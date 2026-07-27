@@ -1,0 +1,1 @@
+{"case_id":"language-argument-structure-001","domain":"language","language":"zh-CN","learner_request":"用“中学生是否应该每天运动”这个话题，讲清议论文中观点、理由、证据和回应反方的结构。","required_coverage":["中心观点","理由与证据区分","回应反方","结构关系图"],"mechanical_checks":{"required_any":[["观点"],["理由"],["证据"],["反方","反驳","回应"]]}}

@@ -1,15 +1,14 @@
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import {
   assertDeepEqual,
+  assertAuthoringSchema,
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
   validateAuthoringLesson,
-} from "./oll.mjs";
+} from "./index.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, "../../..");
+const root = process.cwd();
 const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8"));
 
 for (const entry of manifest) {
@@ -24,9 +23,10 @@ for (const entry of manifest) {
   const expectedEvents = (await readFile(resolve(example, "lesson.canonical.jsonl"), "utf8"))
     .trim()
     .split("\n")
-    .map((line) => JSON.parse(line));
+    .map((line: string) => JSON.parse(line));
   const expectedState = JSON.parse(await readFile(resolve(example, "expected-state.json"), "utf8"));
 
+  assertAuthoringSchema(authoring);
   validateAuthoringLesson(authoring, host.resourceContext);
   const actualEvents = normalizeAuthoringLesson(authoring, host);
   assertDeepEqual(actualEvents, expectedEvents);

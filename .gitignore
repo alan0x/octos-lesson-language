@@ -1,4 +1,6 @@
 node_modules/
+dist/
+evals/runs/
 coverage/
 .DS_Store
 *.log

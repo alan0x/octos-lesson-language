@@ -1,0 +1,27 @@
+{
+  "suite_id": "unseen-cross-disciplinary-v1",
+  "description": "21 unseen authoring tasks across mathematics, science, language, history, geography, computing, economics, and music.",
+  "cases": [
+    "../cases/unseen-v1/math-fraction-compare.json",
+    "../cases/unseen-v1/math-linear-word-problem.json",
+    "../cases/unseen-v1/math-probability-tree.json",
+    "../cases/unseen-v1/math-slope-intercept.json",
+    "../cases/unseen-v1/science-photosynthesis.json",
+    "../cases/unseen-v1/science-series-circuit.json",
+    "../cases/unseen-v1/science-newton-force.json",
+    "../cases/unseen-v1/science-water-cycle.json",
+    "../cases/unseen-v1/science-state-change.json",
+    "../cases/unseen-v1/language-english-passive.json",
+    "../cases/unseen-v1/language-present-perfect.json",
+    "../cases/unseen-v1/language-argument-structure.json",
+    "../cases/unseen-v1/language-poem-imagery.json",
+    "../cases/unseen-v1/history-silk-road.json",
+    "../cases/unseen-v1/history-industrial-revolution.json",
+    "../cases/unseen-v1/geography-monsoon.json",
+    "../cases/unseen-v1/geography-latitude-climate.json",
+    "../cases/unseen-v1/computing-binary-search.json",
+    "../cases/unseen-v1/computing-loop-trace.json",
+    "../cases/unseen-v1/economics-compound-interest.json",
+    "../cases/unseen-v1/music-time-signature.json"
+  ]
+}

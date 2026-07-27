@@ -1,10 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
-import { normalizeAuthoringLesson, reduceCanonicalEvents } from "./oll.mjs";
+import { resolve } from "node:path";
+import { normalizeAuthoringLesson, reduceCanonicalEvents } from "./index.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, "../../..");
+const root = process.cwd();
 const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8"));
 
 for (const entry of manifest) {

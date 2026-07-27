@@ -1,21 +1,30 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import {
+  assertAuthoringSchema,
   OllError,
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
+  validateAuthoringSchema,
   validateAuthoringLesson,
-} from "../src/oll.mjs";
+  type AuthoringLesson,
+  type NormalizationHost,
+  type ResourceContext,
+} from "../src/index.js";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const root = resolve(here, "../../..");
-const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8"));
+interface ManifestEntry extends NormalizationHost {
+  name: string;
+  contextFile?: string;
+  resourceContext?: ResourceContext;
+}
+
+const root = process.cwd();
+const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8")) as ManifestEntry[];
 const authoringSchema = JSON.parse(await readFile(resolve(root, "schema/authoring/v0.1.schema.json"), "utf8"));
 const lessons = await Promise.all(
-  manifest.map(async (entry) => {
+  manifest.map(async (entry: ManifestEntry) => {
     const example = resolve(root, "examples", entry.name);
     const host = {
       ...entry,
@@ -25,18 +34,18 @@ const lessons = await Promise.all(
     };
     return {
       entry: host,
-      source: JSON.parse(await readFile(resolve(example, "lesson.authoring.json"), "utf8")),
+      source: JSON.parse(await readFile(resolve(example, "lesson.authoring.json"), "utf8")) as AuthoringLesson,
     };
   }),
 );
-const { source, entry: host } = lessons.find(({ entry }) => entry.name === "quadratic");
+const { source, entry: host } = lessons.find(({ entry }) => entry.name === "quadratic")!;
 
 test("validates and normalizes every complete lesson", () => {
   for (const lesson of lessons) {
     validateAuthoringLesson(lesson.source, lesson.entry.resourceContext);
     const events = normalizeAuthoringLesson(lesson.source, lesson.entry);
     assert.equal(events[0].event, "lesson.open");
-    assert.equal(events.at(-1).event, "lesson.close");
+    assert.equal(events.at(-1)!.event, "lesson.close");
     assert.equal(events.length, lesson.source.steps.length + 2);
     assert.equal(reduceCanonicalEvents(events).revision, lesson.entry.baseRevision + lesson.source.steps.length);
   }
@@ -44,7 +53,7 @@ test("validates and normalizes every complete lesson", () => {
 
 test("rejects a reference before it is defined", () => {
   const invalid = structuredClone(source);
-  invalid.steps[0].beats[0].actions[0].place = {
+  (invalid as any).steps[0].beats[0].actions[0].place = {
     relation: "below",
     anchor: "not-created",
   };
@@ -56,7 +65,7 @@ test("rejects a reference before it is defined", () => {
 
 test("rejects duplicate local aliases", () => {
   const invalid = structuredClone(source);
-  invalid.steps[0].beats[0].actions[1].as = "original";
+  (invalid as any).steps[0].beats[0].actions[1].as = "original";
   assert.throws(
     () => validateAuthoringLesson(invalid),
     (error) => error instanceof OllError && error.code === "OLL_DUPLICATE_ALIAS",
@@ -79,21 +88,21 @@ test("replaying a canonical step is idempotent", () => {
 });
 
 test("normalizes addressable image and diagram regions", () => {
-  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line")!;
   const events = normalizeAuthoringLesson(geometry.source, geometry.entry);
   const state = reduceCanonicalEvents(events);
   const diagram = state.nodes[`${geometry.entry.lessonId}:node:clean-diagram`];
-  const edge = diagram.content.edges.find((item) => item.label === "AB");
+  const edge = diagram.content.edges.find((item: Record<string, unknown>) => item.label === "AB");
   assert.equal(edge.from, `${diagram.id}:fragment:point-a`);
   assert.equal(edge.to, `${diagram.id}:fragment:point-b`);
   const auxiliary = state.connections[`${geometry.entry.lessonId}:connection:auxiliary-ad`];
-  assert.equal(auxiliary.emphasis.at(-1).emphasis, "resolved");
+  assert.equal((auxiliary.emphasis!.at(-1) as { emphasis: string }).emphasis, "resolved");
 });
 
 test("rejects an unknown image region", () => {
-  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line")!;
   const invalid = structuredClone(geometry.source);
-  invalid.steps[0].beats[0].actions[0].content.regions[0].source_region = "asset-geometry-001#region-not-provided";
+  (invalid as any).steps[0].beats[0].actions[0].content.regions[0].source_region = "asset-geometry-001#region-not-provided";
   assert.throws(
     () => validateAuthoringLesson(invalid, geometry.entry.resourceContext),
     (error) => error instanceof OllError && error.code === "OLL_RESOURCE_DENIED",
@@ -101,9 +110,9 @@ test("rejects an unknown image region", () => {
 });
 
 test("rejects an internal diagram reference that is not defined", () => {
-  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line")!;
   const invalid = structuredClone(geometry.source);
-  invalid.steps[1].beats[0].actions[0].content.edges[0].from = "point-not-defined";
+  (invalid as any).steps[1].beats[0].actions[0].content.edges[0].from = "point-not-defined";
   assert.throws(
     () => validateAuthoringLesson(invalid, geometry.entry.resourceContext),
     (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
@@ -112,7 +121,7 @@ test("rejects an internal diagram reference that is not defined", () => {
 
 test("rejects model-authored absolute board coordinates", () => {
   const invalid = structuredClone(source);
-  invalid.steps[0].beats[0].actions[0].place.x = 120;
+  (invalid as any).steps[0].beats[0].actions[0].place.x = 120;
   assert.throws(
     () => validateAuthoringLesson(invalid),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_PLACEMENT",
@@ -121,7 +130,7 @@ test("rejects model-authored absolute board coordinates", () => {
 
 test("rejects unknown action fields", () => {
   const invalid = structuredClone(source);
-  invalid.steps[0].beats[0].actions[0].animation_duration = 1200;
+  (invalid as any).steps[0].beats[0].actions[0].animation_duration = 1200;
   assert.throws(
     () => validateAuthoringLesson(invalid),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
@@ -130,7 +139,7 @@ test("rejects unknown action fields", () => {
 
 test("authoring schema declares each action payload required by the validator", () => {
   const declared = Object.fromEntries(
-    authoringSchema.$defs.action.allOf.map((rule) => [
+    authoringSchema.$defs.action.allOf.map((rule: any) => [
       rule.if.properties.do.const,
       rule.then.required,
     ]),
@@ -164,7 +173,23 @@ test("focus actions and lesson close can target a connection", () => {
   validateAuthoringLesson(valid);
   const events = normalizeAuthoringLesson(valid, host);
   const connectionId = `${host.lessonId}:connection:half-to-square`;
-  const focusAction = events[2].step.beats[1].stage.during_speech.at(-1);
-  assert.deepEqual(focusAction.focus.targets, [connectionId]);
-  assert.deepEqual(events.at(-1).result.suggested_focus, [connectionId]);
+  const focusAction = events[2]!.step!.beats[1]!.stage.during_speech.at(-1)!;
+  assert.deepEqual(focusAction.focus!.targets, [connectionId]);
+  assert.deepEqual(events.at(-1)!.result!.suggested_focus, [connectionId]);
+});
+
+test("independent JSON Schema validation accepts every complete lesson", () => {
+  for (const lesson of lessons) {
+    assert.deepEqual(validateAuthoringSchema(lesson.source), { valid: true, errors: [] });
+    assert.doesNotThrow(() => assertAuthoringSchema(lesson.source));
+  }
+});
+
+test("independent JSON Schema validation rejects a malformed action", () => {
+  const invalid = structuredClone(source) as any;
+  delete invalid.steps[1].beats[0].actions[1].as;
+  const result = validateAuthoringSchema(invalid);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.keyword === "required"));
+  assert.throws(() => assertAuthoringSchema(invalid), (error) => error instanceof OllError && error.code === "OLL_SCHEMA_INVALID");
 });

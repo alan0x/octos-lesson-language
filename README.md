@@ -42,7 +42,8 @@ CONFORMANCE.md                  一致性与测试计划
 decisions/                      语言决策记录
 schema/authoring/               模型生成 Schema
 schema/canonical/               Runtime Schema
-packages/reference-js/          零依赖参考 Normalizer/Validator
+packages/core/                  TypeScript Schema/Validator/Normalizer/Reducer
+packages/eval-runner/           可恢复的自动模型评测 CLI
 examples/                       完整课程示例
 fixtures/                       非法和恢复测试输入
 evals/                          模型可生成性评测
@@ -50,12 +51,21 @@ evals/                          模型可生成性评测
 
 ## 独立运行
 
-要求 Node.js 20 或更高版本，不需要安装第三方依赖：
+要求 Node.js 20 或更高版本：
 
 ```bash
+npm install
 npm test
 npm run check:examples
 ```
+
+运行 21 个未见跨学科案例、每题 5 次的正式评测：
+
+```bash
+npm run eval -- --suite evals/suites/unseen-v1.json --run-id unseen-v1-gpt-5.6-sol --repetitions 5 --concurrency 2 --resume
+```
+
+Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并依次通过 JSON Schema、语义校验、确定性规范化和 Reducer，才记为 `first_pass_playable`。每次调用的原始输出、Canonical JSONL、状态和失败阶段保存在 `evals/runs/<run-id>/`。
 
 ## 权威边界
 
@@ -73,6 +83,6 @@ npm run check:examples
 - 几何图片与辅助线：受控 asset region、diagram 内部元素、几何 connection 和视觉不确定性；
 - 英语定语从句：普通文本 fragment、主干提取、修饰关系和分层结构。
 
-三份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和零依赖测试。
+三份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试。
 
-几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。下一里程碑是模型可生成性实验，同时继续补充科学流程图和同板追问，避免过早冻结 v0.1。
+几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。首轮 3 个案例模型基线已经完成；当前里程碑是 21 个未见跨学科案例、每题重复 5 次的 first-pass 可播放率实验。在拿到该结果前不接入 `/learn`。

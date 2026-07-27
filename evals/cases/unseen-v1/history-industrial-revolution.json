@@ -1,0 +1,1 @@
+{"case_id":"history-industrial-revolution-001","domain":"history","language":"zh-CN","learner_request":"用因果链和时间线讲清第一次工业革命为什么先在英国发生，以及它如何改变生产方式。","required_coverage":["农业与人口条件","煤铁和资本市场","蒸汽动力与工厂制","不是单一原因"],"mechanical_checks":{"required_any":[["英国"],["煤","铁"],["蒸汽"],["工厂"],["多种","共同","不是单一"]]}}

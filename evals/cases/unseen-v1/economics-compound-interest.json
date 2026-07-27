@@ -1,0 +1,1 @@
+{"case_id":"economics-compound-interest-001","domain":"economics","language":"zh-CN","learner_request":"本金1000元，年利率5%，按年复利。用前3年表格解释复利，并与单利比较。","required_coverage":["每年利息加入本金","1000×1.05^n","前三年余额","单利与复利差异"],"mechanical_checks":{"required_any":[["1000"],["1.05"],["1050"],["1102.5"],["1157.625","1157.63"],["单利"]]}}

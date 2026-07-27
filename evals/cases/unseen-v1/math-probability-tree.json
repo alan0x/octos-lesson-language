@@ -1,0 +1,1 @@
+{"case_id":"math-probability-tree-001","domain":"math","language":"zh-CN","learner_request":"袋中有2个红球1个蓝球，不放回连续取2次。用概率树讲清楚两次颜色不同的概率。","required_coverage":["概率树分支","不放回导致第二次概率变化","红蓝和蓝红两条路径","答案2/3"],"mechanical_checks":{"required_any":[["红→蓝","红-蓝","红蓝"],["蓝→红","蓝-红","蓝红"],["2/3","\\frac{2}{3}"]]}}

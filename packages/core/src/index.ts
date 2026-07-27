@@ -1,7 +1,34 @@
 import { deepStrictEqual } from "node:assert";
+import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
+import authoringSchema from "../../../schema/authoring/v0.1.schema.json" with { type: "json" };
+import type {
+  ActionPhase,
+  AuthoringAction,
+  AuthoringLesson,
+  CanonicalAction,
+  CanonicalEvent,
+  CanonicalTarget,
+  JsonObject,
+  NormalizationHost,
+  Placement,
+  RegistryEntry,
+  RegistryEntryType,
+  ResourceContext,
+  SchemaValidationResult,
+  SemanticBoardState,
+  WriteAction,
+} from "./types.js";
+
+export type * from "./types.js";
+
+type UnknownRecord = Record<string, unknown>;
+type Registry = Map<string, RegistryEntry>;
+
+const ajv = new Ajv2020({ allErrors: true, strict: false });
+const validateAuthoringDocument = ajv.compile(authoringSchema);
 
 const ALIAS_PATTERN = /^[a-z][a-z0-9-]{0,63}$/;
-const ACTIONS = new Set([
+const ACTIONS = new Set<AuthoringAction["do"]>([
   "write",
   "revise",
   "emphasize",
@@ -11,7 +38,7 @@ const ACTIONS = new Set([
   "point",
   "expression",
 ]);
-const PHASES = new Set(["before_speech", "during_speech", "after_speech"]);
+const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
@@ -20,7 +47,10 @@ const ACTION_FIELDS = new Set([
 ]);
 
 export class OllError extends Error {
-  constructor(code, path, message) {
+  readonly code: string;
+  readonly path: string;
+
+  constructor(code: string, path: string, message: string) {
     super(message);
     this.name = "OllError";
     this.code = code;
@@ -28,35 +58,35 @@ export class OllError extends Error {
   }
 }
 
-function fail(code, path, message) {
+function fail(code: string, path: string, message: string): never {
   throw new OllError(code, path, message);
 }
 
-function requireObject(value, path) {
+function requireObject(value: unknown, path: string): asserts value is UnknownRecord {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     fail("OLL_INVALID_TYPE", path, "Expected an object");
   }
 }
 
-function requireArray(value, path) {
+function requireArray(value: unknown, path: string): asserts value is unknown[] {
   if (!Array.isArray(value) || value.length === 0) {
     fail("OLL_INVALID_TYPE", path, "Expected a non-empty array");
   }
 }
 
-function requireString(value, path) {
+function requireString(value: unknown, path: string): asserts value is string {
   if (typeof value !== "string" || value.length === 0) {
     fail("OLL_INVALID_TYPE", path, "Expected a non-empty string");
   }
 }
 
-function requireAlias(value, path) {
+function requireAlias(value: unknown, path: string): asserts value is string {
   if (typeof value !== "string" || !ALIAS_PATTERN.test(value)) {
     fail("OLL_INVALID_ALIAS", path, `Invalid local alias '${String(value)}'`);
   }
 }
 
-function splitTarget(value, path) {
+function splitTarget(value: unknown, path: string): { alias: string; fragment?: string } {
   if (typeof value !== "string") {
     fail("OLL_INVALID_REFERENCE", path, "Reference must be a string");
   }
@@ -69,7 +99,7 @@ function splitTarget(value, path) {
   return { alias, fragment };
 }
 
-function register(registry, alias, type, path, fragments = []) {
+function register(registry: Registry, alias: unknown, type: RegistryEntryType, path: string, fragments: string[] = []): void {
   requireAlias(alias, path);
   if (registry.has(alias)) {
     fail("OLL_DUPLICATE_ALIAS", path, `Alias '${alias}' is already defined`);
@@ -77,7 +107,7 @@ function register(registry, alias, type, path, fragments = []) {
   registry.set(alias, { type, fragments: new Set(fragments) });
 }
 
-function validateContentFragments(content, path) {
+function validateContentFragments(content: JsonObject, path: string): string[] {
   if (!content?.fragments) return [];
   requireArray(content.fragments, `${path}/fragments`);
   const seen = new Set();
@@ -93,7 +123,7 @@ function validateContentFragments(content, path) {
   });
 }
 
-function collectAddressableContent(content) {
+function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
   for (const field of ["curves", "points", "guides", "regions", "elements", "edges"]) {
     if (!content?.[field]) continue;
@@ -104,7 +134,7 @@ function collectAddressableContent(content) {
   return result;
 }
 
-function validateStructuredContent(content, path, addressable) {
+function validateStructuredContent(content: JsonObject, path: string, addressable: Set<string>): void {
   if (Array.isArray(content?.edges)) {
     content.edges.forEach((edge, index) => {
       for (const field of ["from", "to"]) {
@@ -117,7 +147,7 @@ function validateStructuredContent(content, path, addressable) {
   if (Array.isArray(content?.regions)) {
     content.regions.forEach((region, regionIndex) => {
       if (!Array.isArray(region.members)) return;
-      region.members.forEach((member, memberIndex) => {
+      region.members.forEach((member: string, memberIndex: number) => {
         if (!addressable.has(member)) {
           fail("OLL_REFERENCE_NOT_FOUND", `${path}/regions/${regionIndex}/members/${memberIndex}`, `Diagram element '${member}' is not defined`);
         }
@@ -126,7 +156,7 @@ function validateStructuredContent(content, path, addressable) {
   }
 }
 
-function validateImageResource(action, path, resourceContext) {
+function validateImageResource(action: WriteAction, path: string, resourceContext: ResourceContext | null): void {
   if (action.kind !== "image") return;
   const assetId = action.content?.asset_id;
   if (typeof assetId !== "string" || assetId.length === 0) {
@@ -136,14 +166,14 @@ function validateImageResource(action, path, resourceContext) {
   const asset = resourceContext.assets?.find((candidate) => candidate.asset_id === assetId);
   if (!asset) fail("OLL_RESOURCE_DENIED", `${path}/content/asset_id`, `Asset '${assetId}' is not available in Session Context`);
   const allowedRegions = new Set((asset.regions ?? []).map((region) => region.region_id));
-  (action.content.regions ?? []).forEach((region, index) => {
+  (action.content.regions ?? []).forEach((region: JsonObject, index: number) => {
     if (!allowedRegions.has(region.source_region)) {
       fail("OLL_RESOURCE_DENIED", `${path}/content/regions/${index}/source_region`, `Region '${region.source_region}' is not available for '${assetId}'`);
     }
   });
 }
 
-function validatePlacement(place, path, registry) {
+function validatePlacement(place: Placement, path: string, registry: Registry): void {
   requireObject(place, path);
   if (!PLACEMENT_RELATIONS.has(place.relation)) {
     fail("OLL_INVALID_PLACEMENT", `${path}/relation`, `Unknown placement relation '${place.relation}'`);
@@ -158,7 +188,7 @@ function validatePlacement(place, path, registry) {
   }
 }
 
-function validateActionPayload(action, path) {
+function validateActionPayload(action: AuthoringAction, path: string): void {
   for (const field of Object.keys(action)) {
     if (!ACTION_FIELDS.has(field)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/${field}`, `Unknown action field '${field}'`);
   }
@@ -195,7 +225,12 @@ function validateActionPayload(action, path) {
   }
 }
 
-function resolveLocal(registry, value, path, allowedTypes = null) {
+function resolveLocal(
+  registry: Registry,
+  value: unknown,
+  path: string,
+  allowedTypes: RegistryEntryType[] | null = null,
+): { alias: string; fragment?: string; type: RegistryEntryType } {
   const { alias, fragment } = splitTarget(value, path);
   const entry = registry.get(alias);
   if (!entry) {
@@ -210,7 +245,28 @@ function resolveLocal(registry, value, path, allowedTypes = null) {
   return { alias, fragment, type: entry.type };
 }
 
-export function validateAuthoringLesson(document, resourceContext = null) {
+export function validateAuthoringSchema(document: unknown): SchemaValidationResult {
+  const valid = validateAuthoringDocument(document);
+  return {
+    valid: Boolean(valid),
+    errors: (validateAuthoringDocument.errors ?? []).map((error: ErrorObject) => ({
+      instancePath: error.instancePath,
+      schemaPath: error.schemaPath,
+      keyword: error.keyword,
+      message: error.message ?? "Schema validation failed",
+    })),
+  };
+}
+
+export function assertAuthoringSchema(document: unknown): asserts document is AuthoringLesson {
+  const result = validateAuthoringSchema(document);
+  if (!result.valid) {
+    const first = result.errors[0];
+    fail("OLL_SCHEMA_INVALID", first?.instancePath ?? "", first?.message ?? "Authoring Schema validation failed");
+  }
+}
+
+export function validateAuthoringLesson(document: AuthoringLesson, resourceContext: ResourceContext | null = null): { registry: Registry } {
   requireObject(document, "");
   if (document.dsl !== "octos.lesson" || document.version !== "0.1" || document.profile !== "authoring") {
     fail("OLL_UNSUPPORTED_PROFILE", "", "Expected octos.lesson 0.1 Authoring Profile");
@@ -254,7 +310,7 @@ export function validateAuthoringLesson(document, resourceContext = null) {
           requireObject(action.content, `${actionPath}/content`);
           validatePlacement(action.place, `${actionPath}/place`, registry);
           const fragments = collectAddressableContent(action.content);
-          const uniqueFragments = new Set();
+          const uniqueFragments = new Set<string>();
           for (const fragment of fragments) {
             requireAlias(fragment, `${actionPath}/content`);
             if (uniqueFragments.has(fragment)) fail("OLL_DUPLICATE_ALIAS", `${actionPath}/content`, `Fragment '${fragment}' is duplicated`);
@@ -311,11 +367,11 @@ export function validateAuthoringLesson(document, resourceContext = null) {
   return { registry };
 }
 
-function stableId(host, type, alias) {
+function stableId(host: NormalizationHost, type: string, alias: string): string {
   return `${host.lessonId}:${type}:${alias}`;
 }
 
-function normalizeAddressableContent(host, nodeId, content) {
+function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
   for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges"]) {
     if (!Array.isArray(clone?.[field])) continue;
@@ -328,7 +384,7 @@ function normalizeAddressableContent(host, nodeId, content) {
         normalized.to = `${nodeId}:fragment:${item.to}`;
       }
       if (field === "regions" && Array.isArray(item.members)) {
-        normalized.members = item.members.map((member) => `${nodeId}:fragment:${member}`);
+        normalized.members = item.members.map((member: string) => `${nodeId}:fragment:${member}`);
       }
       return normalized;
     });
@@ -336,8 +392,8 @@ function normalizeAddressableContent(host, nodeId, content) {
   return clone;
 }
 
-function buildCanonicalRegistry(document, host) {
-  const registry = new Map();
+function buildCanonicalRegistry(document: AuthoringLesson, host: NormalizationHost): Registry {
+  const registry: Registry = new Map();
   for (const step of document.steps) {
     for (const beat of step.beats) {
       for (const action of beat.actions) {
@@ -358,7 +414,7 @@ function buildCanonicalRegistry(document, host) {
   return registry;
 }
 
-function canonicalTarget(registry, value) {
+function canonicalTarget(registry: Registry, value: string): CanonicalTarget {
   const { alias, fragment } = splitTarget(value, "target");
   const entry = registry.get(alias);
   if (!entry) fail("OLL_REFERENCE_NOT_FOUND", "target", `Unknown alias '${alias}'`);
@@ -370,22 +426,43 @@ function canonicalTarget(registry, value) {
   };
 }
 
-function normalizePlacement(registry, place) {
+function requireRegistryId(registry: Registry, alias: string): string {
+  const id = registry.get(alias)?.id;
+  if (!id) fail("OLL_REFERENCE_NOT_FOUND", "target", `No canonical ID exists for alias '${alias}'`);
+  return id;
+}
+
+function requireCanonicalId(target: CanonicalTarget): string {
+  const id = target.node_id ?? target.group_id ?? target.connection_id;
+  if (!id) fail("OLL_REFERENCE_NOT_FOUND", "target", "Canonical target has no addressable ID");
+  return id;
+}
+
+function normalizePlacement(registry: Registry, place: Placement): JsonObject {
   const result = { ...place };
   if (place.anchor) {
     const target = canonicalTarget(registry, place.anchor);
     delete result.anchor;
-    result.anchor = target.node_id ?? target.group_id;
+    result.anchor = requireCanonicalId(target);
   }
   return result;
 }
 
-function normalizeAction(action, context) {
+function normalizeAction(
+  action: AuthoringAction,
+  context: {
+    host: NormalizationHost;
+    registry: Registry;
+    sequence: number;
+    beatIndex: number;
+    actionIndex: number;
+  },
+): CanonicalAction {
   const { host, registry, sequence, beatIndex, actionIndex } = context;
   const actionId = `${host.lessonId}:action:${sequence}:${beatIndex + 1}:${actionIndex + 1}`;
 
   if (action.do === "write") {
-    const nodeId = registry.get(action.as).id;
+    const nodeId = requireRegistryId(registry, action.as);
     return {
       action_id: actionId,
       op: "board.create",
@@ -412,7 +489,7 @@ function normalizeAction(action, context) {
       action_id: actionId,
       op: "board.connect",
       connection: {
-        id: registry.get(action.as).id,
+        id: requireRegistryId(registry, action.as),
         from: canonicalTarget(registry, action.from),
         to: canonicalTarget(registry, action.to),
         relation: action.relation,
@@ -425,12 +502,12 @@ function normalizeAction(action, context) {
       action_id: actionId,
       op: "board.group",
       group: {
-        id: registry.get(action.as).id,
+        id: requireRegistryId(registry, action.as),
         title: action.label,
         role: action.role,
         members: action.members.map((member) => {
           const target = canonicalTarget(registry, member);
-          return target.node_id ?? target.group_id;
+          return requireCanonicalId(target);
         }),
       },
     };
@@ -442,7 +519,7 @@ function normalizeAction(action, context) {
       focus: {
         targets: action.targets.map((target) => {
           const resolved = canonicalTarget(registry, target);
-          return resolved.node_id ?? resolved.group_id ?? resolved.connection_id;
+          return requireCanonicalId(resolved);
         }),
         intent: action.intent,
       },
@@ -459,17 +536,17 @@ function normalizeAction(action, context) {
       },
     };
   }
-  fail("OLL_INVALID_OPERATION", "action", `Unsupported action '${action.do}'`);
+  fail("OLL_INVALID_OPERATION", "action", "Unsupported authoring action");
 }
 
-export function normalizeAuthoringLesson(document, host) {
+export function normalizeAuthoringLesson(document: AuthoringLesson, host: NormalizationHost): CanonicalEvent[] {
   validateAuthoringLesson(document, host?.resourceContext);
   requireObject(host, "host");
   for (const field of ["lessonId", "boardId", "baseRevision"]) {
     if (host[field] === undefined || host[field] === null) fail("OLL_MISSING_HOST_FIELD", `host/${field}`, `Missing host field '${field}'`);
   }
   const registry = buildCanonicalRegistry(document, host);
-  const events = [
+  const events: CanonicalEvent[] = [
     {
       dsl: "octos.lesson",
       version: "0.1",
@@ -499,7 +576,7 @@ export function normalizeAuthoringLesson(document, host) {
         id: stableId(host, "step", step.key),
         purpose: step.purpose,
         beats: step.beats.map((beat, beatIndex) => {
-          const stage = { before_speech: [], during_speech: [], after_speech: [] };
+          const stage: Record<ActionPhase, CanonicalAction[]> = { before_speech: [], during_speech: [], after_speech: [] };
           beat.actions.forEach((action, actionIndex) => {
             const phase = action.when ?? "during_speech";
             stage[phase].push(normalizeAction(action, { host, registry, sequence, beatIndex, actionIndex }));
@@ -516,7 +593,7 @@ export function normalizeAuthoringLesson(document, host) {
 
   const focus = (document.close?.focus ?? []).map((target) => {
     const resolved = canonicalTarget(registry, target);
-    return resolved.node_id ?? resolved.group_id ?? resolved.connection_id;
+    return requireCanonicalId(resolved);
   });
   events.push({
     dsl: "octos.lesson",
@@ -534,11 +611,12 @@ export function normalizeAuthoringLesson(document, host) {
   return events;
 }
 
-export function reduceCanonicalEvents(events) {
+export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardState {
   requireArray(events, "events");
-  const open = events[0];
+  const open = events[0]!;
   if (open.event !== "lesson.open") fail("OLL_INVALID_EVENT", "/0/event", "First event must be lesson.open");
-  const state = {
+  if (!open.board) fail("OLL_INVALID_EVENT", "/0/board", "lesson.open must include board state");
+  const state: SemanticBoardState = {
     board_id: open.board.board_id,
     revision: open.board.base_revision,
     nodes: {},
@@ -556,38 +634,53 @@ export function reduceCanonicalEvents(events) {
       continue;
     }
     if (event.event !== "lesson.step") fail("OLL_INVALID_EVENT", "event", `Unexpected event '${event.event}'`);
-    if (state.applied_steps.includes(event.step.id)) continue;
-    for (const beat of event.step.beats) {
-      for (const phase of ["before_speech", "during_speech", "after_speech"]) {
+    if (!event.step) fail("OLL_INVALID_EVENT", "event.step", "lesson.step must include a step");
+    const step = event.step;
+    if (state.applied_steps.includes(step.id)) continue;
+    for (const beat of step.beats) {
+      for (const phase of ["before_speech", "during_speech", "after_speech"] as const) {
         for (const action of beat.stage[phase]) {
           if (state.applied_actions.includes(action.action_id)) continue;
           state.applied_actions.push(action.action_id);
-          if (action.op === "board.create") state.nodes[action.node.id] = structuredClone(action.node);
-          else if (action.op === "board.connect") state.connections[action.connection.id] = structuredClone(action.connection);
-          else if (action.op === "board.group") state.groups[action.group.id] = structuredClone(action.group);
-          else if (action.op === "board.focus") state.focus = [...action.focus.targets];
+          if (action.op === "board.create") {
+            if (!action.node) fail("OLL_INVALID_EVENT", "action.node", "board.create requires node");
+            state.nodes[action.node.id] = structuredClone(action.node);
+          } else if (action.op === "board.connect") {
+            if (!action.connection) fail("OLL_INVALID_EVENT", "action.connection", "board.connect requires connection");
+            state.connections[action.connection.id] = structuredClone(action.connection);
+          } else if (action.op === "board.group") {
+            if (!action.group) fail("OLL_INVALID_EVENT", "action.group", "board.group requires group");
+            state.groups[action.group.id] = structuredClone(action.group);
+          } else if (action.op === "board.focus") {
+            if (!action.focus) fail("OLL_INVALID_EVENT", "action.focus", "board.focus requires focus");
+            state.focus = [...action.focus.targets];
+          }
           else if (action.op === "board.revise") {
+            if (!action.target?.node_id || !action.revision) fail("OLL_INVALID_EVENT", "action", "board.revise requires a node target and revision");
             const node = state.nodes[action.target.node_id];
             if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `Node '${action.target.node_id}' not found`);
             node.content = structuredClone(action.revision.content);
           } else if (action.op === "board.emphasize") {
+            if (!action.target) fail("OLL_INVALID_EVENT", "action.target", "board.emphasize requires target");
             const target = action.target.node_id
               ? state.nodes[action.target.node_id]
-              : state.connections[action.target.connection_id];
+              : action.target.connection_id
+                ? state.connections[action.target.connection_id]
+                : undefined;
             if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
             target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
           }
         }
       }
     }
-    state.applied_steps.push(event.step.id);
+    state.applied_steps.push(step.id);
     state.revision += 1;
   }
   return canonicalizeState(state);
 }
 
-export function canonicalizeState(state) {
-  const sortObject = (value) => Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
+export function canonicalizeState(state: SemanticBoardState): SemanticBoardState {
+  const sortObject = <T>(value: Record<string, T>): Record<string, T> => Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b)));
   return {
     ...structuredClone(state),
     nodes: sortObject(state.nodes),
@@ -597,6 +690,6 @@ export function canonicalizeState(state) {
   };
 }
 
-export function assertDeepEqual(actual, expected) {
+export function assertDeepEqual(actual: unknown, expected: unknown): void {
   deepStrictEqual(actual, expected);
 }
