@@ -1,0 +1,539 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "I lost my key. 与 I have lost my key. 的关注点",
+    "goals": [
+      "区分一般过去时对过去事件的关注与现在完成时对当前结果的关注",
+      "掌握现在完成时的 have/has + 过去分词结构",
+      "借助时间线理解两种时态与现在的关系",
+      "知道现在完成时通常不与明确的过去时间状语连用"
+    ]
+  },
+  "steps": [
+    {
+      "key": "compare-meaning",
+      "purpose": "先并列两句话，建立过去事件与当前结果的核心对比。",
+      "beats": [
+        {
+          "key": "show-past-sentence",
+          "say": "先看 I lost my key.。一般过去时把“丢钥匙”当作发生并结束在过去的事件，关注的是过去发生了什么。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "past-sentence",
+              "kind": "text",
+              "role": "example",
+              "content": {
+                "text": "I lost my key.",
+                "gloss": "我把钥匙弄丢了。",
+                "focus": "过去发生的事件"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "comparison",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "past-sentence",
+              "emphasis": "突出 lost，并标明关注过去事件"
+            }
+          ]
+        },
+        {
+          "key": "show-perfect-sentence",
+          "say": "再看 I have lost my key.。丢钥匙仍然发生在过去，但说话人把它和现在连起来：钥匙现在还不在手上，这个当前结果正是重点。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "perfect-sentence",
+              "kind": "text",
+              "role": "example",
+              "content": {
+                "text": "I have lost my key.",
+                "gloss": "我的钥匙丢了，现在还没有找到。",
+                "focus": "过去事件造成的当前结果"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "past-sentence",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "perfect-sentence",
+              "emphasis": "突出 have lost，并标明当前结果"
+            }
+          ]
+        },
+        {
+          "key": "state-core-contrast",
+          "say": "两句话可能描述同一次丢钥匙，但视角不同：一般过去时回答“过去发生了什么”，现在完成时强调“那件事对现在有什么影响”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "core-contrast",
+              "kind": "table",
+              "role": "comparison",
+              "content": {
+                "columns": [
+                  "时态",
+                  "关注点"
+                ],
+                "rows": [
+                  [
+                    "一般过去时",
+                    "过去发生并结束的事件"
+                  ],
+                  [
+                    "现在完成时",
+                    "过去事件与当前结果的联系"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "past-sentence",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "sentence-comparison",
+              "role": "comparison-set",
+              "label": "过去事件与当前结果",
+              "members": [
+                "past-sentence",
+                "perfect-sentence",
+                "core-contrast"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-form",
+      "purpose": "拆解现在完成时的形式，并说明过去分词 lost。",
+      "beats": [
+        {
+          "key": "build-perfect-form",
+          "say": "现在完成时的基本结构是 have/has + 过去分词。I、you、we、they 用 have；he、she、it 用 has。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "perfect-form",
+              "kind": "diagram",
+              "role": "grammar-form",
+              "content": {
+                "formula": "have/has + 过去分词",
+                "subject_agreement": {
+                  "have": "I / you / we / they",
+                  "has": "he / she / it"
+                }
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "form",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "perfect-form",
+              "emphasis": "突出 have/has 与过去分词两个组成部分"
+            }
+          ]
+        },
+        {
+          "key": "apply-perfect-form",
+          "say": "在 I have lost my key. 中，have 是助动词，lost 是 lose 的过去分词；这里的 lost 与 have 一起构成现在完成时。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "form-breakdown",
+              "kind": "text",
+              "role": "worked-example",
+              "content": {
+                "text": "I + have + lost + my key",
+                "parts": {
+                  "I": "主语",
+                  "have": "助动词",
+                  "lost": "lose 的过去分词",
+                  "my key": "宾语"
+                }
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "perfect-form",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "form-to-example",
+              "from": "perfect-form",
+              "to": "form-breakdown",
+              "relation": "结构应用于例句",
+              "label": "have + lost"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "perfect-structure",
+              "role": "grammar-structure",
+              "label": "现在完成时结构",
+              "members": [
+                "perfect-form",
+                "form-breakdown"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "show-timeline",
+      "purpose": "用时间线呈现一般过去时停留在过去、现在完成时连接过去与现在。",
+      "beats": [
+        {
+          "key": "draw-time-points",
+          "say": "把时间分成过去和现在：丢钥匙这件事发生在过去，说话发生在现在。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "past-point",
+              "kind": "shape",
+              "role": "timeline-point",
+              "content": {
+                "label": "过去：钥匙丢失"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "timeline",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "now-point",
+              "kind": "shape",
+              "role": "timeline-point",
+              "content": {
+                "label": "现在：说话时刻"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "past-point",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "time-flow",
+              "from": "past-point",
+              "to": "now-point",
+              "relation": "时间向现在推进",
+              "label": "过去 → 现在"
+            }
+          ]
+        },
+        {
+          "key": "map-past-view",
+          "say": "I lost my key. 把镜头放在过去的丢失事件上；句子本身不说明钥匙现在是否已经找回。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "past-view",
+              "kind": "note",
+              "role": "timeline-interpretation",
+              "content": {
+                "text": "I lost my key.",
+                "interpretation": "镜头停在过去；当前状态未说明"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "past-point",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "past-event-link",
+              "from": "past-view",
+              "to": "past-point",
+              "relation": "关注",
+              "label": "过去事件"
+            }
+          ]
+        },
+        {
+          "key": "map-perfect-view",
+          "say": "I have lost my key. 则从过去的丢失事件连到现在，通常传达“我现在没有钥匙”这一仍然相关的结果。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "perfect-view",
+              "kind": "note",
+              "role": "timeline-interpretation",
+              "content": {
+                "text": "I have lost my key.",
+                "interpretation": "过去发生丢失；现在仍受影响"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "now-point",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "perfect-current-link",
+              "from": "past-point",
+              "to": "perfect-view",
+              "relation": "过去事件产生当前结果",
+              "label": "现在仍相关"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "timeline-model",
+              "role": "timeline",
+              "label": "两种时态的时间视角",
+              "members": [
+                "past-point",
+                "now-point",
+                "past-view",
+                "perfect-view"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-time-expressions",
+      "purpose": "说明明确过去时间与两种时态的搭配限制。",
+      "beats": [
+        {
+          "key": "show-finished-time",
+          "say": "明确且已经结束的过去时间，如 yesterday、last night、two days ago，会把事件固定在过去，因此自然使用一般过去时。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "finished-time-rule",
+              "kind": "note",
+              "role": "usage-rule",
+              "content": {
+                "rule": "明确且已结束的过去时间 → 一般过去时",
+                "examples": [
+                  "yesterday",
+                  "last night",
+                  "two days ago"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "time-expression-rule",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "past-time-example",
+              "kind": "text",
+              "role": "correct-example",
+              "content": {
+                "text": "I lost my key yesterday.",
+                "note": "yesterday 明确指定了已经结束的过去时间"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "finished-time-rule",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "rule-to-past-example",
+              "from": "finished-time-rule",
+              "to": "past-time-example",
+              "relation": "规则示例"
+            }
+          ]
+        },
+        {
+          "key": "warn-perfect-time",
+          "say": "所以不能把现在完成时与这类明确过去时间随意连用：I have lost my key yesterday. 在标准用法中不自然。若要保留 yesterday，应改为 I lost my key yesterday.；若要强调当前结果，就说 I have lost my key.，不加 yesterday。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "time-warning",
+              "kind": "table",
+              "role": "usage-contrast",
+              "content": {
+                "columns": [
+                  "表达",
+                  "判断",
+                  "原因"
+                ],
+                "rows": [
+                  [
+                    "I have lost my key yesterday.",
+                    "不自然",
+                    "现在完成时与明确的已结束过去时间冲突"
+                  ],
+                  [
+                    "I lost my key yesterday.",
+                    "自然",
+                    "聚焦昨天发生的事件"
+                  ],
+                  [
+                    "I have lost my key.",
+                    "自然",
+                    "强调现在仍受影响"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "finished-time-rule",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "time-warning",
+              "emphasis": "突出明确过去时间不能与现在完成时随意连用"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "time-usage",
+              "role": "usage-guidance",
+              "label": "时间表达搭配",
+              "members": [
+                "finished-time-rule",
+                "past-time-example",
+                "time-warning"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "consolidate",
+      "purpose": "汇总形式、时间视角和时间状语限制。",
+      "beats": [
+        {
+          "key": "final-map",
+          "say": "完整地看：I lost my key. 用一般过去时，把重点放在过去的丢失事件；I have lost my key. 用 have + lost，把过去事件连接到当前结果。遇到 yesterday 等明确过去时间，通常选择一般过去时，而不是现在完成时。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "decision-map",
+              "kind": "diagram",
+              "role": "summary-map",
+              "content": {
+                "branches": [
+                  {
+                    "focus": "过去何时发生、发生了什么",
+                    "choice": "一般过去时",
+                    "example": "I lost my key yesterday."
+                  },
+                  {
+                    "focus": "过去事件造成的当前结果",
+                    "choice": "现在完成时：have/has + 过去分词",
+                    "example": "I have lost my key."
+                  }
+                ],
+                "constraint": "现在完成时通常不与明确且已结束的过去时间状语连用"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "summary",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "sentence-comparison",
+                "perfect-structure",
+                "timeline-model",
+                "time-usage",
+                "decision-map"
+              ],
+              "intent": "同时回顾意义、形式、时间线和搭配限制"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "一般过去时关注已经发生在过去的事件；现在完成时用 have/has + 过去分词，把过去事件与当前结果联系起来。I lost my key. 不说明钥匙现在是否找回，I have lost my key. 通常强调现在仍没有钥匙。yesterday 等明确且已结束的过去时间通常搭配一般过去时，不能与现在完成时随意连用。",
+    "focus": [
+      "sentence-comparison",
+      "perfect-structure",
+      "timeline-model",
+      "time-usage",
+      "decision-map"
+    ]
+  }
+}

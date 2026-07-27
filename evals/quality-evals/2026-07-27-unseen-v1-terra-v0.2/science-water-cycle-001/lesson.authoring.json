@@ -1,0 +1,504 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "水循环：能量驱动与水的路径",
+    "goals": [
+      "结合水循环图片辨认海洋、云、山地和河流",
+      "理解太阳能如何驱动蒸发",
+      "沿水的路径理解凝结、降水和径流",
+      "形成水从海洋出发并最终回到海洋的循环图景"
+    ]
+  },
+  "steps": [
+    {
+      "key": "observe-cycle",
+      "purpose": "建立图片区域与水循环整体路径的对应关系。",
+      "beats": [
+        {
+          "key": "show-image",
+          "say": "先观察水循环示意图。图中的海洋、云、山地和河流，是我们追踪水的路径时要经过的主要区域。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "cycle-image",
+              "kind": "image",
+              "role": "水循环示意图",
+              "content": {
+                "asset_id": "asset-water-cycle-001",
+                "alt": "水循环示意图",
+                "regions": [
+                  {
+                    "as": "ocean-region",
+                    "source_region": "asset-water-cycle-001#ocean"
+                  },
+                  {
+                    "as": "cloud-region",
+                    "source_region": "asset-water-cycle-001#cloud"
+                  },
+                  {
+                    "as": "mountain-region",
+                    "source_region": "asset-water-cycle-001#mountain"
+                  },
+                  {
+                    "as": "river-region",
+                    "source_region": "asset-water-cycle-001#river"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main-visual",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "cycle-image#ocean-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "cycle-image#cloud-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "cycle-image#mountain-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "cycle-image#river-region"
+            }
+          ]
+        },
+        {
+          "key": "frame-two-views",
+          "say": "理解这幅图可以抓住两条线索：第一是太阳提供能量，第二是水依次经历蒸发、凝结、降水和径流，最后回到海洋。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "energy-clue",
+              "kind": "note",
+              "role": "能量线索",
+              "content": {
+                "text": "能量驱动：太阳能"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "cycle-image",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "path-clue",
+              "kind": "note",
+              "role": "路径线索",
+              "content": {
+                "text": "水的路径：蒸发 → 凝结 → 降水 → 径流 → 海洋"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "energy-clue",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "two-clues",
+              "role": "理解框架",
+              "label": "能量与路径",
+              "members": [
+                "energy-clue",
+                "path-clue"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "energy-and-rise",
+      "purpose": "说明太阳能驱动蒸发，以及水蒸气上升后凝结成云。",
+      "beats": [
+        {
+          "key": "explain-evaporation",
+          "say": "水循环的能量起点是太阳。太阳能加热海洋表面的水，使一部分液态水变成水蒸气并进入空气，这个过程叫蒸发。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "solar-node",
+              "kind": "shape",
+              "role": "能量来源",
+              "content": {
+                "label": "太阳能",
+                "description": "加热海洋表面"
+              },
+              "place": {
+                "relation": "above",
+                "anchor": "energy-clue",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "ocean-water-node",
+              "kind": "text",
+              "role": "蒸发起点",
+              "content": {
+                "text": "海洋表面的液态水"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cycle-image",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evaporation-node",
+              "kind": "diagram",
+              "role": "蒸发过程",
+              "content": {
+                "title": "蒸发",
+                "text": "液态水受热变成水蒸气，进入空气"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "ocean-water-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "solar-drives-evaporation",
+              "from": "solar-node",
+              "to": "evaporation-node",
+              "relation": "提供能量",
+              "label": "太阳能驱动"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "ocean-to-evaporation",
+              "from": "ocean-water-node",
+              "to": "evaporation-node",
+              "relation": "受热变成水蒸气"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "cycle-image#ocean-region"
+            }
+          ]
+        },
+        {
+          "key": "explain-condensation",
+          "say": "水蒸气上升到较冷的高空后，会变成许多细小水滴或冰晶，这个过程叫凝结。大量小水滴或冰晶聚集起来，就形成了云。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "condensation-node",
+              "kind": "diagram",
+              "role": "凝结过程",
+              "content": {
+                "title": "凝结",
+                "text": "水蒸气在较冷的高空变成小水滴或冰晶"
+              },
+              "place": {
+                "relation": "above",
+                "anchor": "evaporation-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "cloud-node",
+              "kind": "shape",
+              "role": "凝结结果",
+              "content": {
+                "label": "云",
+                "description": "由大量小水滴或冰晶聚集形成"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "condensation-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "evaporation-to-condensation",
+              "from": "evaporation-node",
+              "to": "condensation-node",
+              "relation": "水蒸气上升并遇冷"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "condensation-to-cloud",
+              "from": "condensation-node",
+              "to": "cloud-node",
+              "relation": "聚集形成"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "cycle-image#cloud-region"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "rise-process",
+              "role": "水的上升路径",
+              "label": "海洋到云",
+              "members": [
+                "ocean-water-node",
+                "evaporation-node",
+                "condensation-node",
+                "cloud-node"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "fall-and-return",
+      "purpose": "说明降水落到地表，并通过径流返回海洋。",
+      "beats": [
+        {
+          "key": "explain-precipitation",
+          "say": "云中的水滴或冰晶不断聚集、变大；当它们重到空气托不住时，就会以雨或雪等形式落向地面，这叫降水。图中降水可以落到山地等陆地区域。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "precipitation-node",
+              "kind": "diagram",
+              "role": "降水过程",
+              "content": {
+                "title": "降水",
+                "text": "云中水滴或冰晶增大后，以雨或雪等形式落向地面"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cloud-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "land-water-node",
+              "kind": "text",
+              "role": "降水落点",
+              "content": {
+                "text": "山地等陆地上的水"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "precipitation-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "cloud-to-precipitation",
+              "from": "cloud-node",
+              "to": "precipitation-node",
+              "relation": "水滴或冰晶增大并落下"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "precipitation-to-land",
+              "from": "precipitation-node",
+              "to": "land-water-node",
+              "relation": "到达地表"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "cycle-image#mountain-region"
+            }
+          ]
+        },
+        {
+          "key": "explain-runoff",
+          "say": "落到陆地上的一部分水会沿地表由高处流向低处，汇入溪流和河流，这叫径流。河流继续把水输送到海洋，于是水回到了这段路径的起点。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "runoff-node",
+              "kind": "diagram",
+              "role": "径流过程",
+              "content": {
+                "title": "径流",
+                "text": "地表水由高处流向低处，汇入溪流和河流"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "land-water-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "river-node",
+              "kind": "shape",
+              "role": "径流通道",
+              "content": {
+                "label": "河流",
+                "description": "把径流水输送到海洋"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "runoff-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "ocean-return-node",
+              "kind": "shape",
+              "role": "循环返回点",
+              "content": {
+                "label": "回到海洋",
+                "description": "水重新汇入海洋"
+              },
+              "place": {
+                "relation": "left_of",
+                "anchor": "river-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "land-to-runoff",
+              "from": "land-water-node",
+              "to": "runoff-node",
+              "relation": "沿地表向低处流动"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "runoff-to-river",
+              "from": "runoff-node",
+              "to": "river-node",
+              "relation": "汇入"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "river-to-ocean",
+              "from": "river-node",
+              "to": "ocean-return-node",
+              "relation": "输送并汇入"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "cycle-image#river-region"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "cycle-image#ocean-region"
+            }
+          ]
+        },
+        {
+          "key": "complete-cycle",
+          "say": "把整条路径连起来：太阳能加热海洋并驱动蒸发；水蒸气上升遇冷，凝结成云；云中水滴或冰晶增大后形成降水；落到陆地的水形成径流，经河流回到海洋。水会反复沿这条路径循环，而太阳能持续提供主要动力。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "ocean-restarts-cycle",
+              "from": "ocean-return-node",
+              "to": "ocean-water-node",
+              "relation": "重新成为蒸发起点"
+            },
+            {
+              "do": "group",
+              "when": "during_speech",
+              "as": "water-path",
+              "role": "完整水循环路径",
+              "label": "蒸发—凝结—降水—径流—回到海洋",
+              "members": [
+                "ocean-water-node",
+                "evaporation-node",
+                "condensation-node",
+                "cloud-node",
+                "precipitation-node",
+                "land-water-node",
+                "runoff-node",
+                "river-node",
+                "ocean-return-node"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "solar-drives-evaporation",
+                "water-path"
+              ],
+              "intent": "同时呈现太阳能驱动和水的完整循环路径"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "太阳能是水循环的主要动力：它驱动海洋水蒸发，水蒸气上升遇冷后凝结成云，随后以降水形式到达地表，再通过径流和河流回到海洋。",
+    "focus": [
+      "solar-drives-evaporation",
+      "water-path"
+    ]
+  }
+}

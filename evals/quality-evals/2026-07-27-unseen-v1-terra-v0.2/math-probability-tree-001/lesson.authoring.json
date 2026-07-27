@@ -1,0 +1,434 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用概率树求两次取球颜色不同的概率",
+    "goals": [
+      "画出不放回取球的两层概率树",
+      "理解第一次取球后第二次分支概率会变化",
+      "计算红→蓝和蓝→红两条路径并相加",
+      "得到两次颜色不同的概率2/3"
+    ]
+  },
+  "steps": [
+    {
+      "key": "setup",
+      "purpose": "整理袋中球的数量，并明确概率树的起点。",
+      "beats": [
+        {
+          "key": "show-bag",
+          "say": "袋中共有3个球：2个红球、1个蓝球。我们从表示尚未取球的起点开始画概率树。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "bag",
+              "kind": "text",
+              "role": "given",
+              "content": {
+                "text": "袋中：2个红球，1个蓝球，共3个球"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "probability-tree",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "as": "start",
+              "kind": "shape",
+              "role": "tree-root",
+              "content": {
+                "label": "开始：2红1蓝"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "bag",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "first-draw",
+      "purpose": "建立第一次取球的两个概率分支。",
+      "beats": [
+        {
+          "key": "first-red",
+          "say": "第一次取到红球的概率是2/3，因为3个球中有2个红球。先画出红色分支。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "first-red-node",
+              "kind": "shape",
+              "role": "tree-outcome",
+              "content": {
+                "label": "第一次：红"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "start",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "first-red-branch",
+              "from": "start",
+              "to": "first-red-node",
+              "relation": "第一次取到",
+              "label": "红：2/3"
+            }
+          ]
+        },
+        {
+          "key": "first-blue",
+          "say": "第一次取到蓝球的概率是1/3，因为3个球中只有1个蓝球。概率树的第一层现在有红、蓝两个分支。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "first-blue-node",
+              "kind": "shape",
+              "role": "tree-outcome",
+              "content": {
+                "label": "第一次：蓝"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "first-red-node",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "first-blue-branch",
+              "from": "start",
+              "to": "first-blue-node",
+              "relation": "第一次取到",
+              "label": "蓝：1/3"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "first-red-branch",
+                "first-blue-branch"
+              ],
+              "intent": "展示第一次取球的两个概率树分支"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "second-draw",
+      "purpose": "根据不放回后的剩余球，建立第二次取球的条件概率分支。",
+      "beats": [
+        {
+          "key": "after-red",
+          "say": "关键是不放回：如果第一次取走红球，袋中只剩1红1蓝。因此第二次取红和取蓝的概率都变成1/2。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "after-red-note",
+              "kind": "note",
+              "role": "remaining-state",
+              "content": {
+                "text": "取走红球后：剩1红1蓝，共2个球"
+              },
+              "place": {
+                "relation": "near",
+                "anchor": "first-red-node",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "as": "red-red-node",
+              "kind": "shape",
+              "role": "tree-leaf",
+              "content": {
+                "label": "红→红"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "first-red-node",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "red-red-branch",
+              "from": "first-red-node",
+              "to": "red-red-node",
+              "relation": "第二次取到",
+              "label": "红：1/2"
+            },
+            {
+              "do": "write",
+              "as": "red-blue-node",
+              "kind": "shape",
+              "role": "tree-leaf",
+              "content": {
+                "label": "红→蓝"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "red-red-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "red-blue-branch",
+              "from": "first-red-node",
+              "to": "red-blue-node",
+              "relation": "第二次取到",
+              "label": "蓝：1/2"
+            }
+          ]
+        },
+        {
+          "key": "after-blue",
+          "say": "如果第一次取走唯一的蓝球，袋中剩下2个红球。因此第二次一定取到红球，概率是1；取到蓝球的概率是0。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "after-blue-note",
+              "kind": "note",
+              "role": "remaining-state",
+              "content": {
+                "text": "取走蓝球后：剩2红0蓝，共2个球"
+              },
+              "place": {
+                "relation": "near",
+                "anchor": "first-blue-node",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "as": "blue-red-node",
+              "kind": "shape",
+              "role": "tree-leaf",
+              "content": {
+                "label": "蓝→红"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "first-blue-node",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "blue-red-branch",
+              "from": "first-blue-node",
+              "to": "blue-red-node",
+              "relation": "第二次取到",
+              "label": "红：1"
+            },
+            {
+              "do": "write",
+              "as": "blue-blue-node",
+              "kind": "shape",
+              "role": "tree-leaf",
+              "content": {
+                "label": "蓝→蓝"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "blue-red-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "blue-blue-branch",
+              "from": "first-blue-node",
+              "to": "blue-blue-node",
+              "relation": "第二次取到",
+              "label": "蓝：0"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "after-red-note",
+                "after-blue-note"
+              ],
+              "intent": "比较第一次取走不同颜色后第二次概率的变化"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "select-paths",
+      "purpose": "找出两次颜色不同所对应的两条互斥路径。",
+      "beats": [
+        {
+          "key": "mark-different",
+          "say": "两次颜色不同只有两种顺序：红→蓝和蓝→红。它们是概率树上的两条不同路径。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "group",
+              "as": "different-color-paths",
+              "role": "favorable-outcomes",
+              "label": "颜色不同：红→蓝、蓝→红",
+              "members": [
+                "red-blue-node",
+                "blue-red-node"
+              ]
+            },
+            {
+              "do": "emphasize",
+              "target": "red-blue-node",
+              "emphasis": "highlight"
+            },
+            {
+              "do": "emphasize",
+              "target": "blue-red-node",
+              "emphasis": "highlight"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "different-color-paths"
+              ],
+              "intent": "锁定颜色不同的两条路径"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "calculate",
+      "purpose": "沿路径相乘，再把两条互斥路径的概率相加。",
+      "beats": [
+        {
+          "key": "calculate-red-blue",
+          "say": "先算红→蓝：沿同一条路径把分支概率相乘，所以概率是2/3乘1/2，等于1/3。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "red-blue-calc",
+              "kind": "math",
+              "role": "path-calculation",
+              "content": {
+                "expression": "P(红→蓝) = 2/3 × 1/2 = 1/3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "red-blue-node",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "point",
+              "target": "first-red-branch"
+            },
+            {
+              "do": "point",
+              "target": "red-blue-branch"
+            }
+          ]
+        },
+        {
+          "key": "calculate-blue-red",
+          "say": "再算蓝→红：沿路径相乘，概率是1/3乘1，等于1/3。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "blue-red-calc",
+              "kind": "math",
+              "role": "path-calculation",
+              "content": {
+                "expression": "P(蓝→红) = 1/3 × 1 = 1/3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "blue-red-node",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "point",
+              "target": "first-blue-branch"
+            },
+            {
+              "do": "point",
+              "target": "blue-red-branch"
+            }
+          ]
+        },
+        {
+          "key": "add-paths",
+          "say": "红→蓝与蓝→红不可能同时发生，所以把这两条互斥路径的概率相加：1/3加1/3等于2/3。两次颜色不同的概率就是2/3。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "final-answer",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {
+                "expression": "P(颜色不同) = P(红→蓝) + P(蓝→红) = 1/3 + 1/3 = 2/3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "different-color-paths",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "final-answer",
+              "emphasis": "final-result"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "different-color-paths",
+                "final-answer"
+              ],
+              "intent": "呈现两条有利路径及最终概率2/3"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "不放回会改变袋中剩余球的组成，因此第二次的分支概率要按第一次的结果分别计算。颜色不同对应红→蓝和蓝→红两条路径；每条路径内相乘，再把两条互斥路径相加，得到1/3+1/3=2/3。",
+    "focus": [
+      "different-color-paths",
+      "red-blue-calc",
+      "blue-red-calc",
+      "final-answer"
+    ]
+  }
+}

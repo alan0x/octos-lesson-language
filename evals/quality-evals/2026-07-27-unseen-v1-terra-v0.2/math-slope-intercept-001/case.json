@@ -1,0 +1,28 @@
+{
+  "case_id": "math-slope-intercept-001",
+  "domain": "math",
+  "language": "zh-CN",
+  "learner_request": "从两个点 A(1,2)、B(4,8) 推出直线方程，并解释斜率和截距各是什么意思。",
+  "required_coverage": [
+    "斜率(8-2)/(4-1)=2",
+    "点斜式",
+    "y=2x",
+    "截距为0"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "(8-2)/(4-1)",
+        "\\frac{8-2}{4-1}"
+      ],
+      [
+        "y=2x",
+        "y = 2x"
+      ],
+      [
+        "截距",
+        "intercept"
+      ]
+    ]
+  }
+}

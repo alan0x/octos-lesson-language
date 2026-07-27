@@ -1,0 +1,500 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "串联电路中的电流与断路",
+    "goals": [
+      "结合电路图识别串联电路的唯一电流路径",
+      "理解两只串联灯泡中的电流相同",
+      "理解任意一处断路会使全回路没有电流"
+    ],
+    "adaptation": {
+      "strategies": [
+        "先结合上传的电路图追踪电流路径，再用电荷守恒解释电流关系",
+        "通过完整回路与断路情形的对照呈现结果"
+      ],
+      "context_refs": [
+        "learner_request",
+        "session_context.assets.asset-circuit-001"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "inspect-circuit",
+      "purpose": "结合上传的图片识别串联电路的组成和连接方式。",
+      "beats": [
+        {
+          "key": "show-circuit",
+          "say": "先看你上传的串联电路图：电池提供电能，两只灯泡A、B和导线依次连成一个完整回路。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "circuit-image",
+              "kind": "image",
+              "role": "串联电路示意图",
+              "content": {
+                "asset_id": "asset-circuit-001",
+                "alt": "电池、开关和两只灯泡组成的串联电路",
+                "regions": [
+                  {
+                    "as": "battery",
+                    "source_region": "asset-circuit-001#battery"
+                  },
+                  {
+                    "as": "lamp-a",
+                    "source_region": "asset-circuit-001#lamp-a"
+                  },
+                  {
+                    "as": "lamp-b",
+                    "source_region": "asset-circuit-001#lamp-b"
+                  },
+                  {
+                    "as": "wire",
+                    "source_region": "asset-circuit-001#wire"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main-visual",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "circuit-image#battery"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "circuit-image#lamp-a"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "circuit-image#lamp-b"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "circuit-image#wire"
+            }
+          ]
+        },
+        {
+          "key": "identify-path",
+          "say": "沿导线回路追踪可以看到：电流从电池出发，依次经过灯泡A和灯泡B，再回到电池。中间没有分支，所以串联电路只有一条电流路径。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "single-path",
+              "kind": "diagram",
+              "role": "唯一电流路径",
+              "content": {
+                "sequence": [
+                  "电池",
+                  "灯泡A",
+                  "灯泡B",
+                  "返回电池"
+                ],
+                "statement": "串联电路只有一条路径，没有分支"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "circuit-image",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "single-path",
+              "emphasis": "突出唯一的一条闭合路径"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-current",
+      "purpose": "从唯一路径和电荷守恒解释两只灯泡电流相同。",
+      "beats": [
+        {
+          "key": "mark-currents",
+          "say": "把通过灯泡A的电流记作I₁，把通过灯泡B的电流记作I₂。它们都位于刚才那条唯一的电流路径上。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "current-a",
+              "kind": "math",
+              "role": "灯泡A的电流",
+              "content": {
+                "expression": "I₁",
+                "meaning": "通过灯泡A的电流"
+              },
+              "place": {
+                "relation": "near",
+                "anchor": "circuit-image",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "current-b",
+              "kind": "math",
+              "role": "灯泡B的电流",
+              "content": {
+                "expression": "I₂",
+                "meaning": "通过灯泡B的电流"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "current-a",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "a-on-path",
+              "from": "current-a",
+              "to": "single-path",
+              "relation": "位于唯一路径上",
+              "label": "灯泡A处"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "b-on-path",
+              "from": "current-b",
+              "to": "single-path",
+              "relation": "位于唯一路径上",
+              "label": "灯泡B处"
+            }
+          ]
+        },
+        {
+          "key": "conserve-charge",
+          "say": "电流表示单位时间内通过某处的电荷量。因为回路没有分支，电荷不能在两只灯泡之间凭空增加、消失或持续堆积；单位时间内通过灯泡A的电荷量，也必须通过灯泡B。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "charge-rule",
+              "kind": "note",
+              "role": "电荷守恒解释",
+              "content": {
+                "definition": "电流表示单位时间内通过某处的电荷量",
+                "reason": "唯一路径上电荷不凭空增加、消失或持续堆积",
+                "consequence": "单位时间内通过灯泡A和灯泡B的电荷量相同"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "single-path",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "single-path",
+                "charge-rule"
+              ],
+              "intent": "联系唯一路径与电荷守恒"
+            }
+          ]
+        },
+        {
+          "key": "state-equality",
+          "say": "因此，在这个串联电路正常闭合时，两只灯泡中的电流相同，结论是I₁=I₂。灯泡不会把一部分电流“用掉”；它转换的是电能，而电荷仍沿同一条路径继续运动。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "equal-current",
+              "kind": "math",
+              "role": "串联电流关系",
+              "content": {
+                "expression": "I₁=I₂",
+                "condition": "回路完整且闭合",
+                "explanation": "两只灯泡位于同一条无分支路径上"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "charge-rule",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "energy-note",
+              "kind": "note",
+              "role": "澄清常见误解",
+              "content": {
+                "statement": "灯泡转换电能，但不会把电流用掉"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "equal-current",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "rule-to-equality",
+              "from": "charge-rule",
+              "to": "equal-current",
+              "relation": "推出",
+              "label": "电荷守恒"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "equal-current",
+              "emphasis": "突出I₁=I₂"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-open-circuit",
+      "purpose": "说明任意一只灯泡处断路对整个串联回路的影响。",
+      "beats": [
+        {
+          "key": "introduce-break",
+          "say": "现在设想灯泡A损坏并形成断路。断路就是原来连续的导电路径在这一处被切断，电路不再构成完整闭合回路。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "open-at-a",
+              "kind": "diagram",
+              "role": "灯泡A处断路",
+              "content": {
+                "scenario": "灯泡A损坏",
+                "state": "灯泡A处断路",
+                "effect_on_path": "唯一导电路径被切断，回路不再闭合"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "open-circuit-comparison",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "breaks-path",
+              "from": "open-at-a",
+              "to": "single-path",
+              "relation": "切断",
+              "label": "断路"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "breaks-path",
+              "emphasis": "突出唯一路径被切断"
+            }
+          ]
+        },
+        {
+          "key": "whole-circuit-zero",
+          "say": "由于串联电路没有第二条路可绕行，灯泡A处一旦断路，电荷就不能沿回路持续运动，于是全回路电流都变为零，两只灯泡都会熄灭。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "zero-current",
+              "kind": "math",
+              "role": "断路后的电流",
+              "content": {
+                "expression": "I₁=I₂=0",
+                "cause": "唯一电流路径被断路切断",
+                "result": "两只灯泡都熄灭"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "open-at-a",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "break-to-zero",
+              "from": "open-at-a",
+              "to": "zero-current",
+              "relation": "导致",
+              "label": "全回路无电流"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "zero-current",
+              "emphasis": "突出I₁=I₂=0和两灯都熄灭"
+            }
+          ]
+        },
+        {
+          "key": "generalize-break",
+          "say": "同理，若断路发生在灯泡B、开关或任意一段导线上，结果都一样：只要串联回路任一处断开，唯一路径就不完整，全回路无电流。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "open-rule",
+              "kind": "note",
+              "role": "串联断路规律",
+              "content": {
+                "rule": "任一处断路，全回路无电流",
+                "possible_locations": [
+                  "灯泡A",
+                  "灯泡B",
+                  "开关",
+                  "任意一段导线"
+                ],
+                "reason": "串联电路只有一条路径"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "zero-current",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "open-circuit-result",
+              "role": "断路因果链",
+              "label": "任一处断路 → 唯一路径被切断 → 全回路无电流",
+              "members": [
+                "open-at-a",
+                "zero-current",
+                "open-rule"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "open-circuit-result",
+                "break-to-zero"
+              ],
+              "intent": "完整呈现串联电路断路的因果结果"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "consolidate",
+      "purpose": "把正常闭合与断路两种状态归纳为清晰的对照。",
+      "beats": [
+        {
+          "key": "compare-states",
+          "say": "把两种状态放在一起看：回路完整时，唯一路径处处连续，所以I₁=I₂；任一处断路时，唯一的路径被切断，所以I₁=I₂=0，两只灯泡都熄灭。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "state-comparison",
+              "kind": "table",
+              "role": "完整回路与断路对照",
+              "content": {
+                "columns": [
+                  "电路状态",
+                  "路径状态",
+                  "电流",
+                  "灯泡结果"
+                ],
+                "rows": [
+                  [
+                    "完整闭合",
+                    "唯一的路径连续",
+                    "I₁=I₂",
+                    "两灯中都有电流"
+                  ],
+                  [
+                    "任一处断路",
+                    "唯一的路径被切断",
+                    "I₁=I₂=0",
+                    "两灯都熄灭"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "lesson-conclusion",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "core-ideas",
+              "role": "课程核心结论",
+              "label": "串联电路的路径、电流与断路",
+              "members": [
+                "single-path",
+                "equal-current",
+                "open-circuit-result",
+                "state-comparison"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "core-ideas"
+              ],
+              "intent": "聚焦完整回路和断路状态的核心规律"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "串联电路只有一条无分支的电流路径。根据电荷守恒，完整闭合时通过两只灯泡的电流相同，即I₁=I₂；任一只灯泡或回路中的任一处发生断路，唯一的路径都会被切断，因此全回路无电流，I₁=I₂=0，两只灯泡都熄灭。",
+    "focus": [
+      "core-ideas",
+      "equal-current",
+      "open-circuit-result",
+      "state-comparison"
+    ]
+  }
+}

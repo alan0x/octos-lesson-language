@@ -1,0 +1,93 @@
+{
+  "case_id": "math-slope-intercept-001",
+  "domain": "math",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "math-slope-intercept-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "beat-calculate-slope：m=(8-2)/(4-1)=6/3=2，计算正确。",
+          "beat-point-slope-form 至 beat-simplify-equation：正确代入 y-2=2(x-1) 并化简为 y=2x。",
+          "beat-explain-intercept：以 x=0 验证 y=0，正确说明纵截距及原点。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "beat-calculate-slope 实际讲解并板书 (8-2)/(4-1)=2。",
+          "beat-point-slope-form 实际教授点斜式及其代入。",
+          "beat-simplify-equation 明确推出 y=2x。",
+          "beat-identify-intercept 与 beat-explain-intercept 明确教授截距为 0 及其意义。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "step-points 先建立 Δx=3、Δy=6，再由 step-slope 计算斜率。",
+          "step-equation 将点斜式模板、代入、展开、移项拆分为连续 Beat。",
+          "step-intercept 在方程得出后再对应 y=mx+b 并验证 x=0。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "beat-show-points 的讲述与 point-a、point-b、coordinate-changes 板书一致。",
+          "beat-simplify-equation 的展开和“两边加 2”分别对应 expanded-equation、final-equation 及连接关系。",
+          "beat-explain-intercept 的 x=0 验证和截距含义对应 intercept-check、intercept-meaning。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "step-points、step-equation、step-intercept 分置 derivation、equation、interpretation 区域，结构清晰。",
+          "template-to-substitution、substitution-to-expanded、expanded-to-final 显式呈现推导关系。",
+          "beat-summary 用 derivation-group、meaning-group 和 focus 组织回顾重点。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部步骤以 explain 模式连续给出计算、推导、解释和总结。",
+          "各 Beat 未要求学习者作答、暂停等待或输出测试题；close 完整收束结论。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 未提供学习者画像；lesson 未编造能力、偏好或背景。",
+          "adaptation.context_refs 指向 learner_request，且实际教学围绕其指定两点、方程、斜率和截距展开。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "lesson 的 say、goals 和 adaptation 未声称学习者已经掌握、不会或偏好任何内容。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "仅依据提供的课程文本评估，未观察实际渲染后的白板视觉效果。"
+    ]
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

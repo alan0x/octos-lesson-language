@@ -1,0 +1,92 @@
+{
+  "case_id": "language-present-perfect-001",
+  "domain": "language",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "language-present-perfect-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "compare-meaning/show-perfect-sentence：准确说明过去丢失与当前结果的联系。",
+          "explain-form/build-perfect-form：正确教授“have/has + 过去分词”及主谓搭配。",
+          "explain-time-expressions/warn-perfect-time：正确说明明确、已结束的过去时间通常不用现在完成时。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "compare-meaning/state-core-contrast：直接比较两句的关注点。",
+          "explain-form/build-perfect-form：实际讲解 have/has + 过去分词。",
+          "show-timeline/draw-time-points 至 map-perfect-view：用过去—现在时间线解释差异。",
+          "explain-time-expressions/warn-perfect-time：明确讲解 yesterday 等时间状语限制。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "steps 从句义对比、结构拆解、时间线、时间状语限制，到 consolidate/final-map 逐步展开。",
+          "show-timeline/map-past-view 在呈现时间点后再解释一般过去时视角。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "compare-meaning/show-past-sentence：讲述过去事件，past-sentence 同步呈现例句与“过去发生的事件”。",
+          "explain-form/apply-perfect-form：讲述 have 与 lost 的作用，form-breakdown 对应逐项标注。",
+          "explain-time-expressions/warn-perfect-time：讲述三种表达的差别，time-warning 表格逐行对应。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "compare-meaning/state-core-contrast 使用对比表组织两种时态的关注点。",
+          "show-timeline 以 past-point、now-point、连接线和两种解释构成结构化时间线。",
+          "consolidate/final-map 用决策图汇总关注点、结构和时间状语限制。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "所有 beats 均为连续讲解与可见板书动作，没有等待学生回答、练习提交或测试题。",
+          "close/summary 在同一轮完成核心规则回顾。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅有空 assets，lesson 未虚构学习者水平、偏好或既往表现。",
+          "课程内容直接围绕 learner_request 的两句比较展开。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "全文没有声称学习者“已经掌握”“容易混淆”或具有任何未经 Context 支持的能力、经历或错误。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "仅基于提供的课程文本评估，未观察真实白板渲染或学习者实际理解效果。"
+    ]
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "case_id": "geography-monsoon-001",
+  "domain": "geography",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "geography-monsoon-001",
+    "dimensions": {
+      "correctness": {
+        "score": 3,
+        "evidence": [
+          "summer-pressure-beat：以“大陆低压、海洋相对高压”推导夏季海洋→陆地。",
+          "winter-direction-beat：以大陆高压、海洋低压推导冬季陆地→海洋。",
+          "reversal-chain-beat：清楚给出“冷热关系对调→气压高低对调→风向反转”。"
+        ],
+        "concerns": [
+          "将冬季“相对温暖的海洋上形成低压”作为普遍海陆热力结论较为简化；东亚实际冬季环流还显著受西伯利亚高压、阿留申低压及地转偏向影响，宜明确这是教学模型中的相对气压格局。"
+        ]
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "land-rate-beat 与 ocean-rate-beat 实际讲解陆地快、海洋慢的升降温差异。",
+          "summer-pressure-beat、summer-direction-beat 讲解气压差及“海洋→陆地”。",
+          "winter-pressure-beat、winter-direction-beat 讲解气压差及“陆地→海洋”。",
+          "summer-moisture-beat、winter-nature-beat 分别解释温暖湿润与干冷，final-contrast-beat 完成对照。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "步骤按 thermal-basis→summer-monsoon→winter-monsoon→seasonal-reversal 展开。",
+          "夏、冬各自按温度→气压→风向→性质分 Beat 建构。",
+          "reversal-chain-beat 在分别建立两条链后再归纳季节反转。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "summer-direction-beat 的说法“海洋→陆地”与 summer-wind 连线方向一致。",
+          "winter-direction-beat 的说法“陆地→海洋”与 winter-wind 连线方向一致。",
+          "final-contrast-beat 的口述比较与 season-table 的两行内容和规则一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "thermal-contrast 将 land-rate 与 ocean-rate 组织为对比组。",
+          "夏、冬分别在独立 region 中以陆地、海洋、气压标签和风向连线呈现因果关系。",
+          "reversal-chain 与 season-table 提供因果链和结构化跨季对照，monsoon-summary 聚合总结。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部内容以 explain 模式连续讲授，未要求学习者中途回答。",
+          "close.summary 对全部因果链、方向和性质作完整收束。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅含 assets: []，lesson 未虚构学习者背景、水平或偏好。",
+          "全课采用通用解释与可见板书组织，未作无依据的个性化适配。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "各 Beat 均陈述地理机制，没有声称学习者“已经掌握”“容易混淆”或具备特定经历。",
+          "close.summary 只总结课程内容，未对学习者表现作无证据判断。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "评估依据给定的教学模型与文本，未展开检验东亚不同地区、月份和高空环流的区域差异。"
+    ]
+  },
+  "gate": {
+    "total_score": 31,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

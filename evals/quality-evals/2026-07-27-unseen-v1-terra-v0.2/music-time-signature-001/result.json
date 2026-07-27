@@ -1,0 +1,94 @@
+{
+  "case_id": "music-time-signature-001",
+  "domain": "music",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "music-time-signature-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "three-four/three-four-definition：准确说明3/4为3个四分音符拍、每拍细分为两个八分音符。",
+          "six-eight/six-eight-definition：准确说明6/8的三个八分音符合成一个附点四分音符大拍，因此为两拍。",
+          "direct-contrast/felt-difference：以拍点间隔区分2+2+2与3+3，并对应强—弱—弱和强—弱。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "three-four/three-four-definition实际讲授“3/4是三组四分音符拍”。",
+          "six-eight/six-eight-definition实际讲授“6/8是两组附点四分音符拍”。",
+          "direct-contrast/three-versus-two实际呈现“3对2”、2+2+2与3+3的节拍分组图和比较表。",
+          "three-four/three-four-accent与six-eight/six-eight-accent实际讲授两种强弱组织。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "same-six/six-eighths先建立“同样六个八分音符”的共同点。",
+          "three-four三个连续 Beat 依次定义、分组、标出强弱；six-eight采用对应顺序。",
+          "direct-contrast/felt-difference最后将分组转化为听辨拍点的方法。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "three-four/three-four-diagram的“一-and、二-and、三-and”与three-four-group-one至three-four-group-three的两音分组一致。",
+          "six-eight/six-eight-diagram的“1-la-li、2-la-li”与两组三音 diagram 一致。",
+          "direct-contrast/three-versus-two的口述3对2与contrast-table中的大拍数、细分、分组和强弱列一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "same-six以共同标题和六音序列建立比较基准。",
+          "three-four与six-eight分别使用可见分组图、分组对象、重音连线和焦点组织。",
+          "direct-contrast/contrast-table将拍号、大拍数、细分、分组图和强弱并排归纳。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部教学内容在连续 Beat 与close中完成。",
+          "课程没有等待学生回答、要求输出，或插入未解答的测试题。",
+          "close明确复述两个拍号的分组、拍点和强弱结论。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "lesson.adaptation.context_refs明确引用learner_request。",
+          "adaptation采用“从相同数量的八分音符切入”和渐进分组图，直接适配零基础且聚焦请求中的困惑。",
+          "Resolved Session Context未提供个人画像；课程未虚构学习者背景。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "全课使用一般性教学表述，如same-six/core-question的“接下来把同一排六个音分别组织”，未声称学生已掌握或存在特定困难。",
+          "没有依据缺失的个人 Context 对学生能力、偏好或表现作判断。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

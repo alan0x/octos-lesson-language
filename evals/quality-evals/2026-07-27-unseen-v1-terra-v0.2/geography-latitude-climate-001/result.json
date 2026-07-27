@@ -1,0 +1,94 @@
+{
+  "case_id": "geography-latitude-climate-001",
+  "domain": "geography",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "geography-latitude-climate-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "beat-energy-density：正确说明相同总能量分摊到较小/较大面积会造成单位面积能量差异。",
+          "beat-path-effect：正确说明较长大气路径通常带来更多散射和吸收、较少能量到达地面。",
+          "beat-other-factors：以“总体规律”“通常”限定纬度与气温的关系，并列出海拔、洋流等因素。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "beat-low-angle 与 beat-high-angle：分别讲解近直射、斜射及太阳高度角差异。",
+          "beat-same-energy 与 beat-energy-density：实际讲解相同能量覆盖面积不同及单位面积能量差异。",
+          "beat-paths 与 beat-path-effect：实际讲解穿过大气路径和其能量后果。",
+          "beat-other-factors：明确讲解“纬度不是唯一的气候因素”及其他因素。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "step-angle 先建立太阳高度角、近直射和斜射的空间关系。",
+          "step-area 随后以“相同总能量”为前提推导单位面积能量差异。",
+          "step-atmosphere 补充第二层机制，step-conclusion 再整合因果链与适用边界。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "beat-high-angle 的讲述“太阳高度角较小…斜射”与 slant-ray、slant-label 对应。",
+          "beat-energy-density 的单位面积推导与 more-per-area、less-per-area 两条板书对应。",
+          "beat-path-effect 的散射、吸收后果与 short-path-result、long-path-result 对应。",
+          "beat-other-factors 的限定与 climate-limit、other-factors 对应。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "angle-comparison 将近直射与斜射的地面、太阳位置和结论组织为对比区域。",
+          "area-comparison 用相同 energy_marks 的小/大覆盖区呈现“同能量、不同面积”。",
+          "path-comparison 以大气层内部的短、长路径图示组织第二个机制。",
+          "latitude-energy-model 以两条 flow 因果链收束并与 climate-context 并列聚焦。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部 beats 为连续讲述与板书动作，没有等待学生回答的指令。",
+          "close.summary 完整复述了面积分布、大气路径和多因素限定。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅含 assets，课程未虚构学习者背景、能力或偏好。",
+          "adaptation.context_refs 仅引用 learner_request，且实际内容围绕该请求的太阳高度角与单位面积能量机制展开。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "各 beat 使用的是学科陈述，如 beat-causal-chain 的因果链，未断言学习者已掌握、困惑或具备任何特征。",
+          "lesson.adaptation 未包含关于学习者能力、经历或错误观念的无证据判断。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

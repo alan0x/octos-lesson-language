@@ -1,0 +1,488 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "丝绸之路：连接欧亚大陆的交流网络",
+    "goals": [
+      "结合地图理解丝绸之路由多条陆路与海上路线组成",
+      "说明商品、技术、宗教与文化如何沿网络传播",
+      "理解丝绸之路上的交流具有双向性"
+    ]
+  },
+  "steps": [
+    {
+      "key": "read-map",
+      "purpose": "从地图中的多个区域建立丝绸之路是路线网络而非单线的整体认识。",
+      "beats": [
+        {
+          "key": "show-map",
+          "say": "先看欧亚丝绸之路路线图。我们标出长安、中亚、地中海和海上路线四个区域；这些分散而又相连的区域，是理解丝绸之路网络结构的起点。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "silk-road-map",
+              "kind": "image",
+              "role": "丝绸之路地图",
+              "content": {
+                "asset_id": "asset-silk-road-001",
+                "alt": "欧亚丝绸之路路线图",
+                "regions": [
+                  {
+                    "as": "changan-region",
+                    "source_region": "asset-silk-road-001#changan"
+                  },
+                  {
+                    "as": "central-asia-region",
+                    "source_region": "asset-silk-road-001#central-asia"
+                  },
+                  {
+                    "as": "mediterranean-region",
+                    "source_region": "asset-silk-road-001#mediterranean"
+                  },
+                  {
+                    "as": "maritime-region",
+                    "source_region": "asset-silk-road-001#maritime"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "地图主区",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#changan-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#central-asia-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#mediterranean-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#maritime-region"
+            }
+          ]
+        },
+        {
+          "key": "identify-routes",
+          "say": "从长安向西，可以经过中亚并继续联系地中海，这是由许多支线、绿洲和中转站接续而成的陆路；地图上的海上路线则通过港口和海域连接不同地区。陆路与海路并存，已经说明丝绸之路不是一条单线。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "land-routes",
+              "kind": "diagram",
+              "role": "陆路结构",
+              "content": {
+                "title": "多条陆路",
+                "items": [
+                  "长安",
+                  "中亚绿洲与中转站",
+                  "地中海地区",
+                  "沿途存在多条支线"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "silk-road-map",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "sea-routes",
+              "kind": "diagram",
+              "role": "海路结构",
+              "content": {
+                "title": "海上路线",
+                "items": [
+                  "多个港口",
+                  "多段海域",
+                  "沿岸中转网络"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "land-routes",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "land-sea-link",
+              "from": "land-routes",
+              "to": "sea-routes",
+              "relation": "共同构成"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "route-network",
+              "role": "路线网络",
+              "label": "陆海并行、多点连接的路线网络",
+              "members": [
+                "land-routes",
+                "sea-routes"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "route-network",
+                "land-sea-link"
+              ],
+              "intent": "突出丝绸之路由多条陆海路线共同构成"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "trade-network",
+      "purpose": "说明商品依靠分段运输和多次转手在网络中流动。",
+      "beats": [
+        {
+          "key": "goods-flow",
+          "say": "这个网络首先承载商品交换。丝绸等东方商品可以向西流动，玻璃器、香料、金银制品等商品也会沿不同路线流向其他地区；货物通常不是由一个商人从起点直接运到终点，而是在中亚等节点多次转手。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "east-goods",
+              "kind": "note",
+              "role": "向西流动的商品",
+              "content": {
+                "heading": "向西流动",
+                "items": [
+                  "丝绸等东方商品"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "silk-road-map",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "west-goods",
+              "kind": "note",
+              "role": "沿网络流动的其他商品",
+              "content": {
+                "heading": "向东及向其他地区流动",
+                "items": [
+                  "玻璃器",
+                  "香料",
+                  "金银制品"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "east-goods",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "relay-trade",
+              "kind": "diagram",
+              "role": "分段贸易",
+              "content": {
+                "sequence": [
+                  "出发地",
+                  "中亚等中转节点",
+                  "其他市场"
+                ],
+                "caption": "多批商人接力运输、货物多次转手"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "east-goods",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "goods-to-relay",
+              "from": "east-goods",
+              "to": "relay-trade",
+              "relation": "通过分段贸易流动"
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "other-goods-to-relay",
+              "from": "west-goods",
+              "to": "relay-trade",
+              "relation": "通过分段贸易流动"
+            },
+            {
+              "do": "point",
+              "when": "after_speech",
+              "target": "silk-road-map#central-asia-region"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ideas-and-technology",
+      "purpose": "展示路线网络同时传播技术、宗教和文化，而非只运输商品。",
+      "beats": [
+        {
+          "key": "technology-flow",
+          "say": "与商品同行的还有知识和技术。造纸等技术会被工匠、商人和旅行者带到新的地区，再由当地人学习、改进并继续传播；因此，路线也是技术传播的通道。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "technology",
+              "kind": "diagram",
+              "role": "技术传播",
+              "content": {
+                "title": "技术传播",
+                "example": "造纸等技术",
+                "process": [
+                  "人员携带知识",
+                  "当地学习与改进",
+                  "继续向其他地区传播"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "relay-trade",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "routes-carry-technology",
+              "from": "route-network",
+              "to": "technology",
+              "relation": "提供传播通道"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "technology",
+              "emphasis": "突出学习、改进和再传播的过程"
+            }
+          ]
+        },
+        {
+          "key": "culture-flow",
+          "say": "宗教与文化也沿这些路线传播。佛教等宗教随僧侣、商旅和译经活动跨越地区，艺术样式、语言词汇与生活习俗也在接触中发生交流和融合。丝绸之路因而不仅是贸易网络，也是文化交流网络。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "religion-culture",
+              "kind": "diagram",
+              "role": "宗教与文化传播",
+              "content": {
+                "title": "宗教与文化交流",
+                "examples": [
+                  "佛教等宗教的传播",
+                  "僧侣、商旅与译经活动",
+                  "艺术样式的融合",
+                  "语言词汇与生活习俗的交流"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "technology",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "routes-carry-culture",
+              "from": "route-network",
+              "to": "religion-culture",
+              "relation": "承载宗教与文化传播"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "exchange-content",
+              "role": "交流内容",
+              "label": "商品、技术、宗教与文化",
+              "members": [
+                "east-goods",
+                "west-goods",
+                "technology",
+                "religion-culture"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "exchange-content",
+                "routes-carry-technology",
+                "routes-carry-culture"
+              ],
+              "intent": "呈现丝绸之路承载的多层次交流"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "two-way-network",
+      "purpose": "整合路线和交流内容，明确丝绸之路是长期、双向、多中心的交流网络。",
+      "beats": [
+        {
+          "key": "two-way-exchange",
+          "say": "这些流动不是单向输出。不同地区都在送出商品、技术和文化，也在接收、选择并改造外来事物。长安、中亚、地中海及海上港口都是参与交流的节点，因此更准确的理解是：丝绸之路是双向、多中心的交流网络。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "two-way",
+              "kind": "diagram",
+              "role": "双向交流模型",
+              "content": {
+                "title": "双向交流",
+                "directions": [
+                  "各地区送出商品、技术与文化",
+                  "各地区接收、选择并改造外来事物"
+                ],
+                "nodes": [
+                  "长安",
+                  "中亚",
+                  "地中海",
+                  "海上港口"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "exchange-content",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "network-enables-exchange",
+              "from": "route-network",
+              "to": "two-way",
+              "relation": "使多地区双向往来成为可能"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "content-moves-both-ways",
+              "from": "exchange-content",
+              "to": "two-way",
+              "relation": "在各节点间双向流动"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#changan-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#central-asia-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#mediterranean-region"
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "silk-road-map#maritime-region"
+            }
+          ]
+        },
+        {
+          "key": "final-model",
+          "say": "把整幅白板合起来看：多条陆路与海上路线构成骨架，商品、技术、宗教和文化是其中流动的内容，双向交流则说明各地既是接收者也是贡献者。所以，丝绸之路不是从一个起点直达一个终点的单线，而是跨越欧亚、连接众多节点的交流网络。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "group",
+              "when": "during_speech",
+              "as": "silk-road-network-model",
+              "role": "丝绸之路整体模型",
+              "label": "多路线、多内容、双向流动的交流网络",
+              "members": [
+                "route-network",
+                "exchange-content",
+                "two-way"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "silk-road-map",
+                "silk-road-network-model",
+                "network-enables-exchange",
+                "content-moves-both-ways"
+              ],
+              "intent": "整合地图、路线、交流内容与双向性"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "silk-road-network-model",
+              "emphasis": "突出丝绸之路是交流网络而非单线"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "丝绸之路由多条陆路和海上路线组成，依靠众多城市、绿洲与港口接力连接欧亚。网络中流动的不仅有丝绸等商品，还有技术、宗教和文化；各地区既接收也贡献，并会改造外来事物，因此这种交流是双向且多中心的。",
+    "focus": [
+      "silk-road-map",
+      "route-network",
+      "exchange-content",
+      "two-way",
+      "silk-road-network-model"
+    ]
+  }
+}

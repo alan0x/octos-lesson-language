@@ -1,0 +1,9 @@
+{
+  "rubric_version": "0.2",
+  "model": "gpt-5.6-terra",
+  "repetitions": 1,
+  "concurrency": 3,
+  "suite": "/private/tmp/oll-quality-calibration-v01/suite.json",
+  "source": "/private/tmp/oll-quality-calibration-v01/source",
+  "structured_output_schema": "/Users/alan0x/Documents/projects/octos-lesson-language/evals/rubrics/lesson-quality-v0.2.schema.json"
+}

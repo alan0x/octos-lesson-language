@@ -1,0 +1,8 @@
+{
+  "case_id": "history-silk-road-001",
+  "domain": "history",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": false,
+  "error": "Expected ',' or '}' after property value in JSON at position 1672 (line 1 column 1673)"
+}

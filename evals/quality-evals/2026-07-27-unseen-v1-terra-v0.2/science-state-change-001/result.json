@@ -1,0 +1,100 @@
+{
+  "case_id": "science-state-change-001",
+  "domain": "science",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "science-state-change-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "beat solid-model：固态分子在相对固定位置附近振动",
+          "beat melting-process：熔化定义为固态变液态",
+          "beat vaporization-process：继续吸热后发生汽化并形成水蒸气",
+          "beat size-constant：区分分子间距增大与单个分子尺寸变化"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "beats solid-model、liquid-model、gas-model 实际比较三态排列和运动",
+          "beat heat-effect：吸热后水分子运动增强",
+          "beats melting-process、vaporization-process 实际讲解熔化与汽化",
+          "beat size-constant：明确水分子大小始终不变"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "step compare-states 先建立三态模型",
+          "step explain-heating 再连接吸热、熔化和汽化",
+          "step protect-model 最后纠正“间距”与“大小”的混淆",
+          "beat full-sequence 将已建立的要素串成完整因果链"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "beat solid-model 的 say 与 solid-model 图示均呈现紧密规则、原位振动",
+          "beat heat-effect 的 say 与 heat-input、heat-to-solid 均表达吸热导致运动增强",
+          "beat melting-process 的 say 与 melting-change、melting-note 均表达固态到液态",
+          "beat size-constant 的 say 与 size-rule 均强调大小不变、间距可变"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "solid-model、liquid-model、gas-model 以并列区域形成三态对比",
+          "heat-to-solid、melting-change、vaporization-change 显示状态变化关系",
+          "size-rule 单列模型边界，突出恒定量与变化量",
+          "process-summary 汇总完整过程并由 focus 聚焦关键对象"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "lesson mode 为 explain，所有 beats 连续讲解",
+          "未出现要求学习者回答、等待输入或输出测试题的内容",
+          "close 对全过程作完整总结"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅含空 assets",
+          "lesson 未虚构学习者背景、能力或偏好",
+          "内容保持通用解释，未作无依据个性化"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "各 beat 均陈述粒子模型与过程，未断言学习者已掌握或会犯特定错误",
+          "beat size-constant 直接教学模型边界，而非归因于学习者表现"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "未提供 Learner Context，因此无法评价更具体的个性化适配。"
+    ]
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

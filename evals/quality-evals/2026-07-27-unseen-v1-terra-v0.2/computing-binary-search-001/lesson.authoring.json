@@ -1,0 +1,400 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "在有序数组中用二分查找找到 23",
+    "goals": [
+      "理解二分查找中的 low、mid、high",
+      "用逐轮表格跟踪查找过程",
+      "理解每轮如何排除约一半范围",
+      "解释数组为什么必须有序",
+      "理解时间复杂度 O(log n)"
+    ]
+  },
+  "steps": [
+    {
+      "key": "setup",
+      "purpose": "建立数组、下标和二分查找的初始边界。",
+      "beats": [
+        {
+          "key": "show-array",
+          "say": "我们要在有序数组 [2,5,8,12,16,23,38] 中查找 23。先把元素和下标对齐，后面用下标记录查找范围。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "array",
+              "kind": "table",
+              "role": "ordered-array",
+              "content": {
+                "title": "有序数组",
+                "columns": ["下标", "0", "1", "2", "3", "4", "5", "6"],
+                "rows": [
+                  ["元素", "2", "5", "8", "12", "16", "23", "38"]
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main",
+                "align": "center"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "target",
+              "kind": "note",
+              "role": "search-target",
+              "content": {
+                "text": "目标值：23"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "array",
+                "align": "start",
+                "gap": "normal"
+              }
+            }
+          ]
+        },
+        {
+          "key": "define-bounds",
+          "say": "low 指向当前范围最左端，high 指向最右端，mid 取中间下标。初始时 low=0、high=6，mid=floor((0+6)/2)=3。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "bounds-rule",
+              "kind": "math",
+              "role": "boundary-definition",
+              "content": {
+                "lines": [
+                  "low = 当前范围的最左下标",
+                  "high = 当前范围的最右下标",
+                  "mid = floor((low + high) / 2)"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "array",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "initial-state",
+              "kind": "math",
+              "role": "initial-state",
+              "content": {
+                "text": "low=0，mid=3，high=6"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "bounds-rule",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "trace",
+      "purpose": "用逐轮表格展示边界、比较结果和范围缩小过程。",
+      "beats": [
+        {
+          "key": "table-header",
+          "say": "现在建立逐轮表格。每一行都记录 low、mid、high、中间值、比较结果和下一步。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "trace-header",
+              "kind": "table",
+              "role": "trace-table-header",
+              "content": {
+                "title": "二分查找逐轮记录",
+                "columns": ["轮次", "low", "mid", "high", "array[mid]", "比较", "下一步"]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "target",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "round-one",
+          "say": "第 1 轮，low=0、mid=3、high=6，中间值是 12。因为 12<23，而且数组递增，所以 23 只可能在 mid 右侧；下标 0 到 3 被排除，下一轮令 low=4。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "round-one-row",
+              "kind": "table",
+              "role": "trace-row",
+              "content": {
+                "rows": [
+                  ["1", "0", "3", "6", "12", "12 < 23", "排除下标 0..3；low=4"]
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "trace-header",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "round-one-range",
+              "kind": "diagram",
+              "role": "remaining-range",
+              "content": {
+                "excluded": ["2", "5", "8", "12"],
+                "remaining": ["16", "23", "38"],
+                "caption": "排除左侧及 mid，保留右侧"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "round-one-row",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "round-one-range",
+              "emphasis": "突出剩余范围 [16,23,38]"
+            }
+          ]
+        },
+        {
+          "key": "round-two",
+          "say": "第 2 轮，范围是下标 4 到 6，所以 low=4、high=6，mid=floor((4+6)/2)=5。array[5]=23，正好等于目标值，于是在下标 5 找到 23。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "round-two-row",
+              "kind": "table",
+              "role": "trace-row",
+              "content": {
+                "rows": [
+                  ["2", "4", "5", "6", "23", "23 = 23", "找到；下标 5"]
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "round-one-row",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "found-result",
+              "kind": "note",
+              "role": "result",
+              "content": {
+                "text": "找到 23：下标 5，共比较 2 轮"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "round-two-row",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "found-result",
+              "emphasis": "突出查找成功和下标 5"
+            }
+          ]
+        },
+        {
+          "key": "group-trace",
+          "say": "两行合起来就是完整轨迹：先比较 12 并排除左侧，再比较 23 并找到目标。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "group",
+              "when": "before_speech",
+              "as": "trace-rows",
+              "role": "complete-trace",
+              "label": "完整的两轮查找轨迹",
+              "members": ["trace-header", "round-one-row", "round-two-row"]
+            },
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": ["trace-rows"],
+              "intent": "依次查看第 1 轮排除左侧和第 2 轮找到目标"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "ordering",
+      "purpose": "解释有序性如何保证能够确定排除方向。",
+      "beats": [
+        {
+          "key": "ordered-reason",
+          "say": "二分查找能排除一半，关键是数组有序。看到中间值 12<23 时，左侧所有元素都不大于 12，因此它们必然不等于 23，可以整体排除。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "order-guarantee",
+              "kind": "diagram",
+              "role": "ordering-logic",
+              "content": {
+                "premise": "数组递增",
+                "comparison": "array[mid] = 12 < 23",
+                "guarantee": "mid 左侧元素 ≤ 12 < 23",
+                "conclusion": "目标只能在右侧"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "trace-rows",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "order-to-exclusion",
+              "from": "order-guarantee",
+              "to": "round-one-range",
+              "relation": "有序性保证可以向右查找并排除左侧"
+            }
+          ]
+        },
+        {
+          "key": "unordered-failure",
+          "say": "如果数组无序，中间值小于 23 并不能说明 23 在右侧；23 仍可能藏在左侧。这样就无法安全地决定排除方向，二分查找的核心推理会失效。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "unordered-warning",
+              "kind": "note",
+              "role": "failure-condition",
+              "content": {
+                "text": "无序时：array[mid] < 23 ⇏ 23 一定在右侧",
+                "consequence": "不能安全排除任意一半"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "order-guarantee",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "unordered-warning",
+              "emphasis": "突出不能确定排除方向"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "complexity",
+      "purpose": "从每轮范围减半推出对数时间复杂度。",
+      "beats": [
+        {
+          "key": "halving",
+          "say": "一般情况下，每比较一轮，候选范围都会从 n 缩小到大约 n/2，再到 n/4、n/8，直到只剩一个位置。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "halving-chain",
+              "kind": "math",
+              "role": "range-reduction",
+              "content": {
+                "sequence": "n → n/2 → n/4 → n/8 → … → 1",
+                "meaning": "每轮排除约一半候选"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "order-guarantee",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "log-result",
+          "say": "经过大约 log₂n 轮，范围就会缩小到 1，所以二分查找的时间复杂度是 O(log n)。本例有 7 个元素，只用 2 轮就找到了 23。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "complexity-result",
+              "kind": "math",
+              "role": "complexity",
+              "content": {
+                "derivation": "n / 2^k ≈ 1  ⇒  k ≈ log₂n",
+                "result": "时间复杂度：O(log n)",
+                "example": "本例 n=7，实际比较 2 轮"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "halving-chain",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "halving-to-log",
+              "from": "halving-chain",
+              "to": "complexity-result",
+              "relation": "连续减半产生对数轮数"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": ["halving-chain", "complexity-result", "halving-to-log"],
+              "intent": "聚焦每轮减半与 O(log n) 的因果关系"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在 [2,5,8,12,16,23,38] 中查找 23：第 1 轮 low=0、mid=3、high=6，因 12<23 而排除下标 0..3；第 2 轮 low=4、mid=5、high=6，在下标 5 找到 23。有序性保证比较后能够确定安全的排除方向；候选范围每轮约减半，因此时间复杂度为 O(log n)。",
+    "focus": ["trace-rows", "order-guarantee", "complexity-result"]
+  }
+}

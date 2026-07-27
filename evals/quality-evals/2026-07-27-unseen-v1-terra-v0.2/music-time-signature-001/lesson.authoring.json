@@ -1,0 +1,591 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "同样六个八分音符：3/4拍与6/8拍的不同组织",
+    "goals": [
+      "理解3/4拍是三组四分音符拍",
+      "理解6/8拍是两组附点四分音符拍",
+      "看懂六个八分音符的3对2分组",
+      "辨认两种拍号的强弱组织"
+    ],
+    "adaptation": {
+      "strategies": [
+        "从相同数量的八分音符切入",
+        "用渐进分组图呈现拍点与强弱",
+        "用口语化数拍词帮助零基础学生感受差异"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "same-six",
+      "purpose": "先建立共同点：一个小节都可以容纳六个八分音符。",
+      "beats": [
+        {
+          "key": "six-eighths",
+          "say": "先看共同点：3/4拍和6/8拍的一个小节，都可以写成六个时值相同的八分音符。差别不在音符总数，而在这六个音怎样分组、哪些位置被听成拍点。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "common-title",
+              "kind": "text",
+              "role": "heading",
+              "content": {
+                "text": "共同点：每小节都有6个八分音符"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "comparison",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "as": "six-notes",
+              "kind": "diagram",
+              "role": "rhythm-sequence",
+              "content": {
+                "items": [
+                  "♪",
+                  "♪",
+                  "♪",
+                  "♪",
+                  "♪",
+                  "♪"
+                ],
+                "caption": "六个等长的八分音符"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "common-title",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "six-notes",
+              "emphasis": "same-duration-and-count"
+            }
+          ]
+        },
+        {
+          "key": "core-question",
+          "say": "因此，拍号不是只告诉我们一共有多少个八分音符；它还告诉我们拍子的基本单位和分组方式。接下来把同一排六个音分别按3/4和6/8组织。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "grouping-key",
+              "kind": "note",
+              "role": "principle",
+              "content": {
+                "text": "关键：总时值相同，不代表节拍分组相同"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "six-notes",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "six-notes",
+                "grouping-key"
+              ],
+              "intent": "contrast equal note count with different metric grouping"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "three-four",
+      "purpose": "展示3/4拍的三组二分结构和强弱弱组织。",
+      "beats": [
+        {
+          "key": "three-four-definition",
+          "say": "在3/4拍里，下面的4表示以四分音符为一拍，上面的3表示每小节有三拍。所以3/4是三组四分音符拍；每个四分音符拍又能分成两个八分音符。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "three-four-title",
+              "kind": "text",
+              "role": "heading",
+              "content": {
+                "text": "3/4拍：3个四分音符拍"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "three-four-explanation",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "as": "three-four-rule",
+              "kind": "math",
+              "role": "meter-definition",
+              "content": {
+                "expression": "3/4 = 3拍 × 每拍1个四分音符 = 3组 × 每组2个八分音符"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "three-four-title",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "three-four-rule",
+              "emphasis": "three-quarter-note-beats"
+            }
+          ]
+        },
+        {
+          "key": "three-four-diagram",
+          "say": "把六个八分音符每两个分成一组，就得到三组：第一拍、第二拍、第三拍。可以数成“一-and、二-and、三-and”。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "three-four-group-one",
+              "kind": "diagram",
+              "role": "beat-group",
+              "content": {
+                "label": "第1拍",
+                "notes": [
+                  "♪",
+                  "♪"
+                ],
+                "count": "1-and"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "three-four-rule",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "as": "three-four-group-two",
+              "kind": "diagram",
+              "role": "beat-group",
+              "content": {
+                "label": "第2拍",
+                "notes": [
+                  "♪",
+                  "♪"
+                ],
+                "count": "2-and"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "three-four-group-one",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "as": "three-four-group-three",
+              "kind": "diagram",
+              "role": "beat-group",
+              "content": {
+                "label": "第3拍",
+                "notes": [
+                  "♪",
+                  "♪"
+                ],
+                "count": "3-and"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "three-four-group-two",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "as": "three-four-beats",
+              "role": "meter-grouping",
+              "label": "3/4：2 + 2 + 2",
+              "members": [
+                "three-four-group-one",
+                "three-four-group-two",
+                "three-four-group-three"
+              ]
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "three-four-beats"
+              ],
+              "intent": "show three groups of two eighth notes"
+            }
+          ]
+        },
+        {
+          "key": "three-four-accent",
+          "say": "3/4有三个拍点，典型强弱是“强—弱—弱”。重音落在第1拍开头；第2拍和第3拍较弱。六个八分音符因此听成“强-and，弱-and，弱-and”。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "three-four-accent-line",
+              "kind": "text",
+              "role": "accent-pattern",
+              "content": {
+                "text": "3/4：强-and ｜ 弱-and ｜ 弱-and"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "three-four-beats",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "three-four-accent-link",
+              "from": "three-four-group-one",
+              "to": "three-four-accent-line",
+              "relation": "first-beat-is-strong",
+              "label": "第1拍最强"
+            },
+            {
+              "do": "emphasize",
+              "target": "three-four-group-one",
+              "emphasis": "primary-accent"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "three-four-beats",
+                "three-four-accent-link"
+              ],
+              "intent": "hear strong-weak-weak across three beats"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "six-eight",
+      "purpose": "展示6/8拍的两组三分结构和强弱组织。",
+      "beats": [
+        {
+          "key": "six-eight-definition",
+          "say": "在6/8拍里，六个八分音符通常不是六个彼此独立的拍，也不是照3/4那样每两个一组，而是每三个八分音符合成一个大拍。三个八分音符的总时值等于一个附点四分音符，所以6/8是两组附点四分音符拍，也就是每小节两拍。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "six-eight-title",
+              "kind": "text",
+              "role": "heading",
+              "content": {
+                "text": "6/8拍：2个附点四分音符拍"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "six-eight-explanation",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "as": "six-eight-rule",
+              "kind": "math",
+              "role": "meter-definition",
+              "content": {
+                "expression": "6/8 = 2拍 × 每拍1个附点四分音符 = 2组 × 每组3个八分音符"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "six-eight-title",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "six-eight-rule",
+              "emphasis": "two-dotted-quarter-note-beats"
+            }
+          ]
+        },
+        {
+          "key": "six-eight-diagram",
+          "say": "现在把同样六个八分音符每三个分成一组，就得到两个大拍。第一组可以数“一-la-li”，第二组数“二-la-li”。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "six-eight-group-one",
+              "kind": "diagram",
+              "role": "beat-group",
+              "content": {
+                "label": "第1大拍",
+                "notes": [
+                  "♪",
+                  "♪",
+                  "♪"
+                ],
+                "count": "1-la-li"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "six-eight-rule",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "as": "six-eight-group-two",
+              "kind": "diagram",
+              "role": "beat-group",
+              "content": {
+                "label": "第2大拍",
+                "notes": [
+                  "♪",
+                  "♪",
+                  "♪"
+                ],
+                "count": "2-la-li"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "six-eight-group-one",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "as": "six-eight-beats",
+              "role": "meter-grouping",
+              "label": "6/8：3 + 3",
+              "members": [
+                "six-eight-group-one",
+                "six-eight-group-two"
+              ]
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "six-eight-beats"
+              ],
+              "intent": "show two groups of three eighth notes"
+            }
+          ]
+        },
+        {
+          "key": "six-eight-accent",
+          "say": "6/8有两个大拍点，典型组织是第一大拍强、第二大拍弱。每个大拍内部，第一个八分音符是拍点，后两个只是这个大拍的细分，所以可听成“强-la-li，弱-la-li”。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "six-eight-accent-line",
+              "kind": "text",
+              "role": "accent-pattern",
+              "content": {
+                "text": "6/8：强-la-li ｜ 弱-la-li"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "six-eight-beats",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "six-eight-accent-link",
+              "from": "six-eight-group-one",
+              "to": "six-eight-accent-line",
+              "relation": "first-large-beat-is-strong",
+              "label": "第1大拍最强"
+            },
+            {
+              "do": "emphasize",
+              "target": "six-eight-group-one",
+              "emphasis": "primary-accent"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "six-eight-beats",
+                "six-eight-accent-link"
+              ],
+              "intent": "hear strong-weak across two compound beats"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "direct-contrast",
+      "purpose": "并排归纳3对2的分组差异以及由此产生的强弱差异。",
+      "beats": [
+        {
+          "key": "three-versus-two",
+          "say": "把两幅节拍分组图并排看，核心就是“3对2”：3/4把六个八分音符分成三组，每组两个，是2+2+2；6/8把它们分成两组，每组三个，是3+3。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "contrast-title",
+              "kind": "text",
+              "role": "heading",
+              "content": {
+                "text": "同样6个八分音符，强弱组织是3对2"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "final-comparison",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "as": "contrast-table",
+              "kind": "table",
+              "role": "meter-comparison",
+              "content": {
+                "columns": [
+                  "拍号",
+                  "大拍数",
+                  "每拍细分",
+                  "分组图",
+                  "强弱"
+                ],
+                "rows": [
+                  [
+                    "3/4",
+                    "三拍",
+                    "每拍2个八分音符",
+                    "2 + 2 + 2",
+                    "强—弱—弱"
+                  ],
+                  [
+                    "6/8",
+                    "两拍",
+                    "每拍3个八分音符",
+                    "3 + 3",
+                    "强—弱"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "contrast-title",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "three-four-to-contrast",
+              "from": "three-four-beats",
+              "to": "contrast-table",
+              "relation": "summarized-as-three-groups"
+            },
+            {
+              "do": "connect",
+              "as": "six-eight-to-contrast",
+              "from": "six-eight-beats",
+              "to": "contrast-table",
+              "relation": "summarized-as-two-groups"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "contrast-table",
+                "three-four-to-contrast",
+                "six-eight-to-contrast"
+              ],
+              "intent": "compare three simple beats with two compound beats"
+            }
+          ]
+        },
+        {
+          "key": "felt-difference",
+          "say": "所以，判断它们时不要只数到六。要听拍点多久出现一次：若每两个八分音符出现一个拍点，一小节有三个拍点，就是3/4的“强弱弱”；若每三个八分音符出现一个大拍点，一小节有两个大拍点，就是6/8的“强弱”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "listening-guide",
+              "kind": "note",
+              "role": "listening-summary",
+              "content": {
+                "title": "不要只数音符，要听拍点",
+                "lines": [
+                  "每2个八分音符一个拍点 → 3个拍点 → 3/4：强—弱—弱",
+                  "每3个八分音符一个大拍点 → 2个大拍点 → 6/8：强—弱"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "contrast-table",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "as": "final-understanding",
+              "role": "lesson-conclusion",
+              "label": "从分组听懂拍号",
+              "members": [
+                "contrast-table",
+                "listening-guide"
+              ]
+            },
+            {
+              "do": "emphasize",
+              "target": "listening-guide",
+              "emphasis": "listen-for-beat-onsets"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "final-understanding"
+              ],
+              "intent": "retain the grouping and accent distinction"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "3/4与6/8都能容纳六个八分音符，但3/4是三个四分音符拍，按2+2+2分组，典型强弱为强—弱—弱；6/8是两个附点四分音符拍，按3+3分组，典型强弱为强—弱。两者的核心差异是三个拍点对两个大拍点，也就是强弱组织的3对2。",
+    "focus": [
+      "three-four-beats",
+      "six-eight-beats",
+      "final-understanding"
+    ]
+  }
+}

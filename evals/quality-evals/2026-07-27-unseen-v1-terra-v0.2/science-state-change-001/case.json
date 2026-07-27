@@ -1,0 +1,35 @@
+{
+  "case_id": "science-state-change-001",
+  "domain": "science",
+  "language": "zh-CN",
+  "learner_request": "从粒子模型解释冰受热变成水再变成水蒸气，注意不要说分子本身变大。",
+  "required_coverage": [
+    "固液气粒子排列差异",
+    "吸热使粒子运动增强",
+    "熔化和汽化",
+    "分子大小不变"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "熔化"
+      ],
+      [
+        "汽化",
+        "蒸发"
+      ],
+      [
+        "粒子",
+        "分子"
+      ],
+      [
+        "大小不变",
+        "不会变大"
+      ]
+    ],
+    "forbidden": [
+      "分子变大",
+      "粒子变大"
+    ]
+  }
+}

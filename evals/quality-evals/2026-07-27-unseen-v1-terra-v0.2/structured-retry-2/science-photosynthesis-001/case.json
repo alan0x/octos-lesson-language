@@ -1,0 +1,32 @@
+{
+  "case_id": "science-photosynthesis-001",
+  "domain": "science",
+  "language": "zh-CN",
+  "learner_request": "请用一块逐步形成的示意图，给初一学生讲清楚光合作用的原料、条件、产物和发生地点。",
+  "required_coverage": [
+    "二氧化碳和水",
+    "光和叶绿体",
+    "葡萄糖和氧气",
+    "物质流向示意图"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "二氧化碳",
+        "CO2",
+        "CO₂"
+      ],
+      [
+        "叶绿体"
+      ],
+      [
+        "葡萄糖"
+      ],
+      [
+        "氧气",
+        "O2",
+        "O₂"
+      ]
+    ]
+  }
+}

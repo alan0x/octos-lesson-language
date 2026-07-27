@@ -1,0 +1,8 @@
+{
+  "case_id": "language-argument-structure-001",
+  "domain": "language",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": false,
+  "error": "Expected ',' or '}' after property value in JSON at position 1873 (line 1 column 1874)"
+}

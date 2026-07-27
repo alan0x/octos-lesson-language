@@ -1,0 +1,9 @@
+{
+  "rubric_version": "0.2",
+  "model": "gpt-5.6-terra",
+  "repetitions": 5,
+  "concurrency": 3,
+  "suite": "/private/tmp/oll-quality-v02-invalid-suite.json",
+  "source": "evals/runs/2026-07-27-unseen-v1-gpt-5.6-sol",
+  "structured_output_schema": "/Users/alan0x/Documents/projects/octos-lesson-language/evals/rubrics/lesson-quality-v0.2.schema.json"
+}

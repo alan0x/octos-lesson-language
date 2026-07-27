@@ -1,0 +1,431 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用受力图求箱子的净力和加速度",
+    "goals": [
+      "画出箱子受到的四个力",
+      "求出水平方向的净力",
+      "用 F = ma 求加速度"
+    ]
+  },
+  "steps": [
+    {
+      "key": "identify-object",
+      "purpose": "明确研究对象和已知条件。",
+      "beats": [
+        {
+          "key": "show-box",
+          "say": "把2 kg的箱子作为研究对象。已知水平拉力是10 N，摩擦力是4 N。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "box",
+              "kind": "shape",
+              "role": "研究对象",
+              "content": {
+                "shape": "rectangle",
+                "text": "箱子\nm = 2 kg"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "受力图中心",
+                "align": "center"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "known-data",
+              "kind": "note",
+              "role": "已知条件",
+              "content": {
+                "text": "水平拉力：10 N\n摩擦力：4 N"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "box",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "draw-forces",
+      "purpose": "渐进画出箱子受到的四个力。",
+      "beats": [
+        {
+          "key": "horizontal-forces",
+          "say": "水平方向有两个力：10 N拉力向右，4 N摩擦力向左。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "pull-force",
+              "kind": "math",
+              "role": "向右的拉力",
+              "content": {
+                "text": "拉力 F拉 = 10 N",
+                "direction": "向右"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "box",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "pull-arrow",
+              "from": "box",
+              "to": "pull-force",
+              "relation": "受力箭头向右",
+              "label": "10 N"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "friction-force",
+              "kind": "math",
+              "role": "向左的摩擦力",
+              "content": {
+                "text": "摩擦力 f = 4 N",
+                "direction": "向左"
+              },
+              "place": {
+                "relation": "left_of",
+                "anchor": "box",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "friction-arrow",
+              "from": "box",
+              "to": "friction-force",
+              "relation": "受力箭头向左",
+              "label": "4 N"
+            }
+          ]
+        },
+        {
+          "key": "vertical-forces",
+          "say": "竖直方向还有两个力：地面对箱子的支持力向上，重力向下。箱子没有竖直加速，所以这两个力平衡。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "normal-force",
+              "kind": "math",
+              "role": "向上的支持力",
+              "content": {
+                "text": "支持力 N",
+                "direction": "向上"
+              },
+              "place": {
+                "relation": "above",
+                "anchor": "box",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "normal-arrow",
+              "from": "box",
+              "to": "normal-force",
+              "relation": "受力箭头向上"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "gravity-force",
+              "kind": "math",
+              "role": "向下的重力",
+              "content": {
+                "text": "重力 G = mg",
+                "direction": "向下"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "box",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "gravity-arrow",
+              "from": "box",
+              "to": "gravity-force",
+              "relation": "受力箭头向下"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "vertical-balance",
+              "kind": "math",
+              "role": "竖直方向平衡",
+              "content": {
+                "text": "竖直方向：N - G = 0"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "gravity-force",
+                "align": "center",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "complete-diagram",
+          "say": "完整受力图包含四个力：向右的拉力、向左的摩擦力、向上的支持力和向下的重力。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "group",
+              "when": "during_speech",
+              "as": "four-force-diagram",
+              "role": "完整受力图",
+              "label": "箱子的四个力",
+              "members": [
+                "box",
+                "pull-force",
+                "friction-force",
+                "normal-force",
+                "gravity-force"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "pull-arrow",
+                "friction-arrow",
+                "normal-arrow",
+                "gravity-arrow"
+              ],
+              "intent": "同时查看四个力的方向"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "calculate-net-force",
+      "purpose": "利用方向和大小计算水平方向净力。",
+      "beats": [
+        {
+          "key": "choose-positive",
+          "say": "取向右为正方向。竖直方向的支持力与重力平衡，因此净力只需看水平方向。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "positive-direction",
+              "kind": "note",
+              "role": "正方向约定",
+              "content": {
+                "text": "规定：向右为正"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "four-force-diagram",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "point",
+              "when": "during_speech",
+              "target": "vertical-balance"
+            }
+          ]
+        },
+        {
+          "key": "subtract-forces",
+          "say": "拉力向右取正，摩擦力向左取负，所以水平方向净力是10 N减4 N，等于6 N，方向向右。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "net-force-equation",
+              "kind": "math",
+              "role": "水平方向净力计算",
+              "content": {
+                "text": "F净 = 10 N - 4 N = 6 N →"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "positive-direction",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "net-force-equation",
+              "emphasis": "突出结果6 N及向右方向"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "calculate-acceleration",
+      "purpose": "运用牛顿第二定律求箱子的加速度。",
+      "beats": [
+        {
+          "key": "state-newton-law",
+          "say": "根据牛顿第二定律，净力等于质量乘加速度，也就是 F = ma。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "newton-second-law",
+              "kind": "math",
+              "role": "牛顿第二定律",
+              "content": {
+                "text": "F净 = ma"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "net-force-equation",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "substitute-values",
+          "say": "代入净力6 N和质量2 kg，得到6 N等于2 kg乘加速度。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "substitution",
+              "kind": "math",
+              "role": "代入已知量",
+              "content": {
+                "text": "6 N = 2 kg × a"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "newton-second-law",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "net-force-substitution",
+              "from": "net-force-equation",
+              "to": "substitution",
+              "relation": "将净力6 N代入"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "mass-substitution",
+              "from": "box",
+              "to": "substitution",
+              "relation": "将质量2 kg代入"
+            }
+          ]
+        },
+        {
+          "key": "solve-acceleration",
+          "say": "两边除以2 kg，加速度是6除以2，等于3 m/s²；加速度方向与净力相同，向右。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "acceleration-result",
+              "kind": "math",
+              "role": "加速度结果",
+              "content": {
+                "text": "a = 6 N ÷ 2 kg = 3 m/s² →"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "substitution",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "acceleration-result",
+              "emphasis": "突出3 m/s²及向右方向"
+            }
+          ]
+        },
+        {
+          "key": "link-force-motion",
+          "say": "因此，箱子的水平方向净力是向右6 N，由 F = ma 得到加速度是向右3 m/s²。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "group",
+              "when": "during_speech",
+              "as": "solution-chain",
+              "role": "净力到加速度的推导",
+              "label": "受力图 → 净力 → 加速度",
+              "members": [
+                "four-force-diagram",
+                "net-force-equation",
+                "newton-second-law",
+                "substitution",
+                "acceleration-result"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "net-force-equation",
+                "newton-second-law",
+                "acceleration-result"
+              ],
+              "intent": "回顾从6 N净力到3 m/s²加速度的推导"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "箱子受到拉力、摩擦力、支持力和重力四个力。竖直方向支持力与重力平衡；水平方向净力为10 N - 4 N = 6 N，方向向右。由 F = ma，a = 6 N ÷ 2 kg = 3 m/s²，方向向右。",
+    "focus": [
+      "four-force-diagram",
+      "net-force-equation",
+      "acceleration-result"
+    ]
+  }
+}

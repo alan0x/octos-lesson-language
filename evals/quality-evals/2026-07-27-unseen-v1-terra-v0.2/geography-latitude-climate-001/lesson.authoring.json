@@ -1,0 +1,611 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么低纬通常比高纬暖",
+    "goals": [
+      "用太阳高度角比较低纬近直射与高纬斜射",
+      "解释相同太阳能量在不同面积上的分布差异",
+      "说明太阳光穿过大气的路径差异",
+      "认识纬度不是决定气候的唯一因素"
+    ],
+    "adaptation": {
+      "strategies": [
+        "从光束照射地面的几何示意逐步建立因果关系",
+        "用相同能量分摊到不同面积的类比突出单位面积获得能量",
+        "最后补充其他气候因素，限定结论的适用范围"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-angle",
+      "purpose": "建立太阳高度角与近直射、斜射的空间关系。",
+      "beats": [
+        {
+          "key": "beat-low-angle",
+          "say": "先看低纬地区：太阳在天空中通常更高，太阳高度角较大，光线更接近垂直照向地面，也就是近直射。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "low-latitude",
+              "kind": "shape",
+              "role": "低纬地面",
+              "content": {
+                "shape": "horizontal-surface",
+                "label": "低纬地面"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "近直射示意",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "high-sun",
+              "kind": "shape",
+              "role": "高空太阳",
+              "content": {
+                "shape": "sun",
+                "label": "太阳位置较高"
+              },
+              "place": {
+                "relation": "above",
+                "anchor": "low-latitude",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "direct-ray",
+              "from": "high-sun",
+              "to": "low-latitude",
+              "relation": "较大太阳高度角，近直射"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "direct-label",
+              "kind": "text",
+              "role": "近直射结论",
+              "content": {
+                "text": "太阳高度角较大 → 近直射"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "low-latitude",
+                "align": "center",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-high-angle",
+          "say": "再看高纬地区：太阳位置通常较低，太阳高度角较小，光线以更倾斜的方向到达地面，也就是斜射。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "high-latitude",
+              "kind": "shape",
+              "role": "高纬地面",
+              "content": {
+                "shape": "horizontal-surface",
+                "label": "高纬地面"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "low-latitude",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "low-sun",
+              "kind": "shape",
+              "role": "低空太阳",
+              "content": {
+                "shape": "sun",
+                "label": "太阳位置较低"
+              },
+              "place": {
+                "relation": "above",
+                "anchor": "high-latitude",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "slant-ray",
+              "from": "low-sun",
+              "to": "high-latitude",
+              "relation": "较小太阳高度角，斜射"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "slant-label",
+              "kind": "text",
+              "role": "斜射结论",
+              "content": {
+                "text": "太阳高度角较小 → 斜射"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "high-latitude",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "angle-comparison",
+              "role": "太阳高度角对比",
+              "label": "近直射与斜射",
+              "members": [
+                "low-latitude",
+                "high-sun",
+                "direct-label",
+                "high-latitude",
+                "low-sun",
+                "slant-label"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-area",
+      "purpose": "解释相同能量因覆盖面积不同而造成单位面积获得能量不同。",
+      "beats": [
+        {
+          "key": "beat-same-energy",
+          "say": "现在假设两束太阳光携带的总能量相同。近直射的光束集中在较小的地面面积上，斜射的光束则铺展到较大的地面面积上。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "before_speech",
+              "as": "same-energy",
+              "kind": "note",
+              "role": "比较前提",
+              "content": {
+                "text": "比较前提：两束光携带相同总能量"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "angle-comparison",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "small-area",
+              "kind": "shape",
+              "role": "近直射覆盖区",
+              "content": {
+                "shape": "compact-patch",
+                "label": "近直射：覆盖面积较小",
+                "energy_marks": 8
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "same-energy",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "large-area",
+              "kind": "shape",
+              "role": "斜射覆盖区",
+              "content": {
+                "shape": "wide-patch",
+                "label": "斜射：覆盖面积较大",
+                "energy_marks": 8
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "small-area",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "area-comparison",
+              "role": "相同能量面积对比",
+              "label": "相同能量，分布面积不同",
+              "members": [
+                "same-energy",
+                "small-area",
+                "large-area"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-energy-density",
+          "say": "因此，近直射时，相同能量分摊到较小面积，单位面积获得的能量较多；斜射时，相同能量分摊到较大面积，单位面积获得的能量较少。单位面积获得能量的差异，是低纬通常更暖的核心原因。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "more-per-area",
+              "kind": "math",
+              "role": "近直射单位面积能量",
+              "content": {
+                "expression": "相同总能量 ÷ 较小面积 = 单位面积能量较多"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "small-area",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "less-per-area",
+              "kind": "math",
+              "role": "斜射单位面积能量",
+              "content": {
+                "expression": "相同总能量 ÷ 较大面积 = 单位面积能量较少"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "large-area",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "small-area-effect",
+              "from": "small-area",
+              "to": "more-per-area",
+              "relation": "能量更集中"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "large-area-effect",
+              "from": "large-area",
+              "to": "less-per-area",
+              "relation": "能量更分散"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "more-per-area",
+              "emphasis": "核心原因"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "unit-energy-comparison",
+              "role": "单位面积能量对比",
+              "label": "单位面积获得能量不同",
+              "members": [
+                "more-per-area",
+                "less-per-area"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-atmosphere",
+      "purpose": "补充太阳光穿过大气路径长短造成的能量差异。",
+      "beats": [
+        {
+          "key": "beat-paths",
+          "say": "还有第二层差异：近直射的太阳光穿过大气的路径较短；斜射的太阳光穿过大气的路径较长。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "before_speech",
+              "as": "atmosphere",
+              "kind": "diagram",
+              "role": "大气层示意",
+              "content": {
+                "diagram": "atmospheric-layer",
+                "label": "大气层"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "area-comparison",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "short-path",
+              "kind": "shape",
+              "role": "近直射大气路径",
+              "content": {
+                "shape": "near-vertical-path",
+                "label": "近直射：路径较短"
+              },
+              "place": {
+                "relation": "inside",
+                "anchor": "atmosphere",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "long-path",
+              "kind": "shape",
+              "role": "斜射大气路径",
+              "content": {
+                "shape": "slanted-long-path",
+                "label": "斜射：路径较长"
+              },
+              "place": {
+                "relation": "inside",
+                "anchor": "atmosphere",
+                "align": "end",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "path-comparison",
+              "role": "大气路径对比",
+              "label": "穿过大气的路径不同",
+              "members": [
+                "atmosphere",
+                "short-path",
+                "long-path"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-path-effect",
+          "say": "路径越长，太阳辐射与大气相互作用的机会越多，被散射和吸收的能量通常也越多，到达地面的能量就越少。因此，高纬的斜射不仅让能量摊得更开，还会经历更长的大气路径。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "short-path-result",
+              "kind": "text",
+              "role": "短路径结果",
+              "content": {
+                "text": "路径较短 → 散射、吸收较少 → 到达地面的能量较多"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "short-path",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "long-path-result",
+              "kind": "text",
+              "role": "长路径结果",
+              "content": {
+                "text": "路径较长 → 散射、吸收较多 → 到达地面的能量较少"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "long-path",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "short-path-effect",
+              "from": "short-path",
+              "to": "short-path-result",
+              "relation": "较少大气削弱"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "long-path-effect",
+              "from": "long-path",
+              "to": "long-path-result",
+              "relation": "较多大气削弱"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "unit-energy-comparison",
+                "path-comparison"
+              ],
+              "intent": "并列呈现面积分布与大气路径两层原因"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-conclusion",
+      "purpose": "串联完整因果链，并说明纬度结论的边界。",
+      "beats": [
+        {
+          "key": "beat-causal-chain",
+          "say": "把两层原因串起来：低纬太阳高度角通常较大，光线近直射，能量集中在较小面积，而且穿过大气的路径较短，所以单位面积地面通常获得更多太阳能量，气温也通常较高。高纬的情况大体相反。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "low-latitude-chain",
+              "kind": "diagram",
+              "role": "低纬增温因果链",
+              "content": {
+                "flow": [
+                  "低纬",
+                  "太阳高度角较大",
+                  "近直射",
+                  "覆盖面积较小且大气路径较短",
+                  "单位面积获得能量较多",
+                  "通常较暖"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "path-comparison",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "high-latitude-chain",
+              "kind": "diagram",
+              "role": "高纬降温因果链",
+              "content": {
+                "flow": [
+                  "高纬",
+                  "太阳高度角较小",
+                  "斜射",
+                  "覆盖面积较大且大气路径较长",
+                  "单位面积获得能量较少",
+                  "通常较冷"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "low-latitude-chain",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "latitude-energy-model",
+              "role": "纬度与能量模型",
+              "label": "低纬与高纬的总体对比",
+              "members": [
+                "low-latitude-chain",
+                "high-latitude-chain"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-other-factors",
+          "say": "不过，“低纬通常更暖”是总体规律，不是对每个地点的绝对判断。纬度不是唯一的气候因素；海拔、距海远近、洋流、盛行风和地形等，也会改变一个地区的温度。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "climate-limit",
+              "kind": "note",
+              "role": "结论边界",
+              "content": {
+                "text": "纬度不是唯一的气候因素：低纬通常更暖，但并非所有低纬地点都比所有高纬地点暖。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "latitude-energy-model",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "other-factors",
+              "kind": "diagram",
+              "role": "其他气候因素",
+              "content": {
+                "center": "地区温度",
+                "factors": [
+                  "海拔",
+                  "距海远近",
+                  "洋流",
+                  "盛行风",
+                  "地形"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "climate-limit",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "climate-context",
+              "role": "气候因素范围",
+              "label": "纬度规律及其边界",
+              "members": [
+                "climate-limit",
+                "other-factors"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "latitude-energy-model",
+                "climate-context"
+              ],
+              "intent": "同时保留核心因果链和纬度并非唯一因素的限定"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "低纬地区的太阳高度角通常较大，太阳光近直射：相同能量集中在较小面积，使单位面积获得的能量较多；同时光线穿过大气的路径较短，散射和吸收通常较少，所以低纬通常比高纬暖。高纬斜射时，能量分布面积更大且大气路径更长。不过，纬度不是唯一的气候因素，海拔、海陆位置、洋流、风和地形等也会影响温度。",
+    "focus": [
+      "latitude-energy-model",
+      "climate-context"
+    ]
+  }
+}

@@ -1,0 +1,844 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "第一次工业革命为何先在英国发生，又如何改变生产方式",
+    "goals": [
+      "沿时间线梳理第一次工业革命在英国发生的条件",
+      "用因果链解释农业、人口、资源、资本与技术之间的联系",
+      "说明蒸汽动力和工厂制如何改变生产方式",
+      "理解工业革命由多种条件共同促成，不是单一原因造成"
+    ],
+    "adaptation": {
+      "strategies": [
+        "用时间线建立先后顺序",
+        "用多条因果链呈现条件之间的相互作用",
+        "区分有利条件、技术突破与生产方式变化"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-overview",
+      "purpose": "先建立时间范围与多因共同作用的总体框架。",
+      "beats": [
+        {
+          "key": "beat-question",
+          "say": "我们要解释两个相连的问题：为什么第一次工业革命先在英国发生，以及它怎样把生产从分散的手工劳动推向以机器和工厂为中心的生产。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "main-question",
+              "kind": "text",
+              "role": "lesson-question",
+              "content": {
+                "text": "为什么先在英国？又如何改变生产方式？"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "overview",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "production-shift",
+              "kind": "diagram",
+              "role": "change-overview",
+              "content": {
+                "text": "分散手工生产 → 机器化工厂生产"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "main-question",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-timeline",
+          "say": "时间上可以抓住三个阶段：18世纪前期，多项有利条件逐渐积累；18世纪中后期，纺织等行业的机器创新加快；18世纪后期到19世纪前期，蒸汽动力和工厂制扩展。这个过程是逐步形成的，不是某一年突然发生。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "time-conditions",
+              "kind": "text",
+              "role": "timeline-stage",
+              "content": {
+                "text": "18世纪前期：有利条件积累"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "timeline",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "time-machines",
+              "kind": "text",
+              "role": "timeline-stage",
+              "content": {
+                "text": "18世纪中后期：机器创新加快"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "time-conditions",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "timeline-link-one",
+              "from": "time-conditions",
+              "to": "time-machines",
+              "relation": "随后"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "time-factories",
+              "kind": "text",
+              "role": "timeline-stage",
+              "content": {
+                "text": "18世纪后期—19世纪前期：蒸汽动力与工厂制扩展"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "time-machines",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "timeline-link-two",
+              "from": "time-machines",
+              "to": "time-factories",
+              "relation": "进一步发展为"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "industrial-timeline",
+              "role": "timeline",
+              "label": "第一次工业革命的渐进过程",
+              "members": [
+                "time-conditions",
+                "time-machines",
+                "time-factories"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-conditions",
+      "purpose": "解释农业、人口、煤铁、资本和市场如何构成英国工业化的条件网络。",
+      "beats": [
+        {
+          "key": "beat-agriculture-population",
+          "say": "先看农业与人口条件。农业改良提高了产量和劳动生产率，使更多人口得到供养；一部分农村劳动力也能转向城镇和工业。人口增长则同时扩大了劳动力供给和商品需求。因此，农业变化不是直接造出机器，而是为工业化提供了人、粮食和市场。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "agricultural-change",
+              "kind": "text",
+              "role": "causal-factor",
+              "content": {
+                "text": "农业改良：产量与劳动生产率提高"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "causal-chain",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "food-support",
+              "kind": "text",
+              "role": "causal-result",
+              "content": {
+                "text": "更多粮食，能够供养更多人口"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "agricultural-change",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "agriculture-to-food",
+              "from": "agricultural-change",
+              "to": "food-support",
+              "relation": "促进"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "labor-supply",
+              "kind": "text",
+              "role": "industrial-condition",
+              "content": {
+                "text": "部分劳动力转向城镇和工业"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "food-support",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "agriculture-to-labor",
+              "from": "agricultural-change",
+              "to": "labor-supply",
+              "relation": "释放部分劳动力"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "population-growth",
+              "kind": "text",
+              "role": "causal-factor",
+              "content": {
+                "text": "人口增长：劳动力与消费需求扩大"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "agricultural-change",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "agriculture-population-group",
+              "role": "condition-cluster",
+              "label": "农业与人口条件",
+              "members": [
+                "agricultural-change",
+                "food-support",
+                "labor-supply",
+                "population-growth"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-resources",
+          "say": "再看煤和铁。英国拥有可开发的煤炭和铁矿资源，并逐步形成相应的采矿与运输能力。煤能够提供比传统有机能源更集中的动力来源，铁则用于制造机器、工具、轨道和其他设备。资源本身不会自动引发工业革命，但它们降低了机器化扩张的限制。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "coal-resource",
+              "kind": "text",
+              "role": "resource-factor",
+              "content": {
+                "text": "煤：较集中的能源来源"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "resource-chain",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "iron-resource",
+              "kind": "text",
+              "role": "resource-factor",
+              "content": {
+                "text": "铁：机器、工具与设备的材料"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "coal-resource",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "machine-expansion",
+              "kind": "text",
+              "role": "resource-result",
+              "content": {
+                "text": "支撑机器制造和工业规模扩大"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "coal-resource",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "coal-to-expansion",
+              "from": "coal-resource",
+              "to": "machine-expansion",
+              "relation": "提供能源"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "iron-to-expansion",
+              "from": "iron-resource",
+              "to": "machine-expansion",
+              "relation": "提供材料"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "coal-iron-group",
+              "role": "condition-cluster",
+              "label": "煤铁条件",
+              "members": [
+                "coal-resource",
+                "iron-resource",
+                "machine-expansion"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-capital-market",
+          "say": "机器、厂房和运输建设都需要前期投入。英国较发达的商业、银行、信贷和资本市场，使商人和企业家更容易汇集资金、分担风险并扩大投资。同时，国内市场和海外贸易带来销售机会。资本与市场把发明从少量试验推向较大规模的生产。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "capital-market",
+              "kind": "text",
+              "role": "financial-factor",
+              "content": {
+                "text": "商业、银行、信贷与资本市场"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "finance-chain",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "investment-capacity",
+              "kind": "text",
+              "role": "financial-result",
+              "content": {
+                "text": "汇集资金并分担投资风险"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "capital-market",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "capital-to-investment",
+              "from": "capital-market",
+              "to": "investment-capacity",
+              "relation": "支持"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "market-demand",
+              "kind": "text",
+              "role": "market-factor",
+              "content": {
+                "text": "国内市场与海外贸易：扩大销售机会"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "capital-market",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "scaled-production",
+              "kind": "text",
+              "role": "industrial-result",
+              "content": {
+                "text": "发明由试验走向规模化生产"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "market-demand",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "investment-to-scale",
+              "from": "investment-capacity",
+              "to": "scaled-production",
+              "relation": "为扩张提供资金"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "demand-to-scale",
+              "from": "market-demand",
+              "to": "scaled-production",
+              "relation": "为扩张提供需求"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "capital-demand-group",
+              "role": "condition-cluster",
+              "label": "资本与市场条件",
+              "members": [
+                "capital-market",
+                "investment-capacity",
+                "market-demand",
+                "scaled-production"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-transformation",
+      "purpose": "说明蒸汽动力如何与机器结合，并推动工厂制和生产组织发生变化。",
+      "beats": [
+        {
+          "key": "beat-steam",
+          "say": "早期机器可以借助水力，但厂址和运转容易受河流与水量限制。改良后的蒸汽机把煤转化为较稳定、可控制的动力，先服务于采矿等活动，又逐渐用于纺织、运输和其他工业。蒸汽动力使更多机器能够集中运转，也让生产地点较少受水源约束。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "water-limit",
+              "kind": "text",
+              "role": "technical-constraint",
+              "content": {
+                "text": "水力：受河流、地点和水量限制"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "power-chain",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "steam-power",
+              "kind": "text",
+              "role": "technical-breakthrough",
+              "content": {
+                "text": "改良蒸汽机：把煤转化为稳定、可控制的动力"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "water-limit",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "limit-to-steam",
+              "from": "water-limit",
+              "to": "steam-power",
+              "relation": "动力限制推动改进需求"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "power-concentration",
+              "kind": "text",
+              "role": "technical-result",
+              "content": {
+                "text": "更多机器可集中、持续运转"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "steam-power",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "steam-to-concentration",
+              "from": "steam-power",
+              "to": "power-concentration",
+              "relation": "使得"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "steam-power",
+              "emphasis": "key-mechanism"
+            }
+          ]
+        },
+        {
+          "key": "beat-factory-system",
+          "say": "机器集中之后，生产组织也随之改变。工厂把动力、机器、原料和工人集中在同一地点，由经营者统一安排工序、时间和纪律。生产从家庭或小作坊中较分散的手工劳动，转向机器分工、标准化流程和更连续的大批量生产，这就是工厂制带来的核心变化。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "domestic-system",
+              "kind": "text",
+              "role": "former-production-mode",
+              "content": {
+                "text": "此前：家庭或小作坊中的分散手工生产"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "production-change",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "factory-system",
+              "kind": "text",
+              "role": "new-production-mode",
+              "content": {
+                "text": "工厂制：动力、机器、原料和工人集中"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "domestic-system",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "mode-transition",
+              "from": "domestic-system",
+              "to": "factory-system",
+              "relation": "生产组织转向"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "factory-management",
+              "kind": "text",
+              "role": "organizational-change",
+              "content": {
+                "text": "统一工序、工作时间与劳动纪律"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "factory-system",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "factory-to-management",
+              "from": "factory-system",
+              "to": "factory-management",
+              "relation": "形成"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "mass-production",
+              "kind": "text",
+              "role": "production-result",
+              "content": {
+                "text": "机器分工、标准化与连续的大批量生产"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "factory-management",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "management-to-output",
+              "from": "factory-management",
+              "to": "mass-production",
+              "relation": "推动"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "production-transformation-group",
+              "role": "transformation-chain",
+              "label": "生产方式的改变",
+              "members": [
+                "domestic-system",
+                "factory-system",
+                "factory-management",
+                "mass-production"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-synthesis",
+      "purpose": "汇总多种条件如何在英国相互配合，形成完整因果链。",
+      "beats": [
+        {
+          "key": "beat-multiple-causes",
+          "say": "现在把因果链合起来：农业与人口变化提供粮食、劳动力和需求；煤铁提供能源与材料；资本市场和贸易支持投资与销售；机器创新和蒸汽动力提高并集中生产能力；这些条件共同推动工厂制扩展。因此，第一次工业革命先在英国发生，不是煤、蒸汽机或任何一个因素单独造成的，而是多种条件在特定时期相互加强。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "combined-conditions",
+              "kind": "diagram",
+              "role": "causal-synthesis",
+              "content": {
+                "text": "农业与人口 + 煤铁 + 资本与市场 + 技术创新"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "synthesis",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "british-industrialization",
+              "kind": "text",
+              "role": "historical-outcome",
+              "content": {
+                "text": "多种条件相互加强 → 工业革命先在英国展开"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "combined-conditions",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "conditions-to-britain",
+              "from": "combined-conditions",
+              "to": "british-industrialization",
+              "relation": "共同促成"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "not-single-cause",
+              "kind": "note",
+              "role": "historical-caution",
+              "content": {
+                "text": "关键判断：不是单一原因，而是多种条件共同作用。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "british-industrialization",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "not-single-cause",
+              "emphasis": "central-conclusion"
+            }
+          ]
+        },
+        {
+          "key": "beat-final-chain",
+          "say": "用一条最简主线收束：有利条件积累，让机器化既有劳动力和市场，也有能源、材料与资金；蒸汽动力使机器生产更稳定、更集中；工厂制再把技术变化转化为新的生产组织，最终形成机器化、标准化和大批量生产。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-condition-node",
+              "kind": "text",
+              "role": "summary-stage",
+              "content": {
+                "text": "条件积累：人、市场、煤铁、资本"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "final-chain",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-power-node",
+              "kind": "text",
+              "role": "summary-stage",
+              "content": {
+                "text": "技术放大：机器创新与蒸汽动力"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "final-condition-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "final-link-power",
+              "from": "final-condition-node",
+              "to": "final-power-node",
+              "relation": "支持"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-factory-node",
+              "kind": "text",
+              "role": "summary-stage",
+              "content": {
+                "text": "组织重构：工厂制"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "final-power-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "final-link-factory",
+              "from": "final-power-node",
+              "to": "final-factory-node",
+              "relation": "推动"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-production-node",
+              "kind": "text",
+              "role": "summary-outcome",
+              "content": {
+                "text": "机器化、标准化、连续的大批量生产"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "final-factory-node",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "final-link-production",
+              "from": "final-factory-node",
+              "to": "final-production-node",
+              "relation": "形成"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "complete-causal-chain",
+              "role": "lesson-synthesis",
+              "label": "第一次工业革命的完整因果链",
+              "members": [
+                "final-condition-node",
+                "final-power-node",
+                "final-factory-node",
+                "final-production-node"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "complete-causal-chain",
+                "not-single-cause"
+              ],
+              "intent": "同时保留主因果链与多因共同作用的结论"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "第一次工业革命先在英国展开，是农业与人口、煤铁资源、资本市场、贸易需求和技术创新等多种条件共同作用的结果。蒸汽动力使机器能够更稳定、集中地运转，工厂制则把动力、机器、原料和工人统一组织起来，推动生产由分散手工劳动转向机器化、标准化和大批量生产。",
+    "focus": [
+      "industrial-timeline",
+      "complete-causal-chain",
+      "not-single-cause"
+    ]
+  }
+}

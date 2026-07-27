@@ -1,0 +1,32 @@
+{
+  "case_id": "geography-monsoon-001",
+  "domain": "geography",
+  "language": "zh-CN",
+  "learner_request": "用海陆热力差异讲清东亚冬季风和夏季风的方向、性质以及为何季节相反。",
+  "required_coverage": [
+    "海陆升温降温速度不同",
+    "气压差",
+    "夏季海洋吹向陆地",
+    "冬季陆地吹向海洋",
+    "湿润与干冷"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "海陆热力",
+        "海陆"
+      ],
+      [
+        "气压"
+      ],
+      [
+        "海洋→陆地",
+        "海洋吹向陆地"
+      ],
+      [
+        "陆地→海洋",
+        "陆地吹向海洋"
+      ]
+    ]
+  }
+}

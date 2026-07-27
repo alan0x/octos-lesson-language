@@ -1,0 +1,508 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "不用小数比较 5/8 和 7/12",
+    "goals": [
+      "用分数图直观理解两个分数的大小",
+      "用通分法比较 5/8 和 7/12",
+      "用交叉相乘法比较 5/8 和 7/12",
+      "说明两种方法得到相同结论"
+    ],
+    "adaptation": {
+      "strategies": [
+        "先用等分图呈现分数，再连接到符号计算",
+        "把每一步计算拆成独立白板节点"
+      ],
+      "context_refs": [
+        "learner.preference.visual-fractions"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-visual",
+      "purpose": "用等分图建立对两个分数大小的直观认识。",
+      "beats": [
+        {
+          "key": "beat-visual-five-eighths",
+          "say": "先看 5/8：把同样长的一条分数条平均分成 8 份，其中 5 份着色。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "five-eighths-label",
+              "kind": "math",
+              "role": "fraction-label",
+              "content": {
+                "latex": "\\frac{5}{8}",
+                "spoken": "八分之五"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "visual-comparison",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "as": "five-eighths-bar",
+              "kind": "diagram",
+              "role": "fraction-bar",
+              "content": {
+                "model": "fraction_bar",
+                "equal_parts": 8,
+                "shaded_parts": 5,
+                "caption": "8 等份中取 5 份"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "five-eighths-label",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-visual-seven-twelfths",
+          "say": "再看 7/12：用同样长的分数条平均分成 12 份，其中 7 份着色。两条图已经提示，5/8 的着色部分略长。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "seven-twelfths-label",
+              "kind": "math",
+              "role": "fraction-label",
+              "content": {
+                "latex": "\\frac{7}{12}",
+                "spoken": "十二分之七"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "five-eighths-label",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "as": "seven-twelfths-bar",
+              "kind": "diagram",
+              "role": "fraction-bar",
+              "content": {
+                "model": "fraction_bar",
+                "equal_parts": 12,
+                "shaded_parts": 7,
+                "caption": "12 等份中取 7 份"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "seven-twelfths-label",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "as": "visual-bars",
+              "role": "visual-comparison",
+              "label": "同样长的分数条",
+              "members": [
+                "five-eighths-label",
+                "five-eighths-bar",
+                "seven-twelfths-label",
+                "seven-twelfths-bar"
+              ]
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "five-eighths-bar",
+                "seven-twelfths-bar"
+              ],
+              "intent": "比较两条同样长的分数条中着色部分的长度"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-common-denominator",
+      "purpose": "通过通分，把两个分数改写成分母相同的等值分数。",
+      "beats": [
+        {
+          "key": "beat-find-common-denominator",
+          "say": "第一种方法是通分。8 和 12 的最小公倍数是 24，所以把两个分数都改写成二十四分之几。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "common-method-title",
+              "kind": "text",
+              "role": "method-title",
+              "content": {
+                "text": "方法一：通分比较"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "method-one",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "as": "common-denominator",
+              "kind": "math",
+              "role": "key-fact",
+              "content": {
+                "latex": "\\operatorname{lcm}(8,12)=24",
+                "text": "8 和 12 的最小公倍数是 24"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "common-method-title",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "common-denominator",
+              "emphasis": "突出共同分母 24"
+            }
+          ]
+        },
+        {
+          "key": "beat-convert-five-eighths",
+          "say": "把 5/8 的分母乘 3 变成 24，分子也乘 3，所以 5/8=15/24。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "convert-five-eighths",
+              "kind": "math",
+              "role": "worked-step",
+              "content": {
+                "latex": "\\frac{5}{8}=\\frac{5\\times3}{8\\times3}=\\frac{15}{24}",
+                "text": "分子、分母同时乘 3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "common-denominator",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "common-to-five",
+              "from": "common-denominator",
+              "to": "convert-five-eighths",
+              "relation": "以 24 为共同分母"
+            }
+          ]
+        },
+        {
+          "key": "beat-convert-seven-twelfths",
+          "say": "把 7/12 的分母乘 2 变成 24，分子也乘 2，所以 7/12=14/24。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "convert-seven-twelfths",
+              "kind": "math",
+              "role": "worked-step",
+              "content": {
+                "latex": "\\frac{7}{12}=\\frac{7\\times2}{12\\times2}=\\frac{14}{24}",
+                "text": "分子、分母同时乘 2"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "convert-five-eighths",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "common-to-seven",
+              "from": "common-denominator",
+              "to": "convert-seven-twelfths",
+              "relation": "以 24 为共同分母"
+            }
+          ]
+        },
+        {
+          "key": "beat-compare-common-numerators",
+          "say": "现在分母都是 24。相同分母下，分子大的分数更大；因为 15>14，所以 15/24>14/24，也就是 5/8>7/12。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "common-result",
+              "kind": "math",
+              "role": "method-result",
+              "content": {
+                "latex": "15>14\\;\\Longrightarrow\\;\\frac{15}{24}>\\frac{14}{24}\\;\\Longrightarrow\\;\\frac{5}{8}>\\frac{7}{12}",
+                "text": "同分母时比较分子"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "convert-seven-twelfths",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "common-result",
+              "emphasis": "突出 15>14 和最终大于号"
+            },
+            {
+              "do": "group",
+              "as": "common-method",
+              "role": "comparison-method",
+              "label": "通分比较",
+              "members": [
+                "common-method-title",
+                "common-denominator",
+                "convert-five-eighths",
+                "convert-seven-twelfths",
+                "common-result"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-cross-multiply",
+      "purpose": "用交叉相乘直接比较两个正分数，并解释乘积对应的通分分子。",
+      "beats": [
+        {
+          "key": "beat-cross-setup",
+          "say": "第二种方法是交叉相乘。比较 5/8 和 7/12 时，计算 5×12 与 7×8；这两个乘积分别是把共同分母取为 8×12 时得到的分子。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "cross-method-title",
+              "kind": "text",
+              "role": "method-title",
+              "content": {
+                "text": "方法二：交叉相乘比较"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "method-two",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "as": "cross-setup",
+              "kind": "diagram",
+              "role": "cross-multiplication-layout",
+              "content": {
+                "left_fraction": "5/8",
+                "right_fraction": "7/12",
+                "cross_products": [
+                  "5×12",
+                  "7×8"
+                ],
+                "meaning": "共同分母取 8×12 时对应的两个分子"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cross-method-title",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-cross-products",
+          "say": "左边分子乘右边分母：5×12=60；右边分子乘左边分母：7×8=56。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "cross-left-product",
+              "kind": "math",
+              "role": "worked-step",
+              "content": {
+                "latex": "5\\times12=60",
+                "text": "5×12=60"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cross-setup",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "as": "cross-right-product",
+              "kind": "math",
+              "role": "worked-step",
+              "content": {
+                "latex": "7\\times8=56",
+                "text": "7×8=56"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "cross-left-product",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "cross-setup-to-left",
+              "from": "cross-setup",
+              "to": "cross-left-product",
+              "relation": "左上乘右下"
+            },
+            {
+              "do": "connect",
+              "as": "cross-setup-to-right",
+              "from": "cross-setup",
+              "to": "cross-right-product",
+              "relation": "右上乘左下"
+            }
+          ]
+        },
+        {
+          "key": "beat-cross-conclusion",
+          "say": "因为 60>56，所以左边的 5/8 更大，即 5/8>7/12。交叉相乘不是另一个巧合：它等价于把两边都通分到 96，得到 60/96 和 56/96。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "cross-result",
+              "kind": "math",
+              "role": "method-result",
+              "content": {
+                "latex": "60>56\\;\\Longrightarrow\\;\\frac{5}{8}>\\frac{7}{12}",
+                "text": "60>56，所以 5/8>7/12"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cross-left-product",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "as": "cross-explanation",
+              "kind": "math",
+              "role": "concept-link",
+              "content": {
+                "latex": "\\frac{5}{8}=\\frac{60}{96},\\qquad \\frac{7}{12}=\\frac{56}{96}",
+                "text": "交叉乘积就是通分到 96 后的两个分子"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "cross-result",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "products-to-result",
+              "from": "cross-left-product",
+              "to": "cross-result",
+              "relation": "60 与 56 的比较决定原分数大小"
+            },
+            {
+              "do": "emphasize",
+              "target": "cross-result",
+              "emphasis": "突出 60>56 和最终结论"
+            },
+            {
+              "do": "group",
+              "as": "cross-method",
+              "role": "comparison-method",
+              "label": "交叉相乘比较",
+              "members": [
+                "cross-method-title",
+                "cross-setup",
+                "cross-left-product",
+                "cross-right-product",
+                "cross-result",
+                "cross-explanation"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-synthesis",
+      "purpose": "汇合两种比较方法，明确共同结论。",
+      "beats": [
+        {
+          "key": "beat-synthesis",
+          "say": "两种方法说的是同一件事：通分法比较 15 和 14，交叉相乘法比较 60 和 56，结果都表明 5/8 比 7/12 大。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "final-conclusion",
+              "kind": "math",
+              "role": "final-conclusion",
+              "content": {
+                "latex": "\\boxed{\\frac{5}{8}>\\frac{7}{12}}",
+                "text": "结论：5/8 > 7/12"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "conclusion",
+                "align": "center"
+              }
+            },
+            {
+              "do": "connect",
+              "as": "common-to-conclusion",
+              "from": "common-method",
+              "to": "final-conclusion",
+              "relation": "通分得到相同结论"
+            },
+            {
+              "do": "connect",
+              "as": "cross-to-conclusion",
+              "from": "cross-method",
+              "to": "final-conclusion",
+              "relation": "交叉相乘得到相同结论"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "common-method",
+                "cross-method",
+                "final-conclusion"
+              ],
+              "intent": "并列回顾两种方法及其共同结论"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "通分法把两个分数化为 15/24 和 14/24，因此前者更大；交叉相乘法得到 5×12=60、7×8=56，因为 60>56，也得到相同结论：5/8>7/12。",
+    "focus": [
+      "common-method",
+      "cross-method",
+      "final-conclusion"
+    ]
+  }
+}

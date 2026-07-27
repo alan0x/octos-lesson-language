@@ -1,0 +1,28 @@
+{
+  "session_id": "eval-circuit",
+  "assets": [
+    {
+      "asset_id": "asset-circuit-001",
+      "media_type": "image/png",
+      "alt": "电池、开关和两只灯泡组成的串联电路",
+      "regions": [
+        {
+          "region_id": "asset-circuit-001#battery",
+          "label": "电池"
+        },
+        {
+          "region_id": "asset-circuit-001#lamp-a",
+          "label": "灯泡A"
+        },
+        {
+          "region_id": "asset-circuit-001#lamp-b",
+          "label": "灯泡B"
+        },
+        {
+          "region_id": "asset-circuit-001#wire",
+          "label": "导线回路"
+        }
+      ]
+    }
+  ]
+}

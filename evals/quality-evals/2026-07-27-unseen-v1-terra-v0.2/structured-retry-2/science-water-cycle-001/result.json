@@ -1,0 +1,96 @@
+{
+  "case_id": "science-water-cycle-001",
+  "domain": "science",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "science-water-cycle-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "energy-and-rise/explain-evaporation：准确说明太阳能加热海水、液态水变为水蒸气。",
+          "energy-and-rise/explain-condensation：说明水蒸气遇冷形成小水滴或冰晶并聚集成云。",
+          "fall-and-return/explain-runoff：准确说明地表水汇入河流并返回海洋。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "observe-cycle/show-image：写入并指向受控图片 asset-water-cycle-001 的海洋、云、山地、河流区域。",
+          "energy-and-rise/explain-evaporation：实际讲授“太阳能…驱动蒸发”。",
+          "energy-and-rise/explain-condensation：实际讲授凝结形成云。",
+          "fall-and-return 的 explain-precipitation、explain-runoff 与 complete-cycle：讲授降水、径流及回到海洋。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "observe-cycle：先建立图片区域和“能量与路径”双线索。",
+          "energy-and-rise：按蒸发→凝结→云逐步展开。",
+          "fall-and-return：再讲降水→径流→海洋，complete-cycle 最后整合。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "explain-evaporation：旁白的太阳能、海水和蒸发对应 solar-node、ocean-water-node、evaporation-node 及连接线。",
+          "explain-condensation：旁白的遇冷凝结和成云对应 condensation-node、cloud-node。",
+          "explain-precipitation 与 explain-runoff：旁白过程分别对应降水、陆地、径流、河流和回海洋节点。",
+          "complete-cycle：旁白总结与 water-path、solar-drives-evaporation 的焦点一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "show-image：以受控图片作为 main-visual，并标注四个可指向区域。",
+          "frame-two-views：用“能量驱动”和“水的路径”分组建立阅读框架。",
+          "各过程 beat：用节点和带关系标签的 connect 线表达因果与路径。",
+          "complete-cycle：water-path 分组及 focus 同时突出动力和完整循环。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全课为 explain 模式，所有 beats 连续讲解。",
+          "未出现等待学生回答、要求作答或中途测试的动作。",
+          "close/summary 完成整条路径的收束。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "show-image：使用 Resolved Session Context 中的 asset-water-cycle-001。",
+          "show-image：引用 ocean、cloud、mountain、river 四个已提供 region。",
+          "课程未虚构学习者背景或偏好。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "全课旁白讲解学科过程，没有声称学习者已经理解、掌握或存在特定困难。",
+          "lesson/goals 仅陈述教学目标，不构成对学习者能力的无证据判断。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

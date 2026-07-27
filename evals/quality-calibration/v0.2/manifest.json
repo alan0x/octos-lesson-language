@@ -1,0 +1,42 @@
+{
+  "profile": "octos.lesson-quality.calibration",
+  "version": "0.2",
+  "judge_model": "gpt-5.6-terra",
+  "cases": [
+    {
+      "case_id": "calibration-control-taxi",
+      "expected_gate": "pass",
+      "known_defect": null,
+      "observed_score": 31,
+      "observed_gate": "pass"
+    },
+    {
+      "case_id": "calibration-defect-wrong-result",
+      "expected_gate": "fail",
+      "known_defect": "将正确的 24.5 元替换为与算式矛盾的 25.5 元",
+      "observed_score": 27,
+      "observed_gate": "fail"
+    },
+    {
+      "case_id": "calibration-defect-missing-core",
+      "expected_gate": "fail",
+      "known_defect": "删除有序性解释与 O(log n) 教学步骤",
+      "observed_score": 30,
+      "observed_gate": "fail"
+    },
+    {
+      "case_id": "calibration-defect-unsupported-profile",
+      "expected_gate": "fail",
+      "known_defect": "在没有 Learner Context 时断言学生一向不擅长意象分析",
+      "observed_score": 26,
+      "observed_gate": "fail"
+    },
+    {
+      "case_id": "calibration-defect-interruption",
+      "expected_gate": "fail",
+      "known_defect": "在连续讲解末尾要求学生回答后才继续",
+      "observed_score": 28,
+      "observed_gate": "fail"
+    }
+  ]
+}

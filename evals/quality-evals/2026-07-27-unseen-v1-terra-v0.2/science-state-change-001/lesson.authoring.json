@@ -1,0 +1,376 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "冰、水和水蒸气的粒子模型",
+    "goals": [
+      "比较固态、液态和气态的粒子排列与运动",
+      "解释吸热怎样使粒子运动增强",
+      "用粒子模型说明熔化和汽化",
+      "明确状态变化中分子大小始终不变"
+    ]
+  },
+  "steps": [
+    {
+      "key": "compare-states",
+      "purpose": "建立固态、液态和气态的粒子排列与运动模型。",
+      "beats": [
+        {
+          "key": "solid-model",
+          "say": "先看冰。冰是固态水：水分子排列紧密而且较有规则，彼此位置相对固定，只能在原位附近振动。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "solid-model",
+              "kind": "diagram",
+              "role": "固态粒子模型",
+              "content": {
+                "title": "冰（固态）",
+                "particles": {
+                  "arrangement": "紧密、较有规则",
+                  "motion": "在相对固定的位置附近振动",
+                  "size": "相同"
+                }
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "状态对比区",
+                "align": "start"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "solid-model",
+              "emphasis": "突出紧密而有规则的排列"
+            }
+          ]
+        },
+        {
+          "key": "liquid-model",
+          "say": "液态水中，水分子仍然靠得较近，但排列不再固定、也不规则；它们能够彼此越过并改变位置，所以水可以流动。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "liquid-model",
+              "kind": "diagram",
+              "role": "液态粒子模型",
+              "content": {
+                "title": "水（液态）",
+                "particles": {
+                  "arrangement": "较紧密、不规则",
+                  "motion": "彼此越过并改变位置",
+                  "size": "与固态中相同"
+                }
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "solid-model",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "liquid-model",
+              "emphasis": "突出粒子可以改变位置"
+            }
+          ]
+        },
+        {
+          "key": "gas-model",
+          "say": "水蒸气是气态水。气态中，水分子相距很远、排列无规则，并向各个方向快速运动，因此水蒸气能够扩散并充满可用空间。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "gas-model",
+              "kind": "diagram",
+              "role": "气态粒子模型",
+              "content": {
+                "title": "水蒸气（气态）",
+                "particles": {
+                  "arrangement": "间隔很大、无规则",
+                  "motion": "向各个方向快速运动",
+                  "size": "与固态和液态中相同"
+                }
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "liquid-model",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "three-state-models",
+              "role": "三态粒子模型对比",
+              "label": "固态、液态、气态",
+              "members": [
+                "solid-model",
+                "liquid-model",
+                "gas-model"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "three-state-models"
+              ],
+              "intent": "比较三态中粒子的排列、间距和运动方式"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-heating",
+      "purpose": "沿吸热过程解释运动增强、熔化和汽化。",
+      "beats": [
+        {
+          "key": "heat-effect",
+          "say": "给冰持续加热，就是向物质传递能量。水分子获得能量后运动增强：在冰中表现为振动越来越剧烈。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "heat-input",
+              "kind": "note",
+              "role": "吸热作用",
+              "content": {
+                "title": "吸热",
+                "sequence": [
+                  "能量传入",
+                  "水分子运动增强",
+                  "冰中振动更剧烈"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "solid-model",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "heat-to-solid",
+              "from": "heat-input",
+              "to": "solid-model",
+              "relation": "能量传入并使振动增强",
+              "label": "吸热"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "heat-to-solid",
+              "emphasis": "突出能量传递导致运动增强"
+            }
+          ]
+        },
+        {
+          "key": "melting-process",
+          "say": "当吸收的能量足以使水分子摆脱固态中相对固定的排列时，冰开始熔化。熔化是固态变成液态：分子仍靠得较近，但可以改变彼此位置。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "melting-change",
+              "from": "solid-model",
+              "to": "liquid-model",
+              "relation": "固态吸热后变为液态",
+              "label": "熔化"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "melting-note",
+              "kind": "note",
+              "role": "熔化解释",
+              "content": {
+                "title": "熔化",
+                "change": "相对固定的排列被打破",
+                "result": "分子能够彼此越过并改变位置"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "liquid-model",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "melting-change",
+              "emphasis": "突出固态到液态的变化"
+            }
+          ]
+        },
+        {
+          "key": "vaporization-process",
+          "say": "液态水继续吸热，水分子运动进一步增强。当一些分子获得足够能量、克服彼此间的吸引并远离液体时，就发生汽化；形成水蒸气后，分子间距很大并快速运动。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "vaporization-change",
+              "from": "liquid-model",
+              "to": "gas-model",
+              "relation": "液态继续吸热后变为气态",
+              "label": "汽化"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "vaporization-note",
+              "kind": "note",
+              "role": "汽化解释",
+              "content": {
+                "title": "汽化",
+                "change": "分子运动进一步增强并克服彼此间的吸引",
+                "result": "分子远离液体，形成水蒸气"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "gas-model",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "vaporization-change",
+              "emphasis": "突出液态到气态的变化"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "protect-model",
+      "purpose": "明确变化的是排列、间距和运动，而不是分子大小。",
+      "beats": [
+        {
+          "key": "size-constant",
+          "say": "这里最关键的一点是：从冰到水再到水蒸气，水分子大小始终不变。图中气态分子看起来更分散，是因为分子之间的距离增大了，而不是单个分子的尺寸发生了变化。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "size-rule",
+              "kind": "note",
+              "role": "模型边界",
+              "content": {
+                "title": "分子大小始终不变",
+                "changes": [
+                  "排列方式",
+                  "分子间距",
+                  "运动强弱"
+                ],
+                "constant": "单个水分子的大小"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "three-state-models",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "size-rule",
+              "emphasis": "突出大小不变，并区分分子间距与分子尺寸"
+            }
+          ]
+        },
+        {
+          "key": "full-sequence",
+          "say": "把全过程连起来：冰吸热后，分子运动增强并发生熔化，成为液态水；液态水继续吸热，分子运动进一步增强并发生汽化，成为水蒸气。整个过程中，变化的是排列、间距和运动状态，分子大小不变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "process-summary",
+              "kind": "diagram",
+              "role": "状态变化总览",
+              "content": {
+                "sequence": [
+                  "冰",
+                  "吸热与运动增强",
+                  "熔化",
+                  "水",
+                  "继续吸热与运动进一步增强",
+                  "汽化",
+                  "水蒸气"
+                ],
+                "constant": "水分子大小不变"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "size-rule",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "complete-explanation",
+              "role": "完整粒子模型解释",
+              "label": "吸热引起的水的状态变化",
+              "members": [
+                "three-state-models",
+                "heat-input",
+                "melting-note",
+                "vaporization-note",
+                "size-rule",
+                "process-summary"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "process-summary",
+                "size-rule",
+                "melting-change",
+                "vaporization-change"
+              ],
+              "intent": "聚焦完整变化路径、两种状态变化以及分子大小不变"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "冰、水和水蒸气由大小不变的水分子构成。固态粒子紧密且较有规则，只在固定位置附近振动；液态粒子仍较紧密但能改变位置；气态粒子相距很远并快速运动。吸热使粒子运动增强，冰经熔化成为水，水再经汽化成为水蒸气。",
+    "focus": [
+      "process-summary",
+      "size-rule",
+      "melting-change",
+      "vaporization-change"
+    ]
+  }
+}

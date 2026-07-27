@@ -1,0 +1,432 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用前三年余额理解复利，并与单利比较",
+    "goals": [
+      "理解复利中每年利息会加入本金",
+      "使用1000×1.05^n计算第n年末余额",
+      "读懂前三年的复利余额表",
+      "比较单利与复利的增长差异"
+    ]
+  },
+  "steps": [
+    {
+      "key": "compound-idea-step",
+      "purpose": "说明复利的核心机制并建立余额公式。",
+      "beats": [
+        {
+          "key": "given-values-beat",
+          "say": "本金是1000元，年利率是5%，按年复利。5%的年利率意味着每经过一年，年初余额要乘以1.05。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "given-values",
+              "kind": "note",
+              "role": "题目条件",
+              "content": {
+                "title": "已知条件",
+                "items": [
+                  "本金：1000元",
+                  "年利率：5%",
+                  "计息方式：按年复利",
+                  "每年增长因子：1.05"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main",
+                "align": "start"
+              }
+            }
+          ]
+        },
+        {
+          "key": "interest-reinvested-beat",
+          "say": "复利的关键是：每年产生的利息会加入余额，成为下一年的计息本金。因此，下一年不仅会对最初的1000元计息，也会对以前已经得到的利息计息。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "compound-rule",
+              "kind": "diagram",
+              "role": "复利机制",
+              "content": {
+                "sequence": [
+                  "年初余额",
+                  "产生5%利息",
+                  "利息加入余额",
+                  "新余额成为下一年本金"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "given-values",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "compound-rule",
+              "emphasis": "突出“利息加入余额并成为下一年本金”"
+            }
+          ]
+        },
+        {
+          "key": "formula-beat",
+          "say": "连续复利n年，就是连续乘n次1.05，所以第n年末余额为1000×1.05^n。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "compound-formula",
+              "kind": "math",
+              "role": "复利公式",
+              "content": {
+                "expression": "A_n = 1000 × 1.05^n",
+                "definitions": {
+                  "A_n": "第n年末余额",
+                  "n": "复利年数"
+                }
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "compound-rule",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "rule-to-formula",
+              "from": "compound-rule",
+              "to": "compound-formula",
+              "relation": "连续每年乘1.05得到"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "three-years-step",
+      "purpose": "逐年计算并呈现前三年的复利利息和余额。",
+      "beats": [
+        {
+          "key": "year-one-beat",
+          "say": "第1年，利息是1000×5%=50元；利息加入本金后，年末余额是1000+50=1050元，也就是1000×1.05。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "year-one",
+              "kind": "math",
+              "role": "第1年计算",
+              "content": {
+                "year": 1,
+                "opening_balance": "1000元",
+                "interest": "1000×5%=50元",
+                "closing_balance": "1000+50=1050元",
+                "formula": "1000×1.05=1050"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "compound-formula",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "year-two-beat",
+          "say": "第2年以1050元作为新的计息本金，利息是1050×5%=52.5元，年末余额是1102.5元。这里已经开始对第1年的50元利息继续计息。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "year-two",
+              "kind": "math",
+              "role": "第2年计算",
+              "content": {
+                "year": 2,
+                "opening_balance": "1050元",
+                "interest": "1050×5%=52.5元",
+                "closing_balance": "1050+52.5=1102.5元",
+                "formula": "1000×1.05^2=1102.5",
+                "observation": "第1年的利息也参与第2年计息"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "year-one",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "year-one-to-two",
+              "from": "year-one",
+              "to": "year-two",
+              "relation": "1050元成为下一年本金"
+            }
+          ]
+        },
+        {
+          "key": "year-three-beat",
+          "say": "第3年以1102.5元计息，利息是1102.5×5%=55.125元，年末余额是1157.625元；按分取近似值是1157.63元。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "year-three",
+              "kind": "math",
+              "role": "第3年计算",
+              "content": {
+                "year": 3,
+                "opening_balance": "1102.5元",
+                "interest": "1102.5×5%=55.125元",
+                "closing_balance": "1102.5+55.125=1157.625元",
+                "rounded_balance": "1157.63元",
+                "formula": "1000×1.05^3=1157.625"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "year-two",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "year-two-to-three",
+              "from": "year-two",
+              "to": "year-three",
+              "relation": "1102.5元成为下一年本金"
+            }
+          ]
+        },
+        {
+          "key": "compound-table-beat",
+          "say": "把前三年合在表格里看：年初余额依次是1000、1050、1102.5元；当年利息依次是50、52.5、55.125元；年末余额依次是1050、1102.5、1157.625元。利息逐年增加，正是因为计息本金也在增加。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "compound-table",
+              "kind": "table",
+              "role": "前三年复利表",
+              "content": {
+                "columns": [
+                  "年份",
+                  "年初余额（元）",
+                  "当年利息（元）",
+                  "年末余额（元）"
+                ],
+                "rows": [
+                  [
+                    "第1年",
+                    "1000",
+                    "50",
+                    "1050"
+                  ],
+                  [
+                    "第2年",
+                    "1050",
+                    "52.5",
+                    "1102.5"
+                  ],
+                  [
+                    "第3年",
+                    "1102.5",
+                    "55.125",
+                    "1157.625（约1157.63）"
+                  ]
+                ],
+                "pattern": "计息本金增加，使每年利息从50增至52.5，再增至55.125"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "year-two",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "compound-work",
+              "role": "复利计算整体",
+              "label": "前三年复利",
+              "members": [
+                "year-one",
+                "year-two",
+                "year-three",
+                "compound-table"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "simple-interest-comparison-step",
+      "purpose": "计算同期单利余额并解释单利与复利的差异。",
+      "beats": [
+        {
+          "key": "simple-rule-beat",
+          "say": "单利不同：每年只按最初的1000元计算利息，所以每年利息始终是1000×5%=50元，不会把以前的利息加入下一年的计息本金。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "simple-rule",
+              "kind": "note",
+              "role": "单利机制",
+              "content": {
+                "rule": "每年只对原始本金1000元计息",
+                "annual_interest": "1000×5%=50元",
+                "formula": "第n年末余额=1000+50n"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "compound-work",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "comparison-table-beat",
+          "say": "前三年比较如下：第1年单利和复利都是1050元；第2年单利是1100元，复利是1102.5元；第3年单利是1150元，复利是1157.625元。到第3年，复利比单利多7.625元。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "comparison-table",
+              "kind": "table",
+              "role": "单利复利对比表",
+              "content": {
+                "columns": [
+                  "年份",
+                  "单利余额（元）",
+                  "复利余额（元）",
+                  "复利比单利多（元）"
+                ],
+                "rows": [
+                  [
+                    "第1年",
+                    "1050",
+                    "1050",
+                    "0"
+                  ],
+                  [
+                    "第2年",
+                    "1100",
+                    "1102.5",
+                    "2.5"
+                  ],
+                  [
+                    "第3年",
+                    "1150",
+                    "1157.625",
+                    "7.625"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "simple-rule",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "simple-to-comparison",
+              "from": "simple-rule",
+              "to": "comparison-table",
+              "relation": "固定每年50元利息得到单利余额"
+            }
+          ]
+        },
+        {
+          "key": "difference-beat",
+          "say": "结论是：单利每年增加固定的50元，余额按直线方式增长；复利把利息加入本金，形成“利息也产生利息”，所以增长会逐渐加快。时间越长，两者的差距通常越明显。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "difference-summary",
+              "kind": "diagram",
+              "role": "单利复利核心差异",
+              "content": {
+                "simple_interest": "每年固定增加50元",
+                "compound_interest": "每年按新的余额乘1.05",
+                "key_difference": "单利不对既有利息计息；复利会让既有利息继续产生利息",
+                "result": "复利增长逐渐加快，时间越长差距通常越明显"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "comparison-table",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "interest-comparison",
+              "role": "单利与复利比较整体",
+              "label": "单利与复利的差异",
+              "members": [
+                "simple-rule",
+                "comparison-table",
+                "difference-summary"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "compound-table",
+                "comparison-table",
+                "difference-summary"
+              ],
+              "intent": "聚焦前三年复利结果及其与单利的核心差异"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "按年复利时，每年利息都会加入余额并成为下一年的本金，因此第n年末余额是1000×1.05^n。前三年复利余额分别为1050元、1102.5元和1157.625元（约1157.63元）；同期单利余额为1050元、1100元和1150元。单利每年固定增加50元，复利则会产生“利息的利息”，所以差距会随时间扩大。",
+    "focus": [
+      "compound-formula",
+      "compound-table",
+      "comparison-table",
+      "difference-summary"
+    ]
+  }
+}

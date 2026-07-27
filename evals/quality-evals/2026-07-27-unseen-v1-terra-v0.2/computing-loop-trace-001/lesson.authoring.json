@@ -1,0 +1,449 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "逐行跟踪平方和循环",
+    "goals": [
+      "理解 sum=0 的初始化作用",
+      "跟踪 i 从 1 到 4 的四轮循环",
+      "用变量表记录每轮 i² 和 sum 的变化",
+      "得到最终结果 sum=30"
+    ]
+  },
+  "steps": [
+    {
+      "key": "read-code",
+      "purpose": "呈现伪代码并明确执行顺序。",
+      "beats": [
+        {
+          "key": "show-code",
+          "say": "这段伪代码先把 sum 初始化为 0，然后让 i 依次取 1、2、3、4；每一轮都计算 i²，再把它加到原来的 sum 中。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "code-init",
+              "kind": "text",
+              "role": "code-line",
+              "content": {
+                "text": "sum = 0"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "code",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "code-loop",
+              "kind": "text",
+              "role": "code-line",
+              "content": {
+                "text": "for i = 1 to 4"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "code-init",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "code-update",
+              "kind": "text",
+              "role": "code-line",
+              "content": {
+                "text": "sum = sum + i × i"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "code-loop",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "code-block",
+              "role": "pseudocode",
+              "label": "待跟踪的伪代码",
+              "members": [
+                "code-init",
+                "code-loop",
+                "code-update"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "initialize",
+      "purpose": "记录循环开始前的变量状态。",
+      "beats": [
+        {
+          "key": "initialize-sum",
+          "say": "第一行执行 sum=0，所以进入循环之前，sum 的值是 0。变量表先记录这一初始状态，此时 i 还没有进入任何一轮。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "code-init",
+              "emphasis": "current-line"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "table-header",
+              "kind": "table",
+              "role": "variable-table-header",
+              "content": {
+                "title": "变量表",
+                "columns": [
+                  "阶段",
+                  "i",
+                  "i²",
+                  "更新后的 sum"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "code-block",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "row-initial",
+              "kind": "table",
+              "role": "variable-table-row",
+              "content": {
+                "cells": [
+                  "初始化",
+                  "—",
+                  "—",
+                  "0"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "table-header",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "trace-loop",
+      "purpose": "逐轮计算 i²，并跟踪 sum 的累计变化。",
+      "beats": [
+        {
+          "key": "iteration-one",
+          "say": "第 1 轮，i=1。计算 i²=1²=1，再更新 sum：0+1=1，所以这一轮结束后 sum=1。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "code-loop",
+              "emphasis": "i-equals-1"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "calc-one",
+              "kind": "math",
+              "role": "iteration-calculation",
+              "content": {
+                "expression": "i=1: i²=1²=1; sum=0+1=1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "row-initial",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "row-one",
+              "kind": "table",
+              "role": "variable-table-row",
+              "content": {
+                "cells": [
+                  "第1轮",
+                  "1",
+                  "1",
+                  "1"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "calc-one",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "iteration-two",
+          "say": "第 2 轮，i=2。计算 i²=2²=4，再更新 sum：1+4=5，所以这一轮结束后 sum=5。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "code-update",
+              "emphasis": "apply-with-i-2"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "calc-two",
+              "kind": "math",
+              "role": "iteration-calculation",
+              "content": {
+                "expression": "i=2: i²=2²=4; sum=1+4=5"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "row-one",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "row-two",
+              "kind": "table",
+              "role": "variable-table-row",
+              "content": {
+                "cells": [
+                  "第2轮",
+                  "2",
+                  "4",
+                  "5"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "calc-two",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "iteration-three",
+          "say": "第 3 轮，i=3。计算 i²=3²=9，再更新 sum：5+9=14，所以这一轮结束后 sum=14。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "code-update",
+              "emphasis": "apply-with-i-3"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "calc-three",
+              "kind": "math",
+              "role": "iteration-calculation",
+              "content": {
+                "expression": "i=3: i²=3²=9; sum=5+9=14"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "row-two",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "row-three",
+              "kind": "table",
+              "role": "variable-table-row",
+              "content": {
+                "cells": [
+                  "第3轮",
+                  "3",
+                  "9",
+                  "14"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "calc-three",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "iteration-four",
+          "say": "第 4 轮，i=4。计算 i²=4²=16，再更新 sum：14+16=30，所以这一轮结束后 sum=30。i 已经到达 4，循环随即结束。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "code-loop",
+              "emphasis": "final-iteration-i-4"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "calc-four",
+              "kind": "math",
+              "role": "iteration-calculation",
+              "content": {
+                "expression": "i=4: i²=4²=16; sum=14+16=30"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "row-three",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "row-four",
+              "kind": "table",
+              "role": "variable-table-row",
+              "content": {
+                "cells": [
+                  "第4轮",
+                  "4",
+                  "16",
+                  "30"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "calc-four",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "conclude",
+      "purpose": "汇总变量表并明确最终结果。",
+      "beats": [
+        {
+          "key": "assemble-table",
+          "say": "完整变量表显示：sum 从 0 开始，依次加上 1、4、9、16，变化为 0、1、5、14、30。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "group",
+              "when": "during_speech",
+              "as": "variable-table",
+              "role": "variable-table",
+              "label": "sum 的逐轮变量表",
+              "members": [
+                "table-header",
+                "row-initial",
+                "row-one",
+                "row-two",
+                "row-three",
+                "row-four"
+              ]
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "sum-sequence",
+              "kind": "math",
+              "role": "accumulation-summary",
+              "content": {
+                "expression": "sum: 0 → 1 → 5 → 14 → 30",
+                "added_values": "1, 4, 9, 16"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "variable-table",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        },
+        {
+          "key": "state-result",
+          "say": "因此，这段循环计算的是 1²+2²+3²+4²，最终结果是 sum=30。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-result",
+              "kind": "math",
+              "role": "final-answer",
+              "content": {
+                "expression": "1² + 2² + 3² + 4² = 30",
+                "result": "sum = 30"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "sum-sequence",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "final-result",
+              "emphasis": "final-result"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "variable-table",
+                "final-result"
+              ],
+              "intent": "同时呈现逐轮变量变化和最终的 sum=30"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "sum 先初始化为 0；i 从 1 到 4，每轮把 i² 加入 sum。四轮更新分别得到 1、5、14、30，因此最终 sum=30。",
+    "focus": [
+      "variable-table",
+      "final-result"
+    ]
+  }
+}

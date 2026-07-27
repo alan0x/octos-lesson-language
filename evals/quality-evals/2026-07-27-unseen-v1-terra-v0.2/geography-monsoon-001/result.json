@@ -1,0 +1,8 @@
+{
+  "case_id": "geography-monsoon-001",
+  "domain": "geography",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": false,
+  "error": "Expected ',' or '}' after property value in JSON at position 1721 (line 1 column 1722)"
+}

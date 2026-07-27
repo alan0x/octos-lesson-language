@@ -1,0 +1,1521 @@
+{
+  "profile": "octos.lesson-quality.eval",
+  "version": "0.2",
+  "created_at": "2026-07-27T09:43:38.596Z",
+  "judge_model": "gpt-5.6-terra",
+  "selected": 21,
+  "evaluated": 15,
+  "judge_invalid": 6,
+  "gate_passed": 15,
+  "gate_failed": 0,
+  "average_score": 31.866666666666667,
+  "by_domain": {
+    "computing": {
+      "evaluated": 2,
+      "passed": 2,
+      "average_score": 32
+    },
+    "economics": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 31
+    },
+    "geography": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 32
+    },
+    "history": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 32
+    },
+    "language": {
+      "evaluated": 3,
+      "passed": 3,
+      "average_score": 32
+    },
+    "math": {
+      "evaluated": 4,
+      "passed": 4,
+      "average_score": 31.75
+    },
+    "music": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 32
+    },
+    "science": {
+      "evaluated": 2,
+      "passed": 2,
+      "average_score": 32
+    }
+  },
+  "results": [
+    {
+      "case_id": "computing-binary-search-001",
+      "domain": "computing",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "computing-binary-search-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "trace/round-one：12<23 后将 low 更新为 4，排除下标 0..3，推导正确。",
+              "trace/round-two：mid=5 且 array[5]=23，正确定位下标 5。",
+              "ordering/ordered-reason 与 complexity/log-result：有序性推理及 O(log n) 推导正确。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "setup/define-bounds：实际讲解 low、mid、high 的含义、初始值和计算式。",
+              "trace/table-header、round-one、round-two：以逐轮表格展示比较、排除和找到 23。",
+              "ordering/ordered-reason、unordered-failure：解释有序性如何保证排除方向及无序时为何失效。",
+              "complexity/halving、log-result：实际说明逐轮减半和 O(log n)。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "setup 先建立数组、下标和边界定义，再进入 trace。",
+              "trace/round-one 先完成一次排除，round-two 在缩小后的范围内找到目标。",
+              "ordering 与 complexity 在具体轨迹后分别抽象出有序性原因和对数复杂度。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "trace/round-one 的 say 与 round-one-row、round-one-range 都呈现 12<23、排除 0..3、low=4。",
+              "trace/round-two 的 say 与 round-two-row、found-result 都呈现 mid=5、找到下标 5。",
+              "complexity/log-result 的 say 与 complexity-result 都呈现减半推导和 O(log n)。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "setup/show-array 用下标—元素表格建立可操作的数组表示。",
+              "trace/table-header 至 round-two-row 构成逐轮状态表，并配合 remaining-range 图示突出排除结果。",
+              "ordering/order-guarantee 和 unordered-warning 用关系图及对照说明排除方向的依据。",
+              "complexity/halving-chain 与 complexity-result 以缩减链和公式连接具体过程与复杂度。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "所有 beats 均为讲解、写入、强调或聚焦动作，没有等待学习者回答的动作。",
+              "close/summary 连续复述两轮状态、有序性理由和 O(log n)，完成本轮教学闭环。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets，lesson 未虚构学习者背景、能力或偏好。",
+              "lesson 采用与请求直接相关的通用讲解路径，未作无依据的个性化断言。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全文仅陈述算法步骤、数组状态和复杂度，没有断言学习者已理解、会犯某种错误或具备特定能力。",
+              "close/summary 是内容总结，不包含对学习者掌握程度的无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "computing-loop-trace-001",
+      "domain": "computing",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "computing-loop-trace-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "iteration-one：明确计算“1²=1；sum=0+1=1”",
+              "iteration-three：正确推导“5+9=14”",
+              "iteration-four：正确推导“14+16=30”",
+              "state-result：正确归纳“1²+2²+3²+4²，最终结果是 sum=30”"
+            ],
+            "concerns": [
+              "iteration-four 中“i 已经到达 4，循环随即结束”的表述略不严谨；通常是完成 i=4 的轮次后，循环控制再判断结束，但不影响本题跟踪结果。"
+            ]
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "initialize-sum：实际讲解“sum=0”及进入循环前的状态",
+              "show-code：说明 i 依次取“1、2、3、4”",
+              "iteration-one 至 iteration-four：逐轮讲解 i² 与 sum 更新",
+              "assemble-table 和 state-result：展示变量表并明确最终“sum=30”"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "read-code/show-code：先说明代码及执行顺序",
+              "initialize/initialize-sum：单独建立循环前状态",
+              "trace-loop：按 iteration-one 至 iteration-four 分轮构建结果",
+              "conclude：最后汇总变量表和结果"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "initialize-sum 的“初始状态”与 row-initial 的“初始化、—、—、0”一致",
+              "iteration-two 的口述“2²=4，1+4=5”与 calc-two、row-two 一致",
+              "iteration-four 的口述“4²=16，14+16=30”与 calc-four、row-four 一致",
+              "state-result 的口述结论与 final-result 的等式和“sum = 30”一致"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "show-code：以 code-block 集中呈现三行伪代码",
+              "initialize-sum：建立含“阶段、i、i²、更新后的 sum”的变量表",
+              "assemble-table：将表头和五行记录分组为 variable-table，并补充累积序列",
+              "state-result：focus 同时聚焦变量表与最终结果，形成过程—结论关系"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "课程从 show-code、initialize-sum 到四个 iteration beat 连续完成演示",
+              "没有要求学习者回答、暂停等待输入或输出测试题",
+              "close 对完整跟踪过程和最终结果作出闭合总结"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets，Lesson 未声称任何学习者背景、偏好或掌握情况",
+              "全程采用与请求直接相关的通用解释和变量表支持"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "say 与 close 均陈述代码执行和计算结果，未对学习者能力、错误或理解状态作无证据判断"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "未提供学习者背景或先前表现，因此无法评估更细粒度的个性化适配。"
+        ]
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "economics-compound-interest-001",
+      "domain": "economics",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "economics-compound-interest-001",
+        "dimensions": {
+          "correctness": {
+            "score": 3,
+            "evidence": [
+              "formula-beat：给出正确的按年复利公式“1000×1.05^n”。",
+              "year-one-beat、year-two-beat、year-three-beat：前三年余额1050、1102.5、1157.625及利息计算均正确。",
+              "comparison-table-beat：单利余额1050、1100、1150，及第3年差额7.625均正确。"
+            ],
+            "concerns": [
+              "formula-beat 将按年复利称为“连续复利”；严格术语中连续复利通常使用 e^(rt)，这里应称“连续乘n次”或“按年复利n年”。"
+            ]
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "interest-reinvested-beat：明确教授“每年产生的利息会加入余额，成为下一年的计息本金”。",
+              "formula-beat：实际讲解“第n年末余额为1000×1.05^n”。",
+              "compound-table-beat：以表格呈现前三年的年初余额、利息和年末余额。",
+              "simple-rule-beat、comparison-table-beat、difference-beat：计算并解释单利与复利的机制和数值差异。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "compound-idea-step：从年增长因子、利息并入本金到公式建立。",
+              "year-one-beat 至 year-three-beat：逐年展开计算，而非一次贴出结果。",
+              "compound-table-beat：在逐年推导后汇总表格并指出利息递增规律。",
+              "simple-interest-comparison-step：先建单利规则，后给数值比较和结论。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "interest-reinvested-beat：讲述利息加入余额，compound-rule 同步展示对应四步机制。",
+              "year-two-beat：讲述1050为新本金及52.5利息，year-two 写出相同计算。",
+              "compound-table-beat：say 中列出的三年数据与 compound-table 行列一致。",
+              "comparison-table-beat：say 中的单利、复利和差额与 comparison-table 一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "given-values、compound-rule、compound-formula：条件、机制图和公式分区组织，并通过 rule-to-formula 连接。",
+              "year-one、year-two、year-three：以相邻板书和连接线展示余额如何成为下一年本金。",
+              "compound-table：用结构化表格汇总前三年数据及规律。",
+              "comparison-table、difference-summary：用对比表和机制图突出单利、复利及结果差异。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 均为讲解、写板和聚焦动作，没有要求学习者中途回答或完成测试。",
+              "close.summary：在同一轮内完整复述公式、前三年结果和与单利的比较。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets，lesson 未虚构学习者背景、能力或偏好。",
+              "各 beat 只依据题目给定的本金、利率和按年复利条件展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "lesson 的 say、goals 和 close 未声称学习者已经理解、掌握或存在特定困难。",
+              "差异结论均由 comparison-table-beat 的可见计算支撑，而非对学习者作无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "未对 Authoring Schema、别名引用或 Canonical Events 可规范化性评分；本评估遵循题设要求，仅评价教学质量。"
+        ]
+      },
+      "gate": {
+        "total_score": 31,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "geography-latitude-climate-001",
+      "domain": "geography",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "geography-latitude-climate-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-energy-density：正确说明相同总能量分摊到较小/较大面积会造成单位面积能量差异。",
+              "beat-path-effect：正确说明较长大气路径通常带来更多散射和吸收、较少能量到达地面。",
+              "beat-other-factors：以“总体规律”“通常”限定纬度与气温的关系，并列出海拔、洋流等因素。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-low-angle 与 beat-high-angle：分别讲解近直射、斜射及太阳高度角差异。",
+              "beat-same-energy 与 beat-energy-density：实际讲解相同能量覆盖面积不同及单位面积能量差异。",
+              "beat-paths 与 beat-path-effect：实际讲解穿过大气路径和其能量后果。",
+              "beat-other-factors：明确讲解“纬度不是唯一的气候因素”及其他因素。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-angle 先建立太阳高度角、近直射和斜射的空间关系。",
+              "step-area 随后以“相同总能量”为前提推导单位面积能量差异。",
+              "step-atmosphere 补充第二层机制，step-conclusion 再整合因果链与适用边界。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-high-angle 的讲述“太阳高度角较小…斜射”与 slant-ray、slant-label 对应。",
+              "beat-energy-density 的单位面积推导与 more-per-area、less-per-area 两条板书对应。",
+              "beat-path-effect 的散射、吸收后果与 short-path-result、long-path-result 对应。",
+              "beat-other-factors 的限定与 climate-limit、other-factors 对应。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "angle-comparison 将近直射与斜射的地面、太阳位置和结论组织为对比区域。",
+              "area-comparison 用相同 energy_marks 的小/大覆盖区呈现“同能量、不同面积”。",
+              "path-comparison 以大气层内部的短、长路径图示组织第二个机制。",
+              "latitude-energy-model 以两条 flow 因果链收束并与 climate-context 并列聚焦。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 为连续讲述与板书动作，没有等待学生回答的指令。",
+              "close.summary 完整复述了面积分布、大气路径和多因素限定。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含 assets，课程未虚构学习者背景、能力或偏好。",
+              "adaptation.context_refs 仅引用 learner_request，且实际内容围绕该请求的太阳高度角与单位面积能量机制展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 beat 使用的是学科陈述，如 beat-causal-chain 的因果链，未断言学习者已掌握、困惑或具备任何特征。",
+              "lesson.adaptation 未包含关于学习者能力、经历或错误观念的无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "geography-monsoon-001",
+      "domain": "geography",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1721 (line 1 column 1722)"
+    },
+    {
+      "case_id": "history-industrial-revolution-001",
+      "domain": "history",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "history-industrial-revolution-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-agriculture-population：将农业改良解释为提供粮食、劳动力与市场，而非“直接造出机器”。",
+              "beat-resources：准确区分煤提供能源、铁提供机器与设备材料。",
+              "beat-factory-system：准确说明工厂制把动力、机器、原料和工人集中，并改变工序、时间与劳动纪律。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-timeline：实际讲授18世纪前期条件积累、机器创新及蒸汽动力与工厂制扩展的时间线。",
+              "beat-agriculture-population：实际讲授农业改良、人口增长、劳动力与需求。",
+              "beat-resources、beat-capital-market：实际讲授煤铁、资本市场与贸易市场。",
+              "beat-multiple-causes：明确说明“不是……任何一个因素单独造成的，而是多种条件……相互加强”。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-overview 先提出两个问题并建立时间框架，step-conditions 再分解条件网络。",
+              "step-transformation 在条件之后讲蒸汽动力和工厂制的机制。",
+              "step-synthesis 通过 beat-multiple-causes 与 beat-final-chain 将前述内容收束为总因果链。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-timeline 的讲述三阶段与 time-conditions、time-machines、time-factories 及连接线一致。",
+              "beat-steam 的水力限制、蒸汽机、机器集中运转分别对应 water-limit、steam-power、power-concentration。",
+              "beat-factory-system 的生产组织变化对应 domestic-system、factory-system、factory-management、mass-production。",
+              "beat-multiple-causes 的多因结论对应 combined-conditions、british-industrialization、not-single-cause。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "beat-timeline 用横向阶段节点、连接线和 industrial-timeline 分组构成清晰时间线。",
+              "step-conditions 按农业人口、煤铁、资本市场分区，并以因果连接组织关系。",
+              "beat-factory-system 以旧生产方式→工厂制→管理→大批量生产展示转变链。",
+              "beat-final-chain 聚焦 complete-causal-chain 与 not-single-cause，同时保留主线和多因结论。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 均为连续讲述和板书动作，没有等待学生作答的停顿。",
+              "close 提供完整总结，并聚焦时间线、完整因果链和多因结论。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson.adaptation.context_refs 明确引用 learner_request。",
+              "adaptation 的“时间线”“多条因果链”“区分条件、突破与变化”直接对应请求的讲解方式。",
+              "Resolved Session Context 未提供学习者画像；课程未虚构能力、偏好或背景。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全文没有声称学习者已掌握、误解或偏好任何具体内容。",
+              "lesson.adaptation 只陈述教学策略，不对学习者作无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "history-silk-road-001",
+      "domain": "history",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1672 (line 1 column 1673)"
+    },
+    {
+      "case_id": "language-argument-structure-001",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1873 (line 1 column 1874)"
+    },
+    {
+      "case_id": "language-english-passive-001",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "language-english-passive-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-passive-pattern：准确讲解一般过去时被动结构“was/were + 过去分词”。",
+              "beat-choose-was：根据单数主语 The meal 正确选择 was。",
+              "beat-participle：正确说明规则动词 cook 的过去式和过去分词均为 cooked。",
+              "beat-final-sentence：完整答案“The meal was cooked by the chef.”正确。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-object-first：明确教授宾语 the meal 提前并成为被动句主语。",
+              "beat-passive-pattern 与 beat-participle：实际讲解“was/were + 过去分词”及本句 was cooked 的构成。",
+              "beat-by-optional：明确说明 by 短语可保留或省略。",
+              "beat-final-sentence：呈现并解释“The meal was cooked by the chef.”。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-analyze 先在 beat-parts 拆分主语、谓语、宾语。",
+              "step-promote-object 在 beat-object-first 先完成宾语提升并解释关注点变化。",
+              "step-build-verb 依次建立结构、选择 was、确定 cooked，最后在 beat-assemble 合成为完整句。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-parts 的讲述与 active-parts 表格逐项对应句子成分和作用。",
+              "beat-object-first 的讲述与 passive-subject 文本、object-promotion 连线一致。",
+              "beat-by-optional 的讲述与 optional-by 板书同时展示保留和省略两种形式。",
+              "beat-final-sentence 的讲述与 final-passive 及 complete-transformation 连线一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "active-parts 用表格结构化呈现主语、谓语、宾语及其作用。",
+              "object-promotion、pattern-application、agent-move 用连线呈现成分转换关系。",
+              "assembly 用分块图示标注完整被动句的三个组成部分。",
+              "beat-summary-board 使用三步归纳、分组和 focus 聚焦结论。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "课程从 beat-source 到 beat-summary-board 连续完成分析、变换、合成与总结。",
+              "全程没有要求学习者回答、等待输入或插入测试题；close 给出完整可独立理解的总结。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含 assets，未提供学习者画像。",
+              "lesson.adaptation.context_refs 引用 learner_request，且策略“始终围绕同一个例句逐步变换”与请求中的指定例句直接相关。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "所有 beat 均在讲解语法与例句，没有声称学习者已经掌握、容易出错或具有未提供的背景。",
+              "close 只总结所教内容，未对学习者能力作无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "language-poem-imagery-001",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "language-poem-imagery-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-autumn-images：从“枯、老、昏”推到衰败、暗淡的秋景。",
+              "beat-atmosphere-builds：将三组意象组织为“看见归宿、却仍在荒凉路上”的处境。",
+              "beat-heartbroken-traveler：以“昏鸦”“人家”与“断肠人在天涯”说明反衬关系。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-autumn-images、beat-home-images、beat-travel-images：逐组列出并解释关键意象。",
+              "beat-atmosphere-builds：实际讲解意象按顺序叠加成整体氛围。",
+              "beat-heartbroken-traveler：实际讲解“断肠人”与可归的昏鸦、人家的对照。",
+              "beat-evidence-chain：明确呈现“文本证据→效果→情感”的推导链。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-images 先辨认两组景物及特征，step-road 再补入旅途处境。",
+              "beat-atmosphere-builds 先综合环境，随后 beat-sunset 与 beat-heartbroken-traveler 才揭示人物和对照。",
+              "beat-evidence-chain 最后收束为完整证据链，而非一开始直接给主题。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-autumn-images 的说解对应三个意象板书、分组“萧瑟的秋景”和强调动作。",
+              "beat-atmosphere-builds 的说解对应两条组间连接及 combined-atmosphere 图示。",
+              "beat-heartbroken-traveler 的对照说解对应 crow-traveler-contrast、home-traveler-contrast 与 contrast-result。",
+              "beat-evidence-chain 的说解与 evidence-chain 分阶段图示一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "三组意象分别以 imagery-cluster 分组，并标注“萧瑟的秋景”“可归宿的生活图景”“寒凉而疲惫的旅途”。",
+              "bleak-to-home、home-to-travel 可视化呈现意象组合的顺序与关系。",
+              "evidence-chain 使用独立 summary-board，将文本、效果和情感组织为结构化推导。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部内容按四个 step 连续讲完，并以 close.summary 收束。",
+              "各 Beat 均为讲解与板书动作，没有等待学生作答、要求输出或插入测试。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅有 assets，未提供学习者画像；课程没有虚构能力、偏好或经历。",
+              "adaptation.context_refs 指向 learner_request，且实际采用“按文本顺序逐层累积意象”的请求匹配策略。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全课使用文本分析表述，如“支持我们读出”，未声称学生已经理解、不会理解或具有特定水平。",
+              "close.summary 仍以文本证据的推导为中心，没有对学习者作无依据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "language-present-perfect-001",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "language-present-perfect-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "compare-meaning/show-perfect-sentence：准确说明过去丢失与当前结果的联系。",
+              "explain-form/build-perfect-form：正确教授“have/has + 过去分词”及主谓搭配。",
+              "explain-time-expressions/warn-perfect-time：正确说明明确、已结束的过去时间通常不用现在完成时。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "compare-meaning/state-core-contrast：直接比较两句的关注点。",
+              "explain-form/build-perfect-form：实际讲解 have/has + 过去分词。",
+              "show-timeline/draw-time-points 至 map-perfect-view：用过去—现在时间线解释差异。",
+              "explain-time-expressions/warn-perfect-time：明确讲解 yesterday 等时间状语限制。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "steps 从句义对比、结构拆解、时间线、时间状语限制，到 consolidate/final-map 逐步展开。",
+              "show-timeline/map-past-view 在呈现时间点后再解释一般过去时视角。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "compare-meaning/show-past-sentence：讲述过去事件，past-sentence 同步呈现例句与“过去发生的事件”。",
+              "explain-form/apply-perfect-form：讲述 have 与 lost 的作用，form-breakdown 对应逐项标注。",
+              "explain-time-expressions/warn-perfect-time：讲述三种表达的差别，time-warning 表格逐行对应。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "compare-meaning/state-core-contrast 使用对比表组织两种时态的关注点。",
+              "show-timeline 以 past-point、now-point、连接线和两种解释构成结构化时间线。",
+              "consolidate/final-map 用决策图汇总关注点、结构和时间状语限制。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "所有 beats 均为连续讲解与可见板书动作，没有等待学生回答、练习提交或测试题。",
+              "close/summary 在同一轮完成核心规则回顾。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅有空 assets，lesson 未虚构学习者水平、偏好或既往表现。",
+              "课程内容直接围绕 learner_request 的两句比较展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全文没有声称学习者“已经掌握”“容易混淆”或具有任何未经 Context 支持的能力、经历或错误。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "仅基于提供的课程文本评估，未观察真实白板渲染或学习者实际理解效果。"
+        ]
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "math-fraction-compare-001",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "math-fraction-compare-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-convert-five-eighths 正确推导 5/8=15/24；beat-convert-seven-twelfths 正确推导 7/12=14/24。",
+              "beat-cross-products 正确计算 5×12=60、7×8=56；beat-cross-conclusion 正确说明通分到 96 后为 60/96 与 56/96。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "step-common-denominator 的各 Beat 实际讲解最小公倍数 24、等值改写和同分母比较。",
+              "step-cross-multiply 的各 Beat 实际讲解交叉相乘、60 与 56 的比较及其含义。",
+              "beat-synthesis 与 close 明确得出 5/8>7/12，且全程未使用小数法。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "从 step-visual 的同长分数条直观比较，逐步过渡到 step-common-denominator 的分步通分，再到 step-cross-multiply 的计算与原理联系。",
+              "beat-cross-setup 先说明比较的两个乘积及其意义，beat-cross-products 后才计算，beat-cross-conclusion 最后作结论。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-convert-five-eighths 的说法与 alias convert-five-eighths 均展示分子、分母同乘 3 得 15/24。",
+              "beat-cross-products 的说法与 cross-left-product、cross-right-product 均对应 60 和 56。",
+              "beat-synthesis 的讲述与 final-conclusion 及两个 connect 动作一致地汇合两种方法。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "five-eighths-bar 与 seven-twelfths-bar 置于 visual-comparison 区域并 focus，支持同长分数条的视觉比较。",
+              "common-method 和 cross-method 分组，分别包含标题、步骤、结果；final-conclusion 位于独立 conclusion 区域并由两种方法连接。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "lesson.mode 为 explain，所有步骤按连续 Beat 给出完整讲解与结论。",
+              "各 Beat 和 close 均未要求学习者回答、暂停等待或完成测试题。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson.adaptation.context_refs 明确引用 learner.preference.visual-fractions。",
+              "step-visual 实际先用两条 fraction_bar 讲解，再进入符号计算，和该已提供偏好一致。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "课程未声称学习者已经掌握、不会或应当能完成任何内容。",
+              "对学习者的适配仅使用已给出的 learner.preference.visual-fractions，未扩展为无证据的能力判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "math-linear-word-problem-001",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "math-linear-word-problem-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "`calculate-extra-distance` 给出 8-3=5公里。",
+              "`finish-fare-calculation` 正确计算 13+2.3×5=13+11.5=24.5元。",
+              "`assemble-piecewise-function` 给出与计价规则一致的分段函数。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "`show-base-rule` 与 `show-extra-rule` 实际讲解了起步里程和超出里程的区别。",
+              "`build-fare-expression` 板书并讲解 13+2.3×(8-3)。",
+              "`finish-fare-calculation` 明确得出24.5元。",
+              "`assemble-piecewise-function` 实际讲解并板书通用分段函数。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "步骤依次为 `understand-pricing`、`split-eight-kilometers`、`calculate-eight-kilometer-fare`、`build-general-function`。",
+              "`calculate-extra-distance` 先形成超出5公里，再由 `build-fare-expression` 构造费用式，最后在 `verify-eight-kilometers` 回代验证。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 3,
+            "evidence": [
+              "`calculate-extra-distance` 的讲述“8减3，等于5公里”与板书 8-3=5公里一致。",
+              "`finish-fare-calculation` 的逐步口述与板书 13+2.3×5=13+11.5=24.5元一致。",
+              "`write-first-branch`、`write-second-branch` 与对应函数分支板书一致。"
+            ],
+            "concerns": [
+              "`build-fare-expression` 和 `write-second-branch` 的口述未清晰读出括号；虽然板书正确，但“2.3乘以8减3”可能被听作不同运算顺序。"
+            ]
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "`base-rule`、`extra-rule`、`total-distance`、`extra-distance` 将规则与例题分区呈现。",
+              "`total-to-extra`、`extra-to-fare` 用连接关系呈现从里程拆分到费用计算的推导。",
+              "`function-group` 将变量、两段函数和最终分段表达式组织为一个模型区域。",
+              "`focus` 同时聚焦通用函数与8公里验证结果。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "所有 Beat 均为讲解和可见板书动作，没有等待学生回答、要求提交作答或中断课程的测试。",
+              "`close.summary` 在同一轮完整总结规则、8公里计算和分段函数。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 只有空 assets，课程没有编造学习者背景、能力或偏好。",
+              "`adaptation.context_refs` 仅引用 `learner_request`，且教学内容围绕请求中的计价数据展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 Beat 均陈述计价规则、计算和函数建模，未声称学习者已经掌握、容易混淆或具有任何未提供的特征。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "依据提供的 Authoring Lesson 文本评估；未实际渲染白板视觉效果。"
+        ]
+      },
+      "gate": {
+        "total_score": 31,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "math-probability-tree-001",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "math-probability-tree-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat after-red：正确说明取红后剩1红1蓝，第二次两分支均为1/2。",
+              "beat after-blue：正确说明取走唯一蓝球后，第二次取红概率为1、取蓝概率为0。",
+              "beat add-paths：正确计算1/3+1/3=2/3。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beats first-red、first-blue：实际绘制第一次红、蓝概率树分支。",
+              "beats after-red、after-blue：讲解并标出不放回后第二次分支概率变化。",
+              "beat mark-different：明确颜色不同对应“红→蓝和蓝→红”。",
+              "beat add-paths：实际得出两次颜色不同的概率为2/3。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "steps setup→first-draw→second-draw 先给出球的组成，再逐层建立树。",
+              "steps select-paths→calculate 先筛选有利路径，再分别相乘、最后相加。",
+              "beat calculate-red-blue 与 calculate-blue-red 将两条路径分开计算。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat first-red：讲述2/3，action first-red-branch 标注“红：2/3”。",
+              "beat after-blue：讲述第二次红为1、蓝为0，对应 blue-red-branch 与 blue-blue-branch。",
+              "beat add-paths：讲述互斥路径相加，action final-answer 写出完整加法。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "actions 以 start 为根、第一层结果节点和第二层叶节点构成清晰的两层概率树。",
+              "beats after-red、after-blue 使用 remaining-state 注释并聚焦比较剩余球组成。",
+              "beat mark-different 用 group 与 highlight 标出两条有利路径；beat add-paths 将结论单独强调。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部内容在连续 beats 中完成，close 总结完整方法与答案。",
+              "lesson 中没有要求等待学生回答、暂停互动或输出测试题。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets；lesson 未声称任何不存在的学习者背景、能力或偏好。",
+              "教学语言与 learner_request 的 zh-CN 一致。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 beat 均陈述题目条件、概率推导或教学指令，没有对学习者掌握程度作无证据判断。",
+              "close 仅总结解法，没有声称学习者已经理解或完成。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "math-slope-intercept-001",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "math-slope-intercept-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-calculate-slope：m=(8-2)/(4-1)=6/3=2，计算正确。",
+              "beat-point-slope-form 至 beat-simplify-equation：正确代入 y-2=2(x-1) 并化简为 y=2x。",
+              "beat-explain-intercept：以 x=0 验证 y=0，正确说明纵截距及原点。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-calculate-slope 实际讲解并板书 (8-2)/(4-1)=2。",
+              "beat-point-slope-form 实际教授点斜式及其代入。",
+              "beat-simplify-equation 明确推出 y=2x。",
+              "beat-identify-intercept 与 beat-explain-intercept 明确教授截距为 0 及其意义。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-points 先建立 Δx=3、Δy=6，再由 step-slope 计算斜率。",
+              "step-equation 将点斜式模板、代入、展开、移项拆分为连续 Beat。",
+              "step-intercept 在方程得出后再对应 y=mx+b 并验证 x=0。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-show-points 的讲述与 point-a、point-b、coordinate-changes 板书一致。",
+              "beat-simplify-equation 的展开和“两边加 2”分别对应 expanded-equation、final-equation 及连接关系。",
+              "beat-explain-intercept 的 x=0 验证和截距含义对应 intercept-check、intercept-meaning。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "step-points、step-equation、step-intercept 分置 derivation、equation、interpretation 区域，结构清晰。",
+              "template-to-substitution、substitution-to-expanded、expanded-to-final 显式呈现推导关系。",
+              "beat-summary 用 derivation-group、meaning-group 和 focus 组织回顾重点。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部步骤以 explain 模式连续给出计算、推导、解释和总结。",
+              "各 Beat 未要求学习者作答、暂停等待或输出测试题；close 完整收束结论。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 未提供学习者画像；lesson 未编造能力、偏好或背景。",
+              "adaptation.context_refs 指向 learner_request，且实际教学围绕其指定两点、方程、斜率和截距展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "lesson 的 say、goals 和 adaptation 未声称学习者已经掌握、不会或偏好任何内容。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "仅依据提供的课程文本评估，未观察实际渲染后的白板视觉效果。"
+        ]
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "music-time-signature-001",
+      "domain": "music",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "music-time-signature-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "three-four/three-four-definition：准确说明3/4为3个四分音符拍、每拍细分为两个八分音符。",
+              "six-eight/six-eight-definition：准确说明6/8的三个八分音符合成一个附点四分音符大拍，因此为两拍。",
+              "direct-contrast/felt-difference：以拍点间隔区分2+2+2与3+3，并对应强—弱—弱和强—弱。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "three-four/three-four-definition实际讲授“3/4是三组四分音符拍”。",
+              "six-eight/six-eight-definition实际讲授“6/8是两组附点四分音符拍”。",
+              "direct-contrast/three-versus-two实际呈现“3对2”、2+2+2与3+3的节拍分组图和比较表。",
+              "three-four/three-four-accent与six-eight/six-eight-accent实际讲授两种强弱组织。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "same-six/six-eighths先建立“同样六个八分音符”的共同点。",
+              "three-four三个连续 Beat 依次定义、分组、标出强弱；six-eight采用对应顺序。",
+              "direct-contrast/felt-difference最后将分组转化为听辨拍点的方法。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "three-four/three-four-diagram的“一-and、二-and、三-and”与three-four-group-one至three-four-group-three的两音分组一致。",
+              "six-eight/six-eight-diagram的“1-la-li、2-la-li”与两组三音 diagram 一致。",
+              "direct-contrast/three-versus-two的口述3对2与contrast-table中的大拍数、细分、分组和强弱列一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "same-six以共同标题和六音序列建立比较基准。",
+              "three-four与six-eight分别使用可见分组图、分组对象、重音连线和焦点组织。",
+              "direct-contrast/contrast-table将拍号、大拍数、细分、分组图和强弱并排归纳。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部教学内容在连续 Beat 与close中完成。",
+              "课程没有等待学生回答、要求输出，或插入未解答的测试题。",
+              "close明确复述两个拍号的分组、拍点和强弱结论。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson.adaptation.context_refs明确引用learner_request。",
+              "adaptation采用“从相同数量的八分音符切入”和渐进分组图，直接适配零基础且聚焦请求中的困惑。",
+              "Resolved Session Context未提供个人画像；课程未虚构学习者背景。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全课使用一般性教学表述，如same-six/core-question的“接下来把同一排六个音分别组织”，未声称学生已掌握或存在特定困难。",
+              "没有依据缺失的个人 Context 对学生能力、偏好或表现作判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-newton-force-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1862 (line 1 column 1863)"
+    },
+    {
+      "case_id": "science-photosynthesis-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1729 (line 1 column 1730)"
+    },
+    {
+      "case_id": "science-series-circuit-001",
+      "domain": "science",
+      "source_repetition": 2,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "science-series-circuit-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat `conserve-charge`: 以无分支路径与电荷不持续堆积解释单位时间通过两灯的电荷量相同。",
+              "beat `state-equality`: 明确给出闭合回路条件下 `I₁=I₂`。",
+              "beat `generalize-break`: 正确说明串联回路任一处断开会使全回路无电流。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat `show-circuit`: 写入 `asset-circuit-001`，并引用 battery、lamp-a、lamp-b、wire 四个受控区域。",
+              "beat `identify-path`: 实际讲解“没有分支，所以串联电路只有一条电流路径”。",
+              "beat `state-equality`: 实际讲解并板书 `I₁=I₂`。",
+              "beats `whole-circuit-zero`、`generalize-break`: 实际讲解任一处断路导致全回路无电流。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "步骤依次为 `inspect-circuit`、`explain-current`、`explain-open-circuit`、`consolidate`。",
+              "beats `mark-currents` → `conserve-charge` → `state-equality` 先定义量、再给理由、后推出等式。",
+              "beats `introduce-break` → `whole-circuit-zero` → `generalize-break` 从灯泡A示例推广到任一处断路。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat `identify-path` 的讲述“只有一条电流路径”与 `single-path` 图示及其 statement 一致。",
+              "beat `state-equality` 的讲述结论与 `equal-current` 中的 `I₁=I₂`、条件和解释一致。",
+              "beat `whole-circuit-zero` 的讲述与 `zero-current` 中的 `I₁=I₂=0`、两灯熄灭一致。",
+              "beat `compare-states` 的口头对照与 `state-comparison` 表格两行内容一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "`circuit-image` 将上传图放入主视觉区，并以 `single-path` 补充路径结构。",
+              "`charge-rule`、`equal-current` 和连接 `rule-to-equality` 显示从依据到结论的关系。",
+              "`open-circuit-result` 组呈现“断路→路径切断→无电流”的因果链。",
+              "`state-comparison` 表格清楚对照完整闭合与断路两种状态。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 均为讲解、板书或聚焦动作，未要求学习者回答、等待输入或完成测试。",
+              "`close.summary` 在同一轮完整归纳路径、电流相等和断路后果。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson `adaptation.context_refs` 引用 `learner_request` 与 `session_context.assets.asset-circuit-001`。",
+              "beat `show-circuit` 明确以“你上传的串联电路图”为对象，并使用该资产及其受控区域。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "lesson 未声称学习者具有特定基础、困难、偏好或已掌握程度。",
+              "beat `show-circuit` 对“你上传的”图片的指称有 session context 资产支持。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-state-change-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "science-state-change-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat solid-model：固态分子在相对固定位置附近振动",
+              "beat melting-process：熔化定义为固态变液态",
+              "beat vaporization-process：继续吸热后发生汽化并形成水蒸气",
+              "beat size-constant：区分分子间距增大与单个分子尺寸变化"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beats solid-model、liquid-model、gas-model 实际比较三态排列和运动",
+              "beat heat-effect：吸热后水分子运动增强",
+              "beats melting-process、vaporization-process 实际讲解熔化与汽化",
+              "beat size-constant：明确水分子大小始终不变"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step compare-states 先建立三态模型",
+              "step explain-heating 再连接吸热、熔化和汽化",
+              "step protect-model 最后纠正“间距”与“大小”的混淆",
+              "beat full-sequence 将已建立的要素串成完整因果链"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat solid-model 的 say 与 solid-model 图示均呈现紧密规则、原位振动",
+              "beat heat-effect 的 say 与 heat-input、heat-to-solid 均表达吸热导致运动增强",
+              "beat melting-process 的 say 与 melting-change、melting-note 均表达固态到液态",
+              "beat size-constant 的 say 与 size-rule 均强调大小不变、间距可变"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "solid-model、liquid-model、gas-model 以并列区域形成三态对比",
+              "heat-to-solid、melting-change、vaporization-change 显示状态变化关系",
+              "size-rule 单列模型边界，突出恒定量与变化量",
+              "process-summary 汇总完整过程并由 focus 聚焦关键对象"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "lesson mode 为 explain，所有 beats 连续讲解",
+              "未出现要求学习者回答、等待输入或输出测试题的内容",
+              "close 对全过程作完整总结"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets",
+              "lesson 未虚构学习者背景、能力或偏好",
+              "内容保持通用解释，未作无依据个性化"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 beat 均陈述粒子模型与过程，未断言学习者已掌握或会犯特定错误",
+              "beat size-constant 直接教学模型边界，而非归因于学习者表现"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "未提供 Learner Context，因此无法评价更具体的个性化适配。"
+        ]
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-water-cycle-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": false,
+      "error": "Expected ',' or '}' after property value in JSON at position 1829 (line 1 column 1830)"
+    }
+  ]
+}

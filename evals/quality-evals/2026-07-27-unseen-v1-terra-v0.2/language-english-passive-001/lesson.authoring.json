@@ -1,0 +1,431 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "一般过去时主动句变被动句",
+    "goals": [
+      "识别主动句中的动作执行者、谓语和宾语",
+      "理解宾语提前成为被动句主语的原因",
+      "掌握一般过去时被动语态的 was/were + 过去分词结构",
+      "理解 by 短语可以保留或省略"
+    ],
+    "adaptation": {
+      "strategies": [
+        "始终围绕同一个例句逐步变换",
+        "将句子成分与变换理由并排呈现",
+        "先展示结构变化，再合成完整被动句"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-analyze",
+      "purpose": "拆分主动句，明确谁执行动作以及动作作用于什么对象。",
+      "beats": [
+        {
+          "key": "beat-source",
+          "say": "先看主动句：The chef cooked the meal. 意思是“厨师做了这顿饭”。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "active-sentence",
+              "kind": "text",
+              "role": "example",
+              "content": {
+                "text": "The chef cooked the meal."
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main-board",
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-parts",
+          "say": "这个主动句有三个核心部分：The chef 是动作执行者，cooked 是一般过去时的动作，the meal 是承受动作的宾语。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "active-parts",
+              "kind": "table",
+              "role": "sentence-analysis",
+              "content": {
+                "columns": [
+                  "成分",
+                  "原句内容",
+                  "作用"
+                ],
+                "rows": [
+                  [
+                    "主语",
+                    "The chef",
+                    "动作执行者"
+                  ],
+                  [
+                    "谓语",
+                    "cooked",
+                    "一般过去时动作"
+                  ],
+                  [
+                    "宾语",
+                    "the meal",
+                    "动作承受者"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "active-sentence",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-promote-object",
+      "purpose": "说明被动句为何把主动句宾语提前。",
+      "beats": [
+        {
+          "key": "beat-object-first",
+          "say": "变成被动句时，我们要把注意力放在承受动作的事物上，所以把主动句宾语 the meal 提到句首，改为 The meal，作为被动句的主语。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "passive-subject",
+              "kind": "text",
+              "role": "transformed-subject",
+              "content": {
+                "text": "the meal → The meal（被动句主语）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "active-parts",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "object-promotion",
+              "from": "active-parts",
+              "to": "passive-subject",
+              "relation": "宾语提前成为被动句主语",
+              "label": "宾语提前"
+            }
+          ]
+        },
+        {
+          "key": "beat-object-reason",
+          "say": "这样变不是随意调换语序：主动句强调“厨师做了什么”，被动句则强调“这顿饭经历了什么”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "voice-focus",
+              "kind": "note",
+              "role": "reason",
+              "content": {
+                "text": "主动：强调动作执行者 → 被动：强调动作承受者"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "passive-subject",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-build-verb",
+      "purpose": "建立一般过去时被动语态的谓语结构并解释形式选择。",
+      "beats": [
+        {
+          "key": "beat-passive-pattern",
+          "say": "一般过去时的被动谓语使用 was/were + 过去分词。was 或 were 表示过去时，过去分词表示主语承受这个动作。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "passive-pattern",
+              "kind": "text",
+              "role": "grammar-rule",
+              "content": {
+                "text": "一般过去时被动语态：was/were + 过去分词"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "passive-subject",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-choose-was",
+          "say": "The meal 是单数，所以使用 was；如果被动句主语是复数，通常使用 were。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "be-choice",
+              "kind": "note",
+              "role": "agreement-rule",
+              "content": {
+                "text": "The meal（单数）→ was；复数主语 → were"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "passive-pattern",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-participle",
+          "say": "主动句里的 cooked 已经是 cook 的过去式；cook 是规则动词，它的过去分词也是 cooked。因此这里组成 was cooked。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "verb-change",
+              "kind": "text",
+              "role": "verb-transformation",
+              "content": {
+                "text": "cooked（主动句过去式）→ was cooked（was + 过去分词）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "be-choice",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "pattern-application",
+              "from": "passive-pattern",
+              "to": "verb-change",
+              "relation": "应用一般过去时被动结构",
+              "label": "was + cooked"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-agent",
+      "purpose": "解释动作执行者如何进入可选的 by 短语。",
+      "beats": [
+        {
+          "key": "beat-by-phrase",
+          "say": "如果需要说明动作是谁做的，就把原来的主语 The chef 放在 by 后面，形成 by the chef。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "agent-phrase",
+              "kind": "text",
+              "role": "agent-transformation",
+              "content": {
+                "text": "The chef → by the chef"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "verb-change",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "agent-move",
+              "from": "active-parts",
+              "to": "agent-phrase",
+              "relation": "原主动句主语变为 by 短语",
+              "label": "动作执行者"
+            }
+          ]
+        },
+        {
+          "key": "beat-by-optional",
+          "say": "by 短语是可选的。执行者重要时，可以说 by the chef；执行者未知、不重要或已经很清楚时，可以省略，只说 The meal was cooked。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "optional-by",
+              "kind": "note",
+              "role": "usage-rule",
+              "content": {
+                "text": "by 短语可选：保留 → The meal was cooked by the chef.；省略 → The meal was cooked."
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "agent-phrase",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-complete",
+      "purpose": "合并各部分，呈现完整转换及其理由。",
+      "beats": [
+        {
+          "key": "beat-assemble",
+          "say": "现在把三部分合起来：提前后的 The meal，加上一般过去时被动谓语 was cooked，再加可选的 by the chef。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "assembly",
+              "kind": "diagram",
+              "role": "sentence-assembly",
+              "content": {
+                "parts": [
+                  "The meal",
+                  "was cooked",
+                  "by the chef"
+                ],
+                "labels": [
+                  "原宾语提前",
+                  "was + 过去分词",
+                  "可选的 by 短语"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "agent-phrase",
+                "align": "center",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-final-sentence",
+          "say": "完整的被动句是：The meal was cooked by the chef. 它仍然描述过去发生的同一件事，但句子的关注点从厨师转到了这顿饭。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "final-passive",
+              "kind": "text",
+              "role": "final-answer",
+              "content": {
+                "text": "The meal was cooked by the chef."
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "assembly",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "complete-transformation",
+              "from": "active-sentence",
+              "to": "final-passive",
+              "relation": "一般过去时主动句变被动句",
+              "label": "关注点改变，事件不变"
+            }
+          ]
+        },
+        {
+          "key": "beat-summary-board",
+          "say": "这次变化可以归纳为三步：宾语提前；把谓语改成 was/were + 过去分词；需要说明执行者时再加 by 短语。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "three-step-rule",
+              "kind": "note",
+              "role": "summary-rule",
+              "content": {
+                "items": [
+                  "1. 宾语提前，成为被动句主语",
+                  "2. 谓语改为 was/were + 过去分词",
+                  "3. 原主语可放入 by 短语；by 短语可以省略"
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "final-passive",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "passive-result",
+              "role": "lesson-conclusion",
+              "label": "一般过去时主动变被动",
+              "members": [
+                "assembly",
+                "final-passive",
+                "three-step-rule"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "passive-result",
+                "complete-transformation"
+              ],
+              "intent": "同时聚焦完整转换结果和主动、被动两句之间的关系"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "The chef cooked the meal. 变为被动句时，先把宾语 the meal 提前成为主语，再用一般过去时被动结构 was/were + 过去分词。因为 The meal 是单数，选 was；cook 的过去分词是 cooked。原主语 The chef 可改为 by the chef，也可在执行者不重要时省略。因此完整句是 The meal was cooked by the chef.，省略执行者时是 The meal was cooked.",
+    "focus": [
+      "passive-result",
+      "complete-transformation"
+    ]
+  }
+}

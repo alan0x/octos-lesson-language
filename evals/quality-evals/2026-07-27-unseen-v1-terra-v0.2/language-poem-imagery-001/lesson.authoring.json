@@ -1,0 +1,552 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "《天净沙·秋思》：意象怎样一步步组合出游子之情",
+    "goals": [
+      "辨认诗中的关键意象",
+      "理解意象组合形成的环境氛围",
+      "分析“断肠人”与眼前景物的对照",
+      "沿着文本证据推导游子的情感"
+    ],
+    "adaptation": {
+      "strategies": [
+        "按文本顺序逐层累积意象",
+        "先观察景物特征，再归纳氛围与情感",
+        "用对照关系解释情感为何加深"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-images",
+      "purpose": "依照诗句顺序辨认关键意象，并观察每组意象携带的特征。",
+      "beats": [
+        {
+          "key": "beat-autumn-images",
+          "say": "开头先摆出“枯藤、老树、昏鸦”。“枯”“老”“昏”都带着衰败、迟暮和暗淡的意味，三项连在一起，眼前的秋景便显得萧瑟而沉郁。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "withered-vine",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "枯藤",
+                "feature": "枯败、缺少生机"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main-board",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "old-tree",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "老树",
+                "feature": "衰老、迟暮"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "withered-vine",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evening-crow",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "昏鸦",
+                "feature": "暮色中的归鸦，色调暗淡"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "old-tree",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "bleak-images",
+              "role": "imagery-cluster",
+              "label": "萧瑟的秋景",
+              "members": [
+                "withered-vine",
+                "old-tree",
+                "evening-crow"
+              ]
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "bleak-images",
+              "emphasis": "突出“枯—老—昏”共同造成的衰败、暗淡感"
+            }
+          ]
+        },
+        {
+          "key": "beat-home-images",
+          "say": "接着出现“小桥、流水、人家”。这组景物尺度小、有人居住，带来安静、温暖的生活气息；它不是孤立的美景，而是在萧瑟秋景中嵌入一个可归宿的画面。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "small-bridge",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "小桥",
+                "feature": "小巧、安静"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "withered-vine",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "flowing-water",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "流水",
+                "feature": "平和、流动"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "small-bridge",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "homes",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "人家",
+                "feature": "有人居住，具有温暖的生活气息"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "flowing-water",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "home-images",
+              "role": "imagery-cluster",
+              "label": "可归宿的生活图景",
+              "members": [
+                "small-bridge",
+                "flowing-water",
+                "homes"
+              ]
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "home-atmosphere",
+              "kind": "note",
+              "role": "atmosphere",
+              "content": {
+                "text": "安静、温暖、有生活气息"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "home-images",
+                "align": "center",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-road",
+      "purpose": "补入旅途意象，看到环境怎样由静态秋景转向游子的现实处境。",
+      "beats": [
+        {
+          "key": "beat-travel-images",
+          "say": "“古道、西风、瘦马”把视线转到旅途。“古道”漫长荒凉，“西风”寒凉肃杀，“瘦马”显出跋涉的疲惫；环境不再只是秋天的背景，也开始具体包围并压迫赶路的人。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "ancient-road",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "古道",
+                "feature": "漫长、荒凉的旅途"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "small-bridge",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "west-wind",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "西风",
+                "feature": "寒凉、肃杀"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "ancient-road",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "thin-horse",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "瘦马",
+                "feature": "长期跋涉后的疲惫"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "west-wind",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "travel-images",
+              "role": "imagery-cluster",
+              "label": "寒凉而疲惫的旅途",
+              "members": [
+                "ancient-road",
+                "west-wind",
+                "thin-horse"
+              ]
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "travel-atmosphere",
+              "kind": "note",
+              "role": "atmosphere",
+              "content": {
+                "text": "荒凉 + 寒冷 + 疲惫：景物开始显出赶路者的处境"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "travel-images",
+                "align": "center",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-atmosphere-builds",
+          "say": "三组意象按顺序叠加：先是衰败暗淡的秋景，再闪出温暖的人家，随后落到寒冷疲惫的旅途。于是整体氛围不只是“悲秋”，而是一个孤身旅人看见归宿、却仍在荒凉路上的处境。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "bleak-to-home",
+              "from": "bleak-images",
+              "to": "home-images",
+              "relation": "由萧瑟秋景转入温暖归宿的短暂映照"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "home-to-travel",
+              "from": "home-images",
+              "to": "travel-images",
+              "relation": "由可归宿的生活图景转回寒凉疲惫的现实旅途"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "combined-atmosphere",
+              "kind": "diagram",
+              "role": "reasoning-chain",
+              "content": {
+                "sequence": [
+                  "衰败暗淡的秋景",
+                  "温暖可归的人家",
+                  "寒冷疲惫的旅途"
+                ],
+                "result": "孤身旅人看见归宿，却仍在荒凉路上"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "travel-images",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "bleak-images",
+                "home-images",
+                "travel-images",
+                "bleak-to-home",
+                "home-to-travel"
+              ],
+              "intent": "呈现三组意象逐层组合成环境氛围的过程"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-contrast",
+      "purpose": "分析“断肠人”与眼前景物的对照，说明情感为何在结尾集中爆发。",
+      "beats": [
+        {
+          "key": "beat-sunset",
+          "say": "“夕阳西下”补上时间压力：白昼即将结束，暮色更深，而旅人仍没有抵达归宿。它把开头“昏鸦”的暗淡推进到即将入夜，也让漂泊处境更紧迫。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "setting-sun",
+              "kind": "text",
+              "role": "imagery",
+              "content": {
+                "text": "夕阳西下",
+                "feature": "白昼将尽，暮色加深"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "travel-images",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "dusk-deepens",
+              "from": "evening-crow",
+              "to": "setting-sun",
+              "relation": "从昏暗的归鸦推进到白昼将尽"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "time-pressure",
+              "kind": "note",
+              "role": "inference",
+              "content": {
+                "text": "天色将晚，而旅人仍未归宿：漂泊感与紧迫感加深"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "setting-sun",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        },
+        {
+          "key": "beat-heartbroken-traveler",
+          "say": "最后才点出“断肠人在天涯”。“断肠人”不是突然贴上的主题标签：他的前景有归巢的昏鸦和有人居住的“人家”，他自己却骑着瘦马停留在古道与天涯。别人或动物可归、眼前人家可居，与自己无家可归形成强烈对照，思乡与孤独因此集中显现。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "heartbroken-traveler",
+              "kind": "text",
+              "role": "human-presence",
+              "content": {
+                "text": "断肠人在天涯",
+                "position": "远离故乡，仍在漂泊"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "setting-sun",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "crow-traveler-contrast",
+              "from": "evening-crow",
+              "to": "heartbroken-traveler",
+              "relation": "昏鸦似可归巢，游子却仍漂泊"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "home-traveler-contrast",
+              "from": "homes",
+              "to": "heartbroken-traveler",
+              "relation": "眼前有人家可居，游子却远在天涯"
+            },
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "horse-traveler-link",
+              "from": "thin-horse",
+              "to": "heartbroken-traveler",
+              "relation": "瘦马的疲态映照游子长期跋涉的疲惫"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "contrast-result",
+              "kind": "note",
+              "role": "emotional-inference",
+              "content": {
+                "evidence": "可归的昏鸦与人家，对照仍在古道天涯的断肠人",
+                "emotion": "思乡、孤独、漂泊无归之痛"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "heartbroken-traveler",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "home-traveler-contrast",
+              "emphasis": "突出“眼前有家”与“自己无归”的核心对照"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-evidence",
+      "purpose": "把意象、氛围、处境和情感连成完整的文本证据链。",
+      "beats": [
+        {
+          "key": "beat-evidence-chain",
+          "say": "从文本证据走向情感，可以沿着这条链条：枯、老、昏造成衰败暗淡；小桥流水人家显出可归的温暖；古道西风瘦马呈现寒凉疲惫；夕阳西下又加深未归的紧迫；这些景物共同围住“天涯”的断肠人，才支持我们读出思乡、孤独和漂泊无归之痛。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evidence-chain",
+              "kind": "diagram",
+              "role": "text-to-emotion-reasoning",
+              "content": {
+                "stages": [
+                  {
+                    "text": "枯藤、老树、昏鸦",
+                    "effect": "衰败暗淡"
+                  },
+                  {
+                    "text": "小桥、流水、人家",
+                    "effect": "温暖而可归"
+                  },
+                  {
+                    "text": "古道、西风、瘦马",
+                    "effect": "寒凉、荒远、疲惫"
+                  },
+                  {
+                    "text": "夕阳西下",
+                    "effect": "天晚未归，紧迫加深"
+                  },
+                  {
+                    "text": "断肠人在天涯",
+                    "effect": "思乡、孤独、漂泊无归之痛集中显现"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "summary-board",
+                "align": "start"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "atmosphere-to-traveler",
+              "from": "combined-atmosphere",
+              "to": "heartbroken-traveler",
+              "relation": "层层累积的环境氛围具体化为游子的漂泊处境"
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "traveler-to-emotion",
+              "from": "heartbroken-traveler",
+              "to": "contrast-result",
+              "relation": "无家可归的对照支持思乡、孤独与悲痛的情感判断"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "evidence-chain",
+                "atmosphere-to-traveler",
+                "traveler-to-emotion"
+              ],
+              "intent": "收束为从意象证据到环境、处境和情感的完整推导"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "全曲不是先宣布“游子悲秋”，而是让枯藤老树昏鸦、小桥流水人家、古道西风瘦马和夕阳依次出现：萧瑟背景中嵌入可归的温暖，再回到寒凉疲惫的旅途；当“断肠人”现身时，可归的昏鸦与人家便反衬他的天涯漂泊。思乡、孤独与无归之痛，是由这些文本证据一步步推导出来的。",
+    "focus": [
+      "evidence-chain",
+      "heartbroken-traveler",
+      "home-traveler-contrast",
+      "traveler-to-emotion"
+    ]
+  }
+}

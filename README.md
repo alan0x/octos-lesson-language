@@ -6,12 +6,12 @@ Octos Lesson Language（OLL）是一种用于描述 AI 家庭教师课堂行为�
 
 ## 当前状态
 
-OLL 处于 **Exploration Draft**。当前目标不是宣布 v0.1 已经成立，而是完成两个可证伪的实验：
+OLL 处于 **v0.1 Release Candidate 1**。Authoring 与 Canonical 协议表面已冻结，可进入参考前端 Runtime 集成；它仍不是稳定版，也不代表儿童产品已经完成验收。
 
 1. 表达能力：手写 OLL 是否足以描述真实、渐进、可继续的跨学科课程；
 2. 可生成性：目标大模型是否能稳定生成高质量的 OLL Authoring Profile。
 
-在这两个实验通过前，不冻结 v0.1，不承诺兼容性。
+表达、可生成、headless playback 与教学质量门已经完成。RC 阶段只接受兼容性修复；新增动作或改变语义必须有 decision record 和回归证据。
 
 ## 两个 Profile
 
@@ -45,6 +45,7 @@ schema/canonical/               Runtime Schema
 packages/core/                  TypeScript Schema/Validator/Normalizer/Reducer
 packages/eval-runner/           可恢复的自动模型评测 CLI
 packages/player-core/           DOM-free 播放状态机与 checkpoint 内核
+packages/quality-runner/        版本化教学质量 judge、宿主门禁与审计产物
 examples/                       完整课程示例
 fixtures/                       非法和恢复测试输入
 evals/                          模型可生成性评测
@@ -86,4 +87,6 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 
 三份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试。
 
-几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。当前下一门是独立教学质量抽样；通过前不接入 `/learn`。
+几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。
+
+教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。RC 决策、限制和下一门见 `RELEASE-CANDIDATE.md`。下一阶段是参考前端 Runtime 的真实视觉/语音播放验收，不直接绑定生产 `/learn`。

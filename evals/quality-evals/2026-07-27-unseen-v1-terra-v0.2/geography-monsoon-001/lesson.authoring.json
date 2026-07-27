@@ -1,0 +1,597 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "东亚季风：海陆热力差异如何改变风向与性质",
+    "goals": [
+      "理解海洋与陆地升温、降温速度不同",
+      "用海陆气压差解释夏季风与冬季风的方向",
+      "说明夏季风湿润、冬季风干冷的原因",
+      "理解冬夏季风方向相反的完整因果链"
+    ]
+  },
+  "steps": [
+    {
+      "key": "thermal-basis",
+      "purpose": "建立海陆升温和降温速度不同这一季风成因基础。",
+      "beats": [
+        {
+          "key": "thermal-title-beat",
+          "say": "理解东亚季风，先抓住起点：海陆热力差异。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "thermal-title",
+              "kind": "text",
+              "role": "section-title",
+              "content": {
+                "text": "起点：海陆热力差异"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "thermal-foundation",
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "key": "land-rate-beat",
+          "say": "陆地升温快、降温也快，因此气温随季节变化较大。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "land-rate",
+              "kind": "note",
+              "role": "key-fact",
+              "content": {
+                "text": "陆地：升温快，降温快"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "thermal-title",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "land-rate",
+              "emphasis": "突出“快”"
+            }
+          ]
+        },
+        {
+          "key": "ocean-rate-beat",
+          "say": "海洋升温慢、降温也慢，气温随季节变化较小。正是这种速度差，让同一季节的海陆温度不同。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "ocean-rate",
+              "kind": "note",
+              "role": "key-fact",
+              "content": {
+                "text": "海洋：升温慢，降温慢"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "land-rate",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "ocean-rate",
+              "emphasis": "突出“慢”"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "thermal-contrast",
+              "role": "comparison",
+              "label": "海陆升温降温速度对比",
+              "members": [
+                "land-rate",
+                "ocean-rate"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "thermal-contrast"
+              ],
+              "intent": "对比海陆热力性质"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "summer-monsoon",
+      "purpose": "沿温度、气压和风向的因果链解释东亚夏季风。",
+      "beats": [
+        {
+          "key": "summer-temperature-beat",
+          "say": "夏季，陆地升温快，所以东亚大陆比邻近海洋热。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-title",
+              "kind": "text",
+              "role": "section-title",
+              "content": {
+                "text": "夏季：陆地热，海洋较凉"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "summer-monsoon",
+                "align": "center"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-land",
+              "kind": "shape",
+              "role": "land-state",
+              "content": {
+                "label": "东亚大陆",
+                "temperature": "较热"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "summer-title",
+                "align": "end",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-ocean",
+              "kind": "shape",
+              "role": "ocean-state",
+              "content": {
+                "label": "邻近海洋",
+                "temperature": "较凉"
+              },
+              "place": {
+                "relation": "left_of",
+                "anchor": "summer-land",
+                "align": "center",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "summer-pressure-beat",
+          "say": "较热的大陆近地面空气受热上升，形成低压；较凉的海洋上形成相对高压。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-low",
+              "kind": "text",
+              "role": "pressure-label",
+              "content": {
+                "text": "大陆：低压"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "summer-land",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-high",
+              "kind": "text",
+              "role": "pressure-label",
+              "content": {
+                "text": "海洋：高压"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "summer-ocean",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "summer-low",
+              "emphasis": "突出低压"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "summer-high",
+              "emphasis": "突出高压"
+            }
+          ]
+        },
+        {
+          "key": "summer-direction-beat",
+          "say": "近地面空气由高压流向低压，因此夏季风从海洋吹向陆地，即“海洋→陆地”。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "summer-wind",
+              "from": "summer-high",
+              "to": "summer-low",
+              "relation": "近地面空气由高压流向低压",
+              "label": "夏季风：海洋→陆地"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "summer-wind",
+              "emphasis": "突出由海洋指向陆地的方向"
+            }
+          ]
+        },
+        {
+          "key": "summer-moisture-beat",
+          "say": "夏季风经过广阔海洋，携带较多水汽，吹到陆地后带来湿润空气和较多降水，所以性质温暖湿润。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "summer-nature",
+              "kind": "note",
+              "role": "wind-property",
+              "content": {
+                "text": "经过海洋，水汽多 → 夏季风温暖湿润"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "summer-low",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "summer-property-link",
+              "from": "summer-ocean",
+              "to": "summer-nature",
+              "relation": "提供水汽"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "summer-system",
+              "role": "causal-system",
+              "label": "东亚夏季风",
+              "members": [
+                "summer-land",
+                "summer-ocean",
+                "summer-low",
+                "summer-high",
+                "summer-nature"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "winter-monsoon",
+      "purpose": "沿相反的温度和气压格局解释东亚冬季风。",
+      "beats": [
+        {
+          "key": "winter-temperature-beat",
+          "say": "冬季，陆地降温快，所以东亚大陆比邻近海洋冷。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-title",
+              "kind": "text",
+              "role": "section-title",
+              "content": {
+                "text": "冬季：陆地冷，海洋较暖"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "winter-monsoon",
+                "align": "center"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-land",
+              "kind": "shape",
+              "role": "land-state",
+              "content": {
+                "label": "东亚大陆",
+                "temperature": "较冷"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "winter-title",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-ocean",
+              "kind": "shape",
+              "role": "ocean-state",
+              "content": {
+                "label": "邻近海洋",
+                "temperature": "较暖"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "winter-land",
+                "align": "center",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "winter-pressure-beat",
+          "say": "寒冷大陆近地面空气冷却下沉，形成高压；相对温暖的海洋上形成低压。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-high",
+              "kind": "text",
+              "role": "pressure-label",
+              "content": {
+                "text": "大陆：高压"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "winter-land",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-low",
+              "kind": "text",
+              "role": "pressure-label",
+              "content": {
+                "text": "海洋：低压"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "winter-ocean",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "winter-high",
+              "emphasis": "突出高压"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "winter-low",
+              "emphasis": "突出低压"
+            }
+          ]
+        },
+        {
+          "key": "winter-direction-beat",
+          "say": "近地面空气仍由高压流向低压，因此冬季风从陆地吹向海洋，即“陆地→海洋”。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "during_speech",
+              "as": "winter-wind",
+              "from": "winter-high",
+              "to": "winter-low",
+              "relation": "近地面空气由高压流向低压",
+              "label": "冬季风：陆地→海洋"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "winter-wind",
+              "emphasis": "突出由陆地指向海洋的方向"
+            }
+          ]
+        },
+        {
+          "key": "winter-nature-beat",
+          "say": "冬季风来自寒冷大陆，空气温度低；它没有先经过广阔海洋补充大量水汽，因此通常干冷。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "winter-nature",
+              "kind": "note",
+              "role": "wind-property",
+              "content": {
+                "text": "来自寒冷大陆，水汽少 → 冬季风干冷"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "winter-high",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "winter-property-link",
+              "from": "winter-land",
+              "to": "winter-nature",
+              "relation": "提供寒冷干燥空气"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "winter-system",
+              "role": "causal-system",
+              "label": "东亚冬季风",
+              "members": [
+                "winter-land",
+                "winter-ocean",
+                "winter-high",
+                "winter-low",
+                "winter-nature"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "seasonal-reversal",
+      "purpose": "合并冬夏两条因果链，解释季风为何随季节反向。",
+      "beats": [
+        {
+          "key": "reversal-chain-beat",
+          "say": "冬夏季风相反，不是风自己改变方向，而是季节变化使海陆冷热关系对调，气压高低随之对调，最终让近地面风向反转。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "reversal-chain",
+              "kind": "diagram",
+              "role": "causal-chain",
+              "content": {
+                "sequence": [
+                  "季节改变",
+                  "海陆冷热关系对调",
+                  "海陆气压高低对调",
+                  "风向反转"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "synthesis",
+                "align": "center"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "reversal-chain",
+              "emphasis": "突出完整因果链"
+            }
+          ]
+        },
+        {
+          "key": "final-contrast-beat",
+          "say": "完整对比是：夏季大陆热、低压，风由海洋吹向陆地，温暖湿润；冬季大陆冷、高压，风由陆地吹向海洋，干冷。两季都遵循同一条规则：近地面空气由高压流向低压。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "season-table",
+              "kind": "table",
+              "role": "summary-comparison",
+              "content": {
+                "columns": [
+                  "季节",
+                  "大陆状态",
+                  "海陆气压",
+                  "风向",
+                  "性质"
+                ],
+                "rows": [
+                  [
+                    "夏季",
+                    "较热",
+                    "海洋高压、大陆低压",
+                    "海洋→陆地",
+                    "温暖湿润"
+                  ],
+                  [
+                    "冬季",
+                    "较冷",
+                    "大陆高压、海洋低压",
+                    "陆地→海洋",
+                    "干冷"
+                  ]
+                ],
+                "rule": "近地面空气由高压流向低压"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "reversal-chain",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "monsoon-summary",
+              "role": "lesson-synthesis",
+              "label": "东亚冬夏季风总结",
+              "members": [
+                "reversal-chain",
+                "season-table"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "summer-wind",
+                "winter-wind",
+                "monsoon-summary"
+              ],
+              "intent": "聚焦冬夏风向、性质及季节反转原因"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "海陆升温和降温速度不同，使冬夏两季的海陆冷热关系与气压高低发生对调。夏季海洋高压、大陆低压，风从海洋吹向陆地，温暖湿润；冬季大陆高压、海洋低压，风从陆地吹向海洋，干冷。季风反向的核心是气压格局随季节反转，而近地面空气始终由高压流向低压。",
+    "focus": [
+      "summer-wind",
+      "winter-wind",
+      "monsoon-summary"
+    ]
+  }
+}

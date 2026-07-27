@@ -1,0 +1,33 @@
+{
+  "case_id": "geography-latitude-climate-001",
+  "domain": "geography",
+  "language": "zh-CN",
+  "learner_request": "从太阳高度角和单位面积获得能量的差异，解释为什么低纬通常比高纬暖。",
+  "required_coverage": [
+    "近直射与斜射示意",
+    "相同能量分布面积不同",
+    "穿过大气路径差异",
+    "纬度不是唯一气候因素"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "太阳高度角"
+      ],
+      [
+        "单位面积"
+      ],
+      [
+        "斜射",
+        "直射"
+      ],
+      [
+        "大气"
+      ],
+      [
+        "不是唯一",
+        "还受"
+      ]
+    ]
+  }
+}

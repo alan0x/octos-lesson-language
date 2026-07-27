@@ -1,0 +1,34 @@
+{
+  "case_id": "science-newton-force-001",
+  "domain": "science",
+  "language": "zh-CN",
+  "learner_request": "一个2kg箱子在水平地面上被10N水平拉力拉动，摩擦力4N。用受力图讲净力和加速度。",
+  "required_coverage": [
+    "四个力的受力图",
+    "水平方向净力6N",
+    "F=ma",
+    "加速度3m/s²"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "10-4",
+        "6N",
+        "6 N"
+      ],
+      [
+        "F=ma",
+        "F = ma"
+      ],
+      [
+        "3m/s",
+        "3 m/s"
+      ],
+      [
+        "重力",
+        "支持力",
+        "法向力"
+      ]
+    ]
+  }
+}

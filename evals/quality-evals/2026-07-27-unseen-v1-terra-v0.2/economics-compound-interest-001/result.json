@@ -1,0 +1,99 @@
+{
+  "case_id": "economics-compound-interest-001",
+  "domain": "economics",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "economics-compound-interest-001",
+    "dimensions": {
+      "correctness": {
+        "score": 3,
+        "evidence": [
+          "formula-beat：给出正确的按年复利公式“1000×1.05^n”。",
+          "year-one-beat、year-two-beat、year-three-beat：前三年余额1050、1102.5、1157.625及利息计算均正确。",
+          "comparison-table-beat：单利余额1050、1100、1150，及第3年差额7.625均正确。"
+        ],
+        "concerns": [
+          "formula-beat 将按年复利称为“连续复利”；严格术语中连续复利通常使用 e^(rt)，这里应称“连续乘n次”或“按年复利n年”。"
+        ]
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "interest-reinvested-beat：明确教授“每年产生的利息会加入余额，成为下一年的计息本金”。",
+          "formula-beat：实际讲解“第n年末余额为1000×1.05^n”。",
+          "compound-table-beat：以表格呈现前三年的年初余额、利息和年末余额。",
+          "simple-rule-beat、comparison-table-beat、difference-beat：计算并解释单利与复利的机制和数值差异。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "compound-idea-step：从年增长因子、利息并入本金到公式建立。",
+          "year-one-beat 至 year-three-beat：逐年展开计算，而非一次贴出结果。",
+          "compound-table-beat：在逐年推导后汇总表格并指出利息递增规律。",
+          "simple-interest-comparison-step：先建单利规则，后给数值比较和结论。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "interest-reinvested-beat：讲述利息加入余额，compound-rule 同步展示对应四步机制。",
+          "year-two-beat：讲述1050为新本金及52.5利息，year-two 写出相同计算。",
+          "compound-table-beat：say 中列出的三年数据与 compound-table 行列一致。",
+          "comparison-table-beat：say 中的单利、复利和差额与 comparison-table 一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "given-values、compound-rule、compound-formula：条件、机制图和公式分区组织，并通过 rule-to-formula 连接。",
+          "year-one、year-two、year-three：以相邻板书和连接线展示余额如何成为下一年本金。",
+          "compound-table：用结构化表格汇总前三年数据及规律。",
+          "comparison-table、difference-summary：用对比表和机制图突出单利、复利及结果差异。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部 beats 均为讲解、写板和聚焦动作，没有要求学习者中途回答或完成测试。",
+          "close.summary：在同一轮内完整复述公式、前三年结果和与单利的比较。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅含空 assets，lesson 未虚构学习者背景、能力或偏好。",
+          "各 beat 只依据题目给定的本金、利率和按年复利条件展开。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "lesson 的 say、goals 和 close 未声称学习者已经理解、掌握或存在特定困难。",
+          "差异结论均由 comparison-table-beat 的可见计算支撑，而非对学习者作无证据判断。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "未对 Authoring Schema、别名引用或 Canonical Events 可规范化性评分；本评估遵循题设要求，仅评价教学质量。"
+    ]
+  },
+  "gate": {
+    "total_score": 31,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

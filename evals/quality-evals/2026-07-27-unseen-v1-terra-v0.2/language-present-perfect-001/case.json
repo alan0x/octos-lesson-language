@@ -1,0 +1,32 @@
+{
+  "case_id": "language-present-perfect-001",
+  "domain": "language",
+  "language": "zh-CN",
+  "learner_request": "比较 I lost my key. 和 I have lost my key.，讲清一般过去时与现在完成时关注点的不同。",
+  "required_coverage": [
+    "过去事件与当前结果的区别",
+    "have/has + 过去分词",
+    "时间线",
+    "不能与明确过去时间随意连用"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "I lost my key"
+      ],
+      [
+        "I have lost my key"
+      ],
+      [
+        "have/has",
+        "have +",
+        "has +"
+      ],
+      [
+        "现在",
+        "current",
+        "当前"
+      ]
+    ]
+  }
+}

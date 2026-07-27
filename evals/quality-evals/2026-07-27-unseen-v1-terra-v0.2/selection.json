@@ -1,0 +1,107 @@
+[
+  {
+    "case_id": "math-fraction-compare-001",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "math-linear-word-problem-001",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "math-probability-tree-001",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "math-slope-intercept-001",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "science-photosynthesis-001",
+    "domain": "science",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "science-series-circuit-001",
+    "domain": "science",
+    "source_repetition": 2
+  },
+  {
+    "case_id": "science-newton-force-001",
+    "domain": "science",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "science-water-cycle-001",
+    "domain": "science",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "science-state-change-001",
+    "domain": "science",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "language-english-passive-001",
+    "domain": "language",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "language-present-perfect-001",
+    "domain": "language",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "language-argument-structure-001",
+    "domain": "language",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "language-poem-imagery-001",
+    "domain": "language",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "history-silk-road-001",
+    "domain": "history",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "history-industrial-revolution-001",
+    "domain": "history",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "geography-monsoon-001",
+    "domain": "geography",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "geography-latitude-climate-001",
+    "domain": "geography",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "computing-binary-search-001",
+    "domain": "computing",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "computing-loop-trace-001",
+    "domain": "computing",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "economics-compound-interest-001",
+    "domain": "economics",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "music-time-signature-001",
+    "domain": "music",
+    "source_repetition": 1
+  }
+]

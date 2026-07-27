@@ -1,0 +1,63 @@
+{
+  "case_id": "science-water-cycle-001",
+  "domain": "science",
+  "language": "zh-CN",
+  "learner_request": "结合水循环图片，按能量驱动和水的路径讲解蒸发、凝结、降水、径流。",
+  "session_context": {
+    "session_id": "eval-water-cycle",
+    "assets": [
+      {
+        "asset_id": "asset-water-cycle-001",
+        "media_type": "image/png",
+        "alt": "水循环示意图",
+        "regions": [
+          {
+            "region_id": "asset-water-cycle-001#ocean",
+            "label": "海洋"
+          },
+          {
+            "region_id": "asset-water-cycle-001#cloud",
+            "label": "云"
+          },
+          {
+            "region_id": "asset-water-cycle-001#mountain",
+            "label": "山地"
+          },
+          {
+            "region_id": "asset-water-cycle-001#river",
+            "label": "河流"
+          }
+        ]
+      }
+    ]
+  },
+  "required_coverage": [
+    "使用受控图片",
+    "太阳能驱动蒸发",
+    "凝结成云",
+    "降水与径流回到海洋"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "asset-water-cycle-001"
+      ],
+      [
+        "太阳",
+        "solar"
+      ],
+      [
+        "蒸发"
+      ],
+      [
+        "凝结"
+      ],
+      [
+        "降水"
+      ],
+      [
+        "径流"
+      ]
+    ]
+  }
+}

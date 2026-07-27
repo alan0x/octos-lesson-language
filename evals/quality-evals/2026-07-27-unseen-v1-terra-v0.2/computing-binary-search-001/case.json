@@ -1,0 +1,34 @@
+{
+  "case_id": "computing-binary-search-001",
+  "domain": "computing",
+  "language": "zh-CN",
+  "learner_request": "在有序数组 [2,5,8,12,16,23,38] 中查找23，用逐轮表格讲二分查找并解释为什么必须有序。",
+  "required_coverage": [
+    "low mid high状态",
+    "逐轮排除一半",
+    "找到23",
+    "有序性保证排除方向",
+    "O(log n)"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "2,5,8,12,16,23,38",
+        "[2,5,8,12,16,23,38]"
+      ],
+      [
+        "low"
+      ],
+      [
+        "mid"
+      ],
+      [
+        "high"
+      ],
+      [
+        "O(log n)",
+        "log n"
+      ]
+    ]
+  }
+}

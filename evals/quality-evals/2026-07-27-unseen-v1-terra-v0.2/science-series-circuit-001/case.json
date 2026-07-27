@@ -1,0 +1,59 @@
+{
+  "case_id": "science-series-circuit-001",
+  "domain": "science",
+  "language": "zh-CN",
+  "learner_request": "结合我上传的串联电路图，讲清楚为什么两只灯泡电流相同，以及其中一只断路会怎样。",
+  "session_context": {
+    "session_id": "eval-circuit",
+    "assets": [
+      {
+        "asset_id": "asset-circuit-001",
+        "media_type": "image/png",
+        "alt": "电池、开关和两只灯泡组成的串联电路",
+        "regions": [
+          {
+            "region_id": "asset-circuit-001#battery",
+            "label": "电池"
+          },
+          {
+            "region_id": "asset-circuit-001#lamp-a",
+            "label": "灯泡A"
+          },
+          {
+            "region_id": "asset-circuit-001#lamp-b",
+            "label": "灯泡B"
+          },
+          {
+            "region_id": "asset-circuit-001#wire",
+            "label": "导线回路"
+          }
+        ]
+      }
+    ]
+  },
+  "required_coverage": [
+    "引用受控图片区域",
+    "串联只有一条电流路径",
+    "I1=I2",
+    "任一处断路全回路无电流"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "asset-circuit-001"
+      ],
+      [
+        "I1=I2",
+        "I₁=I₂",
+        "I_1=I_2"
+      ],
+      [
+        "一条路径",
+        "唯一"
+      ],
+      [
+        "断路"
+      ]
+    ]
+  }
+}

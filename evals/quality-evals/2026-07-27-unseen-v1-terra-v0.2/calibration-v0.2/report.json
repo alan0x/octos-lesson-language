@@ -1,0 +1,552 @@
+{
+  "profile": "octos.lesson-quality.eval",
+  "version": "0.2",
+  "created_at": "2026-07-27T09:52:05.990Z",
+  "judge_model": "gpt-5.6-terra",
+  "selected": 5,
+  "evaluated": 5,
+  "judge_invalid": 0,
+  "gate_passed": 1,
+  "gate_failed": 4,
+  "average_score": 28.4,
+  "by_domain": {
+    "math": {
+      "evaluated": 2,
+      "passed": 1,
+      "average_score": 29
+    },
+    "science": {
+      "evaluated": 1,
+      "passed": 0,
+      "average_score": 28
+    },
+    "computing": {
+      "evaluated": 1,
+      "passed": 0,
+      "average_score": 30
+    },
+    "language": {
+      "evaluated": 1,
+      "passed": 0,
+      "average_score": 26
+    }
+  },
+  "results": [
+    {
+      "case_id": "calibration-control-taxi",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "calibration-control-taxi",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "step calculate-eight-kilometer-fare / beat finish-fare-calculation: \"13+2.3×5=13+11.5=24.5元\"",
+              "step build-general-function / beat assemble-piecewise-function: 两个分支分别为 13（0≤x≤3）和 13+2.3(x-3)（x>3）",
+              "beat verify-eight-kilometers: 正确选择 x>3 分支并代入 x=8"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat calculate-extra-distance 实际讲解并板书 \"8-3=5公里\"，区分起步与超出里程",
+              "beat build-fare-expression 板书 \"13+2.3×(8-3)\"",
+              "beat assemble-piecewise-function 实际板书完整分段函数",
+              "beat finish-fare-calculation 给出并解释结果 \"24.5元\""
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "steps 依次为计价规则、8公里拆分、具体计算、推广函数",
+              "beat calculate-extra-distance 先得到 5 公里，随后 beat build-fare-expression 才建立费用式",
+              "beat verify-eight-kilometers 将通用函数回代验证具体例子"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 3,
+            "evidence": [
+              "beat show-base-rule 与 action base-rule 都表达13元包含前3公里",
+              "beat calculate-extra-distance 的说法和 action extra-distance 均为 \"8-3=5公里\"",
+              "beat write-second-branch 的说法和 action extra-branch 均为 13+2.3(x-3)"
+            ],
+            "concerns": [
+              "beat build-fare-expression 的口述“13加2.3乘以8减3”未明确口读括号；虽板书为 13+2.3×(8-3)，口述本身可能被理解为不同的运算顺序。"
+            ]
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "通过 main-board、worked-example、generalization 三个 region 分开规则、例题与推广",
+              "action total-to-extra、extra-to-fare、function-to-check 显示关键因果/代入关系",
+              "action function-group 将变量定义、分支和最终函数组织为同一模型",
+              "最后 focus 同时聚焦分段函数和代入验证"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "lesson.mode 为 explain，所有步骤连续完成",
+              "从规则到结果、函数和回代验证均在 beats 与 close 中给出",
+              "未要求学习者中途回答，也没有悬置的测试题"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets，lesson 未虚构学习者背景或能力",
+              "lesson.adaptation.context_refs 为 learner_request，教学顺序直接围绕请求中的8公里与通用函数"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 beat 只陈述计价规则、运算和函数推导",
+              "未声称学习者已掌握、会混淆或具有任何未经提供的特征"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 31,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "calibration-defect-interruption",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "calibration-defect-interruption",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "Beat `conserve-charge` correctly relates equal current in an unbranched steady circuit to no charge accumulation.",
+              "Beat `state-equality` states the closed-circuit result `I₁=I₂`.",
+              "Beat `whole-circuit-zero` correctly concludes an open series path gives `I₁=I₂=0`."
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "Beat `show-circuit` displays `asset-circuit-001` and references its controlled regions for battery, lamps A/B, and wire.",
+              "Beat `identify-path` explicitly teaches that the series circuit has one path and no branches.",
+              "Beat `state-equality` explicitly teaches `I₁=I₂`.",
+              "Beats `introduce-break` through `generalize-break` teach that any break makes the whole circuit have no current."
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "The lesson progresses from identifying the supplied circuit (`show-circuit`, `identify-path`) to defining currents (`mark-currents`), explaining conservation (`conserve-charge`), then deriving `I₁=I₂` (`state-equality`).",
+              "The open-circuit explanation proceeds from a concrete break at lamp A (`introduce-break`) to the whole-circuit consequence (`whole-circuit-zero`) and general rule (`generalize-break`)."
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "`identify-path` narration about the battery–A–B–battery route matches the `single-path` diagram sequence and no-branch statement.",
+              "`state-equality` narration matches the `equal-current` board expression and its closed-loop condition.",
+              "`whole-circuit-zero` narration matches `zero-current` showing `I₁=I₂=0` and both lamps off.",
+              "`compare-states` narration matches the `state-comparison` table."
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "The lesson uses the provided image with region-level references in `circuit-image`, then builds a spatially related `single-path` diagram.",
+              "`charge-rule` → `equal-current` visually represents the explanatory relationship rather than merely repeating prose.",
+              "The open-circuit causal chain (`open-at-a`, `zero-current`, `open-rule`) and final `state-comparison` table organize both states clearly."
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 0,
+            "evidence": [
+              "Beat `compare-states` says: `讲到这里先停下，请你回答为什么两灯电流相同；你回答后我再继续。`"
+            ],
+            "concerns": [
+              "The lesson explicitly pauses for learner output and promises further continuation, so it does not complete in one uninterrupted teaching round."
+            ]
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Beat `show-circuit` directly uses the uploaded `asset-circuit-001` and its controlled regions.",
+              "The lesson addresses the exact requested circuit phenomena: equal series current and the consequence of one lamp opening."
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "The lesson makes no claims about the learner's prior knowledge, ability, misconceptions, or performance.",
+              "The only learner-directed statement in `compare-states` is a prompt to answer, not an unsupported judgment about the learner."
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [
+          {
+            "severity": "major",
+            "category": "pedagogy",
+            "description": "The lesson violates the required one-round continuous-completion constraint by stopping for a learner answer and stating that it will continue only afterward.",
+            "evidence": "Beat `compare-states`: `讲到这里先停下，请你回答为什么两灯电流相同；你回答后我再继续。`"
+          }
+        ],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 28,
+        "maximum_score": 32,
+        "passed": false,
+        "reasons": [
+          "continuous_completion below 3",
+          "1 critical error(s)"
+        ]
+      }
+    },
+    {
+      "case_id": "calibration-defect-missing-core",
+      "domain": "computing",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "calibration-defect-missing-core",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "setup/define-bounds：正确给出 low=0、high=6、mid=floor((0+6)/2)=3。",
+              "trace/round-one：由 12<23 且数组递增，正确排除下标 0..3 并令 low=4。",
+              "trace/round-two：正确计算 mid=5，并在下标 5 找到 23。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 2,
+            "evidence": [
+              "setup/define-bounds 实际讲解 low、mid、high 的含义与初值。",
+              "trace/round-one 和 trace/round-two 用逐轮表格展示排除范围并找到 23。",
+              "trace/round-one 明确说明“因为 12<23，而且数组递增，所以 23 只可能在 mid 右侧”。"
+            ],
+            "concerns": [
+              "O(log n) 仅出现在 lesson.goals，所有 Beat 的 say 与 close 均未讲解其含义、推导或复杂度；明确核心要求未被实际教授。"
+            ]
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "setup 先建立数组、下标和边界定义，再进入 trace。",
+              "trace/table-header 先说明表格字段，随后按 round-one、round-two 逐轮构建结果。",
+              "trace/group-trace 在完成两轮后回顾完整轨迹。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "setup/show-array 的 say 所述数组和下标与 array 表格一致。",
+              "trace/round-one 的比较、排除下标 0..3、low=4 均写入 round-one-row，并由 round-one-range 可视化。",
+              "trace/round-two 的 low=4、mid=5、high=6、找到下标 5 与 round-two-row、found-result 一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "array 将元素与下标对齐，支撑后续边界讨论。",
+              "trace-header、round-one-row、round-two-row 形成结构化逐轮追踪表。",
+              "round-one-range 用排除/保留区域呈现范围缩小，found-result 明确标出结果。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "两轮查找、结果和 close 总结都在单次讲述中完成。",
+              "未要求学习者回答、暂停等待或输出测试题。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets，Lesson 未虚构学习者背景或偏好。",
+              "课程以通用的中性讲解组织内容。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 Beat 说明算法状态与推导，未声称学习者已经理解、掌握或存在特定困难。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [
+          {
+            "severity": "major",
+            "category": "coverage",
+            "description": "明确要求的 O(log n) 完全没有在 Beat 的 say、可见 actions 或 close 中教授；目标字段不构成实际覆盖。",
+            "evidence": "lesson.goals 含“理解时间复杂度 O(log n)”，但 setup、trace 的全部 say 和 close.summary 只讲两轮查找过程及找到 23。"
+          }
+        ],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 30,
+        "maximum_score": 32,
+        "passed": false,
+        "reasons": [
+          "request_coverage below 3",
+          "1 critical error(s)"
+        ]
+      }
+    },
+    {
+      "case_id": "calibration-defect-unsupported-profile",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "calibration-defect-unsupported-profile",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-autumn-images 将“枯、老、昏”推为衰败、暗淡的秋景。",
+              "beat-heartbroken-traveler 以昏鸦、人家与天涯游子构成归宿对照，并落到思乡、孤独、漂泊。",
+              "beat-evidence-chain 明确呈现“文本—效果—情感”的推导链。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-autumn-images、beat-home-images、beat-travel-images 实际列举并解释关键意象。",
+              "beat-atmosphere-builds 实际讲解三组意象如何组合成环境与处境。",
+              "beat-heartbroken-traveler 实际讲解“断肠人”与可归的昏鸦、人家的对照。",
+              "beat-evidence-chain 与 close 均从具体文本证据推至游子情感。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "step-images 先分组辨认意象，step-road 再补入旅途意象。",
+              "beat-atmosphere-builds 将各组景物累积为处境，随后 step-contrast 解释结尾情感集中显现。",
+              "beat-evidence-chain 最后收束为完整证据链，而非开头直接给主题结论。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-atmosphere-builds 的 say 所述三组递进，与 bleak-to-home、home-to-travel 和 combined-atmosphere 一致。",
+              "beat-heartbroken-traveler 的归宿对照，与 crow-traveler-contrast、home-traveler-contrast、contrast-result 一致。",
+              "beat-evidence-chain 的逐项讲述与 evidence-chain 图示 stages 对应。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "各意象以分组 bleak-images、home-images、travel-images 组织，避免零散罗列。",
+              "beat-atmosphere-builds 用连接线和 reasoning-chain 图示表达景物组合关系。",
+              "beat-heartbroken-traveler 用多条对照连接线及 contrast-result 将证据与情感判断可视化。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 均为连续讲解与板书 actions，未要求学习者作答、等待反馈或完成测试。",
+              "close 给出完整总结并聚焦证据链，课程在一轮内完成。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 1,
+            "evidence": [
+              "Resolved Session Context 仅含 assets，未提供学习者能力或历史表现信息。",
+              "beat-autumn-images 开头却称“你一向不擅长从意象推导情感”。",
+              "adaptation.context_refs 仅引用 learner_request，request 本身没有支持该能力判断。"
+            ],
+            "concerns": [
+              "将无依据的能力画像嵌入讲述，未在无 Learner Context 的场景中保持克制。"
+            ]
+          },
+          "no_unsupported_learner_claims": {
+            "score": 1,
+            "evidence": [
+              "beat-autumn-images： “你一向不擅长从意象推导情感”。",
+              "Resolved Session Context 没有任何学习者画像、表现记录或自述可支持“一向不擅长”。"
+            ],
+            "concerns": [
+              "该断言把未经证实的负向能力判断当作既有事实，可能误导或伤害学习者。"
+            ]
+          }
+        },
+        "critical_errors": [
+          {
+            "severity": "major",
+            "category": "context",
+            "description": "课程将没有证据支持的负向学习者能力画像作为事实陈述，违反无上下文时不得编造学生掌握判断的要求。",
+            "evidence": "beat-autumn-images： “你一向不擅长从意象推导情感，所以我会特别慢地讲。”；Resolved Session Context 仅含 assets。"
+          }
+        ],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 26,
+        "maximum_score": 32,
+        "passed": false,
+        "reasons": [
+          "context_grounding below 3",
+          "no_unsupported_learner_claims below 3",
+          "1 critical error(s)"
+        ]
+      }
+    },
+    {
+      "case_id": "calibration-defect-wrong-result",
+      "domain": "math",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "calibration-defect-wrong-result",
+        "dimensions": {
+          "correctness": {
+            "score": 1,
+            "evidence": [
+              "calculate-eight-kilometer-fare/finish-fare-calculation: 将13+11.5算为“25.5元”。",
+              "build-general-function/verify-eight-kilometers: 再次写出“f(8)=...=25.5元”。"
+            ],
+            "concerns": [
+              "正确计算应为13+2.3×5=13+11.5=24.5元；错误结论同时污染具体例题、代入验证和close。"
+            ]
+          },
+          "request_coverage": {
+            "score": 2,
+            "evidence": [
+              "split-eight-kilometers/calculate-extra-distance: 明确教学“8-3=5公里”。",
+              "calculate-eight-kilometer-fare/build-fare-expression: 展示13+2.3×(8-3)。",
+              "build-general-function/assemble-piecewise-function: 教授了x≤3与x>3的分段函数。"
+            ],
+            "concerns": [
+              "明确要求的核心结果“24.5元”未被教授，反而被系统性地教成25.5元；因此覆盖不得高于2。"
+            ]
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "understand-pricing 先区分起步价与超出部分。",
+              "split-eight-kilometers/calculate-extra-distance 再从8公里逐步扣除3公里。",
+              "build-general-function 在具体计算后推广到分段函数并代入核验。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "split-eight-kilometers/calculate-extra-distance: say“8减3，等于5公里”与板书“8-3=5公里”一致。",
+              "build-general-function/write-second-branch: 讲述x-3的超出里程与板书“13+2.3(x-3), x>3”一致。",
+              "calculate-eight-kilometer-fare/finish-fare-calculation: 讲述和板书均给出25.5元，虽结果错误但两者彼此一致。"
+            ],
+            "concerns": [
+              "build-fare-expression 的say未口头明确括号，板书“13+2.3×(8-3)”更清晰。"
+            ]
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "通过base-rule、extra-rule与连接线建立计价规则关系。",
+              "total-distance、extra-distance、fare-expression、fare-result形成结构化例题区。",
+              "function-group 将变量、两个分支和完整分段函数组织为模型区域。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部beats均为连续讲解和板书动作，没有要求学习者回答、停顿等待或输出测试题。",
+              "close总结了计价规则、具体计算和函数。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson.adaptation.context_refs 指向“learner_request”。",
+              "课程内容直接围绕请求中的13元、3公里、2.3元、8公里与通用函数展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "课程未声称学习者已有知识、偏好、能力或掌握情况。",
+              "adaptation 仅采用通用的“先拆分里程，再计算费用”策略。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [
+          {
+            "severity": "major",
+            "category": "factual",
+            "description": "8公里车费的算术结果错误，导致课程把应付24.5元教成25.5元。",
+            "evidence": "calculate-eight-kilometer-fare/finish-fare-calculation: “13+2.3×5=13+11.5=25.5元”；实际13+11.5=24.5。"
+          }
+        ],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 27,
+        "maximum_score": 32,
+        "passed": false,
+        "reasons": [
+          "correctness below 3",
+          "request_coverage below 3",
+          "1 critical error(s)"
+        ]
+      }
+    }
+  ]
+}

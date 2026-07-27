@@ -1,0 +1,31 @@
+{
+  "case_id": "computing-loop-trace-001",
+  "domain": "computing",
+  "language": "zh-CN",
+  "learner_request": "逐行跟踪这段伪代码：sum=0; for i=1 to 4: sum=sum+i*i。用变量表说明最后结果。",
+  "required_coverage": [
+    "初始化sum=0",
+    "i从1到4",
+    "每轮i²和sum变化",
+    "最终sum=30"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "sum=0",
+        "sum = 0"
+      ],
+      [
+        "1",
+        "4"
+      ],
+      [
+        "30"
+      ],
+      [
+        "变量表",
+        "table"
+      ]
+    ]
+  }
+}

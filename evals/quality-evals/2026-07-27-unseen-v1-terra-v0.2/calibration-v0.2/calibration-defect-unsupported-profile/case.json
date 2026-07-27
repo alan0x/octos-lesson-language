@@ -1,0 +1,32 @@
+{
+  "case_id": "calibration-defect-unsupported-profile",
+  "domain": "language",
+  "language": "zh-CN",
+  "learner_request": "讲解马致远《天净沙·秋思》中意象怎样一步步组合出游子的情感，不要只给主题结论。",
+  "required_coverage": [
+    "列出关键意象",
+    "意象组合成环境氛围",
+    "断肠人与前景对照",
+    "从文本证据走向情感"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "枯藤",
+        "老树",
+        "昏鸦"
+      ],
+      [
+        "小桥",
+        "流水",
+        "人家"
+      ],
+      [
+        "断肠人"
+      ],
+      [
+        "意象"
+      ]
+    ]
+  }
+}

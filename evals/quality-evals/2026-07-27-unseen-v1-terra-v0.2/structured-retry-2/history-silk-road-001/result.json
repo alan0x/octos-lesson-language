@@ -1,0 +1,93 @@
+{
+  "case_id": "history-silk-road-001",
+  "domain": "history",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "history-silk-road-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "`goods-flow` 准确说明丝绸等商品、玻璃器和香料通过中亚节点分段转手。",
+          "`technology-flow` 将造纸等技术描述为携带、学习改进、再传播的过程。",
+          "`two-way-exchange` 明确各地既接收也选择、改造外来事物。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "`show-map` 实际展示并指向长安、中亚、地中海、海上路线四个地图区域。",
+          "`identify-routes` 讲解多条陆路支线与海上路线并存，反驳“单线”理解。",
+          "`goods-flow` 教授商品交换与分段贸易。",
+          "`technology-flow`、`culture-flow` 分别教授技术及宗教文化传播。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "步骤依次从 `read-map` 的空间节点，发展到 `trade-network` 的商品流动，再到 `ideas-and-technology`，最后由 `two-way-network` 整合。",
+          "`final-model` 用已建立的路线、内容和双向交流模型得出网络结论，而非一次贴出完整答案。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "`identify-routes` 的陆海并行叙述对应 `land-routes`、`sea-routes` 和 `route-network`。",
+          "`goods-flow` 的分段转手叙述对应 `relay-trade` 及两条商品连接线。",
+          "`culture-flow` 的宗教文化例子对应 `religion-culture` 图示。",
+          "`two-way-exchange` 的节点和双向性叙述对应 `two-way` 图示及地图指向。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "`show-map` 以真实地图为主区并标注四个可见区域。",
+          "`identify-routes` 用陆路、海路图示、连接和分组表达网络关系。",
+          "`exchange-content` 将商品、技术、宗教文化组织为交流内容层。",
+          "`final-model` 将路线网络、交流内容和双向模型分组并聚焦。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "所有 Beat 均为讲述配合写入、连接、聚焦等动作，没有等待学生回答或插入测试输出。",
+          "`close.summary` 在同一轮完成对路线、内容和双向性的收束。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "`show-map` 使用已提供的 `asset-silk-road-001`，并引用其四个已解析区域。",
+          "课程未在没有 Learner Context 的情况下编造学习者背景或偏好。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "全课使用面向全体的解释性表述，如 `final-model` 的“所以，丝绸之路不是……单线”。",
+          "未声称学习者已掌握、误解或偏好任何内容。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

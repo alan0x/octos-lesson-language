@@ -1,0 +1,566 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用“中学生是否应该每天运动”理解议论文结构",
+    "goals": [
+      "明确中心观点的作用",
+      "区分理由与证据",
+      "学会回应反方观点",
+      "理解观点、理由、证据和回应反方之间的结构关系"
+    ],
+    "adaptation": {
+      "strategies": [
+        "围绕同一校园话题逐层展开",
+        "用定义、示例和关系图呈现结构",
+        "明确指出理由与证据的不同作用"
+      ],
+      "context_refs": [
+        "learner_request"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "step-overview",
+      "purpose": "先建立议论文四个核心部分的整体框架。",
+      "beats": [
+        {
+          "key": "beat-topic",
+          "say": "我们用“中学生是否应该每天运动”作为讨论话题。议论文不是只说“我赞成”，而是要形成一条完整的论证链：提出观点，说明理由，用证据支撑，并回应可能的反方意见。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "topic",
+              "kind": "text",
+              "role": "topic",
+              "content": {
+                "text": "讨论话题：中学生是否应该每天运动？"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main_board",
+                "align": "center"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "argument-chain",
+              "kind": "diagram",
+              "role": "overview",
+              "content": {
+                "text": "议论文论证链：观点 → 理由 → 证据 → 回应反方"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "topic",
+                "align": "center",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-claim",
+      "purpose": "说明中心观点是什么，并给出针对话题的明确示例。",
+      "beats": [
+        {
+          "key": "beat-claim-definition",
+          "say": "中心观点是文章希望读者接受的核心判断。它必须直接回答讨论问题，并且立场明确。针对这个话题，可以提出：在身体条件允许的情况下，中学生应该每天进行适量运动。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "claim-definition",
+              "kind": "note",
+              "role": "definition",
+              "content": {
+                "title": "中心观点",
+                "text": "文章希望读者接受的核心判断；它直接回答问题，并表明明确立场。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "argument-chain",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "main-claim",
+              "kind": "text",
+              "role": "claim",
+              "content": {
+                "text": "中心观点：在身体条件允许的情况下，中学生应该每天进行适量运动。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "claim-definition",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "main-claim",
+              "emphasis": "highlight"
+            }
+          ]
+        },
+        {
+          "key": "beat-claim-boundary",
+          "say": "这个观点中的“身体条件允许”“适量”很重要。它把主张限定得更准确：文章并不是要求每个人无视健康状况进行高强度训练，而是主张合理、可持续的日常运动。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "claim-boundary",
+              "kind": "note",
+              "role": "qualification",
+              "content": {
+                "text": "观点边界：身体条件允许；运动适量、合理、可持续。"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "main-claim",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "boundary-connection",
+              "from": "claim-boundary",
+              "to": "main-claim",
+              "relation": "限定"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-reasons-evidence",
+      "purpose": "区分理由与证据，并展示证据如何支撑理由、理由如何支撑观点。",
+      "beats": [
+        {
+          "key": "beat-distinction",
+          "say": "理由和证据不是一回事。理由回答“为什么这个观点成立”，通常是概括性的判断；证据回答“凭什么相信这个理由”，必须是能够核查的事实、数据、研究结果、具体事例或可靠材料。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "reason-definition",
+              "kind": "note",
+              "role": "definition",
+              "content": {
+                "title": "理由",
+                "text": "回答“为什么观点成立”，通常是概括性的判断。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "main-claim",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evidence-definition",
+              "kind": "note",
+              "role": "definition",
+              "content": {
+                "title": "证据",
+                "text": "回答“凭什么相信理由”，包括可核查的事实、数据、研究结果、具体事例或可靠材料。"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "reason-definition",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "reason-evidence-definitions",
+              "role": "comparison",
+              "label": "理由与证据的区别",
+              "members": [
+                "reason-definition",
+                "evidence-definition"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "beat-reason-one",
+          "say": "第一个理由可以是：每天适量运动有助于保持身体健康和精力。这句话解释了为什么应当每天运动，但它仍然只是理由，需要证据继续支撑。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "reason-health",
+              "kind": "text",
+              "role": "reason",
+              "content": {
+                "text": "理由一：每天适量运动有助于保持身体健康和精力。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "reason-evidence-definitions",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "health-supports-claim",
+              "from": "reason-health",
+              "to": "main-claim",
+              "relation": "理由支持观点"
+            }
+          ]
+        },
+        {
+          "key": "beat-evidence-one",
+          "say": "支撑理由一时，可以引用可靠资料中关于规律适量运动与体能、心肺健康关系的研究结论，也可以使用班级运动记录与精神状态观察等可核查材料。写作时要交代来源和具体内容，不能只写“有研究表明”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evidence-health",
+              "kind": "text",
+              "role": "evidence",
+              "content": {
+                "text": "证据一：引用有明确来源的研究结论，或使用可核查的运动记录与状态观察，说明规律适量运动与体能、精力之间的关系。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "reason-health",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "health-evidence-support",
+              "from": "evidence-health",
+              "to": "reason-health",
+              "relation": "证据支撑理由"
+            }
+          ]
+        },
+        {
+          "key": "beat-reason-two",
+          "say": "第二个理由可以从学习生活切入：固定的适量运动能帮助中学生调节久坐带来的疲劳，形成更有节奏的作息。这个理由同样需要具体材料，而不能把个人感觉直接当成普遍事实。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "reason-routine",
+              "kind": "text",
+              "role": "reason",
+              "content": {
+                "text": "理由二：固定的适量运动有助于调节久坐疲劳，并形成更有节奏的作息。"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "reason-health",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "evidence-routine",
+              "kind": "text",
+              "role": "evidence",
+              "content": {
+                "text": "证据二：使用有来源的调查、连续记录或具体案例，呈现适量运动前后久坐疲劳与作息状态的变化。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "reason-routine",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "routine-supports-claim",
+              "from": "reason-routine",
+              "to": "main-claim",
+              "relation": "理由支持观点"
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "routine-evidence-support",
+              "from": "evidence-routine",
+              "to": "reason-routine",
+              "relation": "证据支撑理由"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-counterargument",
+      "purpose": "展示如何准确呈现反方顾虑并作出有针对性的回应。",
+      "beats": [
+        {
+          "key": "beat-counterargument",
+          "say": "完整的议论文还要正面处理反方意见。针对每天运动，反方可能担心：中学生课业繁重，每天运动会占用学习和休息时间。先公平、准确地写出这个顾虑，回应才有力量。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "counterargument",
+              "kind": "text",
+              "role": "counterargument",
+              "content": {
+                "text": "反方意见：中学生课业繁重，每天运动可能占用学习和休息时间。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "reason-health",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "counterargument",
+              "emphasis": "mark_as_counterposition"
+            }
+          ]
+        },
+        {
+          "key": "beat-response",
+          "say": "回应反方不能只说“这个观点不对”，而要承认其中合理的顾虑，再说明为什么中心观点仍然成立。可以这样回应：时间压力确实存在，但“每天运动”不等于长时间高强度训练；把短时、适量运动纳入作息，并根据身体和学习安排调整，能够控制时间成本。因此，反方顾虑提示我们限定运动方式，却不足以推翻中心观点。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "response-concession",
+              "kind": "text",
+              "role": "concession",
+              "content": {
+                "text": "承认合理处：中学生确实面临课业与休息时间压力。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "counterargument",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "response-rebuttal",
+              "kind": "text",
+              "role": "rebuttal",
+              "content": {
+                "text": "回应：每天运动不等于长时间高强度训练；短时、适量并可灵活调整的运动能够控制时间成本。反方顾虑限定了运动方式，但不足以推翻中心观点。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "response-concession",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "response-addresses-counter",
+              "from": "response-rebuttal",
+              "to": "counterargument",
+              "relation": "回应反方"
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "response-defends-claim",
+              "from": "response-rebuttal",
+              "to": "main-claim",
+              "relation": "维护并限定观点"
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "counter-response-group",
+              "role": "counterargument_response",
+              "label": "反方意见与回应",
+              "members": [
+                "counterargument",
+                "response-concession",
+                "response-rebuttal"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "step-structure",
+      "purpose": "汇总并显式呈现完整的议论文结构关系图。",
+      "beats": [
+        {
+          "key": "beat-structure-map",
+          "say": "现在把结构合起来看：中心观点位于核心；两个理由分别解释观点为什么成立；每条证据支撑对应的理由；反方意见对中心观点提出挑战；回应则承认合理顾虑、化解挑战，并对中心观点作出更准确的限定。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "structure-map",
+              "kind": "diagram",
+              "role": "argument_structure",
+              "content": {
+                "title": "结构关系图",
+                "nodes": [
+                  "中心观点",
+                  "理由一：健康与精力",
+                  "证据一：可靠研究或可核查记录",
+                  "理由二：调节疲劳与作息",
+                  "证据二：调查、连续记录或具体案例",
+                  "反方意见：占用学习和休息时间",
+                  "回应：承认压力，限定为短时、适量、可调整的运动"
+                ],
+                "relations": [
+                  "理由一 → 支持 → 中心观点",
+                  "证据一 → 支撑 → 理由一",
+                  "理由二 → 支持 → 中心观点",
+                  "证据二 → 支撑 → 理由二",
+                  "反方意见 → 挑战 → 中心观点",
+                  "回应 → 化解 → 反方意见",
+                  "回应 → 维护并限定 → 中心观点"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "summary_board",
+                "align": "center"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "structure-map",
+                "main-claim",
+                "counter-response-group"
+              ],
+              "intent": "呈现观点、理由、证据与回应反方的完整结构"
+            }
+          ]
+        },
+        {
+          "key": "beat-writing-order",
+          "say": "写成文章时，可以依次安排：开头提出中心观点；主体分段写理由，并紧接相应证据解释证据如何支撑理由；随后呈现并回应反方；结尾回扣经过限定的中心观点。关键不是把四类句子堆在一起，而是让每一部分都有清楚的支撑或回应关系。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "writing-order",
+              "kind": "table",
+              "role": "writing_plan",
+              "content": {
+                "columns": [
+                  "文章位置",
+                  "主要任务"
+                ],
+                "rows": [
+                  [
+                    "开头",
+                    "提出明确且有边界的中心观点"
+                  ],
+                  [
+                    "主体一",
+                    "理由一，并用对应证据支撑"
+                  ],
+                  [
+                    "主体二",
+                    "理由二，并用对应证据支撑"
+                  ],
+                  [
+                    "主体三",
+                    "呈现反方意见，承认合理处并作出回应"
+                  ],
+                  [
+                    "结尾",
+                    "回扣经过限定的中心观点"
+                  ]
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "structure-map",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "final-framework",
+              "role": "lesson_synthesis",
+              "label": "议论文完整框架",
+              "members": [
+                "structure-map",
+                "writing-order"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "final-framework"
+              ],
+              "intent": "聚焦完整论证结构与成文顺序"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "这篇议论文的中心观点是中学生在身体条件允许时应该每天适量运动。理由解释观点为什么成立，证据用可核查材料支撑理由；回应反方则先承认时间压力等合理顾虑，再通过限定运动的时长、强度和安排维护中心观点。完整关系是：证据支撑理由，理由支持观点，反方挑战观点，回应化解挑战并使观点更准确。",
+    "focus": [
+      "final-framework",
+      "main-claim",
+      "health-evidence-support",
+      "routine-evidence-support",
+      "counter-response-group",
+      "response-defends-claim"
+    ]
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "case_id": "science-series-circuit-001",
+  "domain": "science",
+  "source_repetition": 2,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "science-series-circuit-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "beat `conserve-charge`: 以无分支路径与电荷不持续堆积解释单位时间通过两灯的电荷量相同。",
+          "beat `state-equality`: 明确给出闭合回路条件下 `I₁=I₂`。",
+          "beat `generalize-break`: 正确说明串联回路任一处断开会使全回路无电流。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "beat `show-circuit`: 写入 `asset-circuit-001`，并引用 battery、lamp-a、lamp-b、wire 四个受控区域。",
+          "beat `identify-path`: 实际讲解“没有分支，所以串联电路只有一条电流路径”。",
+          "beat `state-equality`: 实际讲解并板书 `I₁=I₂`。",
+          "beats `whole-circuit-zero`、`generalize-break`: 实际讲解任一处断路导致全回路无电流。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "步骤依次为 `inspect-circuit`、`explain-current`、`explain-open-circuit`、`consolidate`。",
+          "beats `mark-currents` → `conserve-charge` → `state-equality` 先定义量、再给理由、后推出等式。",
+          "beats `introduce-break` → `whole-circuit-zero` → `generalize-break` 从灯泡A示例推广到任一处断路。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "beat `identify-path` 的讲述“只有一条电流路径”与 `single-path` 图示及其 statement 一致。",
+          "beat `state-equality` 的讲述结论与 `equal-current` 中的 `I₁=I₂`、条件和解释一致。",
+          "beat `whole-circuit-zero` 的讲述与 `zero-current` 中的 `I₁=I₂=0`、两灯熄灭一致。",
+          "beat `compare-states` 的口头对照与 `state-comparison` 表格两行内容一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "`circuit-image` 将上传图放入主视觉区，并以 `single-path` 补充路径结构。",
+          "`charge-rule`、`equal-current` 和连接 `rule-to-equality` 显示从依据到结论的关系。",
+          "`open-circuit-result` 组呈现“断路→路径切断→无电流”的因果链。",
+          "`state-comparison` 表格清楚对照完整闭合与断路两种状态。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部 beats 均为讲解、板书或聚焦动作，未要求学习者回答、等待输入或完成测试。",
+          "`close.summary` 在同一轮完整归纳路径、电流相等和断路后果。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "lesson `adaptation.context_refs` 引用 `learner_request` 与 `session_context.assets.asset-circuit-001`。",
+          "beat `show-circuit` 明确以“你上传的串联电路图”为对象，并使用该资产及其受控区域。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "lesson 未声称学习者具有特定基础、困难、偏好或已掌握程度。",
+          "beat `show-circuit` 对“你上传的”图片的指称有 session context 资产支持。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

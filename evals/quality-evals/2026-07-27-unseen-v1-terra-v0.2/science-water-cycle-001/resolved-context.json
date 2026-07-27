@@ -1,0 +1,28 @@
+{
+  "session_id": "eval-water-cycle",
+  "assets": [
+    {
+      "asset_id": "asset-water-cycle-001",
+      "media_type": "image/png",
+      "alt": "水循环示意图",
+      "regions": [
+        {
+          "region_id": "asset-water-cycle-001#ocean",
+          "label": "海洋"
+        },
+        {
+          "region_id": "asset-water-cycle-001#cloud",
+          "label": "云"
+        },
+        {
+          "region_id": "asset-water-cycle-001#mountain",
+          "label": "山地"
+        },
+        {
+          "region_id": "asset-water-cycle-001#river",
+          "label": "河流"
+        }
+      ]
+    }
+  ]
+}

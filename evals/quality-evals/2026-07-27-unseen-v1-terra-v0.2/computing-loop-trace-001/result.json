@@ -1,0 +1,100 @@
+{
+  "case_id": "computing-loop-trace-001",
+  "domain": "computing",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "computing-loop-trace-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "iteration-one：明确计算“1²=1；sum=0+1=1”",
+          "iteration-three：正确推导“5+9=14”",
+          "iteration-four：正确推导“14+16=30”",
+          "state-result：正确归纳“1²+2²+3²+4²，最终结果是 sum=30”"
+        ],
+        "concerns": [
+          "iteration-four 中“i 已经到达 4，循环随即结束”的表述略不严谨；通常是完成 i=4 的轮次后，循环控制再判断结束，但不影响本题跟踪结果。"
+        ]
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "initialize-sum：实际讲解“sum=0”及进入循环前的状态",
+          "show-code：说明 i 依次取“1、2、3、4”",
+          "iteration-one 至 iteration-four：逐轮讲解 i² 与 sum 更新",
+          "assemble-table 和 state-result：展示变量表并明确最终“sum=30”"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "read-code/show-code：先说明代码及执行顺序",
+          "initialize/initialize-sum：单独建立循环前状态",
+          "trace-loop：按 iteration-one 至 iteration-four 分轮构建结果",
+          "conclude：最后汇总变量表和结果"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "initialize-sum 的“初始状态”与 row-initial 的“初始化、—、—、0”一致",
+          "iteration-two 的口述“2²=4，1+4=5”与 calc-two、row-two 一致",
+          "iteration-four 的口述“4²=16，14+16=30”与 calc-four、row-four 一致",
+          "state-result 的口述结论与 final-result 的等式和“sum = 30”一致"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "show-code：以 code-block 集中呈现三行伪代码",
+          "initialize-sum：建立含“阶段、i、i²、更新后的 sum”的变量表",
+          "assemble-table：将表头和五行记录分组为 variable-table，并补充累积序列",
+          "state-result：focus 同时聚焦变量表与最终结果，形成过程—结论关系"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "课程从 show-code、initialize-sum 到四个 iteration beat 连续完成演示",
+          "没有要求学习者回答、暂停等待输入或输出测试题",
+          "close 对完整跟踪过程和最终结果作出闭合总结"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅含空 assets，Lesson 未声称任何学习者背景、偏好或掌握情况",
+          "全程采用与请求直接相关的通用解释和变量表支持"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "say 与 close 均陈述代码执行和计算结果，未对学习者能力、错误或理解状态作无证据判断"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": [
+      "未提供学习者背景或先前表现，因此无法评估更细粒度的个性化适配。"
+    ]
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

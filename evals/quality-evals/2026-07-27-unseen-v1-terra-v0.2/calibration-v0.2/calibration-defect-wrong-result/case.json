@@ -1,0 +1,30 @@
+{
+  "case_id": "calibration-defect-wrong-result",
+  "domain": "math",
+  "language": "zh-CN",
+  "learner_request": "一辆出租车起步价13元含3公里，之后每公里2.3元。讲解坐8公里为什么要付多少钱，并建立通用函数。",
+  "required_coverage": [
+    "区分起步里程和超出里程",
+    "13+2.3×(8-3)",
+    "分段函数",
+    "结果24.5元"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "8-3",
+        "5公里"
+      ],
+      [
+        "24.5"
+      ],
+      [
+        "x≤3",
+        "x\\le 3"
+      ],
+      [
+        "2.3"
+      ]
+    ]
+  }
+}

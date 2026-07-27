@@ -1,0 +1,595 @@
+{
+  "profile": "octos.lesson-quality.eval",
+  "version": "0.2",
+  "created_at": "2026-07-27T09:49:54.463Z",
+  "judge_model": "gpt-5.6-terra",
+  "selected": 6,
+  "evaluated": 6,
+  "judge_invalid": 0,
+  "gate_passed": 6,
+  "gate_failed": 0,
+  "average_score": 31.833333333333332,
+  "by_domain": {
+    "geography": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 31
+    },
+    "history": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 32
+    },
+    "language": {
+      "evaluated": 1,
+      "passed": 1,
+      "average_score": 32
+    },
+    "science": {
+      "evaluated": 3,
+      "passed": 3,
+      "average_score": 32
+    }
+  },
+  "results": [
+    {
+      "case_id": "geography-monsoon-001",
+      "domain": "geography",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "geography-monsoon-001",
+        "dimensions": {
+          "correctness": {
+            "score": 3,
+            "evidence": [
+              "summer-pressure-beat：以“大陆低压、海洋相对高压”推导夏季海洋→陆地。",
+              "winter-direction-beat：以大陆高压、海洋低压推导冬季陆地→海洋。",
+              "reversal-chain-beat：清楚给出“冷热关系对调→气压高低对调→风向反转”。"
+            ],
+            "concerns": [
+              "将冬季“相对温暖的海洋上形成低压”作为普遍海陆热力结论较为简化；东亚实际冬季环流还显著受西伯利亚高压、阿留申低压及地转偏向影响，宜明确这是教学模型中的相对气压格局。"
+            ]
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "land-rate-beat 与 ocean-rate-beat 实际讲解陆地快、海洋慢的升降温差异。",
+              "summer-pressure-beat、summer-direction-beat 讲解气压差及“海洋→陆地”。",
+              "winter-pressure-beat、winter-direction-beat 讲解气压差及“陆地→海洋”。",
+              "summer-moisture-beat、winter-nature-beat 分别解释温暖湿润与干冷，final-contrast-beat 完成对照。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "步骤按 thermal-basis→summer-monsoon→winter-monsoon→seasonal-reversal 展开。",
+              "夏、冬各自按温度→气压→风向→性质分 Beat 建构。",
+              "reversal-chain-beat 在分别建立两条链后再归纳季节反转。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "summer-direction-beat 的说法“海洋→陆地”与 summer-wind 连线方向一致。",
+              "winter-direction-beat 的说法“陆地→海洋”与 winter-wind 连线方向一致。",
+              "final-contrast-beat 的口述比较与 season-table 的两行内容和规则一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "thermal-contrast 将 land-rate 与 ocean-rate 组织为对比组。",
+              "夏、冬分别在独立 region 中以陆地、海洋、气压标签和风向连线呈现因果关系。",
+              "reversal-chain 与 season-table 提供因果链和结构化跨季对照，monsoon-summary 聚合总结。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部内容以 explain 模式连续讲授，未要求学习者中途回答。",
+              "close.summary 对全部因果链、方向和性质作完整收束。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含 assets: []，lesson 未虚构学习者背景、水平或偏好。",
+              "全课采用通用解释与可见板书组织，未作无依据的个性化适配。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "各 Beat 均陈述地理机制，没有声称学习者“已经掌握”“容易混淆”或具备特定经历。",
+              "close.summary 只总结课程内容，未对学习者表现作无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": [
+          "评估依据给定的教学模型与文本，未展开检验东亚不同地区、月份和高空环流的区域差异。"
+        ]
+      },
+      "gate": {
+        "total_score": 31,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "history-silk-road-001",
+      "domain": "history",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "history-silk-road-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "`goods-flow` 准确说明丝绸等商品、玻璃器和香料通过中亚节点分段转手。",
+              "`technology-flow` 将造纸等技术描述为携带、学习改进、再传播的过程。",
+              "`two-way-exchange` 明确各地既接收也选择、改造外来事物。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "`show-map` 实际展示并指向长安、中亚、地中海、海上路线四个地图区域。",
+              "`identify-routes` 讲解多条陆路支线与海上路线并存，反驳“单线”理解。",
+              "`goods-flow` 教授商品交换与分段贸易。",
+              "`technology-flow`、`culture-flow` 分别教授技术及宗教文化传播。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "步骤依次从 `read-map` 的空间节点，发展到 `trade-network` 的商品流动，再到 `ideas-and-technology`，最后由 `two-way-network` 整合。",
+              "`final-model` 用已建立的路线、内容和双向交流模型得出网络结论，而非一次贴出完整答案。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "`identify-routes` 的陆海并行叙述对应 `land-routes`、`sea-routes` 和 `route-network`。",
+              "`goods-flow` 的分段转手叙述对应 `relay-trade` 及两条商品连接线。",
+              "`culture-flow` 的宗教文化例子对应 `religion-culture` 图示。",
+              "`two-way-exchange` 的节点和双向性叙述对应 `two-way` 图示及地图指向。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "`show-map` 以真实地图为主区并标注四个可见区域。",
+              "`identify-routes` 用陆路、海路图示、连接和分组表达网络关系。",
+              "`exchange-content` 将商品、技术、宗教文化组织为交流内容层。",
+              "`final-model` 将路线网络、交流内容和双向模型分组并聚焦。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "所有 Beat 均为讲述配合写入、连接、聚焦等动作，没有等待学生回答或插入测试输出。",
+              "`close.summary` 在同一轮完成对路线、内容和双向性的收束。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "`show-map` 使用已提供的 `asset-silk-road-001`，并引用其四个已解析区域。",
+              "课程未在没有 Learner Context 的情况下编造学习者背景或偏好。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全课使用面向全体的解释性表述，如 `final-model` 的“所以，丝绸之路不是……单线”。",
+              "未声称学习者已掌握、误解或偏好任何内容。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "language-argument-structure-001",
+      "domain": "language",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "language-argument-structure-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-distinction 准确区分理由回答“为什么”、证据回答“凭什么”。",
+              "beat-response 采用“承认合理顾虑—限定主张—维护观点”的有效回应反方方式。",
+              "beat-structure-map 正确呈现证据→理由→观点，以及反方与回应的论证关系。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-claim-definition 实际定义并示范中心观点。",
+              "beat-distinction 至 beat-evidence-one 实际讲解理由与证据的功能区别及支撑关系。",
+              "beat-counterargument 与 beat-response 实际示范呈现、承认并回应反方。",
+              "beat-structure-map 提供包含观点、两组理由与证据、反方和回应的结构关系图。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "课程从 beat-topic 的整体论证链开始，再依次展开观点、理由与证据、反方回应，最后在 beat-structure-map 汇总。",
+              "beat-reason-one 明确指出理由仍需证据，beat-evidence-one 随后补上对应证据，形成逐层建构。",
+              "beat-writing-order 将结构图进一步转化为成文顺序。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-distinction 的口述定义与 reason-definition、evidence-definition 板书一致。",
+              "beat-response 的“承认—回应—维护限定”与 response-concession、response-rebuttal 及两条连接关系一致。",
+              "beat-structure-map 的口述关系与 structure-map 的节点和 relations 一一对应。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "argument-chain 先建立总览，避免板书成为孤立文本。",
+              "reason-evidence-definitions 以并列分组突出比较关系，并用连接线表达证据支撑理由、理由支持观点。",
+              "structure-map 用独立 summary_board 汇总完整关系，writing-order 表将结构转成文章位置与任务。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部 beats 均为连续讲解与板书动作，没有等待学生回答的指令。",
+              "close 对观点、理由、证据、反方回应及其关系作出完整收束。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "lesson.adaptation.context_refs 明确引用 learner_request。",
+              "beat-topic 至 beat-writing-order 始终围绕请求指定的“中学生是否应该每天运动”话题展开。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "课程没有声称学习者具备、缺少或已经掌握任何能力。",
+              "lesson.adaptation 仅说明围绕请求话题采用的教学策略，未虚构学习者画像。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-newton-force-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "science-newton-force-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat \"subtract-forces\": \"F净 = 10 N - 4 N = 6 N →\"，净力计算与方向正确。",
+              "beat \"state-newton-law\"与\"solve-acceleration\": 从 F净=ma 推得 a=6 N÷2 kg=3 m/s²，单位和方向正确。",
+              "beat \"vertical-forces\": 正确区分支持力向上、重力向下，并给出 N-G=0。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat \"complete-diagram\"实际讲述并聚焦拉力、摩擦力、支持力、重力四个力。",
+              "beat \"subtract-forces\"实际解释 10 N-4 N=6 N。",
+              "beat \"state-newton-law\"讲解 F=ma，beat \"solve-acceleration\"求得 3 m/s²。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "steps 依次为 \"identify-object\"、\"draw-forces\"、\"calculate-net-force\"、\"calculate-acceleration\"。",
+              "beats 从分别画水平力和竖直力，到选择正方向、代入定律、解出加速度，推导逐步展开。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat \"horizontal-forces\"的讲述方向、大小与 \"pull-force\"、\"friction-force\"及相应箭头一致。",
+              "beat \"subtract-forces\"的口述计算与 \"net-force-equation\"一致。",
+              "beat \"substitute-values\"和\"solve-acceleration\"的说法分别对应 \"substitution\" 与 \"acceleration-result\"。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "以 \"box\" 为中心，通过上下左右放置四力并用四条 connect 箭头构成清晰受力图。",
+              "\"four-force-diagram\"、\"vertical-balance\"、\"positive-direction\"及公式链将受力关系、平衡条件和计算步骤结构化呈现。",
+              "\"solution-chain\"与最终 focus 回顾了受力图→净力→加速度的关系。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "所有 beats 均为讲解与板书动作，没有要求学习者回答、等待输入或插入测试。",
+              "close 对四力、6 N、F=ma 与 3 m/s²作出完整收束。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅含空 assets；lesson 未声称存在学习者画像，也未进行无依据的个性化适配。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "lesson 的 say、goals 与 close 均描述物理关系和解题步骤，未断言学习者已经掌握、容易混淆或具有特定能力。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-photosynthesis-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "science-photosynthesis-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "beat-chloroplast：说明光合作用主要发生在叶绿体中。",
+              "beat-light：正确区分光的供能作用与物质原料。",
+              "beat-overview：正确概括二氧化碳和水在光、叶绿体条件下生成葡萄糖和氧气。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "beat-carbon-dioxide 与 beat-water 实际讲解二氧化碳和水两种原料及进入路径。",
+              "beat-light 与 beat-chloroplast 实际讲解光和叶绿体分别作为能量条件和发生地点。",
+              "beat-glucose 与 beat-oxygen 实际讲解葡萄糖和氧气两种产物。",
+              "beat-oxygen、beat-overview 及 close 明确完成并解读物质流向示意图。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "steps 按“地点→原料→条件→产物→总览”逐步展开。",
+              "beat-leaf 先建立叶片中心，beat-chloroplast 再进入反应场所。",
+              "beat-overview 在各元素和连接均已出现后才汇总完整过程。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "beat-carbon-dioxide 的说法与 carbon-dioxide、carbon-dioxide-flow 的来源和流入关系一致。",
+              "beat-light 的说法与 light、light-energy 的“提供能量”连接一致。",
+              "beat-oxygen 的说法与 oxygen、oxygen-flow 的生成和释放标注一致。",
+              "beat-overview 的口头总览与 process-summary 的原料、条件、场所和产物一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "以 leaf 和其内的 chloroplast 建立清晰的中心空间结构。",
+              "raw-materials、conditions-and-site、products 对原料、条件与产物进行结构化分组。",
+              "四条物质流向连接和 light-energy 区分物质流与能量关系。",
+              "beat-oxygen、beat-overview 的 focus 将完整图及关键箭头组织为可读的总览。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全部内容在连续 steps 中完成，close 给出完整总结。",
+              "课程没有要求学习者作答、等待回应或插入测试题。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "Resolved Session Context 仅提供 assets，未提供 Learner Context。",
+              "adaptation 的 context_refs 指向 learner_request 和 required_coverage，策略直接响应“逐步形成的示意图”和初一讲解请求。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "lesson 未声称学习者已有知识、能力、兴趣或掌握情况。",
+              "adaptation 仅采用请求明确要求的初一层级和逐步示意图方式。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    },
+    {
+      "case_id": "science-water-cycle-001",
+      "domain": "science",
+      "source_repetition": 1,
+      "judge_model": "gpt-5.6-terra",
+      "judge_output_valid": true,
+      "judgment": {
+        "rubric_version": "0.2",
+        "case_id": "science-water-cycle-001",
+        "dimensions": {
+          "correctness": {
+            "score": 4,
+            "evidence": [
+              "energy-and-rise/explain-evaporation：准确说明太阳能加热海水、液态水变为水蒸气。",
+              "energy-and-rise/explain-condensation：说明水蒸气遇冷形成小水滴或冰晶并聚集成云。",
+              "fall-and-return/explain-runoff：准确说明地表水汇入河流并返回海洋。"
+            ],
+            "concerns": []
+          },
+          "request_coverage": {
+            "score": 4,
+            "evidence": [
+              "observe-cycle/show-image：写入并指向受控图片 asset-water-cycle-001 的海洋、云、山地、河流区域。",
+              "energy-and-rise/explain-evaporation：实际讲授“太阳能…驱动蒸发”。",
+              "energy-and-rise/explain-condensation：实际讲授凝结形成云。",
+              "fall-and-return 的 explain-precipitation、explain-runoff 与 complete-cycle：讲授降水、径流及回到海洋。"
+            ],
+            "concerns": []
+          },
+          "progression": {
+            "score": 4,
+            "evidence": [
+              "observe-cycle：先建立图片区域和“能量与路径”双线索。",
+              "energy-and-rise：按蒸发→凝结→云逐步展开。",
+              "fall-and-return：再讲降水→径流→海洋，complete-cycle 最后整合。"
+            ],
+            "concerns": []
+          },
+          "narration_board_alignment": {
+            "score": 4,
+            "evidence": [
+              "explain-evaporation：旁白的太阳能、海水和蒸发对应 solar-node、ocean-water-node、evaporation-node 及连接线。",
+              "explain-condensation：旁白的遇冷凝结和成云对应 condensation-node、cloud-node。",
+              "explain-precipitation 与 explain-runoff：旁白过程分别对应降水、陆地、径流、河流和回海洋节点。",
+              "complete-cycle：旁白总结与 water-path、solar-drives-evaporation 的焦点一致。"
+            ],
+            "concerns": []
+          },
+          "board_use": {
+            "score": 4,
+            "evidence": [
+              "show-image：以受控图片作为 main-visual，并标注四个可指向区域。",
+              "frame-two-views：用“能量驱动”和“水的路径”分组建立阅读框架。",
+              "各过程 beat：用节点和带关系标签的 connect 线表达因果与路径。",
+              "complete-cycle：water-path 分组及 focus 同时突出动力和完整循环。"
+            ],
+            "concerns": []
+          },
+          "continuous_completion": {
+            "score": 4,
+            "evidence": [
+              "全课为 explain 模式，所有 beats 连续讲解。",
+              "未出现等待学生回答、要求作答或中途测试的动作。",
+              "close/summary 完成整条路径的收束。"
+            ],
+            "concerns": []
+          },
+          "context_grounding": {
+            "score": 4,
+            "evidence": [
+              "show-image：使用 Resolved Session Context 中的 asset-water-cycle-001。",
+              "show-image：引用 ocean、cloud、mountain、river 四个已提供 region。",
+              "课程未虚构学习者背景或偏好。"
+            ],
+            "concerns": []
+          },
+          "no_unsupported_learner_claims": {
+            "score": 4,
+            "evidence": [
+              "全课旁白讲解学科过程，没有声称学习者已经理解、掌握或存在特定困难。",
+              "lesson/goals 仅陈述教学目标，不构成对学习者能力的无证据判断。"
+            ],
+            "concerns": []
+          }
+        },
+        "critical_errors": [],
+        "confidence": "high",
+        "limitations": []
+      },
+      "gate": {
+        "total_score": 32,
+        "maximum_score": 32,
+        "passed": true,
+        "reasons": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "session_id": "eval-silk-road",
+  "assets": [
+    {
+      "asset_id": "asset-silk-road-001",
+      "media_type": "image/png",
+      "alt": "欧亚丝绸之路路线图",
+      "regions": [
+        {
+          "region_id": "asset-silk-road-001#changan",
+          "label": "长安"
+        },
+        {
+          "region_id": "asset-silk-road-001#central-asia",
+          "label": "中亚"
+        },
+        {
+          "region_id": "asset-silk-road-001#mediterranean",
+          "label": "地中海"
+        },
+        {
+          "region_id": "asset-silk-road-001#maritime",
+          "label": "海上路线"
+        }
+      ]
+    }
+  ]
+}

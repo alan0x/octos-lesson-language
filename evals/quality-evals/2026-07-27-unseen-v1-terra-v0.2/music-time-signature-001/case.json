@@ -1,0 +1,34 @@
+{
+  "case_id": "music-time-signature-001",
+  "domain": "music",
+  "language": "zh-CN",
+  "learner_request": "给零基础学生讲清3/4拍和6/8拍为什么都能数到6个八分音符，却有不同的强弱组织。",
+  "required_coverage": [
+    "3/4是三组四分音符拍",
+    "6/8是两组附点四分音符拍",
+    "强弱组织3对2",
+    "节拍分组图"
+  ],
+  "mechanical_checks": {
+    "required_any": [
+      [
+        "3/4"
+      ],
+      [
+        "6/8"
+      ],
+      [
+        "三拍",
+        "3拍"
+      ],
+      [
+        "两拍",
+        "2拍"
+      ],
+      [
+        "强",
+        "弱"
+      ]
+    ]
+  }
+}

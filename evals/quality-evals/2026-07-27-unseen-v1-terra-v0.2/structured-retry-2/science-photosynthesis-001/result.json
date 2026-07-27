@@ -1,0 +1,94 @@
+{
+  "case_id": "science-photosynthesis-001",
+  "domain": "science",
+  "source_repetition": 1,
+  "judge_model": "gpt-5.6-terra",
+  "judge_output_valid": true,
+  "judgment": {
+    "rubric_version": "0.2",
+    "case_id": "science-photosynthesis-001",
+    "dimensions": {
+      "correctness": {
+        "score": 4,
+        "evidence": [
+          "beat-chloroplast：说明光合作用主要发生在叶绿体中。",
+          "beat-light：正确区分光的供能作用与物质原料。",
+          "beat-overview：正确概括二氧化碳和水在光、叶绿体条件下生成葡萄糖和氧气。"
+        ],
+        "concerns": []
+      },
+      "request_coverage": {
+        "score": 4,
+        "evidence": [
+          "beat-carbon-dioxide 与 beat-water 实际讲解二氧化碳和水两种原料及进入路径。",
+          "beat-light 与 beat-chloroplast 实际讲解光和叶绿体分别作为能量条件和发生地点。",
+          "beat-glucose 与 beat-oxygen 实际讲解葡萄糖和氧气两种产物。",
+          "beat-oxygen、beat-overview 及 close 明确完成并解读物质流向示意图。"
+        ],
+        "concerns": []
+      },
+      "progression": {
+        "score": 4,
+        "evidence": [
+          "steps 按“地点→原料→条件→产物→总览”逐步展开。",
+          "beat-leaf 先建立叶片中心，beat-chloroplast 再进入反应场所。",
+          "beat-overview 在各元素和连接均已出现后才汇总完整过程。"
+        ],
+        "concerns": []
+      },
+      "narration_board_alignment": {
+        "score": 4,
+        "evidence": [
+          "beat-carbon-dioxide 的说法与 carbon-dioxide、carbon-dioxide-flow 的来源和流入关系一致。",
+          "beat-light 的说法与 light、light-energy 的“提供能量”连接一致。",
+          "beat-oxygen 的说法与 oxygen、oxygen-flow 的生成和释放标注一致。",
+          "beat-overview 的口头总览与 process-summary 的原料、条件、场所和产物一致。"
+        ],
+        "concerns": []
+      },
+      "board_use": {
+        "score": 4,
+        "evidence": [
+          "以 leaf 和其内的 chloroplast 建立清晰的中心空间结构。",
+          "raw-materials、conditions-and-site、products 对原料、条件与产物进行结构化分组。",
+          "四条物质流向连接和 light-energy 区分物质流与能量关系。",
+          "beat-oxygen、beat-overview 的 focus 将完整图及关键箭头组织为可读的总览。"
+        ],
+        "concerns": []
+      },
+      "continuous_completion": {
+        "score": 4,
+        "evidence": [
+          "全部内容在连续 steps 中完成，close 给出完整总结。",
+          "课程没有要求学习者作答、等待回应或插入测试题。"
+        ],
+        "concerns": []
+      },
+      "context_grounding": {
+        "score": 4,
+        "evidence": [
+          "Resolved Session Context 仅提供 assets，未提供 Learner Context。",
+          "adaptation 的 context_refs 指向 learner_request 和 required_coverage，策略直接响应“逐步形成的示意图”和初一讲解请求。"
+        ],
+        "concerns": []
+      },
+      "no_unsupported_learner_claims": {
+        "score": 4,
+        "evidence": [
+          "lesson 未声称学习者已有知识、能力、兴趣或掌握情况。",
+          "adaptation 仅采用请求明确要求的初一层级和逐步示意图方式。"
+        ],
+        "concerns": []
+      }
+    },
+    "critical_errors": [],
+    "confidence": "high",
+    "limitations": []
+  },
+  "gate": {
+    "total_score": 32,
+    "maximum_score": 32,
+    "passed": true,
+    "reasons": []
+  }
+}

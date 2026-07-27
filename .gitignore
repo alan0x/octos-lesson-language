@@ -1,6 +1,9 @@
 node_modules/
 dist/
 evals/runs/
+evals/quality-evals/2026-07-27-unseen-v1-terra/
+evals/quality-evals/2026-07-27-unseen-v1-terra-v0.2/structured-retry-1/
+evals/quality-evals/2026-07-27-unseen-v1-terra-v0.2/structured-probe-2/
 coverage/
 .DS_Store
 *.log

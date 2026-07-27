@@ -1,0 +1,27 @@
+[
+  {
+    "case_id": "calibration-control-taxi",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "calibration-defect-wrong-result",
+    "domain": "math",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "calibration-defect-missing-core",
+    "domain": "computing",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "calibration-defect-unsupported-profile",
+    "domain": "language",
+    "source_repetition": 1
+  },
+  {
+    "case_id": "calibration-defect-interruption",
+    "domain": "science",
+    "source_repetition": 1
+  }
+]
