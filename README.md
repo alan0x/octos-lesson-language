@@ -70,6 +70,14 @@ npm run harness:dev
 
 然后访问 `http://127.0.0.1:4173`。Harness 直接读取四份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
 
+运行真实 Chrome 教学播放观测：
+
+```bash
+npm run teaching:observe:geometry
+```
+
+该命令逐操作播放几何 V2，在 51 个动作帧和 11 个 Beat 边界测量焦点可见性、卡片宽度、正文等效字号、diagram 主要边长、公式/表格裁切、connection label 与节点遮挡、内部 connection 重复渲染和 console 错误。报告写入 `evals/teaching-playback/geometry-v2/`。它不替代学科质量 judge 或学生盲测。
+
 运行 21 个未见跨学科案例、每题 5 次的正式评测：
 
 ```bash

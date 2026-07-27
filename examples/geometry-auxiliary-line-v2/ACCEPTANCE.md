@@ -33,7 +33,7 @@ The lesson passes the first teaching-comprehensibility vertical slice. This resu
 - Each Beat contains narration, a visible state transition, and an explicit end focus.
 - The perpendicular derivation does not contain `AD \\perp BC` until its final Beat.
 - Canonical identifiers do not affect browser card measurement.
-- Full repository suite: 51 tests passed.
+- Full repository suite: 54 tests passed.
 
 ## Defects found by browser review and fixed
 
@@ -46,5 +46,5 @@ The lesson passes the first teaching-comprehensibility vertical slice. This resu
 ## Remaining language/runtime gaps
 
 - OLL v0.1 has no semantic angle-arc, right-angle-square, or equal-side tick primitives. The lesson is correct without them, but these are candidates only after more geometry cases show repeated need.
-- Browser automation currently asserts semantic keyframes in Node and performs the focal-size/cropping gate by browser review. A reusable screenshot/DOM teaching observer remains follow-up work.
+- The reusable Chrome teaching observer now covers action-target visibility, Beat focus size, text size, diagram major-edge size, clipping, label/node overlap, duplicate internal connections and console errors. Subject correctness and learner comprehension still require the quality judge and blind test.
 - Learner node dragging after lesson completion remains a layout-override feature, not part of Canonical OLL.

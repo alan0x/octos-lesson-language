@@ -18,7 +18,7 @@ npm run harness:dev
 - Canonical Event → Player Core → Semantic BoardState 的唯一状态通路；
 - 语义布局、无限画布拖动、缩放和适应全课；
 - text、KaTeX math、note、table、plot、image region 和结构化 SVG diagram；
-- node、group、connection 与 diagram fragment 的引用呈现；
+- node、group、connection，以及 math、text、plot、image region、diagram fragment 的引用呈现；
 - 卡片边缘连接、窄间距绕行、标签背景和标签冲突避让；
 - localStorage checkpoint 与所选课程的刷新恢复；
 - 完整操作时间线和当前 step / beat / phase / revision 调试信息。
@@ -38,3 +38,17 @@ npm test
 ```
 
 自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、几何 SVG、公式横向裁切、暂停刷新恢复与控制台错误。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。
+
+真实 Chrome 自动观测：
+
+```bash
+npm run teaching:observe:geometry
+```
+
+Runner 使用 `playwright-core` 驱动已有 Chrome/Chromium，不下载独立浏览器。macOS 会自动发现 Google Chrome；其他环境可通过 `OLL_CHROME_PATH` 指定可执行文件。失败帧写入报告目录的 `screenshots/`，下一次运行会先清理旧失败截图。
+
+`npm run teaching:observe:calibration` 运行几何 V1 负对照。它使用 `--expect fail`，只有 Observer 继续拒绝已知坏课时命令才成功。
+
+`npm run teaching:observe:quadratic-probe` 是跨学科 expected-fail 探针：它证明 math/plot fragment 可见且公式不裁切，同时保留旧课程缺少 Beat focus、最终 overview 过小的课程级失败。
+
+Harness 仅为观测器暴露 `window.__OLL_HARNESS__` 测试接口：加载 fixture、逐操作前进、采集 DOM 几何观测和执行确定性门禁。生产 Runtime 不应依赖这个全局接口。

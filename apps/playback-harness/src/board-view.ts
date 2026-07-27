@@ -41,15 +41,28 @@ export function mathSource(content: Record<string, any>): string {
   return trimmed;
 }
 
-function renderMath(parent: HTMLElement, content: Record<string, any>): void {
-  const source = mathSource(content);
+function renderMath(parent: HTMLElement, node: Record<string, any>): void {
+  const content = node.content ?? {};
+  const fragments = Array.isArray(content.fragments) ? content.fragments as Record<string, any>[] : [];
   const element = document.createElement("div"); element.className = "math-render";
+  if (fragments.length) {
+    element.classList.add("math-fragments");
+    for (const fragment of fragments) {
+      const part = document.createElement("span"); part.className = "math-fragment"; part.dataset.id = text(fragment.id);
+      applyEmphasisClass(part, latestEmphasis(node, text(fragment.id)));
+      katex.render(text(fragment.latex || fragment.text), part, { displayMode: false, throwOnError: false, strict: "ignore", trust: false, output: "htmlAndMathml" });
+      element.append(part);
+    }
+    parent.append(element); return;
+  }
+  const source = mathSource(content);
   if (!source) { element.textContent = "（空公式）"; parent.append(element); return; }
   katex.render(source, element, { displayMode: true, throwOnError: false, strict: "ignore", trust: false, output: "htmlAndMathml" });
   parent.append(element);
 }
 
-function plot(parent: HTMLElement, content: Record<string, any>): void {
+function plot(parent: HTMLElement, node: Record<string, any>): void {
+  const content = node.content ?? {};
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 300 150");
   svg.classList.add("plot-preview");
@@ -57,8 +70,25 @@ function plot(parent: HTMLElement, content: Record<string, any>): void {
   axisX.setAttribute("d", "M 15 108 H 285 M 150 10 V 140"); axisX.setAttribute("stroke", "#9a958c"); axisX.setAttribute("fill", "none");
   const curve = document.createElementNS(SVG_NS, "path");
   curve.setAttribute("d", "M 35 24 Q 95 134 150 122 Q 205 134 265 24"); curve.setAttribute("stroke", "#23877c"); curve.setAttribute("stroke-width", "3"); curve.setAttribute("fill", "none");
-  svg.append(axisX, curve);
-  const label = content.curves?.[0]?.label ?? content.curves?.[0]?.expression;
+  const curveFragment = content.curves?.[0];
+  if (curveFragment?.id) { curve.dataset.id = text(curveFragment.id); applyEmphasisClass(curve, latestEmphasis(node, text(curveFragment.id))); }
+  svg.append(axisX);
+  const axes = content.axes ?? {}; const xRange = axes.x ?? { min: -5, max: 5 }; const yRange = axes.y ?? { min: -5, max: 5 };
+  const mapX = (value: number) => 15 + (value - Number(xRange.min)) / Math.max(1, Number(xRange.max) - Number(xRange.min)) * 270;
+  const mapY = (value: number) => 140 - (value - Number(yRange.min)) / Math.max(1, Number(yRange.max) - Number(yRange.min)) * 130;
+  for (const guide of Array.isArray(content.guides) ? content.guides : []) {
+    const line = document.createElementNS(SVG_NS, "line"); const x = mapX(Number(guide.value));
+    line.setAttribute("x1", String(x)); line.setAttribute("x2", String(x)); line.setAttribute("y1", "10"); line.setAttribute("y2", "140");
+    line.classList.add("plot-guide"); line.dataset.id = text(guide.id); applyEmphasisClass(line, latestEmphasis(node, text(guide.id))); svg.append(line);
+  }
+  svg.append(curve);
+  for (const point of Array.isArray(content.points) ? content.points : []) {
+    const x = mapX(Number(point.x)); const y = mapY(Number(point.y));
+    const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(x)); dot.setAttribute("cy", String(y)); dot.setAttribute("r", "5");
+    dot.classList.add("plot-point"); dot.dataset.id = text(point.id); applyEmphasisClass(dot, latestEmphasis(node, text(point.id))); svg.append(dot);
+    if (point.label) { const pointLabel = document.createElementNS(SVG_NS, "text"); pointLabel.setAttribute("x", String(x + 8)); pointLabel.setAttribute("y", String(y - 8)); pointLabel.classList.add("plot-label"); pointLabel.textContent = text(point.label); svg.append(pointLabel); }
+  }
+  const label = curveFragment?.label ?? curveFragment?.expression;
   if (label) appendText(parent, String(label), "node-caption");
   parent.append(svg);
 }
@@ -137,15 +167,18 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
-  if (node.kind === "plot") { plot(parent, content); return; }
+  if (node.kind === "plot") { plot(parent, node); return; }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
-  if (node.kind === "math") { renderMath(parent, content); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
+  if (node.kind === "math") { renderMath(parent, node); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
     appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
     const regions = Array.isArray(content.regions) ? content.regions : [];
     if (regions.length) {
       const pills = document.createElement("div"); pills.className = "region-pills";
-      for (const region of regions) appendText(pills, text(region.label || region.as || region.source_region), "");
+      for (const region of regions) {
+        const pill = appendText(pills, text(region.label || region.as || region.source_region), "");
+        pill.dataset.id = text(region.id); applyEmphasisClass(pill, latestEmphasis(node, text(region.id)));
+      }
       parent.append(pills);
     }
     return;
@@ -165,7 +198,12 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
     parent.append(table); return;
   }
   if (Array.isArray(content.fragments)) {
-    appendText(parent, content.fragments.map((fragment: any) => text(fragment.latex || fragment.text)).join(" "));
+    const fragments = document.createElement("div"); fragments.className = "text-fragments";
+    for (const fragment of content.fragments) {
+      const part = document.createElement("span"); part.className = "text-fragment"; part.dataset.id = text(fragment.id);
+      part.textContent = text(fragment.text || fragment.latex); applyEmphasisClass(part, latestEmphasis(node, text(fragment.id))); fragments.append(part);
+    }
+    parent.append(fragments);
   } else if (node.kind === "diagram" && (Array.isArray(content.sequence) || Array.isArray(content.items))) {
     const sequence = document.createElement("div"); sequence.className = "diagram-sequence";
     const values = content.sequence ?? content.items;
@@ -284,6 +322,7 @@ export class InfiniteBoardView {
     for (const group of Object.values(board.groups)) {
       const rect = layout.groups[group.id]; if (!rect) continue;
       const element = document.createElement("div"); element.className = "board-group";
+      element.dataset.id = group.id;
       if (board.focus.includes(group.id)) element.classList.add("focused");
       setRect(element, rect);
       appendText(element, text(group.title || group.role || "知识组"), "group-label");
@@ -295,7 +334,7 @@ export class InfiniteBoardView {
     const defs = document.createElementNS(SVG_NS, "defs");
     const marker = document.createElementNS(SVG_NS, "marker"); marker.setAttribute("id", "arrowhead"); marker.setAttribute("markerWidth", "8"); marker.setAttribute("markerHeight", "8"); marker.setAttribute("refX", "7"); marker.setAttribute("refY", "4"); marker.setAttribute("orient", "auto");
     const triangle = document.createElementNS(SVG_NS, "path"); triangle.setAttribute("d", "M0,0 L8,4 L0,8 Z"); triangle.setAttribute("fill", "#6e8d86"); marker.append(triangle); defs.append(marker); this.connections.append(defs);
-    const occupiedLabels: Rect[] = [];
+    const occupiedLabels: Rect[] = Object.values(layout.nodes).map((rect) => ({ ...rect }));
     for (const connection of Object.values(board.connections)) {
       if (this.renderInternalDiagramConnection(board, connection)) continue;
       const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);

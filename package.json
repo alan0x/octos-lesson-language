@@ -17,11 +17,16 @@
     "eval:revalidate": "npm run build && node dist/packages/eval-runner/src/revalidate.js",
     "playback:conformance": "npm run build && node dist/packages/player-core/src/check-runs.js",
     "quality:eval": "npm run build && node dist/packages/quality-runner/src/cli.js",
-    "harness:dev": "npm run build && node scripts/serve-playback-harness.mjs"
+    "harness:dev": "npm run build && node scripts/serve-playback-harness.mjs",
+    "teaching:observe": "npm run build && node scripts/run-teaching-observer.mjs",
+    "teaching:observe:geometry": "npm run teaching:observe -- --lesson geometry --output evals/teaching-playback/geometry-v2/report.json",
+    "teaching:observe:calibration": "npm run teaching:observe -- --lesson geometry-v1 --expect fail --screenshots none --output evals/teaching-playback/geometry-v1-negative-control/report.json",
+    "teaching:observe:quadratic-probe": "npm run teaching:observe -- --lesson quadratic --expect fail --screenshots none --output evals/teaching-playback/quadratic-probe/report.json"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "esbuild": "^0.28.1",
+    "playwright-core": "^1.62.0",
     "typescript": "^7.0.2"
   },
   "exports": {

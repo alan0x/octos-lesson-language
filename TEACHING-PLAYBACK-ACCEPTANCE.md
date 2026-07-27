@@ -126,6 +126,14 @@ Harness 必须为固定课程输出关键帧观测：
 
 自动门禁不判断“讲解是否聪明”“颜色是否真的帮助理解”或“学生是否学会”。
 
+参考实现命令：
+
+```bash
+npm run teaching:observe -- --lesson geometry --output evals/teaching-playback/geometry-v2/report.json
+```
+
+当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查 KaTeX 错误、内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染和 console warning/error。几何 V2 基准为 11 个 Beat、51 个动作帧。
+
 ## 5. 人工盲测协议
 
 受试者不阅读 OLL、不看调试时间线、不听开发者补充说明，只使用学生界面。
