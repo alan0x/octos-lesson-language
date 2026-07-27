@@ -1,0 +1,15 @@
+{
+  "case_id": "english-relative-clause-001",
+  "language": "zh-CN",
+  "learner_request": "分析这句话：The book that you gave me was fascinating.",
+  "required_coverage": [
+    "原句分片",
+    "主干 The book was fascinating",
+    "that you gave me 修饰 book",
+    "从句内部主语、谓语和宾语",
+    "完整中文含义",
+    "关系不能只依赖颜色表达",
+    "完整讲解中不等待学生回答"
+  ],
+  "reference_authoring": "../../examples/english-relative-clause/lesson.authoring.json"
+}

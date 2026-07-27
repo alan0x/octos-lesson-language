@@ -65,14 +65,14 @@ npm run check:examples
 - Octos 后端负责模型访问、传输、资源和通用持久化，不解释课堂动作。
 - Octos Learn 产品目标和体验定义保存在 Obsidian 的 `learning_coach/learn-product-v2/`。
 
-## 当前里程碑
+## 当前进展
 
-第一里程碑只处理“用配方法理解二次函数”：
+表达能力实验已覆盖：
 
-- 一份完整 Authoring Lesson；
-- 确定性规范化结果；
-- 最小结构和引用验证；
-- expected semantic state；
-- 不依赖浏览器和模型的测试。
+- 二次函数配方法：math fragment、plot、关系连接和总结分组；
+- 几何图片与辅助线：受控 asset region、diagram 内部元素、几何 connection 和视觉不确定性；
+- 英语定语从句：普通文本 fragment、主干提取、修饰关系和分层结构。
 
-完成后再加入几何图片和英语句子结构，检验语言是否过度偏向数学板书。
+三份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和零依赖测试。
+
+几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。下一里程碑是模型可生成性实验，同时继续补充科学流程图和同板追问，避免过早冻结 v0.1。

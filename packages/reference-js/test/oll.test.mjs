@@ -12,21 +12,33 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../../..");
-const source = JSON.parse(await readFile(resolve(root, "examples/quadratic/lesson.authoring.json"), "utf8"));
-const host = {
-  lessonId: "lesson-quadratic-001",
-  boardId: "board-session-001",
-  baseRevision: 0,
-  regionIntent: "new_topic",
-};
+const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8"));
+const lessons = await Promise.all(
+  manifest.map(async (entry) => {
+    const example = resolve(root, "examples", entry.name);
+    const host = {
+      ...entry,
+      ...(entry.contextFile
+        ? { resourceContext: JSON.parse(await readFile(resolve(example, entry.contextFile), "utf8")) }
+        : {}),
+    };
+    return {
+      entry: host,
+      source: JSON.parse(await readFile(resolve(example, "lesson.authoring.json"), "utf8")),
+    };
+  }),
+);
+const { source, entry: host } = lessons.find(({ entry }) => entry.name === "quadratic");
 
-test("validates and normalizes the full quadratic lesson", () => {
-  validateAuthoringLesson(source);
-  const events = normalizeAuthoringLesson(source, host);
-  assert.equal(events[0].event, "lesson.open");
-  assert.equal(events.at(-1).event, "lesson.close");
-  assert.equal(events.length, source.steps.length + 2);
-  assert.equal(reduceCanonicalEvents(events).revision, source.steps.length);
+test("validates and normalizes every complete lesson", () => {
+  for (const lesson of lessons) {
+    validateAuthoringLesson(lesson.source, lesson.entry.resourceContext);
+    const events = normalizeAuthoringLesson(lesson.source, lesson.entry);
+    assert.equal(events[0].event, "lesson.open");
+    assert.equal(events.at(-1).event, "lesson.close");
+    assert.equal(events.length, lesson.source.steps.length + 2);
+    assert.equal(reduceCanonicalEvents(events).revision, lesson.entry.baseRevision + lesson.source.steps.length);
+  }
 });
 
 test("rejects a reference before it is defined", () => {
@@ -63,4 +75,54 @@ test("replaying a canonical step is idempotent", () => {
   const state = reduceCanonicalEvents([events[0], events[1], duplicatedStep, ...events.slice(2)]);
   const baseline = reduceCanonicalEvents(events);
   assert.deepEqual(state, baseline);
+});
+
+test("normalizes addressable image and diagram regions", () => {
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const events = normalizeAuthoringLesson(geometry.source, geometry.entry);
+  const state = reduceCanonicalEvents(events);
+  const diagram = state.nodes[`${geometry.entry.lessonId}:node:clean-diagram`];
+  const edge = diagram.content.edges.find((item) => item.label === "AB");
+  assert.equal(edge.from, `${diagram.id}:fragment:point-a`);
+  assert.equal(edge.to, `${diagram.id}:fragment:point-b`);
+  const auxiliary = state.connections[`${geometry.entry.lessonId}:connection:auxiliary-ad`];
+  assert.equal(auxiliary.emphasis.at(-1).emphasis, "resolved");
+});
+
+test("rejects an unknown image region", () => {
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const invalid = structuredClone(geometry.source);
+  invalid.steps[0].beats[0].actions[0].content.regions[0].source_region = "asset-geometry-001#region-not-provided";
+  assert.throws(
+    () => validateAuthoringLesson(invalid, geometry.entry.resourceContext),
+    (error) => error instanceof OllError && error.code === "OLL_RESOURCE_DENIED",
+  );
+});
+
+test("rejects an internal diagram reference that is not defined", () => {
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line");
+  const invalid = structuredClone(geometry.source);
+  invalid.steps[1].beats[0].actions[0].content.edges[0].from = "point-not-defined";
+  assert.throws(
+    () => validateAuthoringLesson(invalid, geometry.entry.resourceContext),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
+  );
+});
+
+test("rejects model-authored absolute board coordinates", () => {
+  const invalid = structuredClone(source);
+  invalid.steps[0].beats[0].actions[0].place.x = 120;
+  assert.throws(
+    () => validateAuthoringLesson(invalid),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_PLACEMENT",
+  );
+});
+
+test("rejects unknown action fields", () => {
+  const invalid = structuredClone(source);
+  invalid.steps[0].beats[0].actions[0].animation_duration = 1200;
+  assert.throws(
+    () => validateAuthoringLesson(invalid),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
+  );
 });

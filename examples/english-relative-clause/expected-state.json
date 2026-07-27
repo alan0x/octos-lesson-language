@@ -1,0 +1,300 @@
+{
+  "board_id": "board-session-003",
+  "revision": 4,
+  "nodes": {
+    "lesson-english-001:node:main-clause": {
+      "id": "lesson-english-001:node:main-clause",
+      "kind": "text",
+      "role": "observation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-english-001:node:main-clause:fragment:subject",
+            "text": "The book"
+          },
+          {
+            "id": "lesson-english-001:node:main-clause:fragment:linking-verb",
+            "text": " was"
+          },
+          {
+            "id": "lesson-english-001:node:main-clause:fragment:complement",
+            "text": " fascinating."
+          }
+        ],
+        "labels": [
+          "主语",
+          "系动词",
+          "表语"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-english-001:node:original-sentence"
+      }
+    },
+    "lesson-english-001:node:meaning-summary": {
+      "id": "lesson-english-001:node:meaning-summary",
+      "kind": "note",
+      "role": "conclusion",
+      "content": {
+        "title": "分层理解",
+        "items": [
+          "主干：The book was fascinating.",
+          "修饰：that you gave me → book",
+          "整句：你给我的那本书很精彩。"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-english-001:node:main-clause"
+      }
+    },
+    "lesson-english-001:node:modifier-note": {
+      "id": "lesson-english-001:node:modifier-note",
+      "kind": "note",
+      "role": "definition",
+      "content": {
+        "text": "that you gave me = 你给我的；先行词是 book"
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "spacious",
+        "anchor": "lesson-english-001:node:original-sentence"
+      }
+    },
+    "lesson-english-001:node:original-sentence": {
+      "id": "lesson-english-001:node:original-sentence",
+      "kind": "text",
+      "role": "problem",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:subject-head",
+            "text": "The book "
+          },
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:relative-clause",
+            "text": "that you gave me "
+          },
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:main-verb",
+            "text": "was "
+          },
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:subject-complement",
+            "text": "fascinating."
+          }
+        ]
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson_origin"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:original-sentence",
+            "fragment_id": "lesson-english-001:node:original-sentence:fragment:relative-clause"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:original-sentence",
+            "fragment_id": "lesson-english-001:node:original-sentence:fragment:subject-head"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:original-sentence",
+            "fragment_id": "lesson-english-001:node:original-sentence:fragment:main-verb"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:original-sentence",
+            "fragment_id": "lesson-english-001:node:original-sentence:fragment:subject-complement"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    },
+    "lesson-english-001:node:relative-structure": {
+      "id": "lesson-english-001:node:relative-structure",
+      "kind": "text",
+      "role": "derivation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:relative-pronoun",
+            "text": "that"
+          },
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:inner-subject",
+            "text": " you"
+          },
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:inner-verb",
+            "text": " gave"
+          },
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:indirect-object",
+            "text": " me"
+          }
+        ],
+        "labels": [
+          "关系代词/直接宾语",
+          "主语",
+          "谓语",
+          "间接宾语"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-english-001:node:modifier-note"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:relative-structure",
+            "fragment_id": "lesson-english-001:node:relative-structure:fragment:inner-subject"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-english-001:node:relative-structure",
+            "fragment_id": "lesson-english-001:node:relative-structure:fragment:inner-verb"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    }
+  },
+  "connections": {
+    "lesson-english-001:connection:clause-modifies-book": {
+      "id": "lesson-english-001:connection:clause-modifies-book",
+      "from": {
+        "node_id": "lesson-english-001:node:original-sentence",
+        "fragment_id": "lesson-english-001:node:original-sentence:fragment:relative-clause"
+      },
+      "to": {
+        "node_id": "lesson-english-001:node:original-sentence",
+        "fragment_id": "lesson-english-001:node:original-sentence:fragment:subject-head"
+      },
+      "relation": "modifies",
+      "label": "定语从句修饰先行词 book"
+    },
+    "lesson-english-001:connection:predicate-correspondence": {
+      "id": "lesson-english-001:connection:predicate-correspondence",
+      "from": {
+        "node_id": "lesson-english-001:node:original-sentence",
+        "fragment_id": "lesson-english-001:node:original-sentence:fragment:main-verb"
+      },
+      "to": {
+        "node_id": "lesson-english-001:node:main-clause",
+        "fragment_id": "lesson-english-001:node:main-clause:fragment:linking-verb"
+      },
+      "relation": "same_role",
+      "label": "主句谓语"
+    },
+    "lesson-english-001:connection:subject-correspondence": {
+      "id": "lesson-english-001:connection:subject-correspondence",
+      "from": {
+        "node_id": "lesson-english-001:node:original-sentence",
+        "fragment_id": "lesson-english-001:node:original-sentence:fragment:subject-head"
+      },
+      "to": {
+        "node_id": "lesson-english-001:node:main-clause",
+        "fragment_id": "lesson-english-001:node:main-clause:fragment:subject"
+      },
+      "relation": "same_role",
+      "label": "主语"
+    },
+    "lesson-english-001:connection:that-replaces-book": {
+      "id": "lesson-english-001:connection:that-replaces-book",
+      "from": {
+        "node_id": "lesson-english-001:node:relative-structure",
+        "fragment_id": "lesson-english-001:node:relative-structure:fragment:relative-pronoun"
+      },
+      "to": {
+        "node_id": "lesson-english-001:node:original-sentence",
+        "fragment_id": "lesson-english-001:node:original-sentence:fragment:subject-head"
+      },
+      "relation": "refers_to",
+      "label": "that 指代 book"
+    }
+  },
+  "groups": {
+    "lesson-english-001:group:lesson-map": {
+      "id": "lesson-english-001:group:lesson-map",
+      "title": "原句—主干—从句—整句含义",
+      "role": "summary",
+      "members": [
+        "lesson-english-001:group:main-structure-group",
+        "lesson-english-001:group:relative-clause-group",
+        "lesson-english-001:node:meaning-summary"
+      ]
+    },
+    "lesson-english-001:group:main-structure-group": {
+      "id": "lesson-english-001:group:main-structure-group",
+      "title": "主句骨架",
+      "role": "observation",
+      "members": [
+        "lesson-english-001:node:original-sentence",
+        "lesson-english-001:node:main-clause"
+      ]
+    },
+    "lesson-english-001:group:relative-clause-group": {
+      "id": "lesson-english-001:group:relative-clause-group",
+      "title": "定语从句",
+      "role": "derivation",
+      "members": [
+        "lesson-english-001:node:modifier-note",
+        "lesson-english-001:node:relative-structure"
+      ]
+    }
+  },
+  "focus": [
+    "lesson-english-001:group:lesson-map"
+  ],
+  "applied_lessons": [
+    "lesson-english-001"
+  ],
+  "applied_steps": [
+    "lesson-english-001:step:present-sentence",
+    "lesson-english-001:step:find-main-clause",
+    "lesson-english-001:step:explain-relative-clause",
+    "lesson-english-001:step:reassemble-meaning"
+  ],
+  "applied_actions": [
+    "lesson-english-001:action:1:1:1",
+    "lesson-english-001:action:1:1:2",
+    "lesson-english-001:action:2:1:1",
+    "lesson-english-001:action:2:1:2",
+    "lesson-english-001:action:2:1:3",
+    "lesson-english-001:action:2:1:4",
+    "lesson-english-001:action:2:1:5",
+    "lesson-english-001:action:2:1:6",
+    "lesson-english-001:action:3:1:1",
+    "lesson-english-001:action:3:1:2",
+    "lesson-english-001:action:3:2:1",
+    "lesson-english-001:action:3:2:2",
+    "lesson-english-001:action:3:2:3",
+    "lesson-english-001:action:3:2:4",
+    "lesson-english-001:action:4:1:1",
+    "lesson-english-001:action:4:1:2",
+    "lesson-english-001:action:4:1:3",
+    "lesson-english-001:action:4:1:4",
+    "lesson-english-001:action:4:1:5"
+  ]
+}

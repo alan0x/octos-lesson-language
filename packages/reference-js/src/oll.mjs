@@ -12,6 +12,12 @@ const ACTIONS = new Set([
   "expression",
 ]);
 const PHASES = new Set(["before_speech", "during_speech", "after_speech"]);
+const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]);
+const ACTION_FIELDS = new Set([
+  "do", "when", "as", "kind", "role", "content", "place", "target",
+  "from", "to", "relation", "label", "emphasis", "members", "targets",
+  "intent", "expression", "reason",
+]);
 
 export class OllError extends Error {
   constructor(code, path, message) {
@@ -35,6 +41,12 @@ function requireObject(value, path) {
 function requireArray(value, path) {
   if (!Array.isArray(value) || value.length === 0) {
     fail("OLL_INVALID_TYPE", path, "Expected a non-empty array");
+  }
+}
+
+function requireString(value, path) {
+  if (typeof value !== "string" || value.length === 0) {
+    fail("OLL_INVALID_TYPE", path, "Expected a non-empty string");
   }
 }
 
@@ -83,13 +95,104 @@ function validateContentFragments(content, path) {
 
 function collectAddressableContent(content) {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
     }
   }
   return result;
+}
+
+function validateStructuredContent(content, path, addressable) {
+  if (Array.isArray(content?.edges)) {
+    content.edges.forEach((edge, index) => {
+      for (const field of ["from", "to"]) {
+        if (!addressable.has(edge[field])) {
+          fail("OLL_REFERENCE_NOT_FOUND", `${path}/edges/${index}/${field}`, `Diagram element '${edge[field]}' is not defined`);
+        }
+      }
+    });
+  }
+  if (Array.isArray(content?.regions)) {
+    content.regions.forEach((region, regionIndex) => {
+      if (!Array.isArray(region.members)) return;
+      region.members.forEach((member, memberIndex) => {
+        if (!addressable.has(member)) {
+          fail("OLL_REFERENCE_NOT_FOUND", `${path}/regions/${regionIndex}/members/${memberIndex}`, `Diagram element '${member}' is not defined`);
+        }
+      });
+    });
+  }
+}
+
+function validateImageResource(action, path, resourceContext) {
+  if (action.kind !== "image") return;
+  const assetId = action.content?.asset_id;
+  if (typeof assetId !== "string" || assetId.length === 0) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/asset_id`, "Image requires a controlled asset_id");
+  }
+  if (!resourceContext) return;
+  const asset = resourceContext.assets?.find((candidate) => candidate.asset_id === assetId);
+  if (!asset) fail("OLL_RESOURCE_DENIED", `${path}/content/asset_id`, `Asset '${assetId}' is not available in Session Context`);
+  const allowedRegions = new Set((asset.regions ?? []).map((region) => region.region_id));
+  (action.content.regions ?? []).forEach((region, index) => {
+    if (!allowedRegions.has(region.source_region)) {
+      fail("OLL_RESOURCE_DENIED", `${path}/content/regions/${index}/source_region`, `Region '${region.source_region}' is not available for '${assetId}'`);
+    }
+  });
+}
+
+function validatePlacement(place, path, registry) {
+  requireObject(place, path);
+  if (!PLACEMENT_RELATIONS.has(place.relation)) {
+    fail("OLL_INVALID_PLACEMENT", `${path}/relation`, `Unknown placement relation '${place.relation}'`);
+  }
+  for (const forbidden of ["x", "y", "width", "height", "zoom", "duration_ms"]) {
+    if (forbidden in place) fail("OLL_INVALID_PLACEMENT", `${path}/${forbidden}`, `Authoring Profile cannot set '${forbidden}'`);
+  }
+  if (place.relation === "new_region") {
+    if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
+  } else {
+    resolveLocal(registry, place.anchor, `${path}/anchor`, ["node", "group"]);
+  }
+}
+
+function validateActionPayload(action, path) {
+  for (const field of Object.keys(action)) {
+    if (!ACTION_FIELDS.has(field)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/${field}`, `Unknown action field '${field}'`);
+  }
+  if (action.do === "write") {
+    requireAlias(action.as, `${path}/as`);
+    requireString(action.kind, `${path}/kind`);
+    requireString(action.role, `${path}/role`);
+    requireObject(action.content, `${path}/content`);
+    requireObject(action.place, `${path}/place`);
+  } else if (action.do === "revise") {
+    requireString(action.target, `${path}/target`);
+    requireObject(action.content, `${path}/content`);
+    requireString(action.reason, `${path}/reason`);
+  } else if (action.do === "emphasize") {
+    requireString(action.target, `${path}/target`);
+    requireString(action.emphasis, `${path}/emphasis`);
+  } else if (action.do === "connect") {
+    requireAlias(action.as, `${path}/as`);
+    requireString(action.from, `${path}/from`);
+    requireString(action.to, `${path}/to`);
+    requireString(action.relation, `${path}/relation`);
+  } else if (action.do === "group") {
+    requireAlias(action.as, `${path}/as`);
+    requireString(action.role, `${path}/role`);
+    requireString(action.label, `${path}/label`);
+    requireArray(action.members, `${path}/members`);
+  } else if (action.do === "focus") {
+    requireArray(action.targets, `${path}/targets`);
+    requireString(action.intent, `${path}/intent`);
+  } else if (action.do === "point") {
+    requireString(action.target, `${path}/target`);
+  } else if (action.do === "expression") {
+    requireString(action.expression, `${path}/expression`);
+  }
 }
 
 function resolveLocal(registry, value, path, allowedTypes = null) {
@@ -107,7 +210,7 @@ function resolveLocal(registry, value, path, allowedTypes = null) {
   return { alias, fragment, type: entry.type };
 }
 
-export function validateAuthoringLesson(document) {
+export function validateAuthoringLesson(document, resourceContext = null) {
   requireObject(document, "");
   if (document.dsl !== "octos.lesson" || document.version !== "0.1" || document.profile !== "authoring") {
     fail("OLL_UNSUPPORTED_PROFILE", "", "Expected octos.lesson 0.1 Authoring Profile");
@@ -115,6 +218,8 @@ export function validateAuthoringLesson(document) {
   requireObject(document.lesson, "/lesson");
   requireArray(document.lesson.goals, "/lesson/goals");
   requireArray(document.steps, "/steps");
+  requireObject(document.close, "/close");
+  requireArray(document.close.focus, "/close/focus");
 
   const registry = new Map();
   const stepKeys = new Set();
@@ -140,13 +245,14 @@ export function validateAuthoringLesson(document) {
         const actionPath = `${beatPath}/actions/${actionIndex}`;
         requireObject(action, actionPath);
         if (!ACTIONS.has(action.do)) fail("OLL_INVALID_OPERATION", `${actionPath}/do`, `Unknown action '${action.do}'`);
+        validateActionPayload(action, actionPath);
         const phase = action.when ?? "during_speech";
         if (!PHASES.has(phase)) fail("OLL_INVALID_PHASE", `${actionPath}/when`, `Unknown phase '${phase}'`);
 
         if (action.do === "write") {
           requireAlias(action.as, `${actionPath}/as`);
           requireObject(action.content, `${actionPath}/content`);
-          requireObject(action.place, `${actionPath}/place`);
+          validatePlacement(action.place, `${actionPath}/place`, registry);
           const fragments = collectAddressableContent(action.content);
           const uniqueFragments = new Set();
           for (const fragment of fragments) {
@@ -154,14 +260,18 @@ export function validateAuthoringLesson(document) {
             if (uniqueFragments.has(fragment)) fail("OLL_DUPLICATE_ALIAS", `${actionPath}/content`, `Fragment '${fragment}' is duplicated`);
             uniqueFragments.add(fragment);
           }
-          if (action.place.relation !== "new_region") {
-            resolveLocal(registry, action.place.anchor, `${actionPath}/place/anchor`);
-          }
+          validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
+          validateImageResource(action, actionPath, resourceContext);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
 
-        if (["emphasize", "point", "revise"].includes(action.do)) {
+        if (["emphasize", "point"].includes(action.do)) {
+          resolveLocal(registry, action.target, `${actionPath}/target`, ["node", "connection"]);
+          return;
+        }
+
+        if (action.do === "revise") {
           resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
           return;
         }
@@ -205,14 +315,22 @@ function stableId(host, type, alias) {
   return `${host.lessonId}:${type}:${alias}`;
 }
 
-function normalizeFragments(host, nodeId, content) {
+function normalizeAddressableContent(host, nodeId, content) {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
       const { as, ...rest } = item;
-      return { id: `${nodeId}:fragment:${as}`, ...rest };
+      const normalized = { id: `${nodeId}:fragment:${as}`, ...rest };
+      if (field === "edges") {
+        normalized.from = `${nodeId}:fragment:${item.from}`;
+        normalized.to = `${nodeId}:fragment:${item.to}`;
+      }
+      if (field === "regions" && Array.isArray(item.members)) {
+        normalized.members = item.members.map((member) => `${nodeId}:fragment:${member}`);
+      }
+      return normalized;
     });
   }
   return clone;
@@ -275,7 +393,7 @@ function normalizeAction(action, context) {
         id: nodeId,
         kind: action.kind,
         role: action.role,
-        content: normalizeFragments(host, nodeId, action.content),
+        content: normalizeAddressableContent(host, nodeId, action.content),
         placement: normalizePlacement(registry, action.place),
       },
     };
@@ -345,7 +463,7 @@ function normalizeAction(action, context) {
 }
 
 export function normalizeAuthoringLesson(document, host) {
-  validateAuthoringLesson(document);
+  validateAuthoringLesson(document, host?.resourceContext);
   requireObject(host, "host");
   for (const field of ["lessonId", "boardId", "baseRevision"]) {
     if (host[field] === undefined || host[field] === null) fail("OLL_MISSING_HOST_FIELD", `host/${field}`, `Missing host field '${field}'`);
@@ -453,9 +571,11 @@ export function reduceCanonicalEvents(events) {
             if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `Node '${action.target.node_id}' not found`);
             node.content = structuredClone(action.revision.content);
           } else if (action.op === "board.emphasize") {
-            const node = state.nodes[action.target.node_id];
-            if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `Node '${action.target.node_id}' not found`);
-            node.emphasis = [...(node.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
+            const target = action.target.node_id
+              ? state.nodes[action.target.node_id]
+              : state.connections[action.target.connection_id];
+            if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
+            target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
           }
         }
       }

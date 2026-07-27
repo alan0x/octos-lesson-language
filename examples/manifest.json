@@ -1,0 +1,24 @@
+[
+  {
+    "name": "quadratic",
+    "lessonId": "lesson-quadratic-001",
+    "boardId": "board-session-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
+    "name": "geometry-auxiliary-line",
+    "lessonId": "lesson-geometry-001",
+    "boardId": "board-session-002",
+    "baseRevision": 0,
+    "regionIntent": "new_topic",
+    "contextFile": "session-context.json"
+  },
+  {
+    "name": "english-relative-clause",
+    "lessonId": "lesson-english-001",
+    "boardId": "board-session-003",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  }
+]

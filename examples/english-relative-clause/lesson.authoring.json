@@ -1,0 +1,162 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "拆解含定语从句的英语句子",
+    "goals": ["找到句子主干", "理解 that 从句修饰哪个词", "看懂从句内部结构"]
+  },
+  "steps": [
+    {
+      "key": "present-sentence",
+      "purpose": "呈现原句并建立逐层拆解的目标",
+      "beats": [
+        {
+          "key": "write-original",
+          "say": "先保留完整句子，不急着逐词翻译。我们要先找主干，再看中间的从句在修饰谁。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "original-sentence",
+              "kind": "text",
+              "role": "problem",
+              "content": {
+                "fragments": [
+                  {"as": "subject-head", "text": "The book "},
+                  {"as": "relative-clause", "text": "that you gave me "},
+                  {"as": "main-verb", "text": "was "},
+                  {"as": "subject-complement", "text": "fascinating."}
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson_origin"}
+            },
+            {"do": "emphasize", "target": "original-sentence#relative-clause", "emphasis": "supporting"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "find-main-clause",
+      "purpose": "暂时拿掉定语从句，找到主句骨架",
+      "beats": [
+        {
+          "key": "identify-subject-predicate",
+          "say": "先把 that you gave me 暂时拿掉，剩下 The book was fascinating。这就是主句骨架：The book 是主语，was fascinating 是系表结构。",
+          "delivery": "careful",
+          "actions": [
+            {"do": "emphasize", "target": "original-sentence#subject-head", "emphasis": "focus"},
+            {"do": "emphasize", "target": "original-sentence#main-verb", "emphasis": "focus"},
+            {"do": "emphasize", "target": "original-sentence#subject-complement", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "main-clause",
+              "kind": "text",
+              "role": "observation",
+              "content": {
+                "fragments": [
+                  {"as": "subject", "text": "The book"},
+                  {"as": "linking-verb", "text": " was"},
+                  {"as": "complement", "text": " fascinating."}
+                ],
+                "labels": ["主语", "系动词", "表语"]
+              },
+              "place": {"relation": "below", "anchor": "original-sentence", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "subject-correspondence", "from": "original-sentence#subject-head", "to": "main-clause#subject", "relation": "same_role", "label": "主语"},
+            {"do": "connect", "as": "predicate-correspondence", "from": "original-sentence#main-verb", "to": "main-clause#linking-verb", "relation": "same_role", "label": "主句谓语"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-relative-clause",
+      "purpose": "说明定语从句修饰 book，并拆解其内部结构",
+      "beats": [
+        {
+          "key": "attach-clause-to-book",
+          "say": "that you gave me 紧跟在 book 后面，用来限定是哪一本书，所以整个从句修饰 book。它相当于中文里的‘你给我的’。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "connect",
+              "as": "clause-modifies-book",
+              "from": "original-sentence#relative-clause",
+              "to": "original-sentence#subject-head",
+              "relation": "modifies",
+              "label": "定语从句修饰先行词 book"
+            },
+            {
+              "do": "write",
+              "as": "modifier-note",
+              "kind": "note",
+              "role": "definition",
+              "content": {"text": "that you gave me = 你给我的；先行词是 book"},
+              "place": {"relation": "right_of", "anchor": "original-sentence", "align": "center", "gap": "spacious"}
+            }
+          ]
+        },
+        {
+          "key": "split-inner-clause",
+          "say": "再看从句内部：you 是主语，gave 是谓语，me 是间接宾语；that 代替前面的 book，在 gave 后面充当直接宾语。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "relative-structure",
+              "kind": "text",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "relative-pronoun", "text": "that"},
+                  {"as": "inner-subject", "text": " you"},
+                  {"as": "inner-verb", "text": " gave"},
+                  {"as": "indirect-object", "text": " me"}
+                ],
+                "labels": ["关系代词/直接宾语", "主语", "谓语", "间接宾语"]
+              },
+              "place": {"relation": "below", "anchor": "modifier-note", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "that-replaces-book", "from": "relative-structure#relative-pronoun", "to": "original-sentence#subject-head", "relation": "refers_to", "label": "that 指代 book"},
+            {"do": "emphasize", "target": "relative-structure#inner-subject", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "relative-structure#inner-verb", "emphasis": "focus"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "reassemble-meaning",
+      "purpose": "把主干和修饰信息重新组合成完整理解",
+      "beats": [
+        {
+          "key": "show-layered-meaning",
+          "say": "现在重新组合：主干说‘这本书很精彩’，定语从句补充‘是哪本书’——是你给我的那本。完整意思就是‘你给我的那本书很精彩’。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "meaning-summary",
+              "kind": "note",
+              "role": "conclusion",
+              "content": {
+                "title": "分层理解",
+                "items": ["主干：The book was fascinating.", "修饰：that you gave me → book", "整句：你给我的那本书很精彩。"]
+              },
+              "place": {"relation": "below", "anchor": "main-clause", "align": "start", "gap": "spacious"}
+            },
+            {"do": "group", "as": "main-structure-group", "role": "observation", "label": "主句骨架", "members": ["original-sentence", "main-clause"]},
+            {"do": "group", "as": "relative-clause-group", "role": "derivation", "label": "定语从句", "members": ["modifier-note", "relative-structure"]},
+            {"do": "group", "as": "lesson-map", "role": "summary", "label": "原句—主干—从句—整句含义", "members": ["main-structure-group", "relative-clause-group", "meaning-summary"]},
+            {"do": "focus", "when": "after_speech", "targets": ["lesson-map"], "intent": "lesson_overview"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "找到主句骨架，确认 that 从句修饰 book，并拆解从句内部成分",
+    "focus": ["lesson-map"]
+  }
+}

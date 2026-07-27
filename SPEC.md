@@ -272,6 +272,33 @@ diagram, conclusion, warning, uncertainty, summary
 
 Runtime 可以根据 role 选择视觉样式，但 role 不等于 CSS class。
 
+#### Image content
+
+`image` 必须通过受控 `asset_id` 引用 session 资源。可寻址 `regions` 使用宿主视觉预处理提供的 `source_region`：
+
+```json
+{
+  "asset_id": "asset-geometry-001",
+  "alt": "等腰三角形 ABC",
+  "regions": [
+    {
+      "id": "lesson-001:node:image:fragment:midpoint",
+      "source_region": "asset-geometry-001#region-midpoint",
+      "label": "中点标记",
+      "confidence": "medium"
+    }
+  ]
+}
+```
+
+OLL 不保存本地路径和图片二进制。模型引用已知 region，不输出图片像素坐标。Runtime 通过受控 asset manifest 解析实际区域。
+
+#### Diagram content
+
+`diagram` 可以包含 `elements`、`edges` 和 `regions`，每一项都具有稳定 fragment ID。Canonical edge 的 `from`/`to` 和 region 的 `members` 必须是同一 diagram 内 fragment ID。
+
+当 `board.connect` 的两个端点属于同一 diagram 且 relation 为 `geometry_segment` 时，Runtime 将其解释为 diagram 内几何线段，而不是两个白板卡片之间的外部连接线。
+
 ### 9.2 `board.revise`
 
 显式修改已有节点。
@@ -315,6 +342,8 @@ Runtime 可以根据 role 选择视觉样式，但 role 不等于 CSS class。
 ```
 
 `emphasis`：`focus`、`supporting`、`warning`、`resolved`。实现可以使用颜色、描边、下划线或动画，但不能只依赖颜色表达含义。
+
+目标可以是 node、node fragment 或 connection。强调 connection 不复制连接，也不改变其端点和关系语义。
 
 ### 9.4 `board.connect`
 

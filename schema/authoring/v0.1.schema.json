@@ -3,7 +3,7 @@
   "$id": "https://octos.dev/schema/lesson/authoring/0.1",
   "title": "OLL Authoring Profile 0.1 Exploration",
   "type": "object",
-  "required": ["dsl", "version", "profile", "lesson", "steps"],
+  "required": ["dsl", "version", "profile", "lesson", "steps", "close"],
   "additionalProperties": false,
   "properties": {
     "dsl": {"const": "octos.lesson"},
@@ -35,6 +35,8 @@
     },
     "close": {
       "type": "object",
+      "required": ["summary", "focus"],
+      "additionalProperties": false,
       "properties": {
         "summary": {"type": "string"},
         "focus": {"type": "array", "items": {"type": "string"}}
@@ -76,6 +78,7 @@
     "action": {
       "type": "object",
       "required": ["do"],
+      "additionalProperties": false,
       "properties": {
         "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression"]},
         "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
@@ -83,7 +86,7 @@
         "kind": {"enum": ["text", "math", "shape", "diagram", "plot", "image", "table", "note"]},
         "role": {"type": "string"},
         "content": {"type": "object"},
-        "place": {"type": "object"},
+        "place": {"$ref": "#/$defs/placement"},
         "target": {"type": "string"},
         "from": {"type": "string"},
         "to": {"type": "string"},
@@ -100,6 +103,18 @@
     "alias": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    },
+    "placement": {
+      "type": "object",
+      "required": ["relation"],
+      "additionalProperties": false,
+      "properties": {
+        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]},
+        "anchor": {"$ref": "#/$defs/alias"},
+        "region_role": {"type": "string"},
+        "align": {"enum": ["start", "center", "end"]},
+        "gap": {"enum": ["compact", "normal", "spacious"]}
+      }
     }
   }
 }

@@ -69,6 +69,14 @@ parabola#vertex
 
 别名必须先定义后引用。Normalizer 将它们转换成稳定 Canonical ID。
 
+以下内容项都可以通过 `as` 成为 fragment：
+
+```text
+fragments, curves, points, guides, regions, elements, edges
+```
+
+因此可以引用 `source-image#midpoint-marks`、`clean-diagram#point-a`、`clean-diagram#side-ab` 或 `parabola#vertex`。diagram edge 的 `from`/`to` 和 region 的 `members` 必须引用同一 diagram 中已经声明的 element。
+
 ## 5. 课程结构
 
 ```json
@@ -127,6 +135,8 @@ parabola#vertex
 ```json
 {"do": "emphasize", "target": "original#linear", "emphasis": "focus"}
 ```
+
+目标可以是 node、node fragment 或 connection。例如几何辅助线由 `connect` 创建后，可以再次用其别名强调。
 
 ### `connect`
 
@@ -194,8 +204,9 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 
 ## 10. 当前限制
 
-- `diagram`、`shape`、`image` 和 `table` 的 content 仍待跨学科示例证明；
-- 当前完整示例只有数学配方法；
+- `image`、`diagram` 和 `table` 已在几何示例中完成第一轮表达验证，但还没有前端视觉 Runtime 证明；
+- `shape` 和复杂科学流程图仍待完整示例；
+- 当前完整示例覆盖数学、几何图片和英语文本，尚未覆盖同板追问；
 - 模型可生成性尚未测试；
 - Authoring Schema 仍可能过于冗长；
 - 任何无法由真实课程解释的字段都应删除，而不是为了完整感保留。

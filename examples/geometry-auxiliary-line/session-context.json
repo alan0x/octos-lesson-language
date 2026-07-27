@@ -1,0 +1,20 @@
+{
+  "session_id": "session-geometry-001",
+  "request": "帮我讲清楚为什么要连这条辅助线。",
+  "assets": [
+    {
+      "asset_id": "asset-geometry-001",
+      "media_type": "image/png",
+      "alt": "等腰三角形 ABC，D 位于底边 BC 上",
+      "regions": [
+        {"region_id": "asset-geometry-001#region-triangle", "label": "△ABC", "confidence": "high"},
+        {"region_id": "asset-geometry-001#region-a", "label": "顶点 A", "confidence": "high"},
+        {"region_id": "asset-geometry-001#region-b", "label": "点 B", "confidence": "high"},
+        {"region_id": "asset-geometry-001#region-c", "label": "点 C", "confidence": "high"},
+        {"region_id": "asset-geometry-001#region-d", "label": "点 D", "confidence": "medium"},
+        {"region_id": "asset-geometry-001#region-equal-sides", "label": "AB=AC 标记", "confidence": "high"},
+        {"region_id": "asset-geometry-001#region-midpoint", "label": "BD=DC 中点标记", "confidence": "medium"}
+      ]
+    }
+  ]
+}

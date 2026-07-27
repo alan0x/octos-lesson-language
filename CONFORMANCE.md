@@ -281,13 +281,12 @@ E2E 分成两套：
 最终工具应支持等价能力：
 
 ```bash
-pnpm lesson validate fixtures/valid/quadratic.jsonl
-pnpm lesson reduce fixtures/valid/quadratic.jsonl
-pnpm lesson trace fixtures/valid/quadratic.jsonl
-pnpm lesson test-conformance
+npm test
+npm run check:examples
+npm run generate:goldens
 ```
 
-`reduce` 输出 canonical Semantic BoardState，便于人工检查和 golden diff。
+`check:examples` 对 manifest 中的每堂课程执行 Authoring validation、确定性 normalization、Canonical event 对比和 Semantic BoardState golden 对比。`generate:goldens` 只用于明确接受语言变化后更新基准，不能代替人工 diff 审查。
 
 ## 9. CI 门禁
 

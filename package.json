@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node --test packages/reference-js/test/*.test.mjs",
-    "check:examples": "node packages/reference-js/src/check-examples.mjs"
+    "check:examples": "node packages/reference-js/src/check-examples.mjs",
+    "generate:goldens": "node packages/reference-js/src/generate-goldens.mjs"
   }
 }

@@ -1,0 +1,256 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么要连接等腰三角形的顶角和底边中点",
+    "goals": [
+      "看懂辅助线 AD 如何制造两个可比较的三角形",
+      "利用 SSS 证明两个三角形全等",
+      "由全等推出角平分线和垂线结论"
+    ],
+    "adaptation": {
+      "strategies": ["visual-first", "explicit-transformation", "summary-map"],
+      "context_refs": ["learner.preferences.visual-explanation"]
+    }
+  },
+  "steps": [
+    {
+      "key": "inspect-source-image",
+      "purpose": "把学生图片放入白板，并区分确定识别与待确认信息",
+      "beats": [
+        {
+          "key": "place-source",
+          "say": "先看原图。我们能确定这是等腰三角形 ABC，AB 和 AC 有相等标记，D 位于底边 BC 上。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "source-image",
+              "kind": "image",
+              "role": "problem",
+              "content": {
+                "asset_id": "asset-geometry-001",
+                "alt": "等腰三角形 ABC，D 位于底边 BC 上",
+                "regions": [
+                  {"as": "triangle", "source_region": "asset-geometry-001#region-triangle", "label": "△ABC", "confidence": "high"},
+                  {"as": "point-a", "source_region": "asset-geometry-001#region-a", "label": "A", "confidence": "high"},
+                  {"as": "point-b", "source_region": "asset-geometry-001#region-b", "label": "B", "confidence": "high"},
+                  {"as": "point-c", "source_region": "asset-geometry-001#region-c", "label": "C", "confidence": "high"},
+                  {"as": "point-d", "source_region": "asset-geometry-001#region-d", "label": "D", "confidence": "medium"},
+                  {"as": "equal-side-marks", "source_region": "asset-geometry-001#region-equal-sides", "label": "AB=AC", "confidence": "high"},
+                  {"as": "midpoint-marks", "source_region": "asset-geometry-001#region-midpoint", "label": "BD=DC", "confidence": "medium"}
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson_origin"}
+            },
+            {"do": "emphasize", "target": "source-image#equal-side-marks", "emphasis": "focus"},
+            {"do": "emphasize", "target": "source-image#midpoint-marks", "emphasis": "supporting"}
+          ]
+        },
+        {
+          "key": "state-visual-uncertainty",
+          "say": "中点标记在图片里较小。这里按照题目条件把 D 当作中点；如果原题没有这个条件，就不能继续使用 BD 等于 DC。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "recognition-note",
+              "kind": "note",
+              "role": "uncertainty",
+              "content": {
+                "text": "视觉识别：D 为中点的标记置信度为 medium；证明使用题目文字条件 D 是 BC 中点。"
+              },
+              "place": {"relation": "below", "anchor": "source-image", "align": "start", "gap": "compact"}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "build-clean-diagram",
+      "purpose": "从原图建立可寻址的几何结构",
+      "beats": [
+        {
+          "key": "draw-abstract-triangle",
+          "say": "把图片抽象成干净的几何图。A 是顶点，B、D、C 在同一直线上，AB 等于 AC，BD 等于 DC。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "clean-diagram",
+              "kind": "diagram",
+              "role": "diagram",
+              "content": {
+                "elements": [
+                  {"as": "point-a", "kind": "point", "label": "A", "semantic_position": "top"},
+                  {"as": "point-b", "kind": "point", "label": "B", "semantic_position": "bottom_left"},
+                  {"as": "point-d", "kind": "point", "label": "D", "semantic_position": "bottom_center"},
+                  {"as": "point-c", "kind": "point", "label": "C", "semantic_position": "bottom_right"}
+                ],
+                "edges": [
+                  {"as": "side-ab", "from": "point-a", "to": "point-b", "label": "AB", "marks": ["equal-side"]},
+                  {"as": "side-ac", "from": "point-a", "to": "point-c", "label": "AC", "marks": ["equal-side"]},
+                  {"as": "segment-bd", "from": "point-b", "to": "point-d", "label": "BD", "marks": ["equal-half"]},
+                  {"as": "segment-dc", "from": "point-d", "to": "point-c", "label": "DC", "marks": ["equal-half"]}
+                ],
+                "regions": [
+                  {"as": "triangle-abd", "kind": "polygon", "members": ["point-a", "point-b", "point-d"], "label": "△ABD"},
+                  {"as": "triangle-acd", "kind": "polygon", "members": ["point-a", "point-c", "point-d"], "label": "△ACD"}
+                ]
+              },
+              "place": {"relation": "right_of", "anchor": "source-image", "align": "center", "gap": "spacious"}
+            },
+            {
+              "do": "connect",
+              "as": "image-to-diagram",
+              "from": "source-image#triangle",
+              "to": "clean-diagram",
+              "relation": "abstracted_as",
+              "label": "去掉无关视觉信息"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "construct-auxiliary-line",
+      "purpose": "解释连接 AD 的动机和它创造的两个三角形",
+      "beats": [
+        {
+          "key": "draw-ad",
+          "say": "现在连接 A 和 D。它不是凭空出现的技巧：这条线把大三角形分成了 △ABD 和 △ACD，让两边的已知相等条件进入两个可比较的三角形。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "connect",
+              "as": "auxiliary-ad",
+              "from": "clean-diagram#point-a",
+              "to": "clean-diagram#point-d",
+              "relation": "geometry_segment",
+              "label": "辅助线 AD"
+            },
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-abd", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-acd", "emphasis": "supporting"}
+          ]
+        },
+        {
+          "key": "state-motive",
+          "say": "选择连接顶点 A 和中点 D，是因为它同时提供公共边 AD，并把底边中点条件变成 BD 等于 DC。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "construction-motive",
+              "kind": "note",
+              "role": "observation",
+              "content": {"title": "为什么连 AD", "items": ["产生公共边 AD", "把 BD=DC 放进两个三角形", "把左右两半对应起来"]},
+              "place": {"relation": "below", "anchor": "clean-diagram", "align": "start", "gap": "normal"}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "prove-congruence",
+      "purpose": "用三组边相等证明两个三角形全等",
+      "beats": [
+        {
+          "key": "collect-three-sides",
+          "say": "比较两个小三角形：AB 等于 AC，这是等腰条件；BD 等于 DC，这是中点条件；AD 等于 AD，这是公共边。三组对应边分别相等。",
+          "delivery": "neutral",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#side-ab", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#side-ac", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#segment-bd", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "clean-diagram#segment-dc", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "resolved"},
+            {
+              "do": "write",
+              "as": "sss-table",
+              "kind": "table",
+              "role": "derivation",
+              "content": {
+                "columns": ["△ABD", "△ACD", "理由"],
+                "rows": [["AB", "AC", "等腰条件"], ["BD", "DC", "中点条件"], ["AD", "AD", "公共边"]]
+              },
+              "place": {"relation": "below", "anchor": "construction-motive", "align": "start", "gap": "normal"}
+            }
+          ]
+        },
+        {
+          "key": "state-congruence",
+          "say": "因此根据 SSS，△ABD 全等于 △ACD。辅助线的任务完成了：它把原来分散的条件组织成了一次全等证明。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "congruence-result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"fragments": [{"as": "statement", "latex": "\\triangle ABD\\cong\\triangle ACD"}, {"as": "reason", "latex": "\\quad(SSS)"}]},
+              "place": {"relation": "below", "anchor": "sss-table", "align": "start", "gap": "normal"}
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "derive-conclusions",
+      "purpose": "由全等推出角平分线和垂线，并整理知识结构",
+      "beats": [
+        {
+          "key": "derive-angle-bisector",
+          "say": "全等三角形的对应角相等，所以 ∠BAD 等于 ∠CAD，AD 是顶角 A 的角平分线。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "angle-result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"fragments": [{"as": "angles", "latex": "\\angle BAD=\\angle CAD"}, {"as": "meaning", "latex": "\\Rightarrow AD\\text{ 平分 }\\angle A"}]},
+              "place": {"relation": "right_of", "anchor": "congruence-result", "align": "start", "gap": "spacious"}
+            },
+            {"do": "connect", "as": "congruence-to-angle", "from": "congruence-result#statement", "to": "angle-result#angles", "relation": "implies", "label": "对应角相等"}
+          ]
+        },
+        {
+          "key": "derive-perpendicular",
+          "say": "D 点左右两个角也相等，而 B、D、C 在同一直线上，它们相加是 180 度，所以每个都是 90 度。于是 AD 垂直 BC。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "perpendicular-result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"fragments": [{"as": "adjacent", "latex": "\\angle ADB=\\angle ADC"}, {"as": "straight", "latex": ",\\quad \\angle ADB+\\angle ADC=180^\\circ"}, {"as": "result", "latex": "\\Rightarrow AD\\perp BC"}]},
+              "place": {"relation": "below", "anchor": "angle-result", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "congruence-to-perpendicular", "from": "congruence-result#statement", "to": "perpendicular-result#result", "relation": "implies", "label": "对应角相等且构成平角"}
+          ]
+        },
+        {
+          "key": "organize-proof",
+          "say": "整条思路可以缩成一张图：连接顶点和中点，制造两个三角形；用三组边证明全等；再由对应角相等得到角平分线和垂线。",
+          "delivery": "encouraging",
+          "actions": [
+            {"do": "group", "as": "construction-group", "role": "observation", "label": "辅助线动机", "members": ["clean-diagram", "construction-motive"]},
+            {"do": "group", "as": "proof-group", "role": "derivation", "label": "SSS 全等", "members": ["sss-table", "congruence-result"]},
+            {"do": "group", "as": "conclusion-group", "role": "summary", "label": "两个结论", "members": ["angle-result", "perpendicular-result"]},
+            {"do": "group", "as": "lesson-map", "role": "summary", "label": "辅助线 AD 的作用", "members": ["construction-group", "proof-group", "conclusion-group"]},
+            {"do": "focus", "when": "after_speech", "targets": ["lesson-map"], "intent": "lesson_overview"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "连接 AD 产生两个可比较三角形，经 SSS 全等推出角平分线和垂线",
+    "focus": ["lesson-map"]
+  }
+}

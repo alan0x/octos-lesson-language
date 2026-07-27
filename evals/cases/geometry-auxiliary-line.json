@@ -1,0 +1,16 @@
+{
+  "case_id": "geometry-auxiliary-line-001",
+  "language": "zh-CN",
+  "learner_request": "帮我讲清楚为什么要连这条辅助线。",
+  "session_context": "../../examples/geometry-auxiliary-line/session-context.json",
+  "required_coverage": [
+    "引用受控图片资源和区域",
+    "明确中点视觉识别的不确定性",
+    "连接 A 与 D 并解释动机",
+    "AB=AC、BD=DC、AD=AD",
+    "使用 SSS 证明两个三角形全等",
+    "推出角平分线和垂线",
+    "完整讲解中不等待学生回答"
+  ],
+  "reference_authoring": "../../examples/geometry-auxiliary-line/lesson.authoring.json"
+}
