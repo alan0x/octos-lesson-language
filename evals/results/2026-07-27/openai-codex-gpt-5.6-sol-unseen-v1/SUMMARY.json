@@ -1,0 +1,39 @@
+{
+  "run_id": "2026-07-27-unseen-v1-gpt-5.6-sol",
+  "suite_id": "unseen-cross-disciplinary-v1",
+  "model": "gpt-5.6-sol",
+  "core_commit": "8e07b05",
+  "cases": 21,
+  "repetitions": 5,
+  "runs": 105,
+  "first_pass_core_executable": {
+    "passed": 96,
+    "failed": 9,
+    "rate": 0.9142857142857143
+  },
+  "failure_stages": {
+    "parse": 1,
+    "schema": 3,
+    "semantic": 5,
+    "normalize": 0,
+    "reduce": 0
+  },
+  "automated_mechanical_coverage": {
+    "passed": 94,
+    "reported_rate_over_all_runs": 0.8952380952380953,
+    "known_false_negatives": 2
+  },
+  "manually_audited_coverage_among_executable": {
+    "passed": 96,
+    "evaluated": 96,
+    "rate": 1
+  },
+  "latency_ms": {
+    "min": 76999,
+    "p50": 121111,
+    "mean": 125021,
+    "p90": 155055,
+    "p95": 170219,
+    "max": 233705
+  }
+}

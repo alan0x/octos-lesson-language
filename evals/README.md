@@ -11,6 +11,8 @@
 
 首份真实模型基线：[`results/2026-07-27/openai-codex-gpt-5.6-sol/REPORT.md`](results/2026-07-27/openai-codex-gpt-5.6-sol/REPORT.md)。
 
+21 个未见跨学科案例、每题 5 次的稳定性报告：[`results/2026-07-27/openai-codex-gpt-5.6-sol-unseen-v1/REPORT.md`](results/2026-07-27/openai-codex-gpt-5.6-sol-unseen-v1/REPORT.md)。正式结果为 96 / 105（91.4%）first-pass Core-executable；该指标不等于浏览器真实播放或教学质量。
+
 ## 自动 runner
 
 `packages/eval-runner` 直接复用 `packages/core` 的 Schema、Validator、Normalizer 和 Reducer。正式 unseen suite 包含 21 个跨学科案例：
