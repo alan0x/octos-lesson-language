@@ -10,7 +10,7 @@
 
 | Beat | Cursor | Scale | Min card | Min text | Min diagram edge | New nodes | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| show-problem-and-goal | 16 | 1 | 240.46 | 14 | — | 2 | PASS |
+| show-problem-and-goal | 16 | 1 | 240.56 | 14 | — | 2 | PASS |
 | isolate-quadratic-part | 31 | 1 | 280 | 24 | — | 0 | PASS |
 | halve-linear-coefficient | 45 | 1 | 280 | 24 | — | 1 | PASS |
 | build-perfect-square | 60 | 1 | 280 | 24 | — | 1 | PASS |
@@ -18,6 +18,6 @@
 | replace-with-square | 91 | 1 | 280 | 24 | — | 1 | PASS |
 | simplify-constant | 105 | 1 | 280 | 24 | — | 1 | PASS |
 | locate-vertex | 122 | 1 | 340 | 16 | — | 1 | PASS |
-| read-vertex-and-axis | 136 | 1 | 240.46 | 14 | — | 1 | PASS |
-| describe-translation | 149 | 1 | 308.36 | 14 | — | 1 | PASS |
-| show-complete-route | 165 | 1 | 240.46 | 14 | — | 2 | PASS |
+| read-vertex-and-axis | 136 | 1 | 240.48 | 14 | — | 1 | PASS |
+| describe-translation | 149 | 1 | 308.4 | 14 | — | 1 | PASS |
+| show-complete-route | 165 | 1 | 240.59 | 14 | — | 2 | PASS |

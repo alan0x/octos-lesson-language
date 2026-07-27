@@ -7,6 +7,8 @@ export interface BoardLayout {
   bounds: Rect;
 }
 
+export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
+
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 
 function visibleContentLength(value: unknown): number {
@@ -48,7 +50,7 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
   return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
 }
 
-export function computeBoardLayout(state: SemanticBoardState): BoardLayout {
+export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes: MeasuredNodeSizes = {}): BoardLayout {
   const nodes: Record<string, Rect> = {};
   const groups: Record<string, Rect> = {};
   let regionIndex = 0;
@@ -66,7 +68,7 @@ export function computeBoardLayout(state: SemanticBoardState): BoardLayout {
   };
 
   for (const node of Object.values(state.nodes)) {
-    const size = measureSemanticNode(node);
+    const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
     const placement = node.placement ?? { relation: "new_region" };
     const anchor = placement.anchor ? nodes[placement.anchor] ?? groupRect(placement.anchor) : undefined;
     const gap = GAP[placement.gap as keyof typeof GAP] ?? GAP.normal;

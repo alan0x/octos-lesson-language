@@ -19,7 +19,7 @@
 | draw-parabola | 96 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | explain-translation | 108 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | group-derivation | 122 | 0.78 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
-| write-summary | 135 | 0.43 | 120.89 | 14 | — | 1 | G3_FOCUS_TOO_SMALL |
+| write-summary | 135 | 0.42 | 116.58 | 14 | — | 1 | G3_FOCUS_TOO_SMALL |
 
 ## Gate failures
 
@@ -61,4 +61,4 @@
 
 ### Cursor 135: beat.end
 
-- G3_FOCUS_TOO_SMALL: Smallest focused card is 120.89px; expected at least 240px
+- G3_FOCUS_TOO_SMALL: Smallest focused card is 116.58px; expected at least 240px

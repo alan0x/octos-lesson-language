@@ -19,7 +19,7 @@
 | state-congruence | 96 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | derive-angle-bisector | 110 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | derive-perpendicular | 122 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| organize-proof | 137 | 0.41 | 98.54 | 14 | 77.04 | 0 | G3_FOCUS_TOO_SMALL, G3_DIAGRAM_TOO_SMALL |
+| organize-proof | 137 | 0.41 | 98.93 | 14 | 77.31 | 0 | G3_FOCUS_TOO_SMALL, G3_DIAGRAM_TOO_SMALL |
 
 ## Gate failures
 
@@ -61,5 +61,5 @@
 
 ### Cursor 137: beat.end
 
-- G3_FOCUS_TOO_SMALL: Smallest focused card is 98.54px; expected at least 240px
-- G3_DIAGRAM_TOO_SMALL: Smallest focused diagram edge is 77.04px; expected at least 120px
+- G3_FOCUS_TOO_SMALL: Smallest focused card is 98.93px; expected at least 240px
+- G3_DIAGRAM_TOO_SMALL: Smallest focused diagram edge is 77.31px; expected at least 120px

@@ -5,7 +5,7 @@
   "lesson": {
     "mode": "explain",
     "language": "zh-CN",
-    "title": "一步一步拆解英语定语从句",
+    "title": "that 引导的定语从句：从普通句看懂 that 的作用",
     "goals": [
       "从完整句子中抽出主句骨架",
       "说明 that 从句为什么修饰 book",
@@ -19,13 +19,27 @@
   "steps": [
     {
       "key": "establish-sentence",
-      "purpose": "呈现完整句子和拆句目标，不提前给语法答案",
+      "purpose": "明确本课知识点和两个核心问题，再呈现完整例句",
       "beats": [
         {
           "key": "show-sentence-and-goal",
-          "say": "先完整读这句话：The book that you gave me was fascinating。我们不急着逐词翻译，先找主句，再判断中间那一段在修饰谁。",
+          "say": "这节课只解决一个知识点：that 引导的定语从句。围绕例句，我们回答两个问题：that you gave me 修饰谁？that 在从句里充当什么成分？",
           "delivery": "patient",
           "actions": [
+            {
+              "do": "write",
+              "as": "topic-card",
+              "kind": "note",
+              "role": "task",
+              "content": {
+                "title": "本课核心：that 引导的定语从句",
+                "items": [
+                  "that you gave me 修饰哪个词？",
+                  "that 在从句里充当什么成分？"
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
             {
               "do": "write",
               "as": "original-sentence",
@@ -38,20 +52,12 @@
                   {"as": "main-verb", "text": "was "},
                   {"as": "subject-complement", "text": "fascinating."}
                 ],
-                "caption": "原句"
+                "caption": "例句：The book that you gave me was fascinating."
               },
-              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+              "place": {"relation": "below", "anchor": "topic-card", "align": "start", "gap": "normal"}
             },
-            {
-              "do": "write",
-              "as": "goal-card",
-              "kind": "note",
-              "role": "task",
-              "content": {"title": "① 拆句顺序", "items": ["先找主句骨架", "再找被修饰的词", "最后看从句内部作用"]},
-              "place": {"relation": "right_of", "anchor": "original-sentence", "align": "center", "gap": "normal"}
-            },
-            {"do": "group", "as": "task-group", "role": "task", "label": "① 先看整句与目标", "members": ["original-sentence", "goal-card"]},
-            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "read_sentence_and_goal"}
+            {"do": "group", "as": "task-group", "role": "task", "label": "课题与例句", "members": ["topic-card", "original-sentence"]},
+            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "identify_lesson_question"}
           ]
         },
         {
@@ -65,8 +71,8 @@
               "as": "clause-bracket",
               "kind": "note",
               "role": "observation",
-              "content": {"title": "② 先圈出一整块", "text": "[ that you gave me ] 暂时整体拿开，寻找外层主句。"},
-              "place": {"relation": "below", "anchor": "goal-card", "align": "start", "gap": "normal"}
+              "content": {"title": "① 第一步：先圈出中间块", "text": "[ that you gave me ] 暂时整体拿开，寻找外层主句。"},
+              "place": {"relation": "below", "anchor": "task-group", "align": "start", "gap": "spacious"}
             },
             {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "clause-bracket"], "intent": "bracket_middle_clause"}
           ]
@@ -96,9 +102,9 @@
                 ],
                 "caption": "主句骨架"
               },
-              "place": {"relation": "below", "anchor": "original-sentence", "align": "start", "gap": "spacious"}
+              "place": {"relation": "below", "anchor": "clause-bracket", "align": "start", "gap": "normal"}
             },
-            {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "main-clause"], "intent": "see_sentence_without_modifier"}
+            {"do": "focus", "when": "after_speech", "targets": ["clause-bracket", "main-clause"], "intent": "see_sentence_without_modifier"}
           ]
         },
         {
@@ -115,12 +121,13 @@
               "kind": "table",
               "role": "evidence",
               "content": {
-                "title": "③ 主句成分",
+                "title": "主句内部：The book / was / fascinating",
                 "columns": ["片段", "作用"],
                 "rows": [["The book", "主语"], ["was", "系动词"], ["fascinating", "表语"]]
               },
               "place": {"relation": "right_of", "anchor": "main-clause", "align": "center", "gap": "normal"}
             },
+            {"do": "group", "as": "main-analysis-group", "role": "derivation", "label": "① 拿掉中间块，得到完整主句", "members": ["clause-bracket", "main-clause", "main-role-table"]},
             {"do": "focus", "when": "after_speech", "targets": ["main-clause", "main-role-table"], "intent": "label_main_clause_roles"}
           ]
         }
@@ -143,10 +150,10 @@
               "as": "antecedent-note",
               "kind": "note",
               "role": "definition",
-              "content": {"title": "④ 修饰关系", "text": "that you gave me → book；先行词：book"},
-              "place": {"relation": "left_of", "anchor": "original-sentence", "align": "center", "gap": "normal"}
+              "content": {"title": "② 第二步：确定修饰对象", "text": "that you gave me → 修饰 book；book 是先行词。"},
+              "place": {"relation": "below", "anchor": "main-analysis-group", "align": "start", "gap": "spacious"}
             },
-            {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "antecedent-note"], "intent": "connect_clause_to_antecedent"}
+            {"do": "focus", "when": "after_speech", "targets": ["antecedent-note"], "intent": "connect_clause_to_antecedent"}
           ]
         },
         {
@@ -194,7 +201,7 @@
                 ],
                 "caption": "关系代词放到从句开头"
               },
-              "place": {"relation": "below", "anchor": "ordinary-clause", "align": "start", "gap": "normal"}
+              "place": {"relation": "right_of", "anchor": "ordinary-clause", "align": "center", "gap": "normal"}
             },
             {"do": "connect", "as": "book-to-that", "from": "ordinary-clause#direct-object", "to": "relative-structure#relative-pronoun", "relation": "replaced_by", "label": "the book → that"},
             {"do": "emphasize", "target": "relative-structure#relative-pronoun", "emphasis": "focus"},
@@ -216,12 +223,13 @@
               "kind": "table",
               "role": "evidence",
               "content": {
-                "title": "⑤ 从句内部成分",
+                "title": "结论：that 在从句中作什么",
                 "columns": ["片段", "作用"],
                 "rows": [["that", "关系代词 / 直接宾语"], ["you", "主语"], ["gave", "谓语"], ["me", "间接宾语"]]
               },
-              "place": {"relation": "right_of", "anchor": "relative-structure", "align": "center", "gap": "normal"}
+              "place": {"relation": "below", "anchor": "relative-structure", "align": "start", "gap": "normal"}
             },
+            {"do": "group", "as": "clause-analysis-group", "role": "derivation", "label": "② 还原普通句，判断 that 的作用", "members": ["antecedent-note", "ordinary-clause", "relative-structure", "relative-role-table"]},
             {"do": "focus", "when": "after_speech", "targets": ["relative-structure", "relative-role-table"], "intent": "label_relative_clause_roles"}
           ]
         }
@@ -242,11 +250,11 @@
               "kind": "table",
               "role": "conclusion",
               "content": {
-                "title": "⑥ 两层意思",
+                "title": "③ 第三步：把修饰信息放回主句",
                 "columns": ["层次", "内容", "作用"],
                 "rows": [["主句", "The book was fascinating.", "说明书怎么样"], ["定语从句", "that you gave me", "限定是哪本书"]]
               },
-              "place": {"relation": "below", "anchor": "main-role-table", "align": "start", "gap": "spacious"}
+              "place": {"relation": "below", "anchor": "clause-analysis-group", "align": "start", "gap": "spacious"}
             },
             {"do": "focus", "when": "after_speech", "targets": ["meaning-layers"], "intent": "combine_main_and_modifier_meaning"}
           ]
@@ -273,6 +281,7 @@
             },
             {"do": "emphasize", "target": "chinese-order#modifier", "emphasis": "focus"},
             {"do": "emphasize", "target": "chinese-order#noun", "emphasis": "supporting"},
+            {"do": "group", "as": "meaning-group", "role": "conclusion", "label": "③ 重新组合句意", "members": ["meaning-layers", "chinese-order"]},
             {"do": "focus", "when": "after_speech", "targets": ["chinese-order"], "intent": "reorder_for_chinese_meaning"}
           ]
         },
@@ -287,14 +296,14 @@
               "kind": "diagram",
               "role": "summary",
               "content": {"title": "⑦ 拆定语从句的路线", "sequence": ["圈出从句", "拿掉后找主句", "找先行词", "还原普通句", "判断 that 的作用", "组合整句含义"]},
-              "place": {"relation": "below", "anchor": "chinese-order", "align": "start", "gap": "spacious"}
+              "place": {"relation": "below", "anchor": "meaning-group", "align": "start", "gap": "spacious"}
             },
             {
               "do": "write",
               "as": "takeaway",
               "kind": "note",
               "role": "summary",
-              "content": {"title": "一句话方法", "text": "先拿掉定语从句找主干，再还原普通句判断关系代词在从句中的成分。"},
+              "content": {"title": "核心结论", "text": "that you gave me 修饰 book；that 代替 the book，在从句中作 gave 的直接宾语。"},
               "place": {"relation": "below", "anchor": "lesson-route", "align": "start", "gap": "normal"}
             },
             {"do": "group", "as": "summary-group", "role": "summary", "label": "从这里复述拆句方法", "members": ["lesson-route", "takeaway"]},

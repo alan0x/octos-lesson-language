@@ -41,3 +41,16 @@ test("node measurement ignores canonical identifiers that are not rendered", () 
   const canonical = { kind: "math", content: { fragments: [{ id: "lesson:a-very-long-canonical-fragment-identifier", latex: "x=1" }] } };
   assert.deepEqual(measureSemanticNode(canonical), measureSemanticNode(visible));
 });
+
+test("measured browser heights replace estimates and move dependent nodes", () => {
+  const firstNodeId = Object.keys(state.nodes)[0]!;
+  const dependentNode = Object.values(state.nodes).find((node) => node.placement?.anchor === firstNodeId && node.placement?.relation === "below");
+  assert.ok(dependentNode);
+  const estimated = computeBoardLayout(state);
+  const expanded = computeBoardLayout(state, {
+    [firstNodeId]: { width: estimated.nodes[firstNodeId]!.width, height: estimated.nodes[firstNodeId]!.height + 180 },
+  });
+  assert.equal(expanded.nodes[firstNodeId]!.height, estimated.nodes[firstNodeId]!.height + 180);
+  assert.ok(expanded.nodes[dependentNode.id]!.y >= expanded.nodes[firstNodeId]!.y + expanded.nodes[firstNodeId]!.height);
+  assert.ok(expanded.nodes[dependentNode.id]!.y > estimated.nodes[dependentNode.id]!.y);
+});

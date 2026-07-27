@@ -3,7 +3,7 @@ import type { PlaybackOperation } from "../../../packages/player-core/src/index.
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
-import { computeBoardLayout, targetRect, type BoardLayout, type Rect } from "./layout.js";
+import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -308,11 +308,13 @@ export class InfiniteBoardView {
     this.operation = operation;
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren(); this.pointer.hidden = true;
     if (!board) return;
-    const layout = this.layout = computeBoardLayout(board);
+    const provisionalLayout = computeBoardLayout(board);
+    const measuredNodeSizes = this.renderNodes(board, provisionalLayout, operation?.action);
+    const layout = this.layout = computeBoardLayout(board, measuredNodeSizes);
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
+    this.positionNodes(layout);
     this.renderGroups(board, layout);
-    this.renderNodes(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
     const focusTargets = operation?.action?.focus?.targets ?? [];
@@ -336,19 +338,37 @@ export class InfiniteBoardView {
 
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
-  private renderNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): void {
+  private renderNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
     const activeId = action?.node?.id ?? targetId(action?.target);
+    const measured: MeasuredNodeSizes = {};
     for (const node of Object.values(board.nodes)) {
+      const kind = String(node.kind ?? "text");
+      const fixedVisualSize = kind === "plot"
+        || (kind === "diagram" && Array.isArray(node.content?.elements));
       const element = document.createElement("article");
-      element.className = `board-node kind-${String(node.kind ?? "text")}`;
-      element.dataset.kind = String(node.kind ?? "node");
+      element.className = `board-node kind-${kind}`;
+      element.dataset.kind = kind;
       element.dataset.id = node.id;
       if (node.id === activeId) element.classList.add("active");
       if (board.focus.includes(node.id)) element.classList.add("focused");
       applyEmphasisClass(element, latestEmphasis(node));
       setRect(element, layout.nodes[node.id]!);
+      if (!fixedVisualSize) element.style.height = "auto";
       renderContent(element, node, this.resolveAsset);
       this.nodes.append(element);
+      const provisional = layout.nodes[node.id]!;
+      measured[node.id] = {
+        width: provisional.width,
+        height: fixedVisualSize ? provisional.height : Math.max(72, Math.ceil(element.scrollHeight + 8)),
+      };
+    }
+    return measured;
+  }
+
+  private positionNodes(layout: BoardLayout): void {
+    for (const element of this.nodes.querySelectorAll<HTMLElement>(".board-node")) {
+      const id = element.dataset.id;
+      if (id && layout.nodes[id]) setRect(element, layout.nodes[id]!);
     }
   }
 

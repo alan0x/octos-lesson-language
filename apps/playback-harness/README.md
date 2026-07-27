@@ -37,7 +37,7 @@ Harness 不调用模型、不生成 OLL、不播放真实 TTS，也不复刻 `/l
 npm test
 ```
 
-自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、几何 SVG、公式横向裁切、暂停刷新恢复与控制台错误。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。
+自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、几何 SVG、所有卡片类型的横向与纵向裁切、暂停刷新恢复与控制台错误。流式文字卡片按真实 DOM 高度回流；结构化 SVG、plot 与带固有宽高比的图片分别采用匹配其渲染模型的尺寸策略。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。
 
 真实 Chrome 自动观测：
 

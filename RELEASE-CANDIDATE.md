@@ -19,7 +19,7 @@
 - 几何 V2 的真实 Chrome Observer：11/11 Beat、51/51 动作帧通过；
 - 二次函数 V2 的真实 Chrome Observer：11/11 Beat、45/45 动作帧通过；
 - 图片科学 V2 的真实 Chrome Observer：11/11 Beat、37/37 动作帧通过，真实 PNG 和 region overlay 已加载；
-- 英语文本 V2 的真实 Chrome Observer：11/11 Beat、44/44 动作帧通过；
+- 英语文本 V2 的真实 Chrome Observer：11/11 Beat、47/47 动作帧通过；
 - 几何、二次函数与英语 V1 在同一 Observer 下保持 expected-fail，负向校准未失效。
 
 ## RC 冻结规则

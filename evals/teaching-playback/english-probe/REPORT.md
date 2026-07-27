@@ -14,7 +14,7 @@
 | identify-subject-predicate | 32 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | attach-clause-to-book | 46 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
 | split-inner-clause | 60 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| show-layered-meaning | 77 | 0.8 | 191.67 | 14 | — | 1 | G3_FOCUS_TOO_SMALL |
+| show-layered-meaning | 77 | 0.76 | 182.63 | 14 | — | 1 | G3_FOCUS_TOO_SMALL |
 
 ## Gate failures
 
@@ -36,4 +36,4 @@
 
 ### Cursor 77: beat.end
 
-- G3_FOCUS_TOO_SMALL: Smallest focused card is 191.67px; expected at least 240px
+- G3_FOCUS_TOO_SMALL: Smallest focused card is 182.63px; expected at least 240px

@@ -255,12 +255,14 @@ test("English V2 derives the relative pronoun role from addressable text evidenc
   const rows = (frame: (typeof frames)[number], name: string) => frame.board.nodes[node(name)]?.content.rows as unknown[][] | undefined;
   const fragments = (frame: (typeof frames)[number], name: string) => frame.board.nodes[node(name)]?.content.fragments as Array<{ text?: string }> | undefined;
 
+  assert.match(String(frames[0]!.board.nodes[node("topic-card")]?.content.title), /that 引导的定语从句/);
   assert.equal(frames[0]!.board.nodes[node("clause-bracket")], undefined, "the opening Beat must not pre-label the middle clause");
   assert.equal(emphasis(frames[1]!.board, node("original-sentence"), fragment("original-sentence", "relative-clause")), "focus");
   assert.equal(frames[1]!.board.nodes[node("main-clause")], undefined, "bracketing must precede extraction");
   assert.ok(frames[2]!.board.nodes[node("main-clause")]);
   assert.equal(frames[2]!.board.nodes[node("antecedent-note")], undefined, "main clause must be established before attachment");
   assert.equal(rows(frames[3]!, "main-role-table")?.length, 3);
+  assert.ok(frames[3]!.board.groups["lesson-english-v2-001:group:main-analysis-group"]);
   assert.equal(frames[3]!.board.connections[connection("clause-modifies-book")], undefined);
 
   assert.ok(frames[4]!.board.connections[connection("clause-modifies-book")]);
@@ -271,9 +273,14 @@ test("English V2 derives the relative pronoun role from addressable text evidenc
   assert.ok(frames[6]!.board.connections[connection("book-to-that")]);
   assert.equal(frames[6]!.board.nodes[node("relative-role-table")], undefined, "role labels follow the transformation evidence");
   assert.equal(rows(frames[7]!, "relative-role-table")?.length, 4);
+  assert.ok(frames[7]!.board.groups["lesson-english-v2-001:group:clause-analysis-group"]);
 
   assert.equal(rows(frames[8]!, "meaning-layers")?.length, 2);
   assert.deepEqual(fragments(frames[9]!, "chinese-order")?.map((item) => item.text), ["你给我的", "那本书", "很精彩。"]) ;
+  assert.ok(frames[9]!.board.groups["lesson-english-v2-001:group:meaning-group"]);
+  assert.equal(frames[4]!.board.nodes[node("antecedent-note")]?.placement.anchor, "lesson-english-v2-001:group:main-analysis-group");
+  assert.equal(frames[8]!.board.nodes[node("meaning-layers")]?.placement.anchor, "lesson-english-v2-001:group:clause-analysis-group");
+  assert.equal(frames[10]!.board.nodes[node("lesson-route")]?.placement.anchor, "lesson-english-v2-001:group:meaning-group");
   assert.deepEqual(frames[10]!.board.focus, ["lesson-english-v2-001:group:summary-group"]);
 });
 

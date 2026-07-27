@@ -161,20 +161,25 @@ export function collectTeachingObservation(input: {
     };
   });
 
-  const contentOverflows = [...world.querySelectorAll<HTMLElement>(".math-render, .content-table")]
+  const contentOverflows = [...world.querySelectorAll<HTMLElement>(".board-node")]
     .filter((element) => {
-      if (element.matches(".content-table")) return element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2;
-      const card = element.closest<HTMLElement>(".board-node");
-      const rendered = element.matches(".math-fragments") ? [...element.children] : [element.querySelector<HTMLElement>(".katex-display") ?? element.firstElementChild].filter(Boolean);
-      if (!rendered.length || !card) return element.scrollWidth > element.clientWidth + 2;
-      const cardRect = card.getBoundingClientRect(); const tolerance = 2;
-      return element.scrollWidth > element.clientWidth + 2 || rendered.some((child) => {
+      const visualRoot = element.querySelector<HTMLElement>(".diagram-preview, .plot-preview, .lesson-image-frame");
+      if (visualRoot) {
+        const cardRect = element.getBoundingClientRect(); const contentRect = visualRoot.getBoundingClientRect(); const tolerance = 2;
+        return contentRect.left < cardRect.left - tolerance || contentRect.right > cardRect.right + tolerance
+          || contentRect.top < cardRect.top - tolerance || contentRect.bottom > cardRect.bottom + tolerance;
+      }
+      const rendered = element.matches(".kind-math")
+        ? [...element.querySelectorAll<HTMLElement>(".math-fragment, .katex-display")]
+        : [];
+      const cardRect = element.getBoundingClientRect(); const tolerance = 2;
+      return element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2 || rendered.some((child) => {
         const contentRect = child!.getBoundingClientRect();
         return contentRect.left < cardRect.left - tolerance || contentRect.right > cardRect.right + tolerance
           || contentRect.top < cardRect.top - tolerance || contentRect.bottom > cardRect.bottom + tolerance;
       });
     })
-    .map((element) => element.closest<HTMLElement>(".board-node")?.dataset.id ?? "unknown");
+    .map((element) => element.dataset.id ?? "unknown");
 
   const nodeElements = [...world.querySelectorAll<HTMLElement>(".board-node")];
   const labelNodeOverlaps: Array<{ label_id: string; node_id: string }> = [];

@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:20:03.682Z",
+  "generated_at": "2026-07-27T14:55:59.675Z",
   "lesson_id": "lesson-english-001",
   "fixture": "english-v1",
   "viewport": {
@@ -194,7 +194,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.8,
+        "world_scale": 0.76,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 3,
@@ -208,56 +208,56 @@
           {
             "id": "lesson-english-001:node:original-sentence",
             "kind": "text",
-            "x": 253.19,
-            "y": 124.31,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 263.88,
+            "y": 121.75,
+            "width": 182.63,
+            "height": 101.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
-            "x": 253.19,
-            "y": 252.09,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 263.88,
+            "y": 264.05,
+            "width": 182.63,
+            "height": 82.19,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 514.96,
-            "y": 123.89,
-            "width": 192.04,
-            "height": 85.49,
+            "x": 513.3,
+            "y": 130.1,
+            "width": 183,
+            "height": 84.5,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
-            "x": 515.14,
-            "y": 252.09,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 513.48,
+            "y": 255.3,
+            "width": 182.63,
+            "height": 63.92,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
-            "x": 252.96,
-            "y": 406.35,
-            "width": 310.96,
-            "height": 105.18,
+            "x": 263.67,
+            "y": 412.55,
+            "width": 296.29,
+            "height": 100.22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 191.67,
+        "min_focal_node_width": 182.63,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -272,7 +272,7 @@
         "issues": [
           {
             "code": "G3_FOCUS_TOO_SMALL",
-            "message": "Smallest focused card is 191.67px; expected at least 240px"
+            "message": "Smallest focused card is 182.63px; expected at least 240px"
           }
         ]
       }
@@ -308,7 +308,7 @@
             "x": 173.6,
             "y": 153.6,
             "width": 187.2,
-            "height": 82.68,
+            "height": 103.74,
             "visible": true,
             "fully_in_view": true
           }
@@ -551,9 +551,9 @@
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
             "x": 173.6,
-            "y": 278.4,
+            "y": 299.46,
             "width": 187.2,
-            "height": 82.68,
+            "height": 84.24,
             "visible": true,
             "fully_in_view": true
           }
@@ -600,7 +600,7 @@
             "id": "lesson-english-001:connection:subject-correspondence",
             "kind": "connection-line",
             "x": 267.2,
-            "y": 236.28,
+            "y": 257.34,
             "width": 90.09,
             "height": 42.12,
             "visible": true,
@@ -649,7 +649,7 @@
             "id": "lesson-english-001:connection:predicate-correspondence",
             "kind": "connection-line",
             "x": 267.2,
-            "y": 234.72,
+            "y": 255.78,
             "width": 90.09,
             "height": 43.68,
             "visible": true,
@@ -698,9 +698,9 @@
             "id": "lesson-english-001:connection:clause-modifies-book",
             "kind": "connection-line",
             "x": 267.2,
-            "y": 157.5,
+            "y": 149.31,
             "width": 0,
-            "height": 37.44,
+            "height": 56.16,
             "visible": true,
             "fully_in_view": true
           }
@@ -746,10 +746,10 @@
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 429.26,
-            "y": 153.19,
-            "width": 187.56,
-            "height": 83.5,
+            "x": 429.25,
+            "y": 162.16,
+            "width": 187.57,
+            "height": 86.62,
             "visible": true,
             "fully_in_view": true
           }
@@ -796,9 +796,9 @@
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
             "x": 429.44,
-            "y": 278.4,
+            "y": 290.49,
             "width": 187.2,
-            "height": 82.68,
+            "height": 65.52,
             "visible": true,
             "fully_in_view": true
           }
@@ -844,10 +844,10 @@
           {
             "id": "lesson-english-001:connection:that-replaces-book",
             "kind": "connection-line",
-            "x": 351.95,
-            "y": 140.39,
-            "width": 86.35,
-            "height": 138.01,
+            "x": 360.8,
+            "y": 124.82,
+            "width": 91.08,
+            "height": 165.67,
             "visible": true,
             "fully_in_view": true
           }
@@ -894,7 +894,7 @@
             "id": "lesson-english-001:node:relative-structure:fragment:inner-subject",
             "kind": "text-fragment",
             "x": 475.03,
-            "y": 310.38,
+            "y": 322.47,
             "width": 23.39,
             "height": 15.6,
             "visible": true,
@@ -943,7 +943,7 @@
             "id": "lesson-english-001:node:relative-structure:fragment:inner-verb",
             "kind": "text-fragment",
             "x": 501.85,
-            "y": 310.38,
+            "y": 322.47,
             "width": 29.51,
             "height": 15.6,
             "visible": true,
@@ -992,7 +992,7 @@
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
             "x": 173.38,
-            "y": 429.06,
+            "y": 451.68,
             "width": 303.7,
             "height": 102.72,
             "visible": true,
@@ -1043,7 +1043,7 @@
             "x": 173.6,
             "y": 153.6,
             "width": 240.24,
-            "height": 260.52,
+            "height": 283.14,
             "visible": true,
             "fully_in_view": true
           }
@@ -1090,9 +1090,9 @@
             "id": "lesson-english-001:group:relative-clause-group",
             "kind": "board-group",
             "x": 429.44,
-            "y": 153.6,
+            "y": 162.57,
             "width": 240.24,
-            "height": 260.52,
+            "height": 246.48,
             "visible": true,
             "fully_in_view": true
           }
@@ -1141,7 +1141,7 @@
             "x": 173.6,
             "y": 153.6,
             "width": 549.12,
-            "height": 457.08,
+            "height": 479.7,
             "visible": true,
             "fully_in_view": false
           }
@@ -1174,7 +1174,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.8,
+        "world_scale": 0.76,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 3,
@@ -1188,50 +1188,50 @@
           {
             "id": "lesson-english-001:node:original-sentence",
             "kind": "text",
-            "x": 253.19,
-            "y": 124.31,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 263.88,
+            "y": 121.75,
+            "width": 182.63,
+            "height": 101.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
-            "x": 253.19,
-            "y": 252.09,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 263.88,
+            "y": 264.05,
+            "width": 182.63,
+            "height": 82.19,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 514.96,
-            "y": 123.89,
-            "width": 192.04,
-            "height": 85.49,
+            "x": 513.3,
+            "y": 130.1,
+            "width": 183,
+            "height": 84.5,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
-            "x": 515.14,
-            "y": 252.09,
-            "width": 191.67,
-            "height": 84.66,
+            "x": 513.48,
+            "y": 255.3,
+            "width": 182.63,
+            "height": 63.92,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
-            "x": 252.96,
-            "y": 406.35,
-            "width": 310.96,
-            "height": 105.18,
+            "x": 263.67,
+            "y": 412.55,
+            "width": 296.29,
+            "height": 100.22,
             "visible": true,
             "fully_in_view": true
           }
@@ -1240,15 +1240,15 @@
           {
             "id": "lesson-english-001:group:lesson-map",
             "kind": "board-group",
-            "x": 198.88,
+            "x": 212.14,
             "y": 70,
-            "width": 562.24,
+            "width": 535.73,
             "height": 468,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 191.67,
+        "min_focal_node_width": 182.63,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,

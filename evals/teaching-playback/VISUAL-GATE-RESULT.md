@@ -11,9 +11,13 @@ Status: **COMPLETE for the v0.1 reference specimen set**
 | geometry proof | geometry V2 | 11 | 51 | PASS |
 | symbolic algebra and plot | quadratic V2 | 11 | 45 | PASS |
 | controlled image science | transpiration V2 | 11 | 37 | PASS |
-| addressable text reasoning | relative clause V2 | 11 | 44 | PASS |
+| addressable text reasoning | relative clause V2 | 11 | 47 | PASS |
 
 All four use the same Player Core, DOM/SVG board Runtime and Observer gates.
+The Runtime measures flow-content cards from the rendered DOM before the final
+layout pass, while the Observer checks horizontal and vertical overflow on every
+card type. This prevents plain text and note clipping from being hidden behind a
+formula/table-only gate.
 
 ## Negative calibration
 

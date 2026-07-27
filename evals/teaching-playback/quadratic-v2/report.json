@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:05:15.455Z",
+  "generated_at": "2026-07-27T14:55:32.206Z",
   "lesson_id": "lesson-quadratic-v2-001",
   "fixture": "quadratic",
   "viewport": {
@@ -41,25 +41,25 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 193,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:goal-card",
             "kind": "note",
-            "x": 526.77,
-            "y": 250.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 526.72,
+            "y": 238.48,
+            "width": 240.56,
+            "height": 131.05,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.56,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -101,9 +101,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -151,9 +151,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -201,9 +201,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -251,9 +251,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -301,9 +301,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -351,9 +351,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -452,7 +452,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": 109,
+            "y": 107,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -461,16 +461,16 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 390.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.48,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -511,16 +511,16 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": 234.33,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 308.4,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -562,25 +562,25 @@
             "id": "lesson-quadratic-v2-001:node:lesson-route",
             "kind": "diagram",
             "x": 340,
-            "y": 157.5,
+            "y": 138,
             "width": 280,
-            "height": 133,
+            "height": 142,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:takeaway",
             "kind": "note",
-            "x": 339.77,
-            "y": 343.98,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 339.7,
+            "y": 333.48,
+            "width": 240.59,
+            "height": 137.05,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.59,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -626,7 +626,7 @@
             "x": 173.6,
             "y": 153.6,
             "width": 218.4,
-            "height": 74.88,
+            "height": 90.48,
             "visible": true,
             "fully_in_view": true
           }
@@ -672,10 +672,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:goal-card",
             "kind": "note",
-            "x": 433.94,
+            "x": 433.9,
             "y": 153.19,
-            "width": 187.56,
-            "height": 83.5,
+            "width": 187.64,
+            "height": 102.22,
             "visible": true,
             "fully_in_view": true
           }
@@ -724,7 +724,7 @@
             "x": 173.6,
             "y": 153.6,
             "width": 500.76,
-            "height": 135.72,
+            "height": 154.44,
             "visible": true,
             "fully_in_view": true
           }
@@ -772,19 +772,19 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 193,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:goal-card",
             "kind": "note",
-            "x": 526.77,
-            "y": 250.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 526.72,
+            "y": 238.48,
+            "width": 240.56,
+            "height": 131.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -794,14 +794,14 @@
             "id": "lesson-quadratic-v2-001:group:task-group",
             "kind": "board-group",
             "x": 159,
-            "y": 217,
+            "y": 205,
             "width": 642,
-            "height": 174,
+            "height": 198,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.56,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -844,19 +844,19 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 193,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:goal-card",
             "kind": "note",
-            "x": 526.77,
-            "y": 250.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 526.72,
+            "y": 238.48,
+            "width": 240.56,
+            "height": 131.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -866,14 +866,14 @@
             "id": "lesson-quadratic-v2-001:node:original:fragment:quadratic",
             "kind": "math-fragment",
             "x": 300.11,
-            "y": 288.53,
+            "y": 275.53,
             "width": 24.27,
             "height": 30.94,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.56,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -916,19 +916,19 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 193,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:goal-card",
             "kind": "note",
-            "x": 526.77,
-            "y": 250.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 526.72,
+            "y": 238.48,
+            "width": 240.56,
+            "height": 131.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -938,14 +938,14 @@
             "id": "lesson-quadratic-v2-001:node:original:fragment:linear",
             "kind": "math-fragment",
             "x": 327.25,
-            "y": 288.53,
+            "y": 275.53,
             "width": 46.19,
             "height": 30.94,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.56,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -988,9 +988,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1000,9 +1000,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1050,9 +1050,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1062,9 +1062,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 406,
+            "y": 416,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1112,9 +1112,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1124,7 +1124,7 @@
             "id": "lesson-quadratic-v2-001:connection:linear-to-half",
             "kind": "connection-line",
             "x": 480,
-            "y": 352,
+            "y": 362,
             "width": 130.5,
             "height": 54,
             "visible": true,
@@ -1174,9 +1174,9 @@
             "id": "lesson-quadratic-v2-001:node:original",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1186,7 +1186,7 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient:fragment:result",
             "kind": "math-fragment",
             "x": 485.66,
-            "y": 439.03,
+            "y": 446.03,
             "width": 38.83,
             "height": 29.94,
             "visible": true,
@@ -1236,9 +1236,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1248,9 +1248,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1298,9 +1298,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1310,9 +1310,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 406,
+            "y": 416,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1360,9 +1360,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1372,7 +1372,7 @@
             "id": "lesson-quadratic-v2-001:connection:half-to-square",
             "kind": "connection-line",
             "x": 480,
-            "y": 352,
+            "y": 362,
             "width": 130.5,
             "height": 54,
             "visible": true,
@@ -1422,9 +1422,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1434,7 +1434,7 @@
             "id": "lesson-quadratic-v2-001:node:square-identity:fragment:expanded",
             "kind": "math-fragment",
             "x": 361.83,
-            "y": 438.53,
+            "y": 445.53,
             "width": 124.48,
             "height": 30.94,
             "visible": true,
@@ -1484,9 +1484,9 @@
             "id": "lesson-quadratic-v2-001:node:half-coefficient",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1496,7 +1496,7 @@
             "id": "lesson-quadratic-v2-001:node:square-identity:fragment:factored",
             "kind": "math-fragment",
             "x": 511.48,
-            "y": 438.53,
+            "y": 445.53,
             "width": 86.67,
             "height": 30.94,
             "visible": true,
@@ -1546,9 +1546,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1558,9 +1558,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1608,9 +1608,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 234,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1620,9 +1620,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 440,
+            "y": 438,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1670,9 +1670,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 234,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1682,7 +1682,7 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression:fragment:add-nine",
             "kind": "math-fragment",
             "x": 494.66,
-            "y": 473.03,
+            "y": 468.03,
             "width": 31.91,
             "height": 29.94,
             "visible": true,
@@ -1732,9 +1732,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 234,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1744,7 +1744,7 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression:fragment:subtract-nine",
             "kind": "math-fragment",
             "x": 529.44,
-            "y": 473.03,
+            "y": 468.03,
             "width": 31.91,
             "height": 29.94,
             "visible": true,
@@ -1794,9 +1794,9 @@
             "id": "lesson-quadratic-v2-001:node:square-identity",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 234,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1806,9 +1806,9 @@
             "id": "lesson-quadratic-v2-001:connection:cancel-nine",
             "kind": "connection-line",
             "x": 480,
-            "y": 440,
+            "y": 424,
             "width": 0,
-            "height": 48,
+            "height": 72,
             "visible": true,
             "fully_in_view": true
           }
@@ -1856,9 +1856,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1868,9 +1868,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1918,9 +1918,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1930,9 +1930,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 406,
+            "y": 416,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1980,9 +1980,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -1992,9 +1992,9 @@
             "id": "lesson-quadratic-v2-001:connection:identity-to-grouped",
             "kind": "connection-line",
             "x": 480,
-            "y": 168,
+            "y": 158,
             "width": 130.5,
-            "height": 238,
+            "height": 258,
             "visible": true,
             "fully_in_view": true
           }
@@ -2042,9 +2042,9 @@
             "id": "lesson-quadratic-v2-001:node:balanced-expression",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2054,7 +2054,7 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form:fragment:square",
             "kind": "math-fragment",
             "x": 418.95,
-            "y": 438.53,
+            "y": 445.53,
             "width": 86.67,
             "height": 30.94,
             "visible": true,
@@ -2104,9 +2104,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2116,9 +2116,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2166,9 +2166,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2178,9 +2178,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 340,
-            "y": 406,
+            "y": 416,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2228,9 +2228,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2240,7 +2240,7 @@
             "id": "lesson-quadratic-v2-001:connection:constants-to-vertical",
             "kind": "connection-line",
             "x": 480,
-            "y": 352,
+            "y": 362,
             "width": 130.5,
             "height": 54,
             "visible": true,
@@ -2290,9 +2290,9 @@
             "id": "lesson-quadratic-v2-001:node:grouped-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2302,7 +2302,7 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form:fragment:vertical",
             "kind": "math-fragment",
             "x": 529.98,
-            "y": 439.03,
+            "y": 446.03,
             "width": 31.91,
             "height": 29.94,
             "visible": true,
@@ -2352,9 +2352,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2364,9 +2364,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 340,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2414,9 +2414,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 198,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2476,9 +2476,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 198,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2538,9 +2538,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 198,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2600,9 +2600,9 @@
             "id": "lesson-quadratic-v2-001:node:vertex-form",
             "kind": "math",
             "x": 198,
-            "y": 256,
+            "y": 246,
             "width": 280,
-            "height": 96,
+            "height": 116,
             "visible": true,
             "fully_in_view": true
           }
@@ -2612,9 +2612,9 @@
             "id": "lesson-quadratic-v2-001:connection:vertical-to-vertex",
             "kind": "connection-line",
             "x": 478,
-            "y": 144.25,
+            "y": 120.25,
             "width": 88,
-            "height": 159.75,
+            "height": 183.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -2848,7 +2848,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": 164,
+            "y": 160,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -2859,10 +2859,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 447.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 443.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -2911,7 +2911,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": 109,
+            "y": 107,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -2920,10 +2920,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 390.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -2933,7 +2933,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": 109,
+            "y": 107,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -2942,15 +2942,15 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 390.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.48,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -2994,7 +2994,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": -20,
+            "y": -32,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -3003,10 +3003,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 263.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 251.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -3015,15 +3015,15 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 309.72,
-            "y": 423.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 309.7,
+            "y": 415.33,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.48,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3067,7 +3067,7 @@
             "id": "lesson-quadratic-v2-001:node:parabola",
             "kind": "plot",
             "x": 310,
-            "y": -20,
+            "y": -32,
             "width": 340,
             "height": 230,
             "visible": true,
@@ -3076,10 +3076,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:graph-facts",
             "kind": "note",
-            "x": 309.77,
-            "y": 263.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 309.76,
+            "y": 251.48,
+            "width": 240.48,
+            "height": 111.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -3088,15 +3088,15 @@
           {
             "id": "lesson-quadratic-v2-001:connection:graph-to-translation",
             "kind": "connection-line",
-            "x": 466.56,
-            "y": 210,
-            "width": 164.19,
-            "height": 214,
+            "x": 466.66,
+            "y": 198,
+            "width": 164.11,
+            "height": 218,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.48,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3138,10 +3138,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": 234.33,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
             "fully_in_view": true
           }
@@ -3150,15 +3150,15 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": 234.33,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 308.4,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3200,10 +3200,10 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 202.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": 185.33,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
             "fully_in_view": true
           }
@@ -3213,14 +3213,14 @@
             "id": "lesson-quadratic-v2-001:node:lesson-route",
             "kind": "diagram",
             "x": 326.1,
-            "y": 421,
+            "y": 412,
             "width": 280,
-            "height": 133,
+            "height": 142,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 308.4,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3262,27 +3262,27 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 42.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": -4.67,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "active_targets": [
           {
             "id": "lesson-quadratic-v2-001:node:takeaway",
             "kind": "note",
-            "x": 325.87,
-            "y": 447.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 325.8,
+            "y": 417.48,
+            "width": 240.59,
+            "height": 137.05,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 308.4,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3324,12 +3324,12 @@
           {
             "id": "lesson-quadratic-v2-001:node:translation-note",
             "kind": "note",
-            "x": 325.82,
-            "y": 42.33,
-            "width": 308.36,
-            "height": 131.34,
+            "x": 325.8,
+            "y": -4.67,
+            "width": 308.4,
+            "height": 139.34,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "active_targets": [
@@ -3337,14 +3337,14 @@
             "id": "lesson-quadratic-v2-001:group:summary-group",
             "kind": "board-group",
             "x": 292.1,
-            "y": 227,
+            "y": 188,
             "width": 348,
-            "height": 361,
+            "height": 400,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 308.4,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3387,19 +3387,19 @@
             "id": "lesson-quadratic-v2-001:node:lesson-route",
             "kind": "diagram",
             "x": 340,
-            "y": 157.5,
+            "y": 138,
             "width": 280,
-            "height": 133,
+            "height": 142,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-v2-001:node:takeaway",
             "kind": "note",
-            "x": 339.77,
-            "y": 343.98,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 339.7,
+            "y": 333.48,
+            "width": 240.59,
+            "height": 137.05,
             "visible": true,
             "fully_in_view": true
           }
@@ -3409,14 +3409,14 @@
             "id": "lesson-quadratic-v2-001:group:summary-group",
             "kind": "board-group",
             "x": 306,
-            "y": 123.5,
+            "y": 104,
             "width": 348,
-            "height": 361,
+            "height": 400,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 240.59,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
