@@ -98,7 +98,41 @@
         "intent": {"type": "string"},
         "expression": {"type": "string"},
         "reason": {"type": "string"}
-      }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"do": {"const": "write"}}},
+          "then": {"required": ["as", "kind", "role", "content", "place"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "revise"}}},
+          "then": {"required": ["target", "content", "reason"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "emphasize"}}},
+          "then": {"required": ["target", "emphasis"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "connect"}}},
+          "then": {"required": ["as", "from", "to", "relation"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "group"}}},
+          "then": {"required": ["as", "role", "label", "members"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "focus"}}},
+          "then": {"required": ["targets", "intent"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "point"}}},
+          "then": {"required": ["target"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "expression"}}},
+          "then": {"required": ["expression"]}
+        }
+      ]
     },
     "alias": {
       "type": "string",

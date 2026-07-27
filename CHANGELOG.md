@@ -12,3 +12,7 @@
 - 增加 example manifest 和统一 golden 生成/检查流程。
 - 将 image region、diagram element/edge/region 纳入可寻址 fragment。
 - 允许强调 connection，并在 Semantic Reducer 中保留其强调状态。
+
+### Fixed
+
+- Align the Authoring Schema action payload requirements with the reference validator. In particular, `connect` now declares its stable local alias as required.

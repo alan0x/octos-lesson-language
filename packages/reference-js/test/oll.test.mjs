@@ -13,6 +13,7 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "../../..");
 const manifest = JSON.parse(await readFile(resolve(root, "examples/manifest.json"), "utf8"));
+const authoringSchema = JSON.parse(await readFile(resolve(root, "schema/authoring/v0.1.schema.json"), "utf8"));
 const lessons = await Promise.all(
   manifest.map(async (entry) => {
     const example = resolve(root, "examples", entry.name);
@@ -125,4 +126,23 @@ test("rejects unknown action fields", () => {
     () => validateAuthoringLesson(invalid),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
   );
+});
+
+test("authoring schema declares each action payload required by the validator", () => {
+  const declared = Object.fromEntries(
+    authoringSchema.$defs.action.allOf.map((rule) => [
+      rule.if.properties.do.const,
+      rule.then.required,
+    ]),
+  );
+  assert.deepEqual(declared, {
+    write: ["as", "kind", "role", "content", "place"],
+    revise: ["target", "content", "reason"],
+    emphasize: ["target", "emphasis"],
+    connect: ["as", "from", "to", "relation"],
+    group: ["as", "role", "label", "members"],
+    focus: ["targets", "intent"],
+    point: ["target"],
+    expression: ["expression"],
+  });
 });
