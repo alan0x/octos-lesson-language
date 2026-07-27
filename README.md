@@ -65,7 +65,7 @@ npm run check:examples
 npm run eval -- --suite evals/suites/unseen-v1.json --run-id unseen-v1-gpt-5.6-sol --repetitions 5 --concurrency 2 --resume
 ```
 
-Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并依次通过 JSON Schema、语义校验、确定性规范化和 Reducer，才记为 `first_pass_playable`。每次调用的原始输出、Canonical JSONL、状态和失败阶段保存在 `evals/runs/<run-id>/`。
+Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并依次通过 JSON Schema、语义校验、确定性规范化和 Reducer，才记为 `first_pass_core_executable`。这个指标不表示浏览器已经真实播放。Mechanical coverage 只在 Core-executable 输出上评估，状态为 `passed`、`failed` 或 `not_evaluated`。每次调用的原始输出、Canonical JSONL、状态和失败阶段保存在 `evals/runs/<run-id>/`。
 
 ## 权威边界
 

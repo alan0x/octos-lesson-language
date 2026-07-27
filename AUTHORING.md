@@ -94,12 +94,12 @@ fragments, curves, points, guides, regions, elements, edges
 | 字段 | 允许的引用类型 |
 | --- | --- |
 | `place.anchor` | node 或 group |
-| `emphasize.target`、`point.target` | node、node fragment 或 connection |
+| `emphasize.target`、`point.target` | node、node fragment、connection 或 group |
 | `group.members[]` | node 或 group |
 | `focus.targets[]` | node、group 或 connection |
 | `close.focus[]` | 已经创建的 node、group 或 connection |
 
-因此 connection 可以被强调、指向或聚焦，但不能作为布局 anchor 或 group member。需要在 connection 下方继续板书时，应锚定连接两端之一。
+因此 connection 和 group 都可以被强调、指向或聚焦。connection 不能作为布局 anchor 或 group member；需要在 connection 下方继续板书时，应锚定连接两端之一。
 
 ### 4.2 Session 资源先映射为局部 fragment
 

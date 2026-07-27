@@ -189,7 +189,7 @@ Beat 是可感知的最小课堂节拍。
 |---|---|---|
 | `text` | 否 | 可用于 TTS 和字幕的讲述文本 |
 | `language` | 否 | 缺省继承 Lesson language |
-| `delivery` | 否 | `neutral`、`encouraging`、`careful` 或 `emphatic` |
+| `delivery` | 否 | `neutral`、`patient`、`encouraging`、`careful` 或 `emphatic` |
 
 Beat 可以没有 narration，例如只移动焦点；但 Beat 不能同时没有 narration 和动作。
 
@@ -343,7 +343,7 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 
 `emphasis`：`focus`、`supporting`、`warning`、`resolved`。实现可以使用颜色、描边、下划线或动画，但不能只依赖颜色表达含义。
 
-目标可以是 node、node fragment 或 connection。强调 connection 不复制连接，也不改变其端点和关系语义。
+目标可以是 node、node fragment、connection 或 group。强调 connection 不复制连接，也不改变其端点和关系语义；强调 group 作用于组的视觉边界和成员整体，不改变成员内容。
 
 ### 9.4 `board.connect`
 
@@ -405,7 +405,7 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 }
 ```
 
-目标不可见时 Runtime 应先以不突兀的方式使目标进入可见区域。
+目标可以是 node、node fragment、connection 或 group。目标不可见时 Runtime 应先以不突兀的方式使目标进入可见区域；指向 group 时使用组的视觉边界或宿主选择的代表点。
 
 ### 9.8 `teacher.expression`
 

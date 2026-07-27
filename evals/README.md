@@ -22,3 +22,11 @@ npm run eval -- --suite evals/suites/unseen-v1.json --run-id unseen-v1-gpt-5.6-s
 ```
 
 `--resume` 会跳过已有 `result.json` 的调用，也会重新评估已经生成但尚未完成判定的 `raw.json`。这使 105 次调用可以安全中断后继续。
+
+离线重验不会调用模型，也不会修改 raw；它用新版 Core 对已有原始输出做 post-hoc revalidation：
+
+```bash
+npm run eval:revalidate -- --suite evals/suites/unseen-v1.json --source evals/runs/<source-run> --output evals/revalidations/<revision> --run-id <revision> --repetitions 5
+```
+
+离线结果只能证明协议修订对已保存输出的影响，不能冒充模型看到新合同后的 fresh generation rate。

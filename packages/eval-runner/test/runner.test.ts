@@ -4,7 +4,8 @@ import { mkdtemp, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { FixtureProvider } from "../src/providers.js";
-import { runSuite } from "../src/runner.js";
+import { evaluateCoverage, runSuite } from "../src/runner.js";
+import type { AuthoringLesson } from "../../core/src/index.js";
 
 test("runner records deterministic playability and resumes completed runs", async () => {
   const root = process.cwd();
@@ -28,7 +29,7 @@ test("runner records deterministic playability and resumes completed runs", asyn
     provider: new FixtureProvider(fixtures),
   };
   const first = await runSuite({ ...common, resume: false });
-  assert.equal(first.first_pass_playable_rate, 1);
+  assert.equal(first.first_pass_core_executable_rate, 1);
   assert.equal(first.mechanical_coverage_rate, 1);
   const resumed = await runSuite({ ...common, resume: true });
   assert.ok(resumed.results.every((result) => result.resumed));
@@ -48,7 +49,8 @@ test("runner does not repair fenced JSON", async () => {
     repetitions: 1, concurrency: 1, model: "fixture", timeoutMs: 1000, resume: false,
     provider: new FixtureProvider(resolve(temporary, "fixtures")),
   });
-  assert.equal(report.first_pass_playable_rate, 0);
+  assert.equal(report.first_pass_core_executable_rate, 0);
+  assert.equal(report.results[0]!.mechanical_coverage_status, "not_evaluated");
   assert.equal(report.results[0]!.failure_stage, "parse");
 });
 
@@ -61,4 +63,16 @@ test("unseen suite contains at least 20 unique cross-disciplinary cases", async 
   assert.equal(new Set(cases.map((item) => item.case_id)).size, cases.length);
   assert.ok(new Set(cases.map((item) => item.domain)).size >= 8);
   assert.ok(cases.every((item) => !item.reference_authoring));
+});
+
+test("coverage examines parsed string values without JSON escaping false negatives", () => {
+  const document = {
+    lesson: { goals: ["was/were + 过去分词"] },
+    steps: [{ beats: [{ actions: [{ content: { latex: "0\\le x\\le 3" } }] }] }],
+  } as unknown as AuthoringLesson;
+  const result = evaluateCoverage(document, {
+    case_id: "coverage", domain: "test", language: "zh-CN", learner_request: "test", required_coverage: [],
+    mechanical_checks: { required_any: [["was/were +"], ["x\\le 3"]] },
+  });
+  assert.deepEqual(result, { passed: true, missing: [], forbidden: [] });
 });

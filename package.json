@@ -12,7 +12,8 @@
     "test": "npm run build && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js",
     "check:examples": "npm run build && node dist/packages/core/src/check-examples.js",
     "generate:goldens": "npm run build && node dist/packages/core/src/generate-goldens.js",
-    "eval": "npm run build && node dist/packages/eval-runner/src/cli.js"
+    "eval": "npm run build && node dist/packages/eval-runner/src/cli.js",
+    "eval:revalidate": "npm run build && node dist/packages/eval-runner/src/revalidate.js"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

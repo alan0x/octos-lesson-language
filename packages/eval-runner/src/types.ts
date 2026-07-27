@@ -44,7 +44,8 @@ export interface GenerationProvider {
   generate(request: GenerationRequest): Promise<GenerationResult>;
 }
 
-export type FailureStage = "generation" | "parse" | "schema" | "semantic" | "normalize" | "reduce" | "coverage";
+export type FailureStage = "generation" | "parse" | "schema" | "semantic" | "normalize" | "reduce";
+export type CoverageStatus = "passed" | "failed" | "not_evaluated";
 
 export interface RunResult {
   case_id: string;
@@ -59,8 +60,8 @@ export interface RunResult {
   semantic_valid: boolean;
   normalized: boolean;
   reduced: boolean;
-  first_pass_playable: boolean;
-  mechanical_coverage_passed: boolean;
+  first_pass_core_executable: boolean;
+  mechanical_coverage_status: CoverageStatus;
   missing_coverage: string[];
   forbidden_hits: string[];
   failure_stage?: FailureStage;
@@ -77,11 +78,12 @@ export interface EvalReport {
   case_count: number;
   total_runs: number;
   completed_runs: number;
-  first_pass_playable_runs: number;
-  first_pass_playable_rate: number;
-  mechanical_coverage_runs: number;
+  first_pass_core_executable_runs: number;
+  first_pass_core_executable_rate: number;
+  mechanical_coverage_evaluated_runs: number;
+  mechanical_coverage_passed_runs: number;
   mechanical_coverage_rate: number;
-  by_domain: Record<string, { runs: number; playable: number; rate: number }>;
+  by_domain: Record<string, { runs: number; executable: number; rate: number }>;
   failure_stages: Record<string, number>;
   results: RunResult[];
 }

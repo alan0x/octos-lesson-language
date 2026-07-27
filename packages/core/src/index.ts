@@ -323,7 +323,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         }
 
         if (["emphasize", "point"].includes(action.do)) {
-          resolveLocal(registry, action.target, `${actionPath}/target`, ["node", "connection"]);
+          resolveLocal(registry, action.target, `${actionPath}/target`, ["node", "connection", "group"]);
           return;
         }
 
@@ -666,7 +666,9 @@ export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardSt
               ? state.nodes[action.target.node_id]
               : action.target.connection_id
                 ? state.connections[action.target.connection_id]
-                : undefined;
+                : action.target.group_id
+                  ? state.groups[action.target.group_id]
+                  : undefined;
             if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
             target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
           }

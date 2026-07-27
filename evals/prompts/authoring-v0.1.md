@@ -21,11 +21,12 @@
 
 - `write as` 创建 node，`connect as` 创建 connection，`group as` 创建 group；
 - `place.anchor` 只能是已创建的 node 或 group；
-- `emphasize.target`、`point.target` 可以是 node、`node#fragment` 或 connection；
+- `emphasize.target`、`point.target` 可以是 node、`node#fragment`、connection 或 group；
 - `group.members[]` 只能是 node 或 group；`focus.targets[]` 可以是 node、group 或 connection；
 - `close.focus[]` 同样只能引用已经创建的 node、group 或 connection；
 - Session Context 中的 `asset_id` / `region_id` 不是局部别名，不能直接用于 target、from、to、anchor、members 或 targets；
 - 使用图片区域时，必须先 `write kind: image`，在 `content.regions[]` 中用 `as` + 原样 `source_region` 建立局部 fragment，再通过 `image-node#fragment` 引用。
+- beat 的 `delivery` 只能是 `neutral`、`patient`、`encouraging`、`careful` 或 `emphatic`；Tutor Context 的 `patient` 可以原样使用。
 
 评测调用时应附带：
 

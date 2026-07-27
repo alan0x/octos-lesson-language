@@ -6,7 +6,7 @@ export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue
 // schemas will replace this boundary as the visual vocabulary stabilizes.
 export type JsonObject = { [key: string]: any };
 
-export type Delivery = "neutral" | "encouraging" | "careful" | "emphatic";
+export type Delivery = "neutral" | "patient" | "encouraging" | "careful" | "emphatic";
 export type ActionPhase = "before_speech" | "during_speech" | "after_speech";
 export type NodeKind = "text" | "math" | "shape" | "diagram" | "plot" | "image" | "table" | "note";
 export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay";
@@ -210,7 +210,7 @@ export interface SemanticBoardState {
   revision: number;
   nodes: Record<string, JsonObject & { id: string; content: JsonObject; emphasis?: JsonObject[] }>;
   connections: Record<string, JsonObject & { id: string; emphasis?: JsonObject[] }>;
-  groups: Record<string, JsonObject & { id: string }>;
+  groups: Record<string, JsonObject & { id: string; emphasis?: JsonObject[] }>;
   focus: string[];
   applied_lessons: string[];
   applied_steps: string[];

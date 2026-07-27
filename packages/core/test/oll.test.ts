@@ -139,7 +139,7 @@ test("rejects unknown action fields", () => {
 
 test("authoring schema declares each action payload required by the validator", () => {
   const declared = Object.fromEntries(
-    authoringSchema.$defs.action.allOf.map((rule: any) => [
+    authoringSchema.$defs.action.allOf.filter((rule: any) => rule.then.required).map((rule: any) => [
       rule.if.properties.do.const,
       rule.then.required,
     ]),
@@ -192,4 +192,39 @@ test("independent JSON Schema validation rejects a malformed action", () => {
   assert.equal(result.valid, false);
   assert.ok(result.errors.some((error) => error.keyword === "required"));
   assert.throws(() => assertAuthoringSchema(invalid), (error) => error instanceof OllError && error.code === "OLL_SCHEMA_INVALID");
+});
+
+test("patient is a valid beat delivery", () => {
+  const valid = structuredClone(source);
+  valid.steps[0]!.beats[0]!.delivery = "patient";
+  assert.deepEqual(validateAuthoringSchema(valid), { valid: true, errors: [] });
+  assert.doesNotThrow(() => validateAuthoringLesson(valid));
+});
+
+test("point and emphasize can target a group", () => {
+  const valid = structuredClone(source);
+  valid.steps[4]!.beats[0]!.actions.push(
+    { do: "point", target: "derivation-group" },
+    { do: "emphasize", target: "derivation-group", emphasis: "focus" },
+  );
+  validateAuthoringLesson(valid);
+  const events = normalizeAuthoringLesson(valid, host);
+  const actions = events[5]!.step!.beats[0]!.stage.during_speech;
+  const groupId = `${host.lessonId}:group:derivation-group`;
+  assert.deepEqual(actions.at(-2)!.target, { group_id: groupId });
+  assert.deepEqual(actions.at(-1)!.target, { group_id: groupId });
+  const state = reduceCanonicalEvents(events);
+  assert.equal((state.groups[groupId]!.emphasis!.at(-1) as { emphasis: string }).emphasis, "focus");
+});
+
+test("image Schema requires the canonical asset_id field", () => {
+  const geometry = lessons.find(({ entry }) => entry.name === "geometry-auxiliary-line")!;
+  const invalid = structuredClone(geometry.source) as any;
+  const image = invalid.steps[0].beats[0].actions[0];
+  image.content.source_asset = image.content.asset_id;
+  delete image.content.asset_id;
+  const result = validateAuthoringSchema(invalid);
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.keyword === "required"));
+  assert.ok(result.errors.some((error) => error.keyword === "additionalProperties"));
 });

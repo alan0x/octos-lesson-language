@@ -68,9 +68,9 @@ if (args.help || !args.suite) {
     resume: args.resume === true,
     provider,
     onProgress(done, total, result) {
-      console.log(`[${done}/${total}] ${result.case_id} #${result.repetition}: ${result.first_pass_playable ? "playable" : `failed:${result.failure_stage}`}${result.resumed ? " (resumed)" : ""}`);
+      console.log(`[${done}/${total}] ${result.case_id} #${result.repetition}: ${result.first_pass_core_executable ? "core-executable" : `failed:${result.failure_stage}`}${result.resumed ? " (resumed)" : ""}`);
     },
   });
   console.log(`Report: ${resolve(outputDirectory, "REPORT.md")}`);
-  console.log(`First-pass playable: ${report.first_pass_playable_runs}/${report.completed_runs} (${(report.first_pass_playable_rate * 100).toFixed(1)}%)`);
+  console.log(`First-pass Core-executable: ${report.first_pass_core_executable_runs}/${report.completed_runs} (${(report.first_pass_core_executable_rate * 100).toFixed(1)}%)`);
 }
