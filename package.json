@@ -9,15 +9,26 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js",
+    "test": "npm run build && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js dist/packages/player-core/test/*.test.js",
     "check:examples": "npm run build && node dist/packages/core/src/check-examples.js",
     "generate:goldens": "npm run build && node dist/packages/core/src/generate-goldens.js",
     "eval": "npm run build && node dist/packages/eval-runner/src/cli.js",
-    "eval:revalidate": "npm run build && node dist/packages/eval-runner/src/revalidate.js"
+    "eval:revalidate": "npm run build && node dist/packages/eval-runner/src/revalidate.js",
+    "playback:conformance": "npm run build && node dist/packages/player-core/src/check-runs.js"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "typescript": "^7.0.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/packages/core/src/index.d.ts",
+      "default": "./dist/packages/core/src/index.js"
+    },
+    "./player": {
+      "types": "./dist/packages/player-core/src/index.d.ts",
+      "default": "./dist/packages/player-core/src/index.js"
+    }
   },
   "dependencies": {
     "ajv": "^8.20.0"

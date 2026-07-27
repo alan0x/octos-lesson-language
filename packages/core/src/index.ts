@@ -611,12 +611,10 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   return events;
 }
 
-export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardState {
-  requireArray(events, "events");
-  const open = events[0]!;
+export function createSemanticBoardState(open: CanonicalEvent): SemanticBoardState {
   if (open.event !== "lesson.open") fail("OLL_INVALID_EVENT", "/0/event", "First event must be lesson.open");
   if (!open.board) fail("OLL_INVALID_EVENT", "/0/board", "lesson.open must include board state");
-  const state: SemanticBoardState = {
+  return {
     board_id: open.board.board_id,
     revision: open.board.base_revision,
     nodes: {},
@@ -627,10 +625,90 @@ export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardSt
     applied_steps: [],
     applied_actions: [],
   };
+}
+
+function canonicalTargetExists(state: SemanticBoardState, target: CanonicalTarget | undefined): boolean {
+  if (!target) return false;
+  if (target.node_id) return Boolean(state.nodes[target.node_id]);
+  if (target.connection_id) return Boolean(state.connections[target.connection_id]);
+  if (target.group_id) return Boolean(state.groups[target.group_id]);
+  return false;
+}
+
+export function applyCanonicalAction(state: SemanticBoardState, action: CanonicalAction): boolean {
+  if (state.applied_actions.includes(action.action_id)) return false;
+  if (action.op === "board.create") {
+    if (!action.node) fail("OLL_INVALID_EVENT", "action.node", "board.create requires node");
+    if (state.nodes[action.node.id]) fail("OLL_DUPLICATE_NODE_ID", "action.node.id", `Node '${action.node.id}' already exists`);
+    const anchor = action.node.placement?.anchor;
+    if (anchor && !state.nodes[anchor] && !state.groups[anchor]) fail("OLL_REFERENCE_NOT_FOUND", "action.node.placement.anchor", `Anchor '${anchor}' not found`);
+    state.nodes[action.node.id] = structuredClone(action.node);
+  } else if (action.op === "board.connect") {
+    if (!action.connection) fail("OLL_INVALID_EVENT", "action.connection", "board.connect requires connection");
+    if (state.connections[action.connection.id]) fail("OLL_DUPLICATE_CONNECTION_ID", "action.connection.id", `Connection '${action.connection.id}' already exists`);
+    if (!canonicalTargetExists(state, action.connection.from)) fail("OLL_REFERENCE_NOT_FOUND", "action.connection.from", "Connection source not found");
+    if (!canonicalTargetExists(state, action.connection.to)) fail("OLL_REFERENCE_NOT_FOUND", "action.connection.to", "Connection target not found");
+    state.connections[action.connection.id] = structuredClone(action.connection);
+  } else if (action.op === "board.group") {
+    if (!action.group) fail("OLL_INVALID_EVENT", "action.group", "board.group requires group");
+    if (state.groups[action.group.id]) fail("OLL_DUPLICATE_GROUP_ID", "action.group.id", `Group '${action.group.id}' already exists`);
+    for (const member of action.group.members ?? []) {
+      if (!state.nodes[member] && !state.groups[member]) fail("OLL_REFERENCE_NOT_FOUND", "action.group.members", `Group member '${member}' not found`);
+    }
+    state.groups[action.group.id] = structuredClone(action.group);
+  } else if (action.op === "board.focus") {
+    if (!action.focus) fail("OLL_INVALID_EVENT", "action.focus", "board.focus requires focus");
+    for (const target of action.focus.targets) {
+      if (!state.nodes[target] && !state.groups[target] && !state.connections[target]) fail("OLL_REFERENCE_NOT_FOUND", "action.focus.targets", `Focus target '${target}' not found`);
+    }
+    state.focus = [...action.focus.targets];
+  } else if (action.op === "board.revise") {
+    if (!action.target?.node_id || !action.revision) fail("OLL_INVALID_EVENT", "action", "board.revise requires a node target and revision");
+    const node = state.nodes[action.target.node_id];
+    if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `Node '${action.target.node_id}' not found`);
+    node.content = structuredClone(action.revision.content);
+  } else if (action.op === "board.emphasize") {
+    if (!action.target || !action.emphasis) fail("OLL_INVALID_EVENT", "action.target", "board.emphasize requires target and emphasis");
+    const target = action.target.node_id
+      ? state.nodes[action.target.node_id]
+      : action.target.connection_id
+        ? state.connections[action.target.connection_id]
+        : action.target.group_id
+          ? state.groups[action.target.group_id]
+          : undefined;
+    if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
+    target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
+  } else if (action.op === "teacher.point") {
+    if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
+  } else if (action.op === "teacher.expression") {
+    if (!action.expression) fail("OLL_INVALID_EVENT", "action.expression", "teacher.expression requires expression");
+  } else {
+    fail("OLL_INVALID_OPERATION", "action.op", `Unknown canonical operation '${action.op}'`);
+  }
+  state.applied_actions.push(action.action_id);
+  return true;
+}
+
+export function commitCanonicalStep(state: SemanticBoardState, stepId: string): boolean {
+  if (state.applied_steps.includes(stepId)) return false;
+  state.applied_steps.push(stepId);
+  state.revision += 1;
+  return true;
+}
+
+export function applyLessonClose(state: SemanticBoardState, event: CanonicalEvent): void {
+  if (event.event !== "lesson.close") fail("OLL_INVALID_EVENT", "event", "Expected lesson.close");
+  state.focus = [...(event.result?.suggested_focus ?? state.focus)];
+}
+
+export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardState {
+  requireArray(events, "events");
+  const open = events[0]!;
+  const state = createSemanticBoardState(open);
 
   for (const event of events.slice(1)) {
     if (event.event === "lesson.close") {
-      state.focus = [...(event.result?.suggested_focus ?? state.focus)];
+      applyLessonClose(state, event);
       continue;
     }
     if (event.event !== "lesson.step") fail("OLL_INVALID_EVENT", "event", `Unexpected event '${event.event}'`);
@@ -640,43 +718,11 @@ export function reduceCanonicalEvents(events: CanonicalEvent[]): SemanticBoardSt
     for (const beat of step.beats) {
       for (const phase of ["before_speech", "during_speech", "after_speech"] as const) {
         for (const action of beat.stage[phase]) {
-          if (state.applied_actions.includes(action.action_id)) continue;
-          state.applied_actions.push(action.action_id);
-          if (action.op === "board.create") {
-            if (!action.node) fail("OLL_INVALID_EVENT", "action.node", "board.create requires node");
-            state.nodes[action.node.id] = structuredClone(action.node);
-          } else if (action.op === "board.connect") {
-            if (!action.connection) fail("OLL_INVALID_EVENT", "action.connection", "board.connect requires connection");
-            state.connections[action.connection.id] = structuredClone(action.connection);
-          } else if (action.op === "board.group") {
-            if (!action.group) fail("OLL_INVALID_EVENT", "action.group", "board.group requires group");
-            state.groups[action.group.id] = structuredClone(action.group);
-          } else if (action.op === "board.focus") {
-            if (!action.focus) fail("OLL_INVALID_EVENT", "action.focus", "board.focus requires focus");
-            state.focus = [...action.focus.targets];
-          }
-          else if (action.op === "board.revise") {
-            if (!action.target?.node_id || !action.revision) fail("OLL_INVALID_EVENT", "action", "board.revise requires a node target and revision");
-            const node = state.nodes[action.target.node_id];
-            if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `Node '${action.target.node_id}' not found`);
-            node.content = structuredClone(action.revision.content);
-          } else if (action.op === "board.emphasize") {
-            if (!action.target) fail("OLL_INVALID_EVENT", "action.target", "board.emphasize requires target");
-            const target = action.target.node_id
-              ? state.nodes[action.target.node_id]
-              : action.target.connection_id
-                ? state.connections[action.target.connection_id]
-                : action.target.group_id
-                  ? state.groups[action.target.group_id]
-                  : undefined;
-            if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
-            target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
-          }
+          applyCanonicalAction(state, action);
         }
       }
     }
-    state.applied_steps.push(step.id);
-    state.revision += 1;
+    commitCanonicalStep(state, step.id);
   }
   return canonicalizeState(state);
 }
