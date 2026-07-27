@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { computeQualityGate, validateQualityJudgment } from "../src/quality.js";
 import { QUALITY_DIMENSIONS, type QualityJudgment } from "../src/types.js";
+import qualitySchema from "../../../evals/rubrics/lesson-quality-v0.2.schema.json" with { type: "json" };
 
 function judgment(score = 4): QualityJudgment {
   return {
@@ -51,4 +52,21 @@ test("quality schema rejects ungrounded evidence-free scores", () => {
   const validation = validateQualityJudgment(value);
   assert.equal(validation.valid, false);
   assert.ok(validation.errors.some((error) => error.includes("fewer than 1 items")));
+});
+
+test("quality schema uses explicit types required by structured output", () => {
+  function inspect(value: unknown, path = "schema"): void {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return;
+    const schema = value as Record<string, unknown>;
+    if ("const" in schema || "enum" in schema) {
+      assert.equal(typeof schema.type, "string", `${path} must declare type beside const/enum`);
+    }
+    if (schema.type === "object") {
+      assert.equal(schema.additionalProperties, false, `${path} must forbid additional properties`);
+      const properties = (schema.properties ?? {}) as Record<string, unknown>;
+      assert.deepEqual(new Set(schema.required as string[]), new Set(Object.keys(properties)), `${path} must require every property`);
+    }
+    for (const [key, child] of Object.entries(schema)) inspect(child, `${path}.${key}`);
+  }
+  inspect(qualitySchema);
 });

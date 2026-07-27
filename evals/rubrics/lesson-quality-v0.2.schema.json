@@ -5,7 +5,7 @@
   "required": ["rubric_version", "case_id", "dimensions", "critical_errors", "confidence", "limitations"],
   "additionalProperties": false,
   "properties": {
-    "rubric_version": {"const": "0.2"},
+    "rubric_version": {"type": "string", "const": "0.2"},
     "case_id": {"type": "string", "minLength": 1},
     "dimensions": {
       "type": "object",
@@ -29,14 +29,14 @@
         "required": ["severity", "category", "description", "evidence"],
         "additionalProperties": false,
         "properties": {
-          "severity": {"enum": ["major", "fatal"]},
-          "category": {"enum": ["factual", "coverage", "pedagogy", "alignment", "context", "safety"]},
+          "severity": {"type": "string", "enum": ["major", "fatal"]},
+          "category": {"type": "string", "enum": ["factual", "coverage", "pedagogy", "alignment", "context", "safety"]},
           "description": {"type": "string", "minLength": 1},
           "evidence": {"type": "string", "minLength": 1}
         }
       }
     },
-    "confidence": {"enum": ["low", "medium", "high"]},
+    "confidence": {"type": "string", "enum": ["low", "medium", "high"]},
     "limitations": {"type": "array", "items": {"type": "string"}}
   },
   "$defs": {
