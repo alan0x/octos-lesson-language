@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://octos.dev/schema/lesson/authoring/0.1",
+  "title": "OLL Authoring Profile 0.1 Exploration",
+  "type": "object",
+  "required": ["dsl", "version", "profile", "lesson", "steps"],
+  "additionalProperties": false,
+  "properties": {
+    "dsl": {"const": "octos.lesson"},
+    "version": {"const": "0.1"},
+    "profile": {"const": "authoring"},
+    "lesson": {
+      "type": "object",
+      "required": ["mode", "language", "title", "goals"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"const": "explain"},
+        "language": {"type": "string", "minLength": 2, "maxLength": 32},
+        "title": {"type": "string", "minLength": 1, "maxLength": 160},
+        "goals": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string"}},
+        "adaptation": {
+          "type": "object",
+          "properties": {
+            "strategies": {"type": "array", "items": {"type": "string"}},
+            "context_refs": {"type": "array", "items": {"type": "string"}}
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 24,
+      "items": {"$ref": "#/$defs/step"}
+    },
+    "close": {
+      "type": "object",
+      "properties": {
+        "summary": {"type": "string"},
+        "focus": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": ["key", "purpose", "beats"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"$ref": "#/$defs/alias"},
+        "purpose": {"type": "string", "minLength": 1, "maxLength": 240},
+        "beats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "items": {"$ref": "#/$defs/beat"}
+        }
+      }
+    },
+    "beat": {
+      "type": "object",
+      "required": ["key", "actions"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"$ref": "#/$defs/alias"},
+        "say": {"type": "string", "maxLength": 1200},
+        "delivery": {"enum": ["neutral", "encouraging", "careful", "emphatic"]},
+        "actions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 24,
+          "items": {"$ref": "#/$defs/action"}
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": ["do"],
+      "properties": {
+        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression"]},
+        "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
+        "as": {"$ref": "#/$defs/alias"},
+        "kind": {"enum": ["text", "math", "shape", "diagram", "plot", "image", "table", "note"]},
+        "role": {"type": "string"},
+        "content": {"type": "object"},
+        "place": {"type": "object"},
+        "target": {"type": "string"},
+        "from": {"type": "string"},
+        "to": {"type": "string"},
+        "relation": {"type": "string"},
+        "label": {"type": "string"},
+        "emphasis": {"type": "string"},
+        "members": {"type": "array", "items": {"type": "string"}},
+        "targets": {"type": "array", "items": {"type": "string"}},
+        "intent": {"type": "string"},
+        "expression": {"type": "string"},
+        "reason": {"type": "string"}
+      }
+    },
+    "alias": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+    }
+  }
+}

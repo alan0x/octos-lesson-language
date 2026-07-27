@@ -1,0 +1,430 @@
+{
+  "board_id": "board-session-001",
+  "revision": 5,
+  "nodes": {
+    "lesson-quadratic-001:node:balanced-expression": {
+      "id": "lesson-quadratic-001:node:balanced-expression",
+      "kind": "math",
+      "role": "derivation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:balanced-expression:fragment:prefix",
+            "latex": "y=x^2+6x"
+          },
+          {
+            "id": "lesson-quadratic-001:node:balanced-expression:fragment:add-nine",
+            "latex": "+9"
+          },
+          {
+            "id": "lesson-quadratic-001:node:balanced-expression:fragment:subtract-nine",
+            "latex": "-9"
+          },
+          {
+            "id": "lesson-quadratic-001:node:balanced-expression:fragment:plus-five",
+            "latex": "+5"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-quadratic-001:node:square-identity"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-quadratic-001:node:balanced-expression",
+            "fragment_id": "lesson-quadratic-001:node:balanced-expression:fragment:add-nine"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-quadratic-001:node:balanced-expression",
+            "fragment_id": "lesson-quadratic-001:node:balanced-expression:fragment:subtract-nine"
+          },
+          "emphasis": "supporting"
+        }
+      ]
+    },
+    "lesson-quadratic-001:node:half-coefficient": {
+      "id": "lesson-quadratic-001:node:half-coefficient",
+      "kind": "math",
+      "role": "observation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:half-coefficient:fragment:calculation",
+            "latex": "6\\div2=3"
+          }
+        ],
+        "caption": "一次项系数的一半"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-quadratic-001:node:original"
+      }
+    },
+    "lesson-quadratic-001:node:original": {
+      "id": "lesson-quadratic-001:node:original",
+      "kind": "math",
+      "role": "problem",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:original:fragment:lhs",
+            "latex": "y="
+          },
+          {
+            "id": "lesson-quadratic-001:node:original:fragment:quadratic",
+            "latex": "x^2"
+          },
+          {
+            "id": "lesson-quadratic-001:node:original:fragment:linear",
+            "latex": "+6x"
+          },
+          {
+            "id": "lesson-quadratic-001:node:original:fragment:constant",
+            "latex": "+5"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson_origin"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-quadratic-001:node:original",
+            "fragment_id": "lesson-quadratic-001:node:original:fragment:linear"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    },
+    "lesson-quadratic-001:node:parabola": {
+      "id": "lesson-quadratic-001:node:parabola",
+      "kind": "plot",
+      "role": "diagram",
+      "content": {
+        "axes": {
+          "x": {
+            "min": -8,
+            "max": 3
+          },
+          "y": {
+            "min": -6,
+            "max": 8
+          }
+        },
+        "curves": [
+          {
+            "id": "lesson-quadratic-001:node:parabola:fragment:main-curve",
+            "expression": "(x+3)^2-4",
+            "label": "y=(x+3)²-4"
+          }
+        ],
+        "points": [
+          {
+            "id": "lesson-quadratic-001:node:parabola:fragment:vertex",
+            "x": -3,
+            "y": -4,
+            "label": "(-3,-4)"
+          }
+        ],
+        "guides": [
+          {
+            "id": "lesson-quadratic-001:node:parabola:fragment:symmetry-axis",
+            "kind": "vertical_line",
+            "value": -3,
+            "label": "x=-3"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "spacious",
+        "anchor": "lesson-quadratic-001:node:balanced-expression"
+      }
+    },
+    "lesson-quadratic-001:node:square-identity": {
+      "id": "lesson-quadratic-001:node:square-identity",
+      "kind": "math",
+      "role": "derivation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:square-identity:fragment:expanded",
+            "latex": "x^2+6x+9"
+          },
+          {
+            "id": "lesson-quadratic-001:node:square-identity:fragment:equals",
+            "latex": "="
+          },
+          {
+            "id": "lesson-quadratic-001:node:square-identity:fragment:factored",
+            "latex": "(x+3)^2"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-quadratic-001:node:half-coefficient"
+      }
+    },
+    "lesson-quadratic-001:node:summary": {
+      "id": "lesson-quadratic-001:node:summary",
+      "kind": "note",
+      "role": "summary",
+      "content": {
+        "title": "这节课的结论",
+        "items": [
+          "顶点式：y=(x+3)²-4",
+          "顶点：(-3,-4)",
+          "对称轴：x=-3",
+          "相对 y=x²：左移3，下移4"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-quadratic-001:group:derivation-group"
+      }
+    },
+    "lesson-quadratic-001:node:target-form": {
+      "id": "lesson-quadratic-001:node:target-form",
+      "kind": "math",
+      "role": "observation",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:target-form:fragment:template",
+            "latex": "y=(x-h)^2+k"
+          }
+        ],
+        "caption": "顶点式"
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "spacious",
+        "anchor": "lesson-quadratic-001:node:original"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-quadratic-001:node:target-form",
+            "fragment_id": "lesson-quadratic-001:node:target-form:fragment:template"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    },
+    "lesson-quadratic-001:node:translation-note": {
+      "id": "lesson-quadratic-001:node:translation-note",
+      "kind": "note",
+      "role": "observation",
+      "content": {
+        "text": "y=x²  →  左移3  →  下移4",
+        "details": [
+          "x+3=0 时 x=-3",
+          "顶点从 (0,0) 变为 (-3,-4)"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "center",
+        "gap": "normal",
+        "anchor": "lesson-quadratic-001:node:parabola"
+      }
+    },
+    "lesson-quadratic-001:node:vertex-form": {
+      "id": "lesson-quadratic-001:node:vertex-form",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-quadratic-001:node:vertex-form:fragment:lhs",
+            "latex": "y="
+          },
+          {
+            "id": "lesson-quadratic-001:node:vertex-form:fragment:square",
+            "latex": "(x+3)^2"
+          },
+          {
+            "id": "lesson-quadratic-001:node:vertex-form:fragment:vertical-shift",
+            "latex": "-4"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-quadratic-001:node:balanced-expression"
+      }
+    }
+  },
+  "connections": {
+    "lesson-quadratic-001:connection:cancel-nine": {
+      "id": "lesson-quadratic-001:connection:cancel-nine",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:balanced-expression",
+        "fragment_id": "lesson-quadratic-001:node:balanced-expression:fragment:add-nine"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:balanced-expression",
+        "fragment_id": "lesson-quadratic-001:node:balanced-expression:fragment:subtract-nine"
+      },
+      "relation": "cancels",
+      "label": "总变化为0"
+    },
+    "lesson-quadratic-001:connection:constant-to-vertical": {
+      "id": "lesson-quadratic-001:connection:constant-to-vertical",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:vertex-form",
+        "fragment_id": "lesson-quadratic-001:node:vertex-form:fragment:vertical-shift"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:parabola",
+        "fragment_id": "lesson-quadratic-001:node:parabola:fragment:vertex"
+      },
+      "relation": "determines",
+      "label": "顶点纵坐标 -4"
+    },
+    "lesson-quadratic-001:connection:graph-to-translation": {
+      "id": "lesson-quadratic-001:connection:graph-to-translation",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:parabola",
+        "fragment_id": "lesson-quadratic-001:node:parabola:fragment:vertex"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:translation-note"
+      },
+      "relation": "explained_by",
+      "label": "平移结果"
+    },
+    "lesson-quadratic-001:connection:half-to-square": {
+      "id": "lesson-quadratic-001:connection:half-to-square",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:half-coefficient",
+        "fragment_id": "lesson-quadratic-001:node:half-coefficient:fragment:calculation"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:square-identity",
+        "fragment_id": "lesson-quadratic-001:node:square-identity:fragment:factored"
+      },
+      "relation": "constructs",
+      "label": "3 决定括号中的常数"
+    },
+    "lesson-quadratic-001:connection:identity-to-result": {
+      "id": "lesson-quadratic-001:connection:identity-to-result",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:square-identity",
+        "fragment_id": "lesson-quadratic-001:node:square-identity:fragment:factored"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:vertex-form",
+        "fragment_id": "lesson-quadratic-001:node:vertex-form:fragment:square"
+      },
+      "relation": "reused_as",
+      "label": "完全平方部分"
+    },
+    "lesson-quadratic-001:connection:square-to-horizontal": {
+      "id": "lesson-quadratic-001:connection:square-to-horizontal",
+      "from": {
+        "node_id": "lesson-quadratic-001:node:vertex-form",
+        "fragment_id": "lesson-quadratic-001:node:vertex-form:fragment:square"
+      },
+      "to": {
+        "node_id": "lesson-quadratic-001:node:parabola",
+        "fragment_id": "lesson-quadratic-001:node:parabola:fragment:symmetry-axis"
+      },
+      "relation": "determines",
+      "label": "对称轴 x=-3"
+    }
+  },
+  "groups": {
+    "lesson-quadratic-001:group:derivation-group": {
+      "id": "lesson-quadratic-001:group:derivation-group",
+      "title": "配方过程",
+      "role": "derivation",
+      "members": [
+        "lesson-quadratic-001:node:original",
+        "lesson-quadratic-001:node:half-coefficient",
+        "lesson-quadratic-001:node:square-identity",
+        "lesson-quadratic-001:node:balanced-expression",
+        "lesson-quadratic-001:node:vertex-form"
+      ]
+    },
+    "lesson-quadratic-001:group:graph-group": {
+      "id": "lesson-quadratic-001:group:graph-group",
+      "title": "图像意义",
+      "role": "diagram",
+      "members": [
+        "lesson-quadratic-001:node:parabola",
+        "lesson-quadratic-001:node:translation-note"
+      ]
+    },
+    "lesson-quadratic-001:group:lesson-map": {
+      "id": "lesson-quadratic-001:group:lesson-map",
+      "title": "配方法与图像",
+      "role": "summary",
+      "members": [
+        "lesson-quadratic-001:group:derivation-group",
+        "lesson-quadratic-001:group:graph-group",
+        "lesson-quadratic-001:node:summary"
+      ]
+    }
+  },
+  "focus": [
+    "lesson-quadratic-001:group:lesson-map"
+  ],
+  "applied_lessons": [
+    "lesson-quadratic-001"
+  ],
+  "applied_steps": [
+    "lesson-quadratic-001:step:establish-goal",
+    "lesson-quadratic-001:step:find-square",
+    "lesson-quadratic-001:step:preserve-equality",
+    "lesson-quadratic-001:step:interpret-graph",
+    "lesson-quadratic-001:step:organize-lesson"
+  ],
+  "applied_actions": [
+    "lesson-quadratic-001:action:1:1:1",
+    "lesson-quadratic-001:action:1:1:2",
+    "lesson-quadratic-001:action:1:2:1",
+    "lesson-quadratic-001:action:1:2:2",
+    "lesson-quadratic-001:action:2:1:1",
+    "lesson-quadratic-001:action:2:1:2",
+    "lesson-quadratic-001:action:2:2:1",
+    "lesson-quadratic-001:action:2:2:2",
+    "lesson-quadratic-001:action:3:1:1",
+    "lesson-quadratic-001:action:3:1:2",
+    "lesson-quadratic-001:action:3:1:3",
+    "lesson-quadratic-001:action:3:1:4",
+    "lesson-quadratic-001:action:3:2:1",
+    "lesson-quadratic-001:action:3:2:2",
+    "lesson-quadratic-001:action:4:1:1",
+    "lesson-quadratic-001:action:4:1:2",
+    "lesson-quadratic-001:action:4:1:3",
+    "lesson-quadratic-001:action:4:1:4",
+    "lesson-quadratic-001:action:4:2:1",
+    "lesson-quadratic-001:action:4:2:2",
+    "lesson-quadratic-001:action:5:1:1",
+    "lesson-quadratic-001:action:5:1:2",
+    "lesson-quadratic-001:action:5:2:1",
+    "lesson-quadratic-001:action:5:2:2",
+    "lesson-quadratic-001:action:5:2:3"
+  ]
+}

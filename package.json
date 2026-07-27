@@ -1,0 +1,13 @@
+{
+  "name": "octos-lesson-language",
+  "version": "0.0.0-exploration",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test packages/reference-js/test/*.test.mjs",
+    "check:examples": "node packages/reference-js/src/check-examples.mjs"
+  }
+}

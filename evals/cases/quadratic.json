@@ -1,0 +1,38 @@
+{
+  "case_id": "quadratic-completing-square-001",
+  "language": "zh-CN",
+  "learner_request": "请给我讲讲怎么把 y=x²+6x+5 化成顶点式，并说明图像发生了什么。",
+  "tutor_context": {
+    "tone": ["patient", "concrete", "respectful"],
+    "principles": [
+      "show_knowledge_formation",
+      "align_narration_and_board",
+      "complete_requested_scope"
+    ]
+  },
+  "learner_context": [
+    {
+      "ref": "learner.strengths.function-graph",
+      "statement": "对函数图像有较好的直觉",
+      "confidence": "medium",
+      "source": "user_confirmed"
+    },
+    {
+      "ref": "learner.support-needs.constant-term",
+      "statement": "代数变形时容易遗漏常数项",
+      "confidence": "medium",
+      "source": "model_interpreted"
+    }
+  ],
+  "required_coverage": [
+    "原式和目标顶点式",
+    "一次项系数取一半",
+    "显式写出加9减9",
+    "顶点式 y=(x+3)²-4",
+    "顶点 (-3,-4)",
+    "对称轴 x=-3",
+    "左移3下移4",
+    "完整讲解中不等待学生回答"
+  ],
+  "reference_authoring": "../../examples/quadratic/lesson.authoring.json"
+}

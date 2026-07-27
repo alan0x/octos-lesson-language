@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://octos.dev/schema/lesson/canonical/0.1/event",
+  "title": "OLL Canonical Event 0.1 Exploration",
+  "type": "object",
+  "required": ["dsl", "version", "profile", "event", "lesson_id", "sequence"],
+  "properties": {
+    "dsl": {"const": "octos.lesson"},
+    "version": {"const": "0.1"},
+    "profile": {"const": "canonical"},
+    "event": {"enum": ["lesson.open", "lesson.step", "lesson.close"]},
+    "lesson_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "sequence": {"type": "integer", "minimum": 0},
+    "board": {"type": "object"},
+    "lesson": {"type": "object"},
+    "step": {"type": "object"},
+    "result": {"type": "object"}
+  }
+}
