@@ -13,6 +13,7 @@
     "test": "npm run build && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js dist/packages/player-core/test/*.test.js dist/packages/quality-runner/test/*.test.js dist/packages/web-runtime/test/*.test.js dist/apps/playback-harness/test/assets.test.js",
     "test:web-runtime": "npm run build && node --test dist/packages/web-runtime/test/*.test.js",
     "prepack": "npm run build",
+    "prepare": "npm run build",
     "check:examples": "npm run build && node dist/packages/core/src/check-examples.js",
     "generate:goldens": "npm run build && node dist/packages/core/src/generate-goldens.js",
     "eval": "npm run build && node dist/packages/eval-runner/src/cli.js",
