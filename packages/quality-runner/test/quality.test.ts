@@ -5,7 +5,7 @@ import { QUALITY_DIMENSIONS, type QualityJudgment } from "../src/types.js";
 
 function judgment(score = 4): QualityJudgment {
   return {
-    rubric_version: "0.1", case_id: "case",
+    rubric_version: "0.2", case_id: "case",
     dimensions: Object.fromEntries(
       QUALITY_DIMENSIONS.map((dimension) => [dimension, { score, evidence: [`${dimension} evidence`], concerns: [] }]),
     ) as unknown as QualityJudgment["dimensions"],
@@ -34,6 +34,15 @@ test("host gate enforces core teaching dimensions", () => {
   assert.equal(gate.total_score, 30);
   assert.equal(gate.passed, false);
   assert.ok(gate.reasons.includes("progression below 3"));
+});
+
+test("host gate rejects unsupported learner claims even when the total is high", () => {
+  const value = judgment();
+  value.dimensions.no_unsupported_learner_claims.score = 0;
+  const gate = computeQualityGate(value);
+  assert.equal(gate.total_score, 28);
+  assert.equal(gate.passed, false);
+  assert.ok(gate.reasons.includes("no_unsupported_learner_claims below 3"));
 });
 
 test("quality schema rejects ungrounded evidence-free scores", () => {

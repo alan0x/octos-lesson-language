@@ -12,7 +12,7 @@ export interface DimensionJudgment {
 }
 
 export interface QualityJudgment {
-  rubric_version: "0.1";
+  rubric_version: "0.2";
   case_id: string;
   dimensions: Record<QualityDimensionName, DimensionJudgment>;
   critical_errors: Array<{

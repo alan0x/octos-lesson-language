@@ -80,12 +80,18 @@ const resume = args.resume === true;
 if (!Number.isInteger(repetitions) || repetitions < 1) throw new Error("--repetitions must be a positive integer");
 if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error("--concurrency must be a positive integer");
 const [rubric, schema, contract, selected] = await Promise.all([
-  readFile(resolve(root, "evals/rubrics/lesson-quality.md"), "utf8"),
-  readFile(resolve(root, "evals/rubrics/lesson-quality.schema.json"), "utf8"),
-  readFile(resolve(root, "evals/prompts/quality-judge-v0.1.md"), "utf8"),
+  readFile(resolve(root, "evals/rubrics/lesson-quality-v0.2.md"), "utf8"),
+  readFile(resolve(root, "evals/rubrics/lesson-quality-v0.2.schema.json"), "utf8"),
+  readFile(resolve(root, "evals/prompts/quality-judge-v0.2.md"), "utf8"),
   selectLessons(suitePath, source, repetitions),
 ]);
 await mkdir(output, { recursive: true });
+await Promise.all([
+  writeFile(resolve(output, "rubric.snapshot.md"), rubric),
+  writeFile(resolve(output, "judge-contract.snapshot.md"), contract),
+  writeFile(resolve(output, "judgment-schema.snapshot.json"), schema),
+  writeFile(resolve(output, "run-config.json"), `${JSON.stringify({ rubric_version: "0.2", model, repetitions, concurrency, suite: String(args.suite), source: String(args.source) }, null, 2)}\n`),
+]);
 await writeFile(resolve(output, "selection.json"), `${JSON.stringify(selected.map((item) => ({ case_id: item.evalCase.case_id, domain: item.evalCase.domain, source_repetition: item.repetition })), null, 2)}\n`);
 const provider = new CodexCliProvider();
 const results: QualityCaseResult[] = [];
@@ -148,7 +154,7 @@ for (const result of evaluated) {
   value.average_score += result.gate!.total_score;
 }
 for (const value of Object.values(byDomain)) value.average_score /= value.evaluated;
-const report = { profile: "octos.lesson-quality.eval", version: "0.1", created_at: new Date().toISOString(), judge_model: model, selected: selected.length, evaluated: evaluated.length, judge_invalid: results.length - evaluated.length, gate_passed: passed, gate_failed: evaluated.length - passed, average_score: average, by_domain: byDomain, results };
+const report = { profile: "octos.lesson-quality.eval", version: "0.2", created_at: new Date().toISOString(), judge_model: model, selected: selected.length, evaluated: evaluated.length, judge_invalid: results.length - evaluated.length, gate_passed: passed, gate_failed: evaluated.length - passed, average_score: average, by_domain: byDomain, results };
 await writeFile(resolve(output, "report.json"), `${JSON.stringify(report, null, 2)}\n`);
 const domains = Object.entries(byDomain).map(([domain, value]) => `| ${domain} | ${value.passed}/${value.evaluated} | ${value.average_score.toFixed(1)}/32 |`).join("\n");
 await writeFile(resolve(output, "REPORT.md"), `# OLL lesson quality sample\n\n- Judge: ${model}\n- Deterministic sample: lowest Core-executable repetition per case\n- Valid judgments: ${evaluated.length}/${selected.length}\n- Quality gate: **${passed}/${evaluated.length}**\n- Average: ${average.toFixed(1)}/32\n\n| Domain | Passed | Average |\n|---|---:|---:|\n${domains}\n\n> Model-judge result; requires stratified human audit before product gating.\n`);

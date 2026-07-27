@@ -1,4 +1,4 @@
-# OLL Lesson 质量评分
+# OLL Lesson 质量评分 v0.2
 
 每个维度 0–4 分，协议质量与教学质量分开报告。
 
@@ -36,11 +36,3 @@
 Context 维度的无上下文场景不记零分：没有 Learner Context 时，不编造个性化和学生掌握判断即可获得高分。评分必须给出 OLL 中可定位的简短证据，不允许只写主观形容词。
 
 `request_coverage` 使用更严格的覆盖锚点：`3` 要求全部核心请求已由 Beat 或 close 实际教授，只允许次要细节有遗漏；若任一明确要求的核心项完全缺失、只出现在 `goals` / `adaptation` / 标题等元数据，最高为 `2`。关键词出现不等于完成教学。
-
-## 首次实验记录
-
-- 保留原始模型输出；
-- 不做自动 JSON 修复；
-- 同时记录 first-pass 和一次明确重试结果；
-- 记录模型、provider、参数、Skill commit、Schema commit；
-- 人工评分者必须能看到学生请求和全部 Context。
