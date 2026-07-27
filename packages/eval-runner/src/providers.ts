@@ -3,6 +3,15 @@ import { copyFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import type { GenerationProvider, GenerationRequest, GenerationResult } from "./types.js";
 
+export function codexExecArgs(request: GenerationRequest): string[] {
+  return [
+    "exec", "-m", request.model, "--ephemeral", "--ignore-user-config", "--ignore-rules",
+    "--skip-git-repo-check", "--sandbox", "read-only",
+    ...(request.outputSchemaPath ? ["--output-schema", request.outputSchemaPath] : []),
+    "--output-last-message", request.outputPath, "-",
+  ];
+}
+
 export class CodexCliProvider implements GenerationProvider {
   readonly name = "codex-cli";
   constructor(private readonly executable = process.env.OLL_CODEX_BIN ?? "/Applications/ChatGPT.app/Contents/Resources/codex") {}
@@ -10,10 +19,7 @@ export class CodexCliProvider implements GenerationProvider {
   async generate(request: GenerationRequest): Promise<GenerationResult> {
     await mkdir(dirname(request.outputPath), { recursive: true });
     const started = Date.now();
-    const args = [
-      "exec", "-m", request.model, "--ephemeral", "--ignore-user-config", "--ignore-rules",
-      "--skip-git-repo-check", "--sandbox", "read-only", "--output-last-message", request.outputPath, "-",
-    ];
+    const args = codexExecArgs(request);
     const child = spawn(this.executable, args, { stdio: ["pipe", "ignore", "pipe"] });
     let stderr = "";
     child.stderr.setEncoding("utf8");

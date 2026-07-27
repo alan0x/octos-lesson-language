@@ -147,7 +147,14 @@ async function runOne(options: RunnerOptions, evalCase: EvalCase, casePath: stri
   try {
     if (!(options.resume && await exists(rawPath))) {
       const prompt = await buildPrompt(options.root, evalCase, casePath);
-      const generation = await options.provider.generate({ caseId: evalCase.case_id, prompt, outputPath: rawPath, model: options.model, timeoutMs: options.timeoutMs });
+      const generation = await options.provider.generate({
+        caseId: evalCase.case_id,
+        prompt,
+        outputPath: rawPath,
+        model: options.model,
+        timeoutMs: options.timeoutMs,
+        outputSchemaPath: resolve(options.root, "schema/authoring/v0.1.schema.json"),
+      });
       await writeFile(resolve(runDirectory, "generation.json"), `${JSON.stringify(generation, null, 2)}\n`);
       if (generation.exit_code !== 0) throw Object.assign(new Error(`Provider exited with code ${generation.exit_code}`), { stage: "generation" });
     }

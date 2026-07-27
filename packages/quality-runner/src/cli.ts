@@ -85,12 +85,13 @@ const [rubric, schema, contract, selected] = await Promise.all([
   readFile(resolve(root, "evals/prompts/quality-judge-v0.2.md"), "utf8"),
   selectLessons(suitePath, source, repetitions),
 ]);
+const judgmentSchemaPath = resolve(root, "evals/rubrics/lesson-quality-v0.2.schema.json");
 await mkdir(output, { recursive: true });
 await Promise.all([
   writeFile(resolve(output, "rubric.snapshot.md"), rubric),
   writeFile(resolve(output, "judge-contract.snapshot.md"), contract),
   writeFile(resolve(output, "judgment-schema.snapshot.json"), schema),
-  writeFile(resolve(output, "run-config.json"), `${JSON.stringify({ rubric_version: "0.2", model, repetitions, concurrency, suite: String(args.suite), source: String(args.source) }, null, 2)}\n`),
+  writeFile(resolve(output, "run-config.json"), `${JSON.stringify({ rubric_version: "0.2", model, repetitions, concurrency, suite: String(args.suite), source: String(args.source), structured_output_schema: judgmentSchemaPath }, null, 2)}\n`),
 ]);
 await writeFile(resolve(output, "selection.json"), `${JSON.stringify(selected.map((item) => ({ case_id: item.evalCase.case_id, domain: item.evalCase.domain, source_repetition: item.repetition })), null, 2)}\n`);
 const provider = new CodexCliProvider();
@@ -120,7 +121,14 @@ const workers = Array.from({ length: Math.min(concurrency, selected.length) }, a
       "\n## OLL Authoring Lesson\n", item.raw.trim(),
       "\n现在只输出 Quality Judgment JSON。",
     ].join("\n");
-    const generation = await provider.generate({ caseId: item.evalCase.case_id, prompt, outputPath: rawOutput, model, timeoutMs: 300_000 });
+    const generation = await provider.generate({
+      caseId: item.evalCase.case_id,
+      prompt,
+      outputPath: rawOutput,
+      model,
+      timeoutMs: 300_000,
+      outputSchemaPath: judgmentSchemaPath,
+    });
     await writeFile(resolve(directory, "generation.json"), `${JSON.stringify(generation, null, 2)}\n`);
     let result: QualityCaseResult = {
       case_id: item.evalCase.case_id, domain: item.evalCase.domain, source_repetition: item.repetition,

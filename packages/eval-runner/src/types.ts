@@ -29,6 +29,7 @@ export interface GenerationRequest {
   outputPath: string;
   model: string;
   timeoutMs: number;
+  outputSchemaPath?: string;
 }
 
 export interface GenerationResult {
