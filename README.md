@@ -68,15 +68,16 @@ npm run check:examples
 npm run harness:dev
 ```
 
-然后访问 `http://127.0.0.1:4173`。Harness 直接读取四份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
+然后访问 `http://127.0.0.1:4173`。Harness 直接读取五份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
 
 运行真实 Chrome 教学播放观测：
 
 ```bash
 npm run teaching:observe:geometry
+npm run teaching:observe:quadratic
 ```
 
-该命令逐操作播放几何 V2，在 51 个动作帧和 11 个 Beat 边界测量焦点可见性、卡片宽度、正文等效字号、diagram 主要边长、公式/表格裁切、connection label 与节点遮挡、内部 connection 重复渲染和 console 错误。报告写入 `evals/teaching-playback/geometry-v2/`。它不替代学科质量 judge 或学生盲测。
+这两个命令分别逐操作播放几何 V2 和二次函数 V2，在 51/45 个动作帧与各 11 个 Beat 边界测量焦点可见性、卡片宽度、正文等效字号、diagram 主要边长、公式/表格裁切、connection label 与节点遮挡、内部 connection 重复渲染和 console 错误。报告写入 `evals/teaching-playback/geometry-v2/` 与 `quadratic-v2/`。它不替代学科质量 judge 或学生盲测。
 
 运行 21 个未见跨学科案例、每题 5 次的正式评测：
 
@@ -98,14 +99,16 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 
 表达能力实验已覆盖：
 
-- 二次函数配方法：math fragment、plot、关系连接和总结分组；
+- 二次函数配方法 V2：把系数折半、完全平方、等式不变量、代数替换、常数合并与图像解释拆成 11 个可聚焦 Beat；
 - 几何图片与辅助线：受控 asset region、diagram 内部元素、几何 connection 和视觉不确定性；
 - 英语定语从句：普通文本 fragment、主干提取、修饰关系和分层结构。
 
-四份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何 V1 保留为回归样本，V2 是当前教学可理解性样板。
+五份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何与二次函数各保留一个 V1 回归样本和一个 V2 教学可理解性样板。
 
 几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。
 
-教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，开始验证 Canonical 事件在真实浏览器中的渐进呈现、布局与恢复。RC 决策、限制和下一门见 `RELEASE-CANDIDATE.md`；在视觉与语音门通过前不直接绑定生产 `/learn`。
+教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，并用真实 Chrome 自动验收 Canonical 事件的渐进呈现、布局与恢复。RC 决策、限制和下一门见 `RELEASE-CANDIDATE.md`；在视觉、真实资源和语音门通过前不直接绑定生产 `/learn`。
 
 几何辅助线 V2 已作为第一份教学可理解性垂直切片：11 个 Beat 使用现有 OLL v0.1 完成“读题 → 连接 AD → 三组边逐行出现 → SSS → 角平分线 → 三步推出垂线 → 总结路线”。Reference Runtime 已补齐 diagram fragment emphasis、焦点镜头和只按可见内容测量卡片尺寸；逐 Beat 验收记录在 `examples/geometry-auxiliary-line-v2/ACCEPTANCE.md`。
+
+二次函数配方法 V2 是第二份正向切片：11 个 Beat 使用同一协议完成“读题 → 取系数一半 → 构造完全平方 → 补9减9 → 替换与化简 → 图像解释 → 总结路线”。真实 Chrome Observer 对 45 个动作帧和 11 个 Beat 全部通过；旧二次函数课在同一门禁下继续 expected-fail。验收记录在 `examples/quadratic-v2/ACCEPTANCE.md`。

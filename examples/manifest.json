@@ -7,6 +7,13 @@
     "regionIntent": "new_topic"
   },
   {
+    "name": "quadratic-v2",
+    "lessonId": "lesson-quadratic-v2-001",
+    "boardId": "board-session-quadratic-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
     "name": "geometry-auxiliary-line",
     "lessonId": "lesson-geometry-001",
     "boardId": "board-session-002",

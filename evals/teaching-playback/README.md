@@ -6,6 +6,7 @@ This directory stores deterministic real-browser observations of fixed Canonical
 
 ```bash
 npm run teaching:observe:geometry
+npm run teaching:observe:quadratic
 ```
 
 Generic form:
@@ -37,10 +38,21 @@ npm run teaching:observe:calibration
 
 The retained geometry V1 is an expected-fail fixture. `--expect fail` makes the command succeed only when the observer rejects it; an accidental PASS is a calibration failure. Its current baseline failures are missing Beat focus and an unreadably small final overview. Image-region emphasis targets are now real addressable DOM, so they are deliberately no longer part of the negative baseline. Calibration omits screenshots because the remaining defects are already documented.
 
-## Cross-subject probe
+## Cross-subject positive slice
+
+```bash
+npm run teaching:observe:quadratic
+```
+
+Quadratic V2 is the second expected-pass specimen. It separates coefficient
+halving, construction of the perfect square, the `+9-9` invariant, substitution,
+constant simplification and graph interpretation into eleven explicitly focused
+Beats. Its report is stored in `quadratic-v2/`.
+
+## Cross-subject negative probe
 
 ```bash
 npm run teaching:observe:quadratic-probe
 ```
 
-The original quadratic lesson is also expected to fail, but for authoring rather than fragment rendering: nine Beats have no explicit end focus and its final all-content overview shrinks the focused card below the threshold. The probe originally exposed clipped formulas and missing math/plot fragment DOM; those Runtime defects were fixed before this expected-fail baseline was accepted.
+The original quadratic lesson is also expected to fail, but for authoring rather than fragment rendering: nine Beats have no explicit end focus and its final all-content overview shrinks the focused card below the threshold. The probe originally exposed clipped formulas and missing math/plot fragment DOM; those Runtime defects were fixed before this expected-fail baseline was accepted. Keeping V1 and V2 side by side ensures the observer is measuring staging rather than merely recognizing a subject.

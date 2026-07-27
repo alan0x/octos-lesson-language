@@ -5,7 +5,8 @@ import { BrowserLessonSession, LocalPlaybackStore, parseCanonicalJsonl } from ".
 import { collectTeachingObservation, evaluateTeachingObservation, type TeachingFrameObservation, type TeachingGateResult } from "./teaching-observer.js";
 
 const fixtures = [
-  { id: "quadratic", label: "数学 · 二次函数配方法", path: "/examples/quadratic/lesson.canonical.jsonl" },
+  { id: "quadratic", label: "数学 · 二次函数配方法 V2", path: "/examples/quadratic-v2/lesson.canonical.jsonl" },
+  { id: "quadratic-v1", label: "探针 · 二次函数配方法 V1", path: "/examples/quadratic/lesson.canonical.jsonl" },
   { id: "geometry", label: "数学 · 几何辅助线 V2", path: "/examples/geometry-auxiliary-line-v2/lesson.canonical.jsonl" },
   { id: "geometry-v1", label: "回归 · 几何辅助线 V1", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
   { id: "english", label: "语言 · 英语定语从句", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },

@@ -1,0 +1,322 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "配方法：从一般式一步一步走到顶点式",
+    "goals": [
+      "把 y=x²+6x+5 改写为顶点式",
+      "解释为什么配方时必须补9再减9",
+      "从顶点式读出顶点、对称轴和图像平移"
+    ],
+    "adaptation": {
+      "strategies": ["one-change-per-beat", "explicit-invariant", "algebra-to-graph", "durable-route"]
+    }
+  },
+  "steps": [
+    {
+      "key": "establish-task",
+      "purpose": "只呈现原式与本课目标，不提前暴露答案",
+      "beats": [
+        {
+          "key": "show-problem-and-goal",
+          "say": "先看原式 y 等于 x 平方加 6x 加 5。今天只做一件事：把它一步一步改写成顶点式，再从顶点式读出图像信息。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "original",
+              "kind": "math",
+              "role": "problem",
+              "content": {
+                "fragments": [
+                  {"as": "lhs", "latex": "y="},
+                  {"as": "quadratic", "latex": "x^2"},
+                  {"as": "linear", "latex": "+6x"},
+                  {"as": "constant", "latex": "+5"}
+                ],
+                "caption": "原式"
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {
+              "do": "write",
+              "as": "goal-card",
+              "kind": "note",
+              "role": "task",
+              "content": {
+                "title": "① 这节课要回答",
+                "items": ["怎样配成一个完全平方？", "为什么不能只补9？", "顶点式怎样对应图像？"]
+              },
+              "place": {"relation": "right_of", "anchor": "original", "align": "center", "gap": "normal"}
+            },
+            {"do": "group", "as": "task-group", "role": "task", "label": "① 看清原式与目标", "members": ["original", "goal-card"]},
+            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "read_problem_and_goal"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "construct-square",
+      "purpose": "从一次项系数逐步构造完全平方",
+      "beats": [
+        {
+          "key": "isolate-quadratic-part",
+          "say": "配方时先处理 x 平方和 6x，常数 5 暂时放在旁边。现在我们的注意力只落在一次项 6x 上。",
+          "delivery": "careful",
+          "actions": [
+            {"do": "emphasize", "target": "original#quadratic", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "original#linear", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["original"], "intent": "isolate_x_squared_plus_6x"}
+          ]
+        },
+        {
+          "key": "halve-linear-coefficient",
+          "say": "完全平方的中间项是两倍乘积。要得到 6x，就把 6 除以 2，得到 3。这个 3 将进入括号。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "half-coefficient",
+              "kind": "math",
+              "role": "observation",
+              "content": {
+                "fragments": [
+                  {"as": "linear-coefficient", "latex": "6"},
+                  {"as": "operation", "latex": "\\div 2"},
+                  {"as": "result", "latex": "=3"}
+                ],
+                "caption": "一次项系数取一半"
+              },
+              "place": {"relation": "below", "anchor": "original", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "linear-to-half", "from": "original#linear", "to": "half-coefficient#result", "relation": "halved_to", "label": "6 的一半是 3"},
+            {"do": "emphasize", "target": "half-coefficient#result", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["half-coefficient"], "intent": "see_half_coefficient"}
+          ]
+        },
+        {
+          "key": "build-perfect-square",
+          "say": "把 3 放进括号并平方。展开 x 加 3 的平方，正好得到 x 平方加 6x 加 9。因此，要凑成完全平方，还缺一个 9。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "square-identity",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "expanded", "latex": "x^2+6x+9"},
+                  {"as": "equals", "latex": "="},
+                  {"as": "factored", "latex": "(x+3)^2"}
+                ],
+                "caption": "需要构造的完全平方"
+              },
+              "place": {"relation": "below", "anchor": "half-coefficient", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "half-to-square", "from": "half-coefficient#result", "to": "square-identity#factored", "relation": "constructs", "label": "3 进入括号"},
+            {"do": "emphasize", "target": "square-identity#expanded", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "square-identity#factored", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["square-identity"], "intent": "recognize_perfect_square"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "preserve-equality",
+      "purpose": "把补9减9和代数替换拆成三个可见步骤",
+      "beats": [
+        {
+          "key": "add-and-subtract-nine",
+          "say": "原式本来没有 9。我们可以补上 9，但必须同时减去 9。加 9 再减 9，总变化是零，所以函数没有被改掉。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "balanced-expression",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "prefix", "latex": "y=x^2+6x"},
+                  {"as": "add-nine", "latex": "+9"},
+                  {"as": "subtract-nine", "latex": "-9"},
+                  {"as": "plus-five", "latex": "+5"}
+                ],
+                "caption": "补9，同时减9"
+              },
+              "place": {"relation": "below", "anchor": "square-identity", "align": "start", "gap": "spacious"}
+            },
+            {"do": "emphasize", "target": "balanced-expression#add-nine", "emphasis": "focus"},
+            {"do": "emphasize", "target": "balanced-expression#subtract-nine", "emphasis": "focus"},
+            {"do": "connect", "as": "cancel-nine", "from": "balanced-expression#add-nine", "to": "balanced-expression#subtract-nine", "relation": "cancels", "label": "+9-9=0"},
+            {"do": "focus", "when": "after_speech", "targets": ["balanced-expression"], "intent": "see_equality_invariant"}
+          ]
+        },
+        {
+          "key": "replace-with-square",
+          "say": "现在只替换已经凑好的前三项。x 平方加 6x 加 9，换成 x 加 3 的平方；后面的负 9 和正 5 原样保留。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "grouped-form",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "lhs", "latex": "y="},
+                  {"as": "square", "latex": "(x+3)^2"},
+                  {"as": "remaining", "latex": "-9+5"}
+                ],
+                "caption": "先替换完全平方部分"
+              },
+              "place": {"relation": "below", "anchor": "balanced-expression", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "identity-to-grouped", "from": "square-identity#factored", "to": "grouped-form#square", "relation": "substitutes", "label": "前三项换成平方"},
+            {"do": "emphasize", "target": "grouped-form#square", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["grouped-form"], "intent": "replace_only_square_terms"}
+          ]
+        },
+        {
+          "key": "simplify-constant",
+          "say": "最后合并常数：负 9 加 5 等于负 4。于是得到顶点式 y 等于 x 加 3 的平方减 4。配方到这里才真正完成。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "vertex-form",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {
+                "fragments": [
+                  {"as": "lhs", "latex": "y="},
+                  {"as": "square", "latex": "(x+3)^2"},
+                  {"as": "vertical", "latex": "-4"}
+                ],
+                "caption": "顶点式"
+              },
+              "place": {"relation": "below", "anchor": "grouped-form", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "constants-to-vertical", "from": "grouped-form#remaining", "to": "vertex-form#vertical", "relation": "simplifies_to", "label": "-9+5=-4"},
+            {"do": "emphasize", "target": "vertex-form#vertical", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["vertex-form"], "intent": "read_final_vertex_form"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "interpret-graph",
+      "purpose": "把顶点式中的两个结构分别对应到图像",
+      "beats": [
+        {
+          "key": "locate-vertex",
+          "say": "现在把代数结论放到图上。括号 x 加 3 等于零时，x 是负 3；平方项此时最小为零，y 就是负 4。所以最低点是负 3、负 4。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "parabola",
+              "kind": "plot",
+              "role": "diagram",
+              "content": {
+                "axes": {"x": {"min": -8, "max": 3}, "y": {"min": -6, "max": 8}},
+                "curves": [{"as": "main-curve", "expression": "(x+3)^2-4", "label": "y=(x+3)²-4"}],
+                "points": [{"as": "vertex", "x": -3, "y": -4, "label": "顶点 (-3,-4)"}],
+                "guides": [{"as": "symmetry-axis", "kind": "vertical_line", "value": -3, "label": "x=-3"}]
+              },
+              "place": {"relation": "right_of", "anchor": "vertex-form", "align": "center", "gap": "spacious"}
+            },
+            {"do": "point", "target": "parabola#vertex"},
+            {"do": "connect", "as": "square-to-axis", "from": "vertex-form#square", "to": "parabola#symmetry-axis", "relation": "determines", "label": "x+3=0"},
+            {"do": "connect", "as": "vertical-to-vertex", "from": "vertex-form#vertical", "to": "parabola#vertex", "relation": "determines", "label": "最低值 -4"},
+            {"do": "focus", "when": "after_speech", "targets": ["parabola"], "intent": "locate_vertex_on_graph"}
+          ]
+        },
+        {
+          "key": "read-vertex-and-axis",
+          "say": "把图上的信息写成结论：顶点是负 3、负 4，对称轴是 x 等于负 3。两者都来自同一个顶点式。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "parabola#vertex", "emphasis": "focus"},
+            {"do": "emphasize", "target": "parabola#symmetry-axis", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "graph-facts",
+              "kind": "note",
+              "role": "conclusion",
+              "content": {"title": "② 从顶点式读图", "items": ["顶点：(-3,-4)", "对称轴：x=-3"]},
+              "place": {"relation": "below", "anchor": "parabola", "align": "start", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["parabola", "graph-facts"], "intent": "read_vertex_and_axis"}
+          ]
+        },
+        {
+          "key": "describe-translation",
+          "say": "最后比较 y 等于 x 平方。括号里加 3，零点从 0 变成负 3，所以图像向左 3；外面减 4，所以再向下 4。括号内的方向要通过令括号等于零来判断。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "translation-note",
+              "kind": "note",
+              "role": "observation",
+              "content": {
+                "title": "③ 图像怎样移动",
+                "text": "y=x²  →  向左3  →  向下4",
+                "details": ["x+3=0，所以横坐标是 -3", "外面的 -4 决定纵向下移4"]
+              },
+              "place": {"relation": "below", "anchor": "graph-facts", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "graph-to-translation", "from": "parabola#vertex", "to": "translation-note", "relation": "explained_by", "label": "从(0,0)到(-3,-4)"},
+            {"do": "focus", "when": "after_speech", "targets": ["translation-note"], "intent": "explain_translation_directions"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "organize-route",
+      "purpose": "留下学生可以从头复述的整条思路",
+      "beats": [
+        {
+          "key": "show-complete-route",
+          "say": "最后从头复述：先取 6 的一半得到 3；平方得到 9；补 9 同时减 9 保持原式不变；把前三项换成完全平方；合并常数得到顶点式；再读出顶点、对称轴和图像平移。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "lesson-route",
+              "kind": "diagram",
+              "role": "summary",
+              "content": {
+                "title": "④ 配方法的完整路线",
+                "sequence": ["6÷2=3", "补出 3²=9", "+9-9 保持不变", "换成 (x+3)²", "合并为 -4", "读图像信息"]
+              },
+              "place": {"relation": "below", "anchor": "translation-note", "align": "start", "gap": "spacious"}
+            },
+            {
+              "do": "write",
+              "as": "takeaway",
+              "kind": "note",
+              "role": "summary",
+              "content": {
+                "title": "一句话记住",
+                "text": "配方不是凭空加数：一次项系数取一半再平方，并用“加多少、减多少”守住等式。"
+              },
+              "place": {"relation": "below", "anchor": "lesson-route", "align": "start", "gap": "normal"}
+            },
+            {"do": "group", "as": "summary-group", "role": "summary", "label": "从这里复述整节课", "members": ["lesson-route", "takeaway"]},
+            {"do": "focus", "when": "after_speech", "targets": ["summary-group"], "intent": "review_complete_method"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "一次项系数取一半并平方，补9减9后构造完全平方，得到顶点式并读出图像信息",
+    "focus": ["summary-group"]
+  }
+}

@@ -1,9 +1,9 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T13:39:38.076Z",
+  "generated_at": "2026-07-27T13:47:18.948Z",
   "lesson_id": "lesson-quadratic-001",
-  "fixture": "quadratic",
+  "fixture": "quadratic-v1",
   "viewport": {
     "width": 1280,
     "height": 720

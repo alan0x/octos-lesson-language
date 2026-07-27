@@ -37,6 +37,7 @@ const lessons = await Promise.all(manifest.map(async (entry) => {
   return { entry: host, events: normalizeAuthoringLesson(authoring, host) };
 }));
 const quadratic = lessons.find((item) => item.entry.name === "quadratic")!;
+const quadraticV2 = lessons.find((item) => item.entry.name === "quadratic-v2")!;
 const geometryV2 = lessons.find((item) => item.entry.name === "geometry-auxiliary-line-v2")!;
 
 function localId(value: string | undefined): string | undefined {
@@ -134,6 +135,50 @@ test("geometry V2 constructs the proof progressively at teaching keyframes", () 
   assert.deepEqual(frames[10]!.board.focus, ["lesson-geometry-v2-001:group:summary-group"]);
 });
 
+test("quadratic V2 completes the square progressively at teaching keyframes", () => {
+  const frames = playToBeatEnds(quadraticV2.events);
+  assert.deepEqual(frames.map((frame) => frame.beat), [
+    "show-problem-and-goal",
+    "isolate-quadratic-part",
+    "halve-linear-coefficient",
+    "build-perfect-square",
+    "add-and-subtract-nine",
+    "replace-with-square",
+    "simplify-constant",
+    "locate-vertex",
+    "read-vertex-and-axis",
+    "describe-translation",
+    "show-complete-route",
+  ]);
+
+  const node = (name: string) => `lesson-quadratic-v2-001:node:${name}`;
+  const fragment = (nodeName: string, name: string) => `${node(nodeName)}:fragment:${name}`;
+  const emphasis = (board: (typeof frames)[number]["board"], owner: string, target: string) => {
+    const entries = board.nodes[owner]?.emphasis ?? [];
+    return entries.filter((entry) => (entry.target as { fragment_id?: string }).fragment_id === target).at(-1)?.emphasis;
+  };
+
+  assert.equal(frames[1]!.board.nodes[node("half-coefficient")], undefined, "coefficient calculation must wait for its own Beat");
+  assert.equal(emphasis(frames[1]!.board, node("original"), fragment("original", "linear")), "focus");
+  assert.match(String(frames[2]!.board.nodes[node("half-coefficient")]?.content.fragments?.[2]?.latex), /=3/);
+  assert.equal(frames[2]!.board.nodes[node("square-identity")], undefined, "perfect-square identity must not appear early");
+  assert.match(String(frames[3]!.board.nodes[node("square-identity")]?.content.fragments?.[2]?.latex), /\(x\+3\)\^2/);
+
+  assert.equal(frames[3]!.board.nodes[node("balanced-expression")], undefined, "the equality invariant belongs to the next Beat");
+  assert.equal(emphasis(frames[4]!.board, node("balanced-expression"), fragment("balanced-expression", "add-nine")), "focus");
+  assert.equal(emphasis(frames[4]!.board, node("balanced-expression"), fragment("balanced-expression", "subtract-nine")), "focus");
+  assert.equal(frames[4]!.board.nodes[node("vertex-form")], undefined, "the final form must not skip the replacement Beat");
+  assert.match(String(frames[5]!.board.nodes[node("grouped-form")]?.content.fragments?.[2]?.latex), /-9\+5/);
+  assert.match(String(frames[6]!.board.nodes[node("vertex-form")]?.content.fragments?.[2]?.latex), /-4/);
+
+  assert.equal(frames[6]!.board.nodes[node("parabola")], undefined, "graph interpretation starts only after the algebra is complete");
+  assert.ok(frames[7]!.board.nodes[node("parabola")]);
+  assert.deepEqual(frames[7]!.board.focus, [node("parabola")]);
+  assert.deepEqual(frames[8]!.board.focus, [node("parabola"), node("graph-facts")]);
+  assert.deepEqual(frames[9]!.board.focus, [node("translation-note")]);
+  assert.deepEqual(frames[10]!.board.focus, ["lesson-quadratic-v2-001:group:summary-group"]);
+});
+
 test("every geometry V2 beat narrates one visible board transition", () => {
   for (const event of geometryV2.events) {
     for (const beat of event.step?.beats ?? []) {
@@ -141,6 +186,18 @@ test("every geometry V2 beat narrates one visible board transition", () => {
       const actions = Object.values(beat.stage).flat();
       assert.ok(actions.length > 0, `${beat.id} must change the classroom state`);
       assert.ok(actions.some((action) => ["board.create", "board.connect", "board.revise", "board.emphasize"].includes(action.op)), `${beat.id} must produce a visible transition`);
+      assert.ok(beat.stage.after_speech.some((action) => action.op === "board.focus"), `${beat.id} must finish on an explicit teaching focus`);
+    }
+  }
+});
+
+test("every quadratic V2 beat narrates one visible board transition", () => {
+  for (const event of quadraticV2.events) {
+    for (const beat of event.step?.beats ?? []) {
+      assert.ok(beat.narration?.text.trim(), `${beat.id} must contain narration`);
+      const actions = Object.values(beat.stage).flat();
+      assert.ok(actions.length > 0, `${beat.id} must change the classroom state`);
+      assert.ok(actions.some((action) => ["board.create", "board.connect", "board.emphasize"].includes(action.op)), `${beat.id} must produce a visible transition`);
       assert.ok(beat.stage.after_speech.some((action) => action.op === "board.focus"), `${beat.id} must finish on an explicit teaching focus`);
     }
   }

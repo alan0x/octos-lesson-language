@@ -23,7 +23,7 @@ npm run harness:dev
 - localStorage checkpoint 与所选课程的刷新恢复；
 - 完整操作时间线和当前 step / beat / phase / revision 调试信息。
 
-内置四份 golden lesson：二次函数配方法、几何辅助线 V2、几何图片辅助线 V1 回归课和英语定语从句。几何 V2 是当前教学可理解性样板，V1 只保留为旧协议和图片 region 回归样本。
+内置五份 golden lesson：二次函数配方法 V2、二次函数 V1 探针、几何辅助线 V2、几何图片辅助线 V1 回归课和英语定语从句。几何 V2 与二次函数 V2 是当前教学可理解性正向样板；两个 V1 只保留为旧协议、渲染和教学编排的回归样本。
 
 ## 边界
 
@@ -43,12 +43,13 @@ npm test
 
 ```bash
 npm run teaching:observe:geometry
+npm run teaching:observe:quadratic
 ```
 
 Runner 使用 `playwright-core` 驱动已有 Chrome/Chromium，不下载独立浏览器。macOS 会自动发现 Google Chrome；其他环境可通过 `OLL_CHROME_PATH` 指定可执行文件。失败帧写入报告目录的 `screenshots/`，下一次运行会先清理旧失败截图。
 
 `npm run teaching:observe:calibration` 运行几何 V1 负对照。它使用 `--expect fail`，只有 Observer 继续拒绝已知坏课时命令才成功。
 
-`npm run teaching:observe:quadratic-probe` 是跨学科 expected-fail 探针：它证明 math/plot fragment 可见且公式不裁切，同时保留旧课程缺少 Beat focus、最终 overview 过小的课程级失败。
+`npm run teaching:observe:quadratic` 验收 11-Beat 的配方法 V2 正向样板；`npm run teaching:observe:quadratic-probe` 播放相同主题的旧 V1 expected-fail 探针。两者共用 Runtime 和门禁：V2 全部通过，V1 保留缺少 Beat focus、最终 overview 过小的课程级失败。
 
 Harness 仅为观测器暴露 `window.__OLL_HARNESS__` 测试接口：加载 fixture、逐操作前进、采集 DOM 几何观测和执行确定性门禁。生产 Runtime 不应依赖这个全局接口。
