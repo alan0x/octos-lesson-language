@@ -1,0 +1,11 @@
+{
+  "suite_id": "authoring-boundaries-v0.1",
+  "description": "Targeted fresh-generation confirmation for patient delivery, group point/emphasize, and image asset_id boundaries.",
+  "cases": [
+    "../cases/unseen-v1/math-fraction-compare.json",
+    "../cases/unseen-v1/science-photosynthesis.json",
+    "../cases/unseen-v1/language-poem-imagery.json",
+    "../cases/unseen-v1/history-silk-road.json",
+    "../cases/unseen-v1/science-series-circuit.json"
+  ]
+}
