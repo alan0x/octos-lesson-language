@@ -1,0 +1,89 @@
+:root {
+  color: #2d2a25;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #ebe8e0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; overflow: hidden; }
+button, select { font: inherit; }
+button { border: 1px solid #d3cec2; border-radius: 10px; background: #fffdf8; color: #39352e; padding: 8px 12px; cursor: pointer; }
+button:hover { border-color: #a8a093; background: #fff; }
+button.primary { border-color: #207b70; background: #207b70; color: white; min-width: 74px; }
+select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; padding: 7px 28px 7px 9px; }
+.app-shell { height: 100vh; display: grid; grid-template-rows: 64px minmax(0, 1fr); }
+.topbar { display: flex; align-items: center; gap: 22px; padding: 0 18px; background: rgba(250,248,242,.96); border-bottom: 1px solid #d8d3c9; box-shadow: 0 2px 12px rgba(60,50,35,.05); z-index: 5; }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 250px; }
+.brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: #173f3a; color: #effbf8; font-weight: 800; font-size: 12px; letter-spacing: .08em; }
+.brand div { display: grid; }
+.brand small { color: #7c756b; font-size: 11px; margin-top: 2px; }
+.lesson-picker, .playback-controls label { display: flex; align-items: center; gap: 8px; color: #6a6359; font-size: 12px; }
+.lesson-picker select { min-width: 210px; color: #2d2a25; }
+.playback-controls { display: flex; align-items: center; gap: 7px; margin-left: auto; }
+.workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.canvas-column { min-width: 0; display: grid; grid-template-rows: 48px minmax(0, 1fr); }
+.lesson-strip { display: grid; grid-template-columns: minmax(260px, 1fr) 220px 72px; align-items: center; gap: 16px; padding: 0 18px; background: #f4f1e9; border-bottom: 1px solid #d7d2c8; }
+.lesson-strip > div:first-child { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.lesson-strip strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-chip { padding: 4px 7px; border-radius: 999px; background: #ded9cf; color: #625c53; font: 700 10px/1 monospace; }
+.status-chip.playing { background: #d7eee9; color: #17675e; }
+.status-chip.completed { background: #e6ddf3; color: #65468b; }
+.progress-track { height: 5px; overflow: hidden; background: #ded9d0; border-radius: 999px; }
+.progress-track span { display: block; width: 0; height: 100%; border-radius: inherit; background: #24877c; transition: width .18s ease; }
+#progress-label { color: #716a60; font: 11px/1 monospace; text-align: right; }
+.viewport { position: relative; overflow: hidden; background-color: #f8f5ed; background-image: radial-gradient(#d7d1c5 1px, transparent 1px); background-size: 24px 24px; touch-action: none; cursor: grab; }
+.viewport.dragging { cursor: grabbing; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: 3200px; height: 2200px; }
+.layer, .connection-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.board-node { position: absolute; min-height: 72px; padding: 16px 18px; border: 1px solid #d8d0c2; border-radius: 16px; background: rgba(255,253,247,.97); box-shadow: 0 8px 24px rgba(68,57,41,.08); overflow: hidden; }
+.board-node::before { content: attr(data-kind); position: absolute; right: 10px; top: 8px; color: #aaa194; font: 9px/1 monospace; text-transform: uppercase; }
+.board-node.active { border-color: #2a9386; box-shadow: 0 0 0 3px rgba(42,147,134,.13), 0 10px 28px rgba(68,57,41,.1); animation: write-in .34s ease both; }
+.board-node.focused { border-color: #7a5aa3; box-shadow: 0 0 0 4px rgba(122,90,163,.13); }
+.board-node.emphasized { background: #fff9dc; }
+.board-node.kind-math { font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
+.board-node.kind-note { background: #fff7cd; transform: rotate(-.25deg); }
+.board-node.kind-text { font-family: "STKaiti", "Kaiti SC", serif; font-size: 20px; }
+.node-title { margin: 0 0 8px; font-weight: 750; font-size: 16px; }
+.node-caption { color: #777064; font-size: 12px; margin-top: 8px; }
+.content-list { margin: 6px 0 0; padding-left: 20px; font-size: 14px; }
+.content-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.content-table th, .content-table td { border: 1px solid #d6cfc2; padding: 5px 7px; text-align: left; }
+.diagram-sequence { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+.diagram-sequence span { padding: 5px 8px; border-radius: 999px; background: #e9f3f0; }
+.diagram-sequence i { color: #7c756b; font-style: normal; }
+.plot-preview { width: 100%; height: 150px; margin-top: 4px; }
+.diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
+.diagram-region { fill: rgba(79,153,141,.08); stroke: none; }
+.diagram-edge { stroke: #526b67; stroke-width: 2.2; }
+.diagram-edge-label { fill: #766f65; font: 11px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 4px; }
+.diagram-point { fill: #247f74; }
+.diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
+.image-placeholder { display: grid; place-items: center; height: 120px; border: 1px dashed #9aa9a5; border-radius: 10px; background: linear-gradient(135deg,#e4efec,#f5f2e8); color: #4a625d; text-align: center; padding: 10px; }
+.region-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.region-pills span { font-size: 10px; border-radius: 999px; background: #e8e3d8; padding: 3px 7px; }
+.board-group { position: absolute; border: 2px dashed rgba(84,117,110,.28); border-radius: 24px; background: rgba(219,235,230,.08); pointer-events: none; }
+.board-group.focused { border-color: rgba(122,90,163,.55); background: rgba(122,90,163,.05); }
+.group-label { position: absolute; left: 14px; top: -11px; padding: 3px 9px; border-radius: 999px; background: #e9f0ec; color: #45645d; font-size: 10px; }
+.connection-line { fill: none; stroke: #6e8d86; stroke-width: 2; marker-end: url(#arrowhead); }
+.connection-label { fill: #615b52; font-size: 11px; paint-order: stroke; stroke: #f8f5ed; stroke-width: 4px; }
+.teacher-pointer { position: absolute; width: 26px; height: 26px; display: grid; place-items: center; color: #ef5d69; font-size: 19px; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); animation: pointer-pulse .8s infinite alternate; pointer-events: none; }
+.narration { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(720px, 76%); padding: 14px 18px; border-radius: 16px; background: rgba(27,57,53,.92); color: white; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-family: "STKaiti", "Kaiti SC", sans-serif; font-size: 18px; line-height: 1.55; }
+.camera-controls { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 5px; }
+.camera-controls button { box-shadow: 0 4px 15px rgba(0,0,0,.08); }
+.canvas-hint { position: absolute; left: 14px; bottom: 16px; color: #938b7f; font-size: 11px; }
+.debug-panel { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #242825; color: #e8ece9; border-left: 1px solid #151815; }
+.debug-panel section { padding: 15px 16px; border-bottom: 1px solid #3a3e3a; }
+.debug-panel h2 { margin: 0 0 11px; color: #aeb9b3; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.state-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; margin: 0; }
+.state-grid div { min-width: 0; }
+.state-grid dt { color: #8b958f; font-size: 9px; text-transform: uppercase; }
+.state-grid dd { margin: 2px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 11px/1.4 monospace; }
+.timeline-section { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.timeline { min-height: 0; overflow: auto; list-style: none; padding: 0; margin: 0; }
+.timeline li { display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 7px; padding: 7px 8px; border-radius: 8px; color: #8e9993; font: 10px/1.35 monospace; }
+.timeline li.done { color: #cbd4cf; }
+.timeline li.current { color: white; background: #35534c; }
+.timeline .index { color: #68716d; text-align: right; }
+.timeline .detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@keyframes write-in { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+@keyframes pointer-pulse { to { transform: scale(1.25); } }
+@media (max-width: 1000px) { .workspace { grid-template-columns: 1fr; } .debug-panel { display: none; } .lesson-picker { display: none; } }

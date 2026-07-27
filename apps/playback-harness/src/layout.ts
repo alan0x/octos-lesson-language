@@ -1,0 +1,130 @@
+import type { SemanticBoardState } from "../../../packages/core/src/index.js";
+
+export interface Rect { x: number; y: number; width: number; height: number }
+export interface BoardLayout {
+  nodes: Record<string, Rect>;
+  groups: Record<string, Rect>;
+  bounds: Rect;
+}
+
+const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
+
+function serializedLength(value: unknown): number {
+  return JSON.stringify(value ?? "").replace(/[{}[\]"\\]/g, "").length;
+}
+
+export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "width" | "height"> {
+  const content = node.content ?? {};
+  const length = serializedLength(content);
+  const kind = String(node.kind ?? "text");
+  if (kind === "plot" || kind === "image") return { width: 340, height: 230 };
+  if (kind === "table") {
+    const columns = Array.isArray(content.columns) ? content.columns.length : 3;
+    const rows = Array.isArray(content.rows) ? content.rows.length : 2;
+    return { width: Math.min(600, Math.max(300, columns * 100)), height: 90 + rows * 34 };
+  }
+  if (kind === "diagram") return { width: Math.min(480, Math.max(280, length * 3.2)), height: Math.min(260, 105 + Math.ceil(length / 60) * 28) };
+  if (kind === "math") return { width: Math.min(540, Math.max(220, length * 10.5)), height: length > 65 ? 128 : 92 };
+  return { width: Math.min(440, Math.max(220, length * 5.4)), height: Math.min(260, 82 + Math.ceil(length / 48) * 24) };
+}
+
+function intersects(a: Rect, b: Rect, padding = 12): boolean {
+  return a.x < b.x + b.width + padding && a.x + a.width + padding > b.x
+    && a.y < b.y + b.height + padding && a.y + a.height + padding > b.y;
+}
+
+function union(rects: Rect[], padding = 0): Rect | undefined {
+  if (rects.length === 0) return undefined;
+  const minX = Math.min(...rects.map((rect) => rect.x));
+  const minY = Math.min(...rects.map((rect) => rect.y));
+  const maxX = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const maxY = Math.max(...rects.map((rect) => rect.y + rect.height));
+  return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
+}
+
+export function computeBoardLayout(state: SemanticBoardState): BoardLayout {
+  const nodes: Record<string, Rect> = {};
+  const groups: Record<string, Rect> = {};
+  let regionIndex = 0;
+
+  const groupRect = (id: string, seen = new Set<string>()): Rect | undefined => {
+    if (groups[id]) return groups[id];
+    if (seen.has(id)) return undefined;
+    seen.add(id);
+    const group = state.groups[id];
+    if (!group) return undefined;
+    const members = (group.members ?? []).map((member: string) => nodes[member] ?? groupRect(member, seen)).filter(Boolean) as Rect[];
+    const rect = union(members, 34);
+    if (rect) groups[id] = rect;
+    return rect;
+  };
+
+  for (const node of Object.values(state.nodes)) {
+    const size = measureSemanticNode(node);
+    const placement = node.placement ?? { relation: "new_region" };
+    const anchor = placement.anchor ? nodes[placement.anchor] ?? groupRect(placement.anchor) : undefined;
+    const gap = GAP[placement.gap as keyof typeof GAP] ?? GAP.normal;
+    let x = 100;
+    let y = 90;
+    if (!anchor || placement.relation === "new_region") {
+      x = 100 + (regionIndex % 2) * 720;
+      y = 90 + Math.floor(regionIndex / 2) * 560;
+      regionIndex += 1;
+    } else if (placement.relation === "below") {
+      x = anchor.x;
+      y = anchor.y + anchor.height + gap;
+    } else if (placement.relation === "above") {
+      x = anchor.x;
+      y = anchor.y - size.height - gap;
+    } else if (placement.relation === "right_of") {
+      x = anchor.x + anchor.width + gap;
+      y = anchor.y + (anchor.height - size.height) / 2;
+    } else if (placement.relation === "left_of") {
+      x = anchor.x - size.width - gap;
+      y = anchor.y + (anchor.height - size.height) / 2;
+    } else if (placement.relation === "near") {
+      x = anchor.x + anchor.width + GAP.compact;
+      y = anchor.y + GAP.compact;
+    } else if (placement.relation === "inside" || placement.relation === "overlay") {
+      x = anchor.x + 24;
+      y = anchor.y + 24;
+    }
+    if (placement.align === "center" && anchor && ["below", "above"].includes(placement.relation)) x = anchor.x + (anchor.width - size.width) / 2;
+    if (placement.align === "end" && anchor && ["below", "above"].includes(placement.relation)) x = anchor.x + anchor.width - size.width;
+    let candidate: Rect = { x, y, ...size };
+    if (!["inside", "overlay"].includes(placement.relation)) {
+      let guard = 0;
+      while (Object.values(nodes).some((rect) => intersects(candidate, rect)) && guard < 40) {
+        candidate = { ...candidate, y: candidate.y + 36 };
+        guard += 1;
+      }
+    }
+    nodes[node.id] = candidate;
+  }
+
+  for (const groupId of Object.keys(state.groups)) groupRect(groupId);
+  const all = [...Object.values(nodes), ...Object.values(groups)];
+  const rawBounds = union(all, 100) ?? { x: 0, y: 0, width: 1200, height: 800 };
+  const shiftX = rawBounds.x < 20 ? 20 - rawBounds.x : 0;
+  const shiftY = rawBounds.y < 20 ? 20 - rawBounds.y : 0;
+  if (shiftX || shiftY) {
+    for (const rect of [...Object.values(nodes), ...Object.values(groups)]) { rect.x += shiftX; rect.y += shiftY; }
+  }
+  const bounds = union([...Object.values(nodes), ...Object.values(groups)], 100) ?? rawBounds;
+  return { nodes, groups, bounds };
+}
+
+export function targetRect(state: SemanticBoardState, layout: BoardLayout, target: Record<string, any> | string | undefined): Rect | undefined {
+  if (!target) return undefined;
+  const id = typeof target === "string" ? target : target.node_id ?? target.group_id ?? target.connection_id;
+  if (!id) return undefined;
+  if (layout.nodes[id]) return layout.nodes[id];
+  if (layout.groups[id]) return layout.groups[id];
+  const connection = state.connections[id];
+  if (connection) {
+    const from = targetRect(state, layout, connection.from);
+    const to = targetRect(state, layout, connection.to);
+    return from && to ? union([from, to]) : undefined;
+  }
+  return undefined;
+}

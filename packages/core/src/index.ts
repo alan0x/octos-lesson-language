@@ -1,4 +1,3 @@
-import { deepStrictEqual } from "node:assert";
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import authoringSchema from "../../../schema/authoring/v0.1.schema.json" with { type: "json" };
 import type {
@@ -739,5 +738,13 @@ export function canonicalizeState(state: SemanticBoardState): SemanticBoardState
 }
 
 export function assertDeepEqual(actual: unknown, expected: unknown): void {
-  deepStrictEqual(actual, expected);
+  const stableJson = (value: unknown): string => JSON.stringify(value, (_key, item: unknown) => {
+    if (!item || Array.isArray(item) || typeof item !== "object") return item;
+    return Object.fromEntries(Object.entries(item as Record<string, unknown>).sort(([left], [right]) => left.localeCompare(right)));
+  });
+  const actualJson = stableJson(actual);
+  const expectedJson = stableJson(expected);
+  if (actualJson !== expectedJson) {
+    throw new Error(`OLL values are not deeply equal\nactual: ${actualJson}\nexpected: ${expectedJson}`);
+  }
 }

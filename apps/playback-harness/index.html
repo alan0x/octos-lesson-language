@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OLL Playback Harness</title>
+    <link rel="stylesheet" href="/apps/playback-harness/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">OLL</span>
+          <div><strong>Playback Harness</strong><small>v0.1 RC1 · 浏览器课堂实验室</small></div>
+        </div>
+        <label class="lesson-picker">课程<select id="lesson-select"></select></label>
+        <div class="playback-controls">
+          <button id="reset-button" title="重置课程">↺</button>
+          <button id="step-button">下一操作</button>
+          <button id="beat-button">下一 Beat</button>
+          <button id="play-button" class="primary">播放</button>
+          <label>速度<select id="speed-select"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></label>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <div class="canvas-column">
+          <div class="lesson-strip">
+            <div><span id="lesson-status" class="status-chip">READY</span><strong id="lesson-title">正在加载…</strong></div>
+            <div class="progress-track"><span id="progress-bar"></span></div>
+            <span id="progress-label">0 / 0</span>
+          </div>
+          <div id="viewport" class="viewport" aria-label="无限白板">
+            <div id="world" class="world">
+              <svg id="connection-layer" class="connection-layer"></svg>
+              <div id="group-layer" class="layer"></div>
+              <div id="node-layer" class="layer"></div>
+              <div id="pointer" class="teacher-pointer" hidden>●</div>
+            </div>
+            <div id="narration" class="narration" hidden></div>
+            <div class="camera-controls">
+              <button id="zoom-out">−</button><button id="fit-button">适应全课</button><button id="zoom-in">＋</button>
+            </div>
+            <div class="canvas-hint">拖动画布 · 滚轮缩放</div>
+          </div>
+        </div>
+
+        <aside class="debug-panel">
+          <section><h2>当前状态</h2><dl id="state-grid" class="state-grid"></dl></section>
+          <section class="timeline-section"><h2>操作时间线</h2><ol id="timeline" class="timeline"></ol></section>
+        </aside>
+      </section>
+    </main>
+    <script type="module" src="/dist/apps/playback-harness/browser/app.js"></script>
+  </body>
+</html>
