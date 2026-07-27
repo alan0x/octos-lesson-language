@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { mathSource } from "../src/board-view.js";
+import { diagramConnectionGeometry, mathSource } from "../src/board-view.js";
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
@@ -38,4 +38,22 @@ test("connection labels stack instead of covering one another", () => {
   const second = stackConnectionLabel(computeConnectionRoute(from, to, "对应角相等且构成平角"), occupied);
   assert.ok(second.label.y < first.label.y);
   assert.notEqual(routePath(first), routePath(second));
+});
+
+test("diagram-internal connections resolve exact fragment coordinates", () => {
+  const content = {
+    elements: [
+      { id: "point-a", label: "A", semantic_position: "top" },
+      { id: "point-d", label: "D", semantic_position: "bottom_center" },
+    ],
+  };
+  const geometry = diagramConnectionGeometry(content, {
+    label: "辅助线 AD",
+    from: { node_id: "triangle", fragment_id: "point-a" },
+    to: { node_id: "triangle", fragment_id: "point-d" },
+  });
+  assert.ok(geometry);
+  assert.deepEqual(geometry.from, { x: 150, y: 24 });
+  assert.deepEqual(geometry.to, { x: 150, y: 164 });
+  assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
 });

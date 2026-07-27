@@ -61,6 +61,10 @@ select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; pad
 .diagram-edge-label { fill: #766f65; font: 11px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 4px; }
 .diagram-point { fill: #247f74; }
 .diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
+.diagram-connection { stroke: #e34f5f; stroke-width: 3.2; stroke-linecap: round; filter: drop-shadow(0 1px 1px rgba(97,24,32,.18)); }
+.diagram-connection.emphasized, .diagram-connection.focused { stroke-width: 4.4; }
+.diagram-connection-badge rect { fill: rgba(255,251,235,.96); stroke: #e4a8ae; stroke-width: 1; }
+.diagram-connection-badge text { fill: #8f2f3a; font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; }
 .image-placeholder { display: grid; place-items: center; height: 120px; border: 1px dashed #9aa9a5; border-radius: 10px; background: linear-gradient(135deg,#e4efec,#f5f2e8); color: #4a625d; text-align: center; padding: 10px; }
 .region-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
 .region-pills > * { font-size: 10px; border-radius: 999px; background: #e8e3d8; padding: 3px 7px; }

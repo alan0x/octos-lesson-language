@@ -71,6 +71,26 @@ function diagramPoints(content: Record<string, any>): Map<string, { x: number; y
   ]));
 }
 
+export interface DiagramConnectionGeometry {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+  label: string;
+  labelPosition: { x: number; y: number; width: number };
+}
+
+export function diagramConnectionGeometry(content: Record<string, any>, connection: Record<string, any>): DiagramConnectionGeometry | undefined {
+  const points = diagramPoints(content);
+  const from = points.get(text(connection.from?.fragment_id));
+  const to = points.get(text(connection.to?.fragment_id));
+  if (!from || !to) return undefined;
+  const label = text(connection.label || connection.relation);
+  const width = Math.min(112, Math.max(42, [...label].reduce((total, character) => total + (/[^\u0000-\u00ff]/.test(character) ? 12 : 7), 0) + 16));
+  return {
+    from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, label,
+    labelPosition: { x: (from.x + to.x) / 2 + width / 2 + 12, y: (from.y + to.y) / 2, width },
+  };
+}
+
 function renderDiagram(parent: HTMLElement, content: Record<string, any>): void {
   const points = diagramPoints(content);
   const svg = document.createElementNS(SVG_NS, "svg");
@@ -208,8 +228,8 @@ export class InfiniteBoardView {
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.renderGroups(board, layout);
-    this.renderConnections(board, layout);
     this.renderNodes(board, layout, operation?.action);
+    this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
     const activeId = operation?.action?.node?.id ?? targetId(operation?.action?.target);
     const activeRect = activeId ? targetRect(board, layout, activeId) : undefined;
@@ -260,6 +280,7 @@ export class InfiniteBoardView {
     const triangle = document.createElementNS(SVG_NS, "path"); triangle.setAttribute("d", "M0,0 L8,4 L0,8 Z"); triangle.setAttribute("fill", "#6e8d86"); marker.append(triangle); defs.append(marker); this.connections.append(defs);
     const occupiedLabels: Rect[] = [];
     for (const connection of Object.values(board.connections)) {
+      if (this.renderInternalDiagramConnection(board, connection)) continue;
       const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
       const labelText = text(connection.label || connection.relation);
@@ -275,6 +296,38 @@ export class InfiniteBoardView {
         badge.append(background, label); this.connectionLabels.append(badge);
       }
     }
+  }
+
+  private renderInternalDiagramConnection(board: SemanticBoardState, connection: Record<string, any>): boolean {
+    const nodeId = connection.from?.node_id;
+    if (!nodeId || nodeId !== connection.to?.node_id || !connection.from?.fragment_id || !connection.to?.fragment_id) return false;
+    const node = board.nodes[nodeId];
+    if (node?.kind !== "diagram") return false;
+    const geometry = diagramConnectionGeometry(node.content ?? {}, connection);
+    if (!geometry) return false;
+    const nodeElement = [...this.nodes.querySelectorAll<HTMLElement>(".board-node")].find((element) => element.dataset.id === nodeId);
+    const svg = nodeElement?.querySelector<SVGSVGElement>(".diagram-preview");
+    if (!svg) return false;
+
+    const line = document.createElementNS(SVG_NS, "line");
+    line.classList.add("diagram-connection"); line.dataset.id = connection.id;
+    if (connection.emphasis?.length) line.classList.add("emphasized");
+    if (board.focus.includes(connection.id)) line.classList.add("focused");
+    line.setAttribute("x1", String(geometry.from.x)); line.setAttribute("y1", String(geometry.from.y));
+    line.setAttribute("x2", String(geometry.to.x)); line.setAttribute("y2", String(geometry.to.y));
+    const firstPoint = svg.querySelector(".diagram-point");
+    svg.insertBefore(line, firstPoint);
+
+    if (geometry.label) {
+      const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("diagram-connection-badge"); badge.dataset.id = connection.id;
+      const background = document.createElementNS(SVG_NS, "rect");
+      background.setAttribute("x", String(geometry.labelPosition.x - geometry.labelPosition.width / 2)); background.setAttribute("y", String(geometry.labelPosition.y - 11));
+      background.setAttribute("width", String(geometry.labelPosition.width)); background.setAttribute("height", "22"); background.setAttribute("rx", "8");
+      const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(geometry.labelPosition.x)); label.setAttribute("y", String(geometry.labelPosition.y));
+      label.setAttribute("text-anchor", "middle"); label.setAttribute("dominant-baseline", "middle"); label.textContent = geometry.label;
+      badge.append(background, label); svg.append(badge);
+    }
+    return true;
   }
 
   private renderPointer(board: SemanticBoardState, layout: BoardLayout, operation?: PlaybackOperation): void {
