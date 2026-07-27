@@ -36,6 +36,13 @@
     "regionIntent": "new_topic"
   },
   {
+    "name": "english-relative-clause-v2",
+    "lessonId": "lesson-english-v2-001",
+    "boardId": "board-session-english-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
     "name": "science-transpiration-v2",
     "lessonId": "lesson-science-transpiration-v2-001",
     "boardId": "board-session-science-transpiration-v2-001",

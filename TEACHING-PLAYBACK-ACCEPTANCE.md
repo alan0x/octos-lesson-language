@@ -134,7 +134,7 @@ Harness 必须为固定课程输出关键帧观测：
 npm run teaching:observe -- --lesson geometry --output evals/teaching-playback/geometry-v2/report.json
 ```
 
-当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查 KaTeX 错误、内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染、图片 pending/加载失败和 console warning/error。当前三个正向基准分别为几何 11 Beat/51 动作帧、二次函数 11/45、图片科学 11/37。
+当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查 KaTeX 错误、内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染、图片 pending/加载失败和 console warning/error。当前四个正向基准分别为几何 11 Beat/51 动作帧、二次函数 11/45、图片科学 11/37、英语文本 11/44。
 
 ## 5. 人工盲测协议
 

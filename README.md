@@ -68,7 +68,7 @@ npm run check:examples
 npm run harness:dev
 ```
 
-然后访问 `http://127.0.0.1:4173`。Harness 直接读取六份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
+然后访问 `http://127.0.0.1:4173`。Harness 直接读取七份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
 
 运行真实 Chrome 教学播放观测：
 
@@ -76,9 +76,10 @@ npm run harness:dev
 npm run teaching:observe:geometry
 npm run teaching:observe:quadratic
 npm run teaching:observe:science
+npm run teaching:observe:english
 ```
 
-三个命令分别逐操作播放几何、二次函数和图片科学 V2，在 51/45/37 个动作帧与各 11 个 Beat 边界测量焦点可见性、卡片宽度、正文等效字号、资源加载、region 命中、内容裁切、标签遮挡和 console 错误。报告写入 `evals/teaching-playback/` 对应目录。它不替代学科质量 judge 或学生盲测。
+四个命令分别逐操作播放几何、二次函数、图片科学和英语文本 V2，在 51/45/37/44 个动作帧与各 11 个 Beat 边界测量焦点可见性、卡片宽度、正文等效字号、资源加载、fragment/region 命中、内容裁切、标签遮挡和 console 错误。报告写入 `evals/teaching-playback/` 对应目录。它不替代学科质量 judge 或学生盲测。
 
 运行 21 个未见跨学科案例、每题 5 次的正式评测：
 
@@ -103,16 +104,18 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 - 二次函数配方法 V2：把系数折半、完全平方、等式不变量、代数替换、常数合并与图像解释拆成 11 个可聚焦 Beat；
 - 几何图片与辅助线：受控 asset region、diagram 内部元素、几何 connection 和视觉不确定性；
 - 植物蒸腾作用 V2：真实受控图片、对照观察、证据与推断分层、机制模型和回到图片检验解释；
-- 英语定语从句：普通文本 fragment、主干提取、修饰关系和分层结构。
+- 英语定语从句 V2：普通文本 fragment、主干提取、先行词连接、普通句还原、关系代词替换和双语语序重组。
 
-六份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何与二次函数各保留一个 V1 回归样本，几何、二次函数与图片科学各有一个 V2 教学可理解性样板。
+七份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何、二次函数和英语各保留一个 V1 负向样本，几何、二次函数、图片科学与英语各有一个 V2 教学可理解性样板。
 
 几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。
 
-教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，并用真实 Chrome 自动验收 Canonical 事件的渐进呈现、布局、真实资源和恢复。RC 决策、限制和下一门见 `RELEASE-CANDIDATE.md`；在人文视觉样板、语音和动画门通过前不直接绑定生产 `/learn`。
+教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，并用真实 Chrome 自动验收 Canonical 事件的渐进呈现、布局、真实资源和恢复。四类视觉正向样板及三个 V1 负向探针已完成，结论见 `evals/teaching-playback/VISUAL-GATE-RESULT.md`；在语音和动画门通过前不直接绑定生产 `/learn`。
 
 几何辅助线 V2 已作为第一份教学可理解性垂直切片：11 个 Beat 使用现有 OLL v0.1 完成“读题 → 连接 AD → 三组边逐行出现 → SSS → 角平分线 → 三步推出垂线 → 总结路线”。Reference Runtime 已补齐 diagram fragment emphasis、焦点镜头和只按可见内容测量卡片尺寸；逐 Beat 验收记录在 `examples/geometry-auxiliary-line-v2/ACCEPTANCE.md`。
 
 二次函数配方法 V2 是第二份正向切片：11 个 Beat 使用同一协议完成“读题 → 取系数一半 → 构造完全平方 → 补9减9 → 替换与化简 → 图像解释 → 总结路线”。真实 Chrome Observer 对 45 个动作帧和 11 个 Beat 全部通过；旧二次函数课在同一门禁下继续 expected-fail。验收记录在 `examples/quadratic-v2/ACCEPTANCE.md`。
 
 植物蒸腾作用 V2 是第三份正向切片和第一份真实图片课：11 个 Beat 完成“直接观察 → 无叶对照 → 推断 → 根/茎/叶运输模型 → 凝结 → 回图检验 → 证据分层”。Runtime 通过宿主 resolver 加载 PNG 和 region bounds，未修改 OLL v0.1；真实 Chrome Observer 对 37 个动作帧和 11 个 Beat 全部通过。验收记录在 `examples/science-transpiration-v2/ACCEPTANCE.md`。
+
+英语定语从句 V2 是第四份正向切片和第一份文本证据课：11 个 Beat 完成“圈出从句 → 抽出主句 → 找先行词 → 还原普通句 → the book 替换为 that → 标注成分 → 重组含义”。真实 Chrome Observer 对 44 个动作帧和 11 个 Beat 全部通过；英语 V1 在同一门禁下 expected-fail。验收记录在 `examples/english-relative-clause-v2/ACCEPTANCE.md`。

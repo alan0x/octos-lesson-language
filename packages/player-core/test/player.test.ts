@@ -40,6 +40,7 @@ const quadratic = lessons.find((item) => item.entry.name === "quadratic")!;
 const quadraticV2 = lessons.find((item) => item.entry.name === "quadratic-v2")!;
 const geometryV2 = lessons.find((item) => item.entry.name === "geometry-auxiliary-line-v2")!;
 const scienceV2 = lessons.find((item) => item.entry.name === "science-transpiration-v2")!;
+const englishV2 = lessons.find((item) => item.entry.name === "english-relative-clause-v2")!;
 
 function localId(value: string | undefined): string | undefined {
   return value?.split(":").at(-1);
@@ -228,6 +229,54 @@ test("science V2 moves from image evidence to a mechanism progressively", () => 
   assert.deepEqual(frames[10]!.board.focus, ["lesson-science-transpiration-v2-001:group:summary-group"]);
 });
 
+test("English V2 derives the relative pronoun role from addressable text evidence", () => {
+  const frames = playToBeatEnds(englishV2.events);
+  assert.deepEqual(frames.map((frame) => frame.beat), [
+    "show-sentence-and-goal",
+    "bracket-relative-clause",
+    "remove-relative-clause",
+    "label-main-roles",
+    "attach-clause-to-book",
+    "reconstruct-ordinary-clause",
+    "replace-book-with-that",
+    "label-inner-roles",
+    "combine-meaning-layers",
+    "translate-in-chinese-order",
+    "show-complete-route",
+  ]);
+
+  const node = (name: string) => `lesson-english-v2-001:node:${name}`;
+  const connection = (name: string) => `lesson-english-v2-001:connection:${name}`;
+  const fragment = (nodeName: string, name: string) => `${node(nodeName)}:fragment:${name}`;
+  const emphasis = (board: (typeof frames)[number]["board"], owner: string, target: string) => {
+    const entries = board.nodes[owner]?.emphasis ?? [];
+    return entries.filter((entry) => (entry.target as { fragment_id?: string }).fragment_id === target).at(-1)?.emphasis;
+  };
+  const rows = (frame: (typeof frames)[number], name: string) => frame.board.nodes[node(name)]?.content.rows as unknown[][] | undefined;
+  const fragments = (frame: (typeof frames)[number], name: string) => frame.board.nodes[node(name)]?.content.fragments as Array<{ text?: string }> | undefined;
+
+  assert.equal(frames[0]!.board.nodes[node("clause-bracket")], undefined, "the opening Beat must not pre-label the middle clause");
+  assert.equal(emphasis(frames[1]!.board, node("original-sentence"), fragment("original-sentence", "relative-clause")), "focus");
+  assert.equal(frames[1]!.board.nodes[node("main-clause")], undefined, "bracketing must precede extraction");
+  assert.ok(frames[2]!.board.nodes[node("main-clause")]);
+  assert.equal(frames[2]!.board.nodes[node("antecedent-note")], undefined, "main clause must be established before attachment");
+  assert.equal(rows(frames[3]!, "main-role-table")?.length, 3);
+  assert.equal(frames[3]!.board.connections[connection("clause-modifies-book")], undefined);
+
+  assert.ok(frames[4]!.board.connections[connection("clause-modifies-book")]);
+  assert.equal(frames[4]!.board.nodes[node("ordinary-clause")], undefined, "the ordinary clause belongs to the next Beat");
+  assert.match(String(fragments(frames[5]!, "ordinary-clause")?.[3]?.text), /the book/);
+  assert.equal(frames[5]!.board.nodes[node("relative-structure")], undefined, "that must not appear before the repeated noun is shown");
+  assert.equal(fragments(frames[6]!, "relative-structure")?.[0]?.text, "that");
+  assert.ok(frames[6]!.board.connections[connection("book-to-that")]);
+  assert.equal(frames[6]!.board.nodes[node("relative-role-table")], undefined, "role labels follow the transformation evidence");
+  assert.equal(rows(frames[7]!, "relative-role-table")?.length, 4);
+
+  assert.equal(rows(frames[8]!, "meaning-layers")?.length, 2);
+  assert.deepEqual(fragments(frames[9]!, "chinese-order")?.map((item) => item.text), ["你给我的", "那本书", "很精彩。"]) ;
+  assert.deepEqual(frames[10]!.board.focus, ["lesson-english-v2-001:group:summary-group"]);
+});
+
 test("every geometry V2 beat narrates one visible board transition", () => {
   for (const event of geometryV2.events) {
     for (const beat of event.step?.beats ?? []) {
@@ -259,6 +308,18 @@ test("every science V2 beat narrates one visible board transition", () => {
       const actions = Object.values(beat.stage).flat();
       assert.ok(actions.length > 0, `${beat.id} must change the classroom state`);
       assert.ok(actions.some((action) => ["board.create", "board.connect", "board.revise", "board.emphasize"].includes(action.op)), `${beat.id} must produce a visible transition`);
+      assert.ok(beat.stage.after_speech.some((action) => action.op === "board.focus"), `${beat.id} must finish on an explicit teaching focus`);
+    }
+  }
+});
+
+test("every English V2 beat narrates one visible board transition", () => {
+  for (const event of englishV2.events) {
+    for (const beat of event.step?.beats ?? []) {
+      assert.ok(beat.narration?.text.trim(), `${beat.id} must contain narration`);
+      const actions = Object.values(beat.stage).flat();
+      assert.ok(actions.length > 0, `${beat.id} must change the classroom state`);
+      assert.ok(actions.some((action) => ["board.create", "board.connect", "board.emphasize"].includes(action.op)), `${beat.id} must produce a visible transition`);
       assert.ok(beat.stage.after_speech.some((action) => action.op === "board.focus"), `${beat.id} must finish on an explicit teaching focus`);
     }
   }

@@ -8,6 +8,7 @@ This directory stores deterministic real-browser observations of fixed Canonical
 npm run teaching:observe:geometry
 npm run teaching:observe:quadratic
 npm run teaching:observe:science
+npm run teaching:observe:english
 ```
 
 Generic form:
@@ -56,10 +57,19 @@ inference, internal transport, transpiration and condensation across eleven
 Beats. The Observer additionally rejects pending or failed lesson images. Its
 report is stored in `science-transpiration-v2/`.
 
+English relative clause V2 is the fourth expected-pass specimen. It reconstructs
+the ordinary clause and the `the book → that` replacement before assigning
+grammar roles. Its report is stored in `english-relative-clause-v2/`.
+
 ## Cross-subject negative probe
 
 ```bash
 npm run teaching:observe:quadratic-probe
+npm run teaching:observe:english-probe
 ```
 
 The original quadratic lesson is also expected to fail, but for authoring rather than fragment rendering: nine Beats have no explicit end focus and its final all-content overview shrinks the focused card below the threshold. The probe originally exposed clipped formulas and missing math/plot fragment DOM; those Runtime defects were fixed before this expected-fail baseline was accepted. Keeping V1 and V2 side by side ensures the observer is measuring staging rather than merely recognizing a subject.
+
+The original English lesson is an equivalent text-domain negative probe: four of
+five Beats lack end focus and its final all-content overview is too small. The
+aggregate visual-gate decision is recorded in `VISUAL-GATE-RESULT.md`.

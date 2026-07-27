@@ -1,0 +1,1267 @@
+{
+  "profile": "octos.teaching-playback.report",
+  "version": "0.1",
+  "generated_at": "2026-07-27T14:20:03.682Z",
+  "lesson_id": "lesson-english-001",
+  "fixture": "english-v1",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "browser": "150.0.7871.184",
+  "passed": false,
+  "expected_result": "fail",
+  "expectation_met": true,
+  "console_messages": [],
+  "beats": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 14,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": false,
+        "issues": [
+          {
+            "code": "G1_MISSING_BEAT_FOCUS",
+            "message": "Beat ends without an explicit teaching focus"
+          }
+        ]
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 32,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 2,
+        "connection_count": 2,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 2,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": false,
+        "issues": [
+          {
+            "code": "G1_MISSING_BEAT_FOCUS",
+            "message": "Beat ends without an explicit teaching focus"
+          }
+        ]
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 46,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 3,
+        "connection_count": 3,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": false,
+        "issues": [
+          {
+            "code": "G1_MISSING_BEAT_FOCUS",
+            "message": "Beat ends without an explicit teaching focus"
+          }
+        ]
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 60,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 4,
+        "connection_count": 4,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": false,
+        "issues": [
+          {
+            "code": "G1_MISSING_BEAT_FOCUS",
+            "message": "Beat ends without an explicit teaching focus"
+          }
+        ]
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 77,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.8,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 3,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 3,
+        "focus_targets": [
+          "lesson-english-001:group:lesson-map"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-english-001:node:original-sentence",
+            "kind": "text",
+            "x": 253.19,
+            "y": 124.31,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:main-clause",
+            "kind": "text",
+            "x": 253.19,
+            "y": 252.09,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:modifier-note",
+            "kind": "note",
+            "x": 514.96,
+            "y": 123.89,
+            "width": 192.04,
+            "height": 85.49,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:relative-structure",
+            "kind": "text",
+            "x": 515.14,
+            "y": 252.09,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:meaning-summary",
+            "kind": "note",
+            "x": 252.96,
+            "y": 406.35,
+            "width": 310.96,
+            "height": 105.18,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 191.67,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": false,
+        "issues": [
+          {
+            "code": "G3_FOCUS_TOO_SMALL",
+            "message": "Smallest focused card is 191.67px; expected at least 240px"
+          }
+        ]
+      }
+    }
+  ],
+  "action_frames": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 8,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:original-sentence",
+            "kind": "text",
+            "x": 173.6,
+            "y": 153.6,
+            "width": 187.2,
+            "height": 82.68,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 9,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:relative-clause",
+            "kind": "text-fragment",
+            "x": 188.42,
+            "y": 204.6,
+            "width": 110.85,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 22,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:subject-head",
+            "kind": "text-fragment",
+            "x": 188.42,
+            "y": 185.58,
+            "width": 60.64,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 23,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:main-verb",
+            "kind": "text-fragment",
+            "x": 302.69,
+            "y": 204.6,
+            "width": 24.38,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 24,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:original-sentence:fragment:subject-complement",
+            "kind": "text-fragment",
+            "x": 188.42,
+            "y": 223.63,
+            "width": 75.47,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 25,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:main-clause",
+            "kind": "text",
+            "x": 173.6,
+            "y": 278.4,
+            "width": 187.2,
+            "height": 82.68,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 26,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 2,
+        "connection_count": 1,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:connection:subject-correspondence",
+            "kind": "connection-line",
+            "x": 267.2,
+            "y": 236.28,
+            "width": 90.09,
+            "height": 42.12,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 27,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 2,
+        "connection_count": 2,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:connection:predicate-correspondence",
+            "kind": "connection-line",
+            "x": 267.2,
+            "y": 234.72,
+            "width": 90.09,
+            "height": 43.68,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 40,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 2,
+        "connection_count": 3,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:connection:clause-modifies-book",
+            "kind": "connection-line",
+            "x": 267.2,
+            "y": 157.5,
+            "width": 0,
+            "height": 37.44,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 41,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 3,
+        "connection_count": 3,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:modifier-note",
+            "kind": "note",
+            "x": 429.26,
+            "y": 153.19,
+            "width": 187.56,
+            "height": 83.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 52,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 4,
+        "connection_count": 3,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:relative-structure",
+            "kind": "text",
+            "x": 429.44,
+            "y": 278.4,
+            "width": 187.2,
+            "height": 82.68,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 53,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 4,
+        "connection_count": 4,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:connection:that-replaces-book",
+            "kind": "connection-line",
+            "x": 351.95,
+            "y": 140.39,
+            "width": 86.35,
+            "height": 138.01,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 54,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 4,
+        "connection_count": 4,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:inner-subject",
+            "kind": "text-fragment",
+            "x": 475.03,
+            "y": 310.38,
+            "width": 23.39,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 55,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 4,
+        "connection_count": 4,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:relative-structure:fragment:inner-verb",
+            "kind": "text-fragment",
+            "x": 501.85,
+            "y": 310.38,
+            "width": 29.51,
+            "height": 15.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 68,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:node:meaning-summary",
+            "kind": "note",
+            "x": 173.38,
+            "y": 429.06,
+            "width": 303.7,
+            "height": 102.72,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 69,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:group:main-structure-group",
+            "kind": "board-group",
+            "x": 173.6,
+            "y": 153.6,
+            "width": 240.24,
+            "height": 260.52,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 70,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 2,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:group:relative-clause-group",
+            "kind": "board-group",
+            "x": 429.44,
+            "y": 153.6,
+            "width": 240.24,
+            "height": 260.52,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 71,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.78,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 3,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:group:lesson-map",
+            "kind": "board-group",
+            "x": 173.6,
+            "y": 153.6,
+            "width": 549.12,
+            "height": 457.08,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "min_focal_node_width": null,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-english-001",
+        "cursor": 75,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 0.8,
+        "node_count": 5,
+        "connection_count": 4,
+        "group_count": 3,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-english-001:group:lesson-map"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-english-001:node:original-sentence",
+            "kind": "text",
+            "x": 253.19,
+            "y": 124.31,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:main-clause",
+            "kind": "text",
+            "x": 253.19,
+            "y": 252.09,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:modifier-note",
+            "kind": "note",
+            "x": 514.96,
+            "y": 123.89,
+            "width": 192.04,
+            "height": 85.49,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:relative-structure",
+            "kind": "text",
+            "x": 515.14,
+            "y": 252.09,
+            "width": 191.67,
+            "height": 84.66,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-english-001:node:meaning-summary",
+            "kind": "note",
+            "x": 252.96,
+            "y": 406.35,
+            "width": 310.96,
+            "height": 105.18,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-english-001:group:lesson-map",
+            "kind": "board-group",
+            "x": 198.88,
+            "y": 70,
+            "width": 562.24,
+            "height": 468,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 191.67,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ]
+}

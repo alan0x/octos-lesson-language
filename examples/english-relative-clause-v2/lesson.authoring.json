@@ -1,0 +1,311 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "一步一步拆解英语定语从句",
+    "goals": [
+      "从完整句子中抽出主句骨架",
+      "说明 that 从句为什么修饰 book",
+      "由普通句还原 that 在从句中的作用",
+      "按英语结构理解并按中文语序表达整句"
+    ],
+    "adaptation": {
+      "strategies": ["one-change-per-beat", "addressable-text-evidence", "reconstruct-before-label", "durable-route"]
+    }
+  },
+  "steps": [
+    {
+      "key": "establish-sentence",
+      "purpose": "呈现完整句子和拆句目标，不提前给语法答案",
+      "beats": [
+        {
+          "key": "show-sentence-and-goal",
+          "say": "先完整读这句话：The book that you gave me was fascinating。我们不急着逐词翻译，先找主句，再判断中间那一段在修饰谁。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "original-sentence",
+              "kind": "text",
+              "role": "problem",
+              "content": {
+                "fragments": [
+                  {"as": "subject-head", "text": "The book "},
+                  {"as": "relative-clause", "text": "that you gave me "},
+                  {"as": "main-verb", "text": "was "},
+                  {"as": "subject-complement", "text": "fascinating."}
+                ],
+                "caption": "原句"
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {
+              "do": "write",
+              "as": "goal-card",
+              "kind": "note",
+              "role": "task",
+              "content": {"title": "① 拆句顺序", "items": ["先找主句骨架", "再找被修饰的词", "最后看从句内部作用"]},
+              "place": {"relation": "right_of", "anchor": "original-sentence", "align": "center", "gap": "normal"}
+            },
+            {"do": "group", "as": "task-group", "role": "task", "label": "① 先看整句与目标", "members": ["original-sentence", "goal-card"]},
+            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "read_sentence_and_goal"}
+          ]
+        },
+        {
+          "key": "bracket-relative-clause",
+          "say": "先把 that you gave me 看成一个整体。它夹在 book 和主句动词 was 之间，暂时给它加上括号，稍后再打开。",
+          "delivery": "careful",
+          "actions": [
+            {"do": "emphasize", "target": "original-sentence#relative-clause", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "clause-bracket",
+              "kind": "note",
+              "role": "observation",
+              "content": {"title": "② 先圈出一整块", "text": "[ that you gave me ] 暂时整体拿开，寻找外层主句。"},
+              "place": {"relation": "below", "anchor": "goal-card", "align": "start", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "clause-bracket"], "intent": "bracket_middle_clause"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "extract-main-clause",
+      "purpose": "拿掉修饰块后逐步确认主句结构",
+      "beats": [
+        {
+          "key": "remove-relative-clause",
+          "say": "暂时拿掉括号中的部分，剩下 The book was fascinating。这句话本身完整，所以它就是外层主句骨架。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "original-sentence#relative-clause", "emphasis": "supporting"},
+            {
+              "do": "write",
+              "as": "main-clause",
+              "kind": "text",
+              "role": "observation",
+              "content": {
+                "fragments": [
+                  {"as": "subject", "text": "The book"},
+                  {"as": "linking-verb", "text": " was"},
+                  {"as": "complement", "text": " fascinating."}
+                ],
+                "caption": "主句骨架"
+              },
+              "place": {"relation": "below", "anchor": "original-sentence", "align": "start", "gap": "spacious"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "main-clause"], "intent": "see_sentence_without_modifier"}
+          ]
+        },
+        {
+          "key": "label-main-roles",
+          "say": "再看主句内部：The book 是主语；was 是系动词；fascinating 是表语，说明这本书怎么样。",
+          "delivery": "patient",
+          "actions": [
+            {"do": "emphasize", "target": "main-clause#subject", "emphasis": "focus"},
+            {"do": "emphasize", "target": "main-clause#linking-verb", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "main-clause#complement", "emphasis": "supporting"},
+            {
+              "do": "write",
+              "as": "main-role-table",
+              "kind": "table",
+              "role": "evidence",
+              "content": {
+                "title": "③ 主句成分",
+                "columns": ["片段", "作用"],
+                "rows": [["The book", "主语"], ["was", "系动词"], ["fascinating", "表语"]]
+              },
+              "place": {"relation": "right_of", "anchor": "main-clause", "align": "center", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["main-clause", "main-role-table"], "intent": "label_main_clause_roles"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "attach-and-reconstruct-clause",
+      "purpose": "先确定修饰对象，再用普通句还原关系代词作用",
+      "beats": [
+        {
+          "key": "attach-clause-to-book",
+          "say": "把中间块放回来。它紧跟在名词 book 后面，回答的是哪一本书，所以 that you gave me 修饰 book；book 叫先行词。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "original-sentence#relative-clause", "emphasis": "focus"},
+            {"do": "emphasize", "target": "original-sentence#subject-head", "emphasis": "focus"},
+            {"do": "connect", "as": "clause-modifies-book", "from": "original-sentence#relative-clause", "to": "original-sentence#subject-head", "relation": "modifies", "label": "修饰先行词 book"},
+            {
+              "do": "write",
+              "as": "antecedent-note",
+              "kind": "note",
+              "role": "definition",
+              "content": {"title": "④ 修饰关系", "text": "that you gave me → book；先行词：book"},
+              "place": {"relation": "left_of", "anchor": "original-sentence", "align": "center", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["original-sentence", "antecedent-note"], "intent": "connect_clause_to_antecedent"}
+          ]
+        },
+        {
+          "key": "reconstruct-ordinary-clause",
+          "say": "为了看懂 that 的作用，先还原成普通句：you gave me the book，意思是你把这本书给了我。这里 the book 是 gave 的直接宾语。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "ordinary-clause",
+              "kind": "text",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "inner-subject", "text": "you"},
+                  {"as": "inner-verb", "text": " gave"},
+                  {"as": "indirect-object", "text": " me"},
+                  {"as": "direct-object", "text": " the book"}
+                ],
+                "caption": "先还原成普通句"
+              },
+              "place": {"relation": "below", "anchor": "antecedent-note", "align": "start", "gap": "normal"}
+            },
+            {"do": "emphasize", "target": "ordinary-clause#direct-object", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["ordinary-clause"], "intent": "see_repeated_book_as_object"}
+          ]
+        },
+        {
+          "key": "replace-book-with-that",
+          "say": "因为 the book 已经在主句里出现，从句不再重复它，而用 that 代替，并把 that 放到从句开头。于是 you gave me the book 变成 that you gave me。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "ordinary-clause#direct-object", "emphasis": "resolved"},
+            {
+              "do": "write",
+              "as": "relative-structure",
+              "kind": "text",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {"as": "relative-pronoun", "text": "that"},
+                  {"as": "inner-subject", "text": " you"},
+                  {"as": "inner-verb", "text": " gave"},
+                  {"as": "indirect-object", "text": " me"}
+                ],
+                "caption": "关系代词放到从句开头"
+              },
+              "place": {"relation": "below", "anchor": "ordinary-clause", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "book-to-that", "from": "ordinary-clause#direct-object", "to": "relative-structure#relative-pronoun", "relation": "replaced_by", "label": "the book → that"},
+            {"do": "emphasize", "target": "relative-structure#relative-pronoun", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["ordinary-clause", "relative-structure"], "intent": "derive_relative_pronoun_role"}
+          ]
+        },
+        {
+          "key": "label-inner-roles",
+          "say": "现在每个成分都有依据：that 指代 book，在 gave 后缺失的位置充当直接宾语；you 是主语，gave 是谓语，me 是间接宾语。",
+          "delivery": "patient",
+          "actions": [
+            {"do": "emphasize", "target": "relative-structure#relative-pronoun", "emphasis": "focus"},
+            {"do": "emphasize", "target": "relative-structure#inner-subject", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "relative-structure#inner-verb", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "relative-structure#indirect-object", "emphasis": "supporting"},
+            {
+              "do": "write",
+              "as": "relative-role-table",
+              "kind": "table",
+              "role": "evidence",
+              "content": {
+                "title": "⑤ 从句内部成分",
+                "columns": ["片段", "作用"],
+                "rows": [["that", "关系代词 / 直接宾语"], ["you", "主语"], ["gave", "谓语"], ["me", "间接宾语"]]
+              },
+              "place": {"relation": "right_of", "anchor": "relative-structure", "align": "center", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["relative-structure", "relative-role-table"], "intent": "label_relative_clause_roles"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "restore-meaning",
+      "purpose": "把主句与修饰层重新组合，并转换为自然中文语序",
+      "beats": [
+        {
+          "key": "combine-meaning-layers",
+          "say": "把两层意思合起来：主句 The book was fascinating 告诉我们这本书很精彩；定语从句 that you gave me 告诉我们是哪本书。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "meaning-layers",
+              "kind": "table",
+              "role": "conclusion",
+              "content": {
+                "title": "⑥ 两层意思",
+                "columns": ["层次", "内容", "作用"],
+                "rows": [["主句", "The book was fascinating.", "说明书怎么样"], ["定语从句", "that you gave me", "限定是哪本书"]]
+              },
+              "place": {"relation": "below", "anchor": "main-role-table", "align": "start", "gap": "spacious"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["meaning-layers"], "intent": "combine_main_and_modifier_meaning"}
+          ]
+        },
+        {
+          "key": "translate-in-chinese-order",
+          "say": "英语把修饰语放在 book 后面，中文通常把它放到名词前面。所以按中文语序组合成：你给我的，那本书，很精彩。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "chinese-order",
+              "kind": "text",
+              "role": "conclusion",
+              "content": {
+                "fragments": [
+                  {"as": "modifier", "text": "你给我的"},
+                  {"as": "noun", "text": "那本书"},
+                  {"as": "comment", "text": "很精彩。"}
+                ],
+                "caption": "自然中文：你给我的那本书很精彩。"
+              },
+              "place": {"relation": "below", "anchor": "meaning-layers", "align": "start", "gap": "normal"}
+            },
+            {"do": "emphasize", "target": "chinese-order#modifier", "emphasis": "focus"},
+            {"do": "emphasize", "target": "chinese-order#noun", "emphasis": "supporting"},
+            {"do": "focus", "when": "after_speech", "targets": ["chinese-order"], "intent": "reorder_for_chinese_meaning"}
+          ]
+        },
+        {
+          "key": "show-complete-route",
+          "say": "最后从头复述：先圈出 that 从句，拿掉它找到主句；再确认它修饰 book；还原 you gave me the book，才能看出 that 代替 book 作直接宾语；最后把主句与修饰信息重新组合。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "lesson-route",
+              "kind": "diagram",
+              "role": "summary",
+              "content": {"title": "⑦ 拆定语从句的路线", "sequence": ["圈出从句", "拿掉后找主句", "找先行词", "还原普通句", "判断 that 的作用", "组合整句含义"]},
+              "place": {"relation": "below", "anchor": "chinese-order", "align": "start", "gap": "spacious"}
+            },
+            {
+              "do": "write",
+              "as": "takeaway",
+              "kind": "note",
+              "role": "summary",
+              "content": {"title": "一句话方法", "text": "先拿掉定语从句找主干，再还原普通句判断关系代词在从句中的成分。"},
+              "place": {"relation": "below", "anchor": "lesson-route", "align": "start", "gap": "normal"}
+            },
+            {"do": "group", "as": "summary-group", "role": "summary", "label": "从这里复述拆句方法", "members": ["lesson-route", "takeaway"]},
+            {"do": "focus", "when": "after_speech", "targets": ["summary-group"], "intent": "review_relative_clause_method"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "圈出定语从句，抽出主句，找到先行词，并通过还原普通句判断 that 的从句成分",
+    "focus": ["summary-group"]
+  }
+}

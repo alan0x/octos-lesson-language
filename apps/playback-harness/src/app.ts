@@ -11,7 +11,8 @@ const fixtures = [
   { id: "geometry", label: "数学 · 几何辅助线 V2", path: "/examples/geometry-auxiliary-line-v2/lesson.canonical.jsonl" },
   { id: "geometry-v1", label: "回归 · 几何辅助线 V1", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
   { id: "science", label: "科学 · 植物蒸腾作用 V2", path: "/examples/science-transpiration-v2/lesson.canonical.jsonl" },
-  { id: "english", label: "语言 · 英语定语从句", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
+  { id: "english", label: "语言 · 英语定语从句 V2", path: "/examples/english-relative-clause-v2/lesson.canonical.jsonl" },
+  { id: "english-v1", label: "探针 · 英语定语从句 V1", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
 const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");

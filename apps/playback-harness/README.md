@@ -23,7 +23,7 @@ npm run harness:dev
 - localStorage checkpoint 与所选课程的刷新恢复；
 - 完整操作时间线和当前 step / beat / phase / revision 调试信息。
 
-内置六份 golden lesson：二次函数配方法 V2、二次函数 V1 探针、几何辅助线 V2、几何图片辅助线 V1 回归课、植物蒸腾作用 V2 和英语定语从句。几何、二次函数和科学 V2 是当前教学可理解性正向样板；两个 V1 只保留为旧协议、渲染和教学编排的回归样本。
+内置七份 golden lesson：几何、二次函数和英语各有 V2 正向样板与 V1 探针，另有植物蒸腾作用 V2。四个 V2 覆盖证明、代数、图片科学和文本推理；三个 V1 只保留为旧协议、渲染和教学编排的负向回归。
 
 ## 边界
 
@@ -45,6 +45,7 @@ npm test
 npm run teaching:observe:geometry
 npm run teaching:observe:quadratic
 npm run teaching:observe:science
+npm run teaching:observe:english
 ```
 
 Runner 使用 `playwright-core` 驱动已有 Chrome/Chromium，不下载独立浏览器。macOS 会自动发现 Google Chrome；其他环境可通过 `OLL_CHROME_PATH` 指定可执行文件。失败帧写入报告目录的 `screenshots/`，下一次运行会先清理旧失败截图。
@@ -54,5 +55,7 @@ Runner 使用 `playwright-core` 驱动已有 Chrome/Chromium，不下载独立�
 `npm run teaching:observe:quadratic` 验收 11-Beat 的配方法 V2 正向样板；`npm run teaching:observe:quadratic-probe` 播放相同主题的旧 V1 expected-fail 探针。两者共用 Runtime 和门禁：V2 全部通过，V1 保留缺少 Beat focus、最终 overview 过小的课程级失败。
 
 `npm run teaching:observe:science` 验收第一份真实图片正向样板。Harness 通过宿主 asset catalog 把 `asset_id` 解析为本地 URL、固有尺寸和 region bounds；Observer 会等待图片完成，并将 pending 或加载失败作为门禁错误。
+
+`npm run teaching:observe:english` 验收 addressable text 正向样板；`npm run teaching:observe:english-probe` 保留同题 V1 expected-fail。四类正向视觉样板完成后的总门禁结论见 `evals/teaching-playback/VISUAL-GATE-RESULT.md`。
 
 Harness 仅为观测器暴露 `window.__OLL_HARNESS__` 测试接口：加载 fixture、逐操作前进、采集 DOM 几何观测和执行确定性门禁。生产 Runtime 不应依赖这个全局接口。

@@ -8,18 +8,19 @@
 
 ## 已通过的门
 
-- 6 份手写 golden lesson 与 expected state，其中三个 V2 正向教学样板、两个 V1 回归/负向探针；
+- 7 份手写 golden lesson 与 expected state，其中四个 V2 正向教学样板、三个 V1 回归/负向探针；
 - 21 个未见案例 × 5 次生成，共 105 次原始输出；
 - 边界修订后的旧输出离线重验 103/105；
 - 5 个边界案例 × 5 次新生成，25/25 Core-executable；
 - 121 堂 Canonical Lesson、15,853 个播放操作、3,297 个动作和 363 条 checkpoint 恢复路径全部收敛；
 - 教学质量 v0.2 合并结果 21/21 通过，平均 31.9/32；
 - 质量校准：1 个干净对照通过，算错、核心遗漏、臆测画像、交互打断 4 个缺陷样本全部拒绝；
-- 当前自动测试 60/60 通过；
+- 当前自动测试 62/62 通过；
 - 几何 V2 的真实 Chrome Observer：11/11 Beat、51/51 动作帧通过；
 - 二次函数 V2 的真实 Chrome Observer：11/11 Beat、45/45 动作帧通过；
 - 图片科学 V2 的真实 Chrome Observer：11/11 Beat、37/37 动作帧通过，真实 PNG 和 region overlay 已加载；
-- 几何 V1 与二次函数 V1 在同一 Observer 下保持 expected-fail，负向校准未失效。
+- 英语文本 V2 的真实 Chrome Observer：11/11 Beat、44/44 动作帧通过；
+- 几何、二次函数与英语 V1 在同一 Observer 下保持 expected-fail，负向校准未失效。
 
 ## RC 冻结规则
 
@@ -33,8 +34,8 @@
 1. v0.1 只规定动作发生在 narration 前、中、后；不规定词级 cue 或毫秒时间，Beat 内分配由宿主策略负责。
 2. Authoring 生成目前仍是 prompt + Schema 文本 + Core 拒绝；完整 Authoring Schema 尚未转换成 Codex response-format 支持的严格子集。
 3. 质量 judge 分数存在饱和，且不是独立人类教师。已知缺陷校准降低了风险，但不能替代儿童产品上线前的人类课程审查。
-4. Headless Player 与三门正向课的真实 Chrome 布局已经验证，受控图片 asset 已接入；书写动画、TTS 同步和 Octos 形象表现尚未验证。
+4. Headless Player 与四门正向课的真实 Chrome 布局已经验证，受控图片 asset 已接入；书写动画、TTS 同步和 Octos 形象表现尚未验证。
 
 ## 下一门
 
-补齐一份语言或人文学科 V2 正向样板，验证 addressable text evidence 与非公式推理。随后为至少一门正向课接入 TTS 时间轴和书写动画，再设计与 `/learn` 的传输适配；不把旧聊天流程直接接回来。
+固定视觉样板扩展到此停止。下一阶段为至少一门正向课接入真实 TTS 时间轴和书写动画，验证 before/during/after speech 动作、暂停恢复和刷新 checkpoint；通过后再设计与 `/learn` 的传输适配，不把旧聊天流程直接接回来。
