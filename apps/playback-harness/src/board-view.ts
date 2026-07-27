@@ -6,6 +6,7 @@ import { computeConnectionRoute, routePath, stackConnectionLabel } from "./conne
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
 
 function text(value: unknown): string { return typeof value === "string" || typeof value === "number" ? String(value) : ""; }
 function setRect(element: HTMLElement, rect: Rect): void {
@@ -29,6 +30,15 @@ function latestEmphasis(owner: Record<string, any>, fragmentId?: string): string
 
 function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
   if (emphasis) element.classList.add(`emphasis-${emphasis}`);
+}
+
+function syncEmphasisClass(element: Element, emphasis: string | undefined): void {
+  element.classList.remove(...EMPHASIS_CLASSES);
+  applyEmphasisClass(element, emphasis);
+}
+
+function nodeContentSignature(node: Record<string, any>): string {
+  return JSON.stringify({ kind: node.kind, role: node.role, content: node.content });
 }
 
 export function mathSource(content: Record<string, any>): string {
@@ -285,6 +295,10 @@ export class InfiniteBoardView {
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private dragging?: { x: number; y: number; panX: number; panY: number };
+  private readonly nodeElements = new Map<string, HTMLElement>();
+  private readonly nodeContentSignatures = new Map<string, string>();
+  private readonly groupElements = new Map<string, HTMLElement>();
+  private nodeInstanceSequence = 0;
 
   constructor(
     private readonly viewport: HTMLElement,
@@ -306,15 +320,15 @@ export class InfiniteBoardView {
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
     this.board = board ?? undefined;
     this.operation = operation;
-    this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren(); this.pointer.hidden = true;
-    if (!board) return;
+    this.pointer.hidden = true;
+    if (!board) { this.clearBoard(); return; }
     const provisionalLayout = computeBoardLayout(board);
-    const measuredNodeSizes = this.renderNodes(board, provisionalLayout, operation?.action);
+    const measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
     const layout = this.layout = computeBoardLayout(board, measuredNodeSizes);
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
-    this.renderGroups(board, layout);
+    this.syncGroups(board, layout);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
     const focusTargets = operation?.action?.focus?.targets ?? [];
@@ -338,24 +352,45 @@ export class InfiniteBoardView {
 
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
-  private renderNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
-    const activeId = action?.node?.id ?? targetId(action?.target);
+  private clearBoard(): void {
+    this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
+  }
+
+  private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
+    const activeCreateId = action?.op === "board.create" ? action.node?.id : undefined;
     const measured: MeasuredNodeSizes = {};
+    for (const [id, element] of this.nodeElements) {
+      if (board.nodes[id]) continue;
+      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id);
+    }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
       const fixedVisualSize = kind === "plot"
         || (kind === "diagram" && Array.isArray(node.content?.elements));
-      const element = document.createElement("article");
+      let element = this.nodeElements.get(node.id);
+      const created = !element;
+      if (!element) {
+        element = document.createElement("article");
+        element.dataset.id = node.id;
+        element.dataset.instanceId = `node-instance-${++this.nodeInstanceSequence}`;
+        this.nodeElements.set(node.id, element);
+        this.nodes.append(element);
+      }
       element.className = `board-node kind-${kind}`;
       element.dataset.kind = kind;
-      element.dataset.id = node.id;
-      if (node.id === activeId) element.classList.add("active");
+      if (created && node.id === activeCreateId) element.classList.add("active");
       if (board.focus.includes(node.id)) element.classList.add("focused");
       applyEmphasisClass(element, latestEmphasis(node));
+      const signature = nodeContentSignature(node);
+      if (this.nodeContentSignatures.get(node.id) !== signature) {
+        element.replaceChildren();
+        renderContent(element, node, this.resolveAsset);
+        this.nodeContentSignatures.set(node.id, signature);
+      }
+      this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
       if (!fixedVisualSize) element.style.height = "auto";
-      renderContent(element, node, this.resolveAsset);
-      this.nodes.append(element);
       const provisional = layout.nodes[node.id]!;
       measured[node.id] = {
         width: provisional.width,
@@ -365,6 +400,13 @@ export class InfiniteBoardView {
     return measured;
   }
 
+  private syncNodeFragmentEmphasis(element: HTMLElement, node: Record<string, any>): void {
+    for (const fragment of element.querySelectorAll<HTMLElement | SVGElement>("[data-id]")) {
+      const fragmentId = (fragment as HTMLElement).dataset.id;
+      if (fragmentId) syncEmphasisClass(fragment, latestEmphasis(node, fragmentId));
+    }
+  }
+
   private positionNodes(layout: BoardLayout): void {
     for (const element of this.nodes.querySelectorAll<HTMLElement>(".board-node")) {
       const id = element.dataset.id;
@@ -372,19 +414,29 @@ export class InfiniteBoardView {
     }
   }
 
-  private renderGroups(board: SemanticBoardState, layout: BoardLayout): void {
+  private syncGroups(board: SemanticBoardState, layout: BoardLayout): void {
+    for (const [id, element] of this.groupElements) {
+      if (board.groups[id]) continue;
+      element.remove(); this.groupElements.delete(id);
+    }
     for (const group of Object.values(board.groups)) {
       const rect = layout.groups[group.id]; if (!rect) continue;
-      const element = document.createElement("div"); element.className = "board-group";
-      element.dataset.id = group.id;
+      let element = this.groupElements.get(group.id);
+      if (!element) {
+        element = document.createElement("div"); element.dataset.id = group.id;
+        appendText(element, "", "group-label"); this.groupElements.set(group.id, element); this.groups.append(element);
+      }
+      element.className = "board-group";
       if (board.focus.includes(group.id)) element.classList.add("focused");
       setRect(element, rect);
-      appendText(element, text(group.title || group.role || "知识组"), "group-label");
-      this.groups.append(element);
+      const label = element.querySelector<HTMLElement>(".group-label");
+      if (label) label.textContent = text(group.title || group.role || "知识组");
     }
   }
 
   private renderConnections(board: SemanticBoardState, layout: BoardLayout): void {
+    this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
+    for (const element of this.nodes.querySelectorAll(".diagram-connection, .diagram-connection-badge")) element.remove();
     const defs = document.createElementNS(SVG_NS, "defs");
     const marker = document.createElementNS(SVG_NS, "marker"); marker.setAttribute("id", "arrowhead"); marker.setAttribute("markerWidth", "8"); marker.setAttribute("markerHeight", "8"); marker.setAttribute("refX", "7"); marker.setAttribute("refY", "4"); marker.setAttribute("orient", "auto");
     const triangle = document.createElementNS(SVG_NS, "path"); triangle.setAttribute("d", "M0,0 L8,4 L0,8 Z"); triangle.setAttribute("fill", "#6e8d86"); marker.append(triangle); defs.append(marker); this.connections.append(defs);

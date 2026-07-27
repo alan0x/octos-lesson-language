@@ -19,6 +19,11 @@ layout pass, while the Observer checks horizontal and vertical overflow on every
 card type. This prevents plain text and note clipping from being hidden behind a
 formula/table-only gate.
 
+The board renderer updates nodes and groups by semantic ID. Existing cards keep
+the same DOM instance across phase, narration, focus and emphasis operations;
+only a newly created card receives the write-in animation. The Observer records
+instance IDs across sampled frames and fails on an unintended remount.
+
 ## Negative calibration
 
 - geometry V1 remains expected-fail for missing Beat focus and an unreadable overview;

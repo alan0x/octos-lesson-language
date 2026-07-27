@@ -121,6 +121,7 @@ try {
   const beats = [];
   const actionFrames = [];
   let previousBeatCounts = { nodes: 0, connections: 0, groups: 0 };
+  const stableNodeInstances = new Map();
   const screenshotDirectory = resolve(dirname(output), "screenshots");
   await rm(screenshotDirectory, { recursive: true, force: true });
   const capturedScreenshots = new Set();
@@ -132,6 +133,12 @@ try {
     if (operation.type !== "action.apply" && operation.type !== "beat.end") continue;
     await page.waitForFunction(() => [...document.querySelectorAll("img.lesson-image")].every((image) => image.complete), undefined, { timeout: 3000 });
     const observation = await page.evaluate(() => globalThis.__OLL_HARNESS__.observe());
+    observation.remounted_nodes = [];
+    for (const [nodeId, instanceId] of Object.entries(observation.node_instances)) {
+      const stableInstance = stableNodeInstances.get(nodeId);
+      if (stableInstance && stableInstance !== instanceId) observation.remounted_nodes.push(nodeId);
+      else if (!stableInstance) stableNodeInstances.set(nodeId, instanceId);
+    }
     lessonId = observation.lesson_id;
     if (operation.type === "beat.end") {
       observation.new_nodes = observation.node_count - previousBeatCounts.nodes;

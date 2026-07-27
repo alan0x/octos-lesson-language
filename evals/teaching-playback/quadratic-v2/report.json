@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:55:32.206Z",
+  "generated_at": "2026-07-27T15:05:59.450Z",
   "lesson_id": "lesson-quadratic-v2-001",
   "fixture": "quadratic",
   "viewport": {
@@ -67,7 +67,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -117,7 +122,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -167,7 +177,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -217,7 +233,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -267,7 +290,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -317,7 +348,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -367,7 +407,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -417,7 +467,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -478,7 +539,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -528,7 +601,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -588,7 +674,22 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10",
+          "lesson-quadratic-v2-001:node:lesson-route": "node-instance-11",
+          "lesson-quadratic-v2-001:node:takeaway": "node-instance-12"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -639,7 +740,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -688,7 +793,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -737,7 +847,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -809,7 +924,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -881,7 +1001,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -953,7 +1078,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1015,7 +1145,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1077,7 +1212,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1139,7 +1280,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1201,7 +1348,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1263,7 +1416,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1325,7 +1484,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1387,7 +1553,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1449,7 +1622,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1511,7 +1691,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1573,7 +1760,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1635,7 +1829,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1697,7 +1899,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1759,7 +1969,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1821,7 +2039,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1883,7 +2109,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1945,7 +2179,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2007,7 +2250,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2069,7 +2321,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2131,7 +2392,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2193,7 +2463,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2255,7 +2535,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2317,7 +2607,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2379,7 +2679,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2441,7 +2751,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2503,7 +2824,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2565,7 +2897,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2627,7 +2970,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2689,7 +3043,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2751,7 +3116,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2813,7 +3189,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2875,7 +3262,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2958,7 +3357,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3031,7 +3442,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3104,7 +3528,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3166,7 +3603,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3228,7 +3678,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10",
+          "lesson-quadratic-v2-001:node:lesson-route": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3290,7 +3754,22 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10",
+          "lesson-quadratic-v2-001:node:lesson-route": "node-instance-11",
+          "lesson-quadratic-v2-001:node:takeaway": "node-instance-12"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3352,7 +3831,22 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10",
+          "lesson-quadratic-v2-001:node:lesson-route": "node-instance-11",
+          "lesson-quadratic-v2-001:node:takeaway": "node-instance-12"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3424,7 +3918,22 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-quadratic-v2-001:node:original": "node-instance-1",
+          "lesson-quadratic-v2-001:node:goal-card": "node-instance-2",
+          "lesson-quadratic-v2-001:node:half-coefficient": "node-instance-3",
+          "lesson-quadratic-v2-001:node:square-identity": "node-instance-4",
+          "lesson-quadratic-v2-001:node:balanced-expression": "node-instance-5",
+          "lesson-quadratic-v2-001:node:grouped-form": "node-instance-6",
+          "lesson-quadratic-v2-001:node:vertex-form": "node-instance-7",
+          "lesson-quadratic-v2-001:node:parabola": "node-instance-8",
+          "lesson-quadratic-v2-001:node:graph-facts": "node-instance-9",
+          "lesson-quadratic-v2-001:node:translation-note": "node-instance-10",
+          "lesson-quadratic-v2-001:node:lesson-route": "node-instance-11",
+          "lesson-quadratic-v2-001:node:takeaway": "node-instance-12"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,

@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:55:53.371Z",
+  "generated_at": "2026-07-27T15:09:03.283Z",
   "lesson_id": "lesson-geometry-001",
   "fixture": "geometry-v1",
   "viewport": {
@@ -44,7 +44,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -86,7 +90,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -128,7 +137,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -170,7 +185,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -212,7 +233,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -254,7 +282,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -296,7 +332,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -338,7 +383,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -380,7 +435,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -485,7 +551,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": false,
@@ -545,7 +622,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -594,7 +675,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -643,7 +728,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -692,7 +781,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -741,7 +835,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -790,7 +890,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -839,7 +945,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -888,7 +1000,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -937,7 +1055,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -986,7 +1110,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1035,7 +1165,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1084,7 +1221,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1133,7 +1277,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1182,7 +1333,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1231,7 +1389,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1280,7 +1445,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1329,7 +1501,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1378,7 +1558,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1427,7 +1616,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1476,7 +1675,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1525,7 +1734,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1574,7 +1794,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1623,7 +1854,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1672,7 +1914,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1721,7 +1974,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1770,7 +2034,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1882,7 +2157,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-geometry-001:node:source-image": "node-instance-1",
+          "lesson-geometry-001:node:recognition-note": "node-instance-2",
+          "lesson-geometry-001:node:clean-diagram": "node-instance-3",
+          "lesson-geometry-001:node:construction-motive": "node-instance-4",
+          "lesson-geometry-001:node:sss-table": "node-instance-5",
+          "lesson-geometry-001:node:congruence-result": "node-instance-6",
+          "lesson-geometry-001:node:angle-result": "node-instance-7",
+          "lesson-geometry-001:node:perpendicular-result": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,

@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:55:39.794Z",
+  "generated_at": "2026-07-27T15:05:25.666Z",
   "lesson_id": "lesson-english-v2-001",
   "fixture": "english",
   "viewport": {
@@ -67,7 +67,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -128,7 +133,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -189,7 +200,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -250,7 +268,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -300,7 +326,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -350,7 +385,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -411,7 +456,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -472,7 +528,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -522,7 +590,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -572,7 +653,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -632,7 +727,23 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11",
+          "lesson-english-v2-001:node:lesson-route": "node-instance-12",
+          "lesson-english-v2-001:node:takeaway": "node-instance-13"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -683,7 +794,11 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -732,7 +847,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -781,7 +901,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -853,7 +978,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -925,7 +1055,12 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -997,7 +1132,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1080,7 +1221,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1153,7 +1300,13 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1226,7 +1379,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1309,7 +1469,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1382,7 +1549,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1455,7 +1629,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1528,7 +1709,14 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1601,7 +1789,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1674,7 +1870,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1757,7 +1961,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1830,7 +2042,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1903,7 +2123,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -1976,7 +2204,15 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2049,7 +2285,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2111,7 +2356,16 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2173,7 +2427,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2235,7 +2499,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2297,7 +2571,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2359,7 +2643,17 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2421,7 +2715,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2483,7 +2788,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2545,7 +2861,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2628,7 +2955,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2701,7 +3039,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2774,7 +3123,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2847,7 +3207,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2920,7 +3291,18 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -2993,7 +3375,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3066,7 +3460,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3149,7 +3555,19 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3222,7 +3640,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3284,7 +3715,20 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3346,7 +3790,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3408,7 +3866,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3470,7 +3942,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3532,7 +4018,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3594,7 +4094,21 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3656,7 +4170,22 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11",
+          "lesson-english-v2-001:node:lesson-route": "node-instance-12"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3718,7 +4247,23 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11",
+          "lesson-english-v2-001:node:lesson-route": "node-instance-12",
+          "lesson-english-v2-001:node:takeaway": "node-instance-13"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3780,7 +4325,23 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11",
+          "lesson-english-v2-001:node:lesson-route": "node-instance-12",
+          "lesson-english-v2-001:node:takeaway": "node-instance-13"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,
@@ -3852,7 +4413,23 @@
         "label_node_overlaps": [],
         "duplicate_internal_connections": [],
         "image_load_failures": [],
-        "image_pending": []
+        "image_pending": [],
+        "node_instances": {
+          "lesson-english-v2-001:node:topic-card": "node-instance-1",
+          "lesson-english-v2-001:node:original-sentence": "node-instance-2",
+          "lesson-english-v2-001:node:clause-bracket": "node-instance-3",
+          "lesson-english-v2-001:node:main-clause": "node-instance-4",
+          "lesson-english-v2-001:node:main-role-table": "node-instance-5",
+          "lesson-english-v2-001:node:antecedent-note": "node-instance-6",
+          "lesson-english-v2-001:node:ordinary-clause": "node-instance-7",
+          "lesson-english-v2-001:node:relative-structure": "node-instance-8",
+          "lesson-english-v2-001:node:relative-role-table": "node-instance-9",
+          "lesson-english-v2-001:node:meaning-layers": "node-instance-10",
+          "lesson-english-v2-001:node:chinese-order": "node-instance-11",
+          "lesson-english-v2-001:node:lesson-route": "node-instance-12",
+          "lesson-english-v2-001:node:takeaway": "node-instance-13"
+        },
+        "remounted_nodes": []
       },
       "gate": {
         "passed": true,

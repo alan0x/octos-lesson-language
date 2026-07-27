@@ -16,6 +16,7 @@ npm run harness:dev
 - 逐操作、逐 Beat 和自动播放；
 - 0.5×—4× 播放速度；
 - Canonical Event → Player Core → Semantic BoardState 的唯一状态通路；
+- 按语义 ID 增量更新 node/group：已有卡片在 phase、narration、focus、emphasize 等操作之间保持同一 DOM 实例，书写动画只在 `board.create` 新建卡片时触发；
 - 语义布局、无限画布拖动、缩放和适应全课；
 - text、KaTeX math、note、table、plot、真实受控 image asset/region 和结构化 SVG diagram；
 - node、group、connection，以及 math、text、plot、image region、diagram fragment 的引用呈现；
@@ -37,7 +38,7 @@ Harness 不调用模型、不生成 OLL、不播放真实 TTS，也不复刻 `/l
 npm test
 ```
 
-自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、几何 SVG、所有卡片类型的横向与纵向裁切、暂停刷新恢复与控制台错误。流式文字卡片按真实 DOM 高度回流；结构化 SVG、plot 与带固有宽高比的图片分别采用匹配其渲染模型的尺寸策略。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。
+自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、节点挂载身份稳定、几何 SVG、所有卡片类型的横向与纵向裁切、暂停刷新恢复与控制台错误。流式文字卡片按真实 DOM 高度回流；结构化 SVG、plot 与带固有宽高比的图片分别采用匹配其渲染模型的尺寸策略。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。
 
 真实 Chrome 自动观测：
 
