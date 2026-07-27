@@ -2,6 +2,8 @@
 
 这是 OLL Canonical Profile 的独立浏览器播放实验室。它回答的是：一份已经通过 Schema、Normalizer、Reducer 和 headless conformance 的课程，是否能在真实浏览器里按课堂节奏逐步出现，并在刷新后继续。
 
+Harness 是 `octos-lesson-language/web-runtime` 的测试宿主，不再拥有自己的白板 Runtime。课程选择、调试时间线和 fixture catalog 留在这里；播放 session、布局、DOM/SVG 白板、样式与 Observer 来自 `packages/web-runtime`，确保未来 `/learn` 与实验室不会分叉成两套渲染实现。
+
 ## 运行
 
 ```bash

@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { reduceCanonicalEvents } from "../../../packages/core/src/index.js";
-import type { PlaybackCheckpoint } from "../../../packages/player-core/src/index.js";
+import { reduceCanonicalEvents } from "../../core/src/index.js";
+import type { PlaybackCheckpoint } from "../../player-core/src/index.js";
 import { BrowserLessonSession, parseCanonicalJsonl, type PlaybackStore } from "../src/runtime.js";
 
 class MemoryStore implements PlaybackStore {

@@ -1,18 +1,4 @@
-export interface ImageRegionBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface ResolvedImageAsset {
-  src: string;
-  intrinsic_width: number;
-  intrinsic_height: number;
-  regions: Record<string, ImageRegionBounds>;
-}
-
-export type ImageAssetResolver = (assetId: string) => ResolvedImageAsset | undefined;
+import type { ImageAssetResolver, ResolvedImageAsset } from "../../../packages/web-runtime/src/index.js";
 
 const assets: Record<string, ResolvedImageAsset> = {
   "asset-transpiration-control-001": {

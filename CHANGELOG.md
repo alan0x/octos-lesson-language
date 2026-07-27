@@ -13,6 +13,8 @@
 - 将 image region、diagram element/edge/region 纳入可寻址 fragment。
 - 允许强调 connection，并在 Semantic Reducer 中保留其强调状态。
 - 保存首轮真实模型 Authoring 生成基线、原始输出、验证结果和人工评分。
+- 提取可安装的 `octos-lesson-language/web-runtime` 浏览器模块，统一 Harness 与生产 `/learn` 将使用的播放 session、无限白板、样式和测试门禁。
+- 增加 `mountInfiniteBoard()` 宿主 API、独立 Runtime 测试命令、testing 子路径和可安装 tarball 清单。
 
 ### Fixed
 

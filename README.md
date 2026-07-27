@@ -45,6 +45,7 @@ schema/canonical/               Runtime Schema
 packages/core/                  TypeScript Schema/Validator/Normalizer/Reducer
 packages/eval-runner/           可恢复的自动模型评测 CLI
 packages/player-core/           DOM-free 播放状态机与 checkpoint 内核
+packages/web-runtime/           可复用的浏览器播放、DOM/SVG 白板与测试门禁
 packages/quality-runner/        版本化教学质量 judge、宿主门禁与审计产物
 apps/playback-harness/          独立浏览器播放实验室（DOM/SVG 无限白板）
 examples/                       完整课程示例
@@ -68,7 +69,7 @@ npm run check:examples
 npm run harness:dev
 ```
 
-然后访问 `http://127.0.0.1:4173`。Harness 直接读取七份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。
+然后访问 `http://127.0.0.1:4173`。Harness 直接读取七份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。Harness 本身只保留 fixture、控制和调试外壳，白板与浏览器播放能力来自同仓库的 `octos-lesson-language/web-runtime`。
 
 运行真实 Chrome 教学播放观测：
 
@@ -110,7 +111,7 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 
 几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。
 
-教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，并用真实 Chrome 自动验收 Canonical 事件的渐进呈现、布局、真实资源和恢复。四类视觉正向样板及三个 V1 负向探针已完成，结论见 `evals/teaching-playback/VISUAL-GATE-RESULT.md`；在语音和动画门通过前不直接绑定生产 `/learn`。
+教学质量 v0.2 对 21 份确定性抽样课程实现 21/21 可评分并通过门禁；已知缺陷校准集实现 1 个干净对照通过、4 个缺陷样本全部拒绝。独立 playback harness 已完成第一版，并用真实 Chrome 自动验收 Canonical 事件的渐进呈现、布局、真实资源和恢复。四类视觉正向样板及三个 V1 负向探针已完成，结论见 `evals/teaching-playback/VISUAL-GATE-RESULT.md`。浏览器播放与白板代码现已提取为 `packages/web-runtime`，下一门是让生产 `/learn` 使用同一 Runtime 播放固定 Canonical 课程；TTS 先采用 Beat 级粗粒度衔接，不要求毫秒同步。
 
 几何辅助线 V2 已作为第一份教学可理解性垂直切片：11 个 Beat 使用现有 OLL v0.1 完成“读题 → 连接 AD → 三组边逐行出现 → SSS → 角平分线 → 三步推出垂线 → 总结路线”。Reference Runtime 已补齐 diagram fragment emphasis、焦点镜头和只按可见内容测量卡片尺寸；逐 Beat 验收记录在 `examples/geometry-auxiliary-line-v2/ACCEPTANCE.md`。
 

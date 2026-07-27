@@ -1,9 +1,18 @@
 import type { CanonicalEvent } from "../../../packages/core/src/index.js";
-import "katex/dist/katex.min.css";
+import "../../../packages/web-runtime/styles.css";
+import {
+  BrowserLessonSession,
+  LocalPlaybackStore,
+  mountInfiniteBoard,
+  parseCanonicalJsonl,
+} from "../../../packages/web-runtime/src/index.js";
+import {
+  collectTeachingObservation,
+  evaluateTeachingObservation,
+  type TeachingFrameObservation,
+  type TeachingGateResult,
+} from "../../../packages/web-runtime/src/testing.js";
 import { resolveHarnessAsset } from "./assets.js";
-import { InfiniteBoardView } from "./board-view.js";
-import { BrowserLessonSession, LocalPlaybackStore, parseCanonicalJsonl } from "./runtime.js";
-import { collectTeachingObservation, evaluateTeachingObservation, type TeachingFrameObservation, type TeachingGateResult } from "./teaching-observer.js";
 
 const fixtures = [
   { id: "quadratic", label: "数学 · 二次函数配方法 V2", path: "/examples/quadratic-v2/lesson.canonical.jsonl" },
@@ -43,10 +52,8 @@ for (const fixture of fixtures) { const option = document.createElement("option"
 const restoredLessonId = localStorage.getItem(selectedLessonKey);
 lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId) ? requestedLessonId!
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
-const boardView = new InfiniteBoardView(
-  requireElement("#viewport"), requireElement("#world"), requireElement("#node-layer"), requireElement("#group-layer"),
-  requireElement<SVGSVGElement>("#connection-layer"), requireElement<SVGSVGElement>("#connection-label-layer"), requireElement("#pointer"), resolveHarnessAsset,
-);
+const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), resolveHarnessAsset);
+const boardView = mountedBoard.view;
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
 let events: CanonicalEvent[] = [];
@@ -126,7 +133,7 @@ const harnessApi: Window["__OLL_HARNESS__"] = window.__OLL_HARNESS__ = {
     const operation = session.currentOperation;
     if (!board || !operation) throw new Error("Teaching observation requires at least one playback operation");
     return collectTeachingObservation({
-      viewport: requireElement("#viewport"), world: requireElement("#world"), board, operation, cursor: session.cursor,
+      viewport: mountedBoard.elements.viewport, world: mountedBoard.elements.world, board, operation, cursor: session.cursor,
     });
   },
   evaluate: evaluateTeachingObservation,

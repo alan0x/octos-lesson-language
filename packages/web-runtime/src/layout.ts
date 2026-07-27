@@ -1,4 +1,4 @@
-import type { SemanticBoardState } from "../../../packages/core/src/index.js";
+import type { SemanticBoardState } from "../../core/src/index.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {

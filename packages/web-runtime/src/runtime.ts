@@ -1,5 +1,5 @@
-import type { CanonicalEvent } from "../../../packages/core/src/index.js";
-import { HeadlessLessonPlayer, type PlaybackCheckpoint, type PlaybackFrame, type PlaybackOperation, type PlaybackProjection } from "../../../packages/player-core/src/index.js";
+import type { CanonicalEvent } from "../../core/src/index.js";
+import { HeadlessLessonPlayer, type PlaybackCheckpoint, type PlaybackFrame, type PlaybackOperation, type PlaybackProjection } from "../../player-core/src/index.js";
 
 export interface PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined;

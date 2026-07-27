@@ -1,5 +1,5 @@
-import type { CanonicalAction, SemanticBoardState } from "../../../packages/core/src/index.js";
-import type { PlaybackOperation } from "../../../packages/player-core/src/index.js";
+import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
+import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
@@ -128,6 +128,22 @@ export interface DiagramConnectionGeometry {
   to: { x: number; y: number };
   label: string;
   labelPosition: { x: number; y: number; width: number };
+}
+
+export interface InfiniteBoardElements {
+  viewport: HTMLElement;
+  world: HTMLElement;
+  nodes: HTMLElement;
+  groups: HTMLElement;
+  connections: SVGSVGElement;
+  connectionLabels: SVGSVGElement;
+  pointer: HTMLElement;
+}
+
+export interface MountedInfiniteBoard {
+  view: InfiniteBoardView;
+  elements: InfiniteBoardElements;
+  destroy(): void;
 }
 
 export function diagramConnectionGeometry(content: Record<string, any>, connection: Record<string, any>): DiagramConnectionGeometry | undefined {
@@ -299,6 +315,11 @@ export class InfiniteBoardView {
   private readonly nodeContentSignatures = new Map<string, string>();
   private readonly groupElements = new Map<string, HTMLElement>();
   private nodeInstanceSequence = 0;
+  private readonly hostWindow: Window;
+  private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
+  private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
+  private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
+  private readonly handlePointerUp = (): void => this.onPointerUp();
 
   constructor(
     private readonly viewport: HTMLElement,
@@ -310,10 +331,13 @@ export class InfiniteBoardView {
     private readonly pointer: HTMLElement,
     private readonly resolveAsset: ImageAssetResolver = () => undefined,
   ) {
-    viewport.addEventListener("wheel", (event) => this.onWheel(event), { passive: false });
-    viewport.addEventListener("pointerdown", (event) => this.onPointerDown(event));
-    window.addEventListener("pointermove", (event) => this.onPointerMove(event));
-    window.addEventListener("pointerup", () => this.onPointerUp());
+    const hostWindow = viewport.ownerDocument.defaultView;
+    if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
+    this.hostWindow = hostWindow;
+    viewport.addEventListener("wheel", this.handleWheel, { passive: false });
+    viewport.addEventListener("pointerdown", this.handlePointerDown);
+    hostWindow.addEventListener("pointermove", this.handlePointerMove);
+    hostWindow.addEventListener("pointerup", this.handlePointerUp);
     this.transform();
   }
 
@@ -351,6 +375,15 @@ export class InfiniteBoardView {
   }
 
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
+
+  dispose(): void {
+    this.viewport.removeEventListener("wheel", this.handleWheel);
+    this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
+    this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
+    this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
+    this.dragging = undefined;
+    this.viewport.classList.remove("dragging");
+  }
 
   private clearBoard(): void {
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
@@ -528,4 +561,51 @@ export class InfiniteBoardView {
   private onPointerDown(event: PointerEvent): void { if ((event.target as HTMLElement).closest("button")) return; this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
   private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }
   private onPointerUp(): void { this.dragging = undefined; this.viewport.classList.remove("dragging"); }
+}
+
+export function mountInfiniteBoard(
+  viewport: HTMLElement,
+  resolveAsset: ImageAssetResolver = () => undefined,
+): MountedInfiniteBoard {
+  if (viewport.querySelector(":scope > [data-oll-board-runtime-world]")) {
+    throw new Error("This viewport already contains a mounted OLL board Runtime");
+  }
+  const document = viewport.ownerDocument;
+  const createLayer = (className: string): HTMLDivElement => {
+    const element = document.createElement("div");
+    element.className = className;
+    return element;
+  };
+  const createSvgLayer = (className: string): SVGSVGElement => {
+    const element = document.createElementNS(SVG_NS, "svg");
+    element.setAttribute("class", className);
+    return element;
+  };
+
+  const world = createLayer("world");
+  world.dataset.ollBoardRuntimeWorld = "";
+  const connections = createSvgLayer("connection-layer");
+  const groups = createLayer("layer group-layer");
+  const nodes = createLayer("layer node-layer");
+  const connectionLabels = createSvgLayer("connection-label-layer");
+  const pointer = createLayer("teacher-pointer");
+  pointer.hidden = true;
+  pointer.textContent = "●";
+  world.append(connections, groups, nodes, connectionLabels, pointer);
+  const addedViewportClass = !viewport.classList.contains("viewport");
+  viewport.classList.add("viewport", "oll-board-runtime");
+  viewport.prepend(world);
+
+  const elements: InfiniteBoardElements = { viewport, world, nodes, groups, connections, connectionLabels, pointer };
+  const view = new InfiniteBoardView(viewport, world, nodes, groups, connections, connectionLabels, pointer, resolveAsset);
+  return {
+    view,
+    elements,
+    destroy() {
+      view.dispose();
+      world.remove();
+      viewport.classList.remove("oll-board-runtime");
+      if (addedViewportClass) viewport.classList.remove("viewport");
+    },
+  };
 }

@@ -1,5 +1,5 @@
-import type { CanonicalAction, SemanticBoardState } from "../../../packages/core/src/index.js";
-import type { PlaybackOperation } from "../../../packages/player-core/src/index.js";
+import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
+import type { PlaybackOperation } from "../../player-core/src/index.js";
 
 export interface TeachingRectObservation {
   id: string;
