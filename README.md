@@ -44,6 +44,7 @@ schema/authoring/               模型生成 Schema
 schema/canonical/               Runtime Schema
 packages/core/                  TypeScript Schema/Validator/Normalizer/Reducer
 packages/eval-runner/           可恢复的自动模型评测 CLI
+packages/player-core/           DOM-free 播放状态机与 checkpoint 内核
 examples/                       完整课程示例
 fixtures/                       非法和恢复测试输入
 evals/                          模型可生成性评测
@@ -85,4 +86,4 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 
 三份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试。
 
-几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。首轮 3 个案例模型基线已经完成；当前里程碑是 21 个未见跨学科案例、每题重复 5 次的 first-pass 可播放率实验。在拿到该结果前不接入 `/learn`。
+几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。当前下一门是独立教学质量抽样；通过前不接入 `/learn`。

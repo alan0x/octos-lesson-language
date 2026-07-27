@@ -15,6 +15,8 @@
 
 Authoring 边界修订后的 25 次 fresh 定向确认：[`results/2026-07-28/openai-codex-gpt-5.6-sol-boundary-v0.1/REPORT.md`](results/2026-07-28/openai-codex-gpt-5.6-sol-boundary-v0.1/REPORT.md)。结果为 25 / 25 Core-executable，但不能替代原 21-case 全量基线。
 
+121 堂真实 Canonical Lesson 的 Headless Playback Conformance：[`playback-conformance/REPORT.md`](playback-conformance/REPORT.md)。结果为 121 / 121，并完成 363 条 checkpoint 恢复路径验证；该结果仍不包含浏览器视觉和教学质量。
+
 ## 自动 runner
 
 `packages/eval-runner` 直接复用 `packages/core` 的 Schema、Validator、Normalizer 和 Reducer。正式 unseen suite 包含 21 个跨学科案例：
