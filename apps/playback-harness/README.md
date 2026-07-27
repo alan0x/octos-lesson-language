@@ -17,8 +17,9 @@ npm run harness:dev
 - 0.5×—4× 播放速度；
 - Canonical Event → Player Core → Semantic BoardState 的唯一状态通路；
 - 语义布局、无限画布拖动、缩放和适应全课；
-- text、math、note、table、plot、image region 和结构化 SVG diagram；
+- text、KaTeX math、note、table、plot、image region 和结构化 SVG diagram；
 - node、group、connection 与 diagram fragment 的引用呈现；
+- 卡片边缘连接、窄间距绕行、标签背景和标签冲突避让；
 - localStorage checkpoint 与所选课程的刷新恢复；
 - 完整操作时间线和当前 step / beat / phase / revision 调试信息。
 
@@ -27,6 +28,8 @@ npm run harness:dev
 ## 边界
 
 Harness 不调用模型、不生成 OLL、不播放真实 TTS，也不复刻 `/learn` 的产品外壳。图片暂用带 region 标记的受控占位视图；语音阶段目前以 narration 字幕和时钟代替。下一轮视觉验收会把真实 asset loader、语音时间轴和更完整的板书动画接进同一个 Player Core。
+
+低优先后续项：课程完成后允许学生拖动白板节点。手动位置应作为每个 learner/session 的 layout override 单独持久化，不修改 Canonical OLL 或 Semantic BoardState；节点移动时需要重新计算 group 边界、connection 路径与画布 bounds。播放期间先保持自动布局，避免学生拖动与老师渐进板书争夺位置。
 
 ## 验证
 

@@ -1,5 +1,7 @@
 import type { CanonicalAction, SemanticBoardState } from "../../../packages/core/src/index.js";
 import type { PlaybackOperation } from "../../../packages/player-core/src/index.js";
+import katex from "katex";
+import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type Rect } from "./layout.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -15,6 +17,25 @@ function appendText(parent: HTMLElement, value: string, className?: string): HTM
   element.textContent = value;
   parent.append(element);
   return element;
+}
+
+export function mathSource(content: Record<string, any>): string {
+  const raw = Array.isArray(content.fragments)
+    ? content.fragments.map((fragment: Record<string, any>) => text(fragment.latex || fragment.text)).filter(Boolean).join(" ")
+    : text(content.latex || content.expression || content.statement || content.rule || content.derivation || content.result || content.text);
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("$$") && trimmed.endsWith("$$")) return trimmed.slice(2, -2).trim();
+  if (trimmed.startsWith("\\[") && trimmed.endsWith("\\]")) return trimmed.slice(2, -2).trim();
+  if (trimmed.startsWith("$") && trimmed.endsWith("$")) return trimmed.slice(1, -1).trim();
+  return trimmed;
+}
+
+function renderMath(parent: HTMLElement, content: Record<string, any>): void {
+  const source = mathSource(content);
+  const element = document.createElement("div"); element.className = "math-render";
+  if (!source) { element.textContent = "（空公式）"; parent.append(element); return; }
+  katex.render(source, element, { displayMode: true, throwOnError: false, strict: "ignore", trust: false, output: "htmlAndMathml" });
+  parent.append(element);
 }
 
 function plot(parent: HTMLElement, content: Record<string, any>): void {
@@ -86,6 +107,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "plot") { plot(parent, content); return; }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, content); return; }
+  if (node.kind === "math") { renderMath(parent, content); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
     appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
     const regions = Array.isArray(content.regions) ? content.regions : [];
@@ -136,8 +158,6 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
 }
 
 function targetId(target: Record<string, any> | undefined): string | undefined { return target?.node_id ?? target?.group_id ?? target?.connection_id; }
-function center(rect: Rect): { x: number; y: number } { return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 }; }
-
 function connectionTargetRect(board: SemanticBoardState, layout: BoardLayout, target: Record<string, any>): Rect | undefined {
   const nodeId = target?.node_id;
   const fragmentId = target?.fragment_id;
@@ -169,6 +189,7 @@ export class InfiniteBoardView {
     private readonly nodes: HTMLElement,
     private readonly groups: HTMLElement,
     private readonly connections: SVGSVGElement,
+    private readonly connectionLabels: SVGSVGElement,
     private readonly pointer: HTMLElement,
   ) {
     viewport.addEventListener("wheel", (event) => this.onWheel(event), { passive: false });
@@ -181,7 +202,7 @@ export class InfiniteBoardView {
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
     this.board = board ?? undefined;
     this.operation = operation;
-    this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.pointer.hidden = true;
+    this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren(); this.pointer.hidden = true;
     if (!board) return;
     const layout = this.layout = computeBoardLayout(board);
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
@@ -237,13 +258,21 @@ export class InfiniteBoardView {
     const defs = document.createElementNS(SVG_NS, "defs");
     const marker = document.createElementNS(SVG_NS, "marker"); marker.setAttribute("id", "arrowhead"); marker.setAttribute("markerWidth", "8"); marker.setAttribute("markerHeight", "8"); marker.setAttribute("refX", "7"); marker.setAttribute("refY", "4"); marker.setAttribute("orient", "auto");
     const triangle = document.createElementNS(SVG_NS, "path"); triangle.setAttribute("d", "M0,0 L8,4 L0,8 Z"); triangle.setAttribute("fill", "#6e8d86"); marker.append(triangle); defs.append(marker); this.connections.append(defs);
+    const occupiedLabels: Rect[] = [];
     for (const connection of Object.values(board.connections)) {
       const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
-      const from = center(fromRect); const to = center(toRect); const middleX = (from.x + to.x) / 2;
-      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.setAttribute("d", `M ${from.x} ${from.y} C ${middleX} ${from.y}, ${middleX} ${to.y}, ${to.x} ${to.y}`); this.connections.append(path);
-      if (connection.label || connection.relation) {
-        const label = document.createElementNS(SVG_NS, "text"); label.classList.add("connection-label"); label.setAttribute("x", String(middleX)); label.setAttribute("y", String((from.y + to.y) / 2 - 7)); label.setAttribute("text-anchor", "middle"); label.textContent = text(connection.label || connection.relation); this.connections.append(label);
+      const labelText = text(connection.label || connection.relation);
+      const internalFragments = connection.from.node_id === connection.to.node_id && Boolean(connection.from.fragment_id && connection.to.fragment_id);
+      const route = labelText
+        ? stackConnectionLabel(computeConnectionRoute(fromRect, toRect, labelText, internalFragments), occupiedLabels)
+        : computeConnectionRoute(fromRect, toRect, labelText, internalFragments);
+      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);
+      if (labelText) {
+        const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("connection-label-badge"); badge.dataset.id = connection.id;
+        const background = document.createElementNS(SVG_NS, "rect"); background.setAttribute("x", String(route.label.x - route.label.width / 2)); background.setAttribute("y", String(route.label.y - route.label.height / 2)); background.setAttribute("width", String(route.label.width)); background.setAttribute("height", String(route.label.height)); background.setAttribute("rx", "9");
+        const label = document.createElementNS(SVG_NS, "text"); label.classList.add("connection-label"); label.setAttribute("x", String(route.label.x)); label.setAttribute("y", String(route.label.y)); label.setAttribute("text-anchor", "middle"); label.setAttribute("dominant-baseline", "middle"); label.textContent = labelText;
+        badge.append(background, label); this.connectionLabels.append(badge);
       }
     }
   }

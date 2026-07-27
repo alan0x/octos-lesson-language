@@ -24,7 +24,7 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     return { width: Math.min(600, Math.max(300, columns * 100)), height: 90 + rows * 34 };
   }
   if (kind === "diagram") return { width: Math.min(480, Math.max(280, length * 3.2)), height: Math.min(260, 105 + Math.ceil(length / 60) * 28) };
-  if (kind === "math") return { width: Math.min(540, Math.max(220, length * 10.5)), height: length > 65 ? 128 : 92 };
+  if (kind === "math") return { width: Math.min(680, Math.max(240, length * 9.2)), height: length > 65 ? 136 : 96 };
   return { width: Math.min(440, Math.max(220, length * 5.4)), height: Math.min(260, 82 + Math.ceil(length / 48) * 24) };
 }
 

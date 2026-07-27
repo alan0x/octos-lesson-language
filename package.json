@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json && npm run build:harness",
-    "build:harness": "esbuild apps/playback-harness/src/app.ts --bundle --format=esm --platform=browser --target=es2022 --sourcemap --outfile=dist/apps/playback-harness/browser/app.js",
+    "build:harness": "esbuild apps/playback-harness/src/app.ts --bundle --format=esm --platform=browser --target=es2022 --sourcemap --loader:.woff2=file --loader:.woff=file --loader:.ttf=file --asset-names=assets/[name]-[hash] --outfile=dist/apps/playback-harness/browser/app.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js dist/packages/player-core/test/*.test.js dist/packages/quality-runner/test/*.test.js dist/apps/playback-harness/test/*.test.js",
     "check:examples": "npm run build && node dist/packages/core/src/check-examples.js",
@@ -35,6 +35,7 @@
     }
   },
   "dependencies": {
-    "ajv": "^8.20.0"
+    "ajv": "^8.20.0",
+    "katex": "^0.18.1"
   }
 }

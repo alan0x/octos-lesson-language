@@ -1,4 +1,5 @@
 import type { CanonicalEvent } from "../../../packages/core/src/index.js";
+import "katex/dist/katex.min.css";
 import { InfiniteBoardView } from "./board-view.js";
 import { BrowserLessonSession, LocalPlaybackStore, parseCanonicalJsonl } from "./runtime.js";
 
@@ -21,7 +22,7 @@ const restoredLessonId = localStorage.getItem(selectedLessonKey);
 lessonSelect.value = fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
 const boardView = new InfiniteBoardView(
   requireElement("#viewport"), requireElement("#world"), requireElement("#node-layer"), requireElement("#group-layer"),
-  requireElement<SVGSVGElement>("#connection-layer"), requireElement("#pointer"),
+  requireElement<SVGSVGElement>("#connection-layer"), requireElement<SVGSVGElement>("#connection-label-layer"), requireElement("#pointer"),
 );
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
