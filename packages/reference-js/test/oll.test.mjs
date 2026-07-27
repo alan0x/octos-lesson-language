@@ -146,3 +146,25 @@ test("authoring schema declares each action payload required by the validator", 
     expression: ["expression"],
   });
 });
+
+test("authoring schema declares close focus as local aliases", () => {
+  assert.equal(authoringSchema.properties.close.properties.focus.minItems, 1);
+  assert.equal(authoringSchema.properties.close.properties.focus.items.$ref, "#/$defs/alias");
+});
+
+test("focus actions and lesson close can target a connection", () => {
+  const valid = structuredClone(source);
+  valid.steps[1].beats[1].actions.push({
+    do: "focus",
+    targets: ["half-to-square"],
+    intent: "show_construction_relation",
+  });
+  valid.close.focus = ["half-to-square"];
+
+  validateAuthoringLesson(valid);
+  const events = normalizeAuthoringLesson(valid, host);
+  const connectionId = `${host.lessonId}:connection:half-to-square`;
+  const focusAction = events[2].step.beats[1].stage.during_speech.at(-1);
+  assert.deepEqual(focusAction.focus.targets, [connectionId]);
+  assert.deepEqual(events.at(-1).result.suggested_focus, [connectionId]);
+});

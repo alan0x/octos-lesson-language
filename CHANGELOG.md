@@ -16,3 +16,6 @@
 ### Fixed
 
 - Align the Authoring Schema action payload requirements with the reference validator. In particular, `connect` now declares its stable local alias as required.
+- Document reference types and the required Session resource-to-local-fragment mapping in the model Authoring contract.
+- Align `close.focus` with the validator: it is a non-empty list of existing visual-object aliases, not free-form summary text.
+- Allow focus actions and lesson-close focus to target visible connections; connections remain invalid as layout anchors or group members.

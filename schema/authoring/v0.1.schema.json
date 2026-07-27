@@ -39,7 +39,11 @@
       "additionalProperties": false,
       "properties": {
         "summary": {"type": "string"},
-        "focus": {"type": "array", "items": {"type": "string"}}
+        "focus": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/alias"}
+        }
       }
     }
   },

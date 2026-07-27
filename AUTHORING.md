@@ -51,6 +51,8 @@ Normalizer 将合法 Authoring Lesson 转换为 Canonical Lesson Events；前端
 
 v0.1 `mode` 固定为 `explain`，不能输出等待学生回答的控制动作。
 
+`close.summary` 是结束语义摘要；`close.focus` 不是摘要文字列表，而是结束时保留在视觉焦点中的、已经创建的 node/group/connection 局部别名列表。通常先创建一个总结 group，再在 `close.focus` 中引用它。
+
 ## 4. 局部别名
 
 `key`、`as` 和引用使用 Lesson 内局部别名：
@@ -76,6 +78,58 @@ fragments, curves, points, guides, regions, elements, edges
 ```
 
 因此可以引用 `source-image#midpoint-marks`、`clean-diagram#point-a`、`clean-diagram#side-ab` 或 `parabola#vertex`。diagram edge 的 `from`/`to` 和 region 的 `members` 必须引用同一 diagram 中已经声明的 element。
+
+### 4.1 引用具有类型
+
+局部别名不是可以互换的字符串。动作会创建三种对象：
+
+| 创建动作 | 得到的类型 |
+| --- | --- |
+| `write as` | node；其可寻址内容为 node fragment |
+| `connect as` | connection |
+| `group as` | group |
+
+使用引用时必须遵守：
+
+| 字段 | 允许的引用类型 |
+| --- | --- |
+| `place.anchor` | node 或 group |
+| `emphasize.target`、`point.target` | node、node fragment 或 connection |
+| `group.members[]` | node 或 group |
+| `focus.targets[]` | node、group 或 connection |
+| `close.focus[]` | 已经创建的 node、group 或 connection |
+
+因此 connection 可以被强调、指向或聚焦，但不能作为布局 anchor 或 group member。需要在 connection 下方继续板书时，应锚定连接两端之一。
+
+### 4.2 Session 资源先映射为局部 fragment
+
+Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是白板局部别名，不能直接写进 `target`、`from`、`to`、`anchor`、`members` 或 `targets`。
+
+先用 `write kind: image` 创建 node，并把需要使用的受控区域映射成局部 fragment：
+
+```json
+{
+  "do": "write",
+  "as": "source-image",
+  "kind": "image",
+  "role": "problem",
+  "content": {
+    "asset_id": "asset-geometry-001",
+    "alt": "等腰三角形 ABC",
+    "regions": [
+      {
+        "as": "point-a",
+        "source_region": "asset-geometry-001#region-a",
+        "label": "A",
+        "confidence": "high"
+      }
+    ]
+  },
+  "place": {"relation": "new_region", "region_role": "lesson_origin"}
+}
+```
+
+后续只引用 `source-image#point-a`。`source_region` 必须逐字来自 Session Context；模型不能自己发明区域，也不能输出像素坐标。
 
 ## 5. 课程结构
 
@@ -185,7 +239,7 @@ v0.1 关系：
 new_region, below, above, left_of, right_of, near, inside, overlay
 ```
 
-除 `new_region` 外必须引用已经存在的 anchor。模型不输出坐标。
+除 `new_region` 外必须引用已经存在的 node 或 group 作为 anchor。模型不输出坐标。
 
 ## 9. 确定性规范化
 
@@ -207,6 +261,6 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 - `image`、`diagram` 和 `table` 已在几何示例中完成第一轮表达验证，但还没有前端视觉 Runtime 证明；
 - `shape` 和复杂科学流程图仍待完整示例；
 - 当前完整示例覆盖数学、几何图片和英语文本，尚未覆盖同板追问；
-- 模型可生成性尚未测试；
+- 已开始模型可生成性评测；first-pass 结果必须与教学质量分开报告；
 - Authoring Schema 仍可能过于冗长；
 - 任何无法由真实课程解释的字段都应删除，而不是为了完整感保留。

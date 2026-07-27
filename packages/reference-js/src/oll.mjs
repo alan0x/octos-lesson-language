@@ -295,7 +295,7 @@ export function validateAuthoringLesson(document, resourceContext = null) {
         if (action.do === "focus") {
           requireArray(action.targets, `${actionPath}/targets`);
           for (let index = 0; index < action.targets.length; index += 1) {
-            resolveLocal(registry, action.targets[index], `${actionPath}/targets/${index}`, ["node", "group"]);
+            resolveLocal(registry, action.targets[index], `${actionPath}/targets/${index}`, ["node", "group", "connection"]);
           }
         }
       });
@@ -304,7 +304,7 @@ export function validateAuthoringLesson(document, resourceContext = null) {
 
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
-      resolveLocal(registry, document.close.focus[index], `/close/focus/${index}`, ["node", "group"]);
+      resolveLocal(registry, document.close.focus[index], `/close/focus/${index}`, ["node", "group", "connection"]);
     }
   }
 
@@ -442,7 +442,7 @@ function normalizeAction(action, context) {
       focus: {
         targets: action.targets.map((target) => {
           const resolved = canonicalTarget(registry, target);
-          return resolved.node_id ?? resolved.group_id;
+          return resolved.node_id ?? resolved.group_id ?? resolved.connection_id;
         }),
         intent: action.intent,
       },
@@ -516,7 +516,7 @@ export function normalizeAuthoringLesson(document, host) {
 
   const focus = (document.close?.focus ?? []).map((target) => {
     const resolved = canonicalTarget(registry, target);
-    return resolved.node_id ?? resolved.group_id;
+    return resolved.node_id ?? resolved.group_id ?? resolved.connection_id;
   });
   events.push({
     dsl: "octos.lesson",
