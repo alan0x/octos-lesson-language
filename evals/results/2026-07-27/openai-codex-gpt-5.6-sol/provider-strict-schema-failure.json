@@ -1,0 +1,11 @@
+{
+  "provider": "openai",
+  "client": "OpenAI Codex CLI 0.146.0-alpha.3.1",
+  "model": "gpt-5.6-sol",
+  "mode": "strict_response_schema",
+  "status": "failed_before_generation",
+  "error_code": "invalid_json_schema",
+  "error": "required must include every property key; the provider reported the optional beat property 'say' as missing from required",
+  "interpretation": "This is provider response-format incompatibility, not an OLL parse failure or a model generation failure.",
+  "decision": "Keep the normative OLL JSON Schema provider-neutral. This evaluation embeds the schema in the prompt and validates the untouched raw output locally. A provider adapter may be added separately."
+}

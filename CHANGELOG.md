@@ -12,6 +12,7 @@
 - 增加 example manifest 和统一 golden 生成/检查流程。
 - 将 image region、diagram element/edge/region 纳入可寻址 fragment。
 - 允许强调 connection，并在 Semantic Reducer 中保留其强调状态。
+- 保存首轮真实模型 Authoring 生成基线、原始输出、验证结果和人工评分。
 
 ### Fixed
 

@@ -1,0 +1,372 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "把二次函数化为顶点式",
+    "goals": [
+      "用配方法把 y=x²+6x+5 化成顶点式",
+      "从顶点式读出顶点和对称轴",
+      "说明函数图像的平移变化"
+    ],
+    "adaptation": {
+      "strategies": [
+        "把常数项的变化逐行显式写出",
+        "结合顶点和平移解释代数结果"
+      ],
+      "context_refs": [
+        "learner.strengths.function-graph",
+        "learner.support-needs.constant-term"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "set-goal",
+      "purpose": "明确原式、目标形式和配方法的核心任务。",
+      "beats": [
+        {
+          "key": "show-original",
+          "say": "我们从原式 y=x²+6x+5 出发，要把它化成顶点式 y=(x-h)²+k。这样就能直接看出顶点、对称轴和图像的平移。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "original-form",
+              "kind": "math",
+              "role": "原式",
+              "content": {
+                "text": "y=x²+6x+5"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "derivation",
+                "align": "start"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "target-form",
+              "kind": "math",
+              "role": "目标形式",
+              "content": {
+                "text": "目标：y=(x-h)²+k"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "original-form",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        },
+        {
+          "key": "identify-half",
+          "say": "配平方时，先看一次项 6x。把一次项系数 6 取一半，得到 3；再平方，得到 9。这个 9 正是组成完全平方所需要的常数。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "half-coefficient",
+              "kind": "math",
+              "role": "取一次项系数的一半",
+              "content": {
+                "text": "6÷2=3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "original-form",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "square-half",
+              "kind": "math",
+              "role": "把一半平方",
+              "content": {
+                "text": "3²=9"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "half-coefficient",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "from": "half-coefficient",
+              "to": "square-half",
+              "relation": "先取一半，再平方",
+              "label": "得到配平方所需的9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "complete-square",
+      "purpose": "显式加9减9并完成等价的代数变形。",
+      "beats": [
+        {
+          "key": "add-and-subtract-nine",
+          "say": "现在在式子里同时加 9、减 9：y=x²+6x+9-9+5。加减同一个数不会改变原式的值；把减 9 明确保留下来，也能避免遗漏常数项。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "balanced-nine",
+              "kind": "math",
+              "role": "显式加9减9",
+              "content": {
+                "text": "y=x²+6x+9-9+5"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "half-coefficient",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "balanced-nine",
+              "emphasis": "突出 +9 与 -9",
+              "intent": "显示等量补偿并防止遗漏常数项"
+            }
+          ]
+        },
+        {
+          "key": "form-perfect-square",
+          "say": "前三项 x²+6x+9 正好是完全平方 (x+3)²，所以原式变为 y=(x+3)²-9+5。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "perfect-square-line",
+              "kind": "math",
+              "role": "组成完全平方",
+              "content": {
+                "text": "y=(x+3)²-9+5"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "balanced-nine",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "from": "balanced-nine",
+              "to": "perfect-square-line",
+              "relation": "x²+6x+9=(x+3)²",
+              "label": "合成完全平方"
+            }
+          ]
+        },
+        {
+          "key": "combine-constants",
+          "say": "最后合并常数项：-9+5=-4，于是得到顶点式 y=(x+3)²-4。这里的 -4 来自刚才完整保留的 -9 和原来的 +5。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "constant-combination",
+              "kind": "math",
+              "role": "合并常数项",
+              "content": {
+                "text": "-9+5=-4"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "perfect-square-line",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "vertex-form",
+              "kind": "math",
+              "role": "顶点式",
+              "content": {
+                "text": "y=(x+3)²-4"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "perfect-square-line",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "vertex-form",
+              "emphasis": "突出最终顶点式",
+              "intent": "确认配方结果"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "interpret-graph",
+      "purpose": "从顶点式确定顶点、对称轴和图像平移。",
+      "beats": [
+        {
+          "key": "read-vertex",
+          "say": "把 y=(x+3)²-4 与 y=(x-h)²+k 对照：x+3=x-(-3)，所以 h=-3；同时 k=-4。因此顶点是 (-3,-4)，对称轴是 x=-3。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "vertex-reading",
+              "kind": "math",
+              "role": "顶点",
+              "content": {
+                "text": "顶点：(-3,-4)"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "vertex-form",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "symmetry-axis",
+              "kind": "math",
+              "role": "对称轴",
+              "content": {
+                "text": "对称轴：x=-3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "vertex-reading",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "from": "vertex-form",
+              "to": "vertex-reading",
+              "relation": "与 y=(x-h)²+k 对照",
+              "label": "h=-3，k=-4"
+            }
+          ]
+        },
+        {
+          "key": "describe-translation",
+          "say": "以基本抛物线 y=x² 为参照，括号里的 x+3 表示图像向左移动 3 个单位，外面的 -4 表示再向下移动 4 个单位。开口方向和宽窄不变，顶点便从 (0,0) 移到 (-3,-4)。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "base-parabola",
+              "kind": "math",
+              "role": "基本抛物线",
+              "content": {
+                "text": "y=x²，顶点 (0,0)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "vertex-form",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "horizontal-shift",
+              "kind": "note",
+              "role": "水平平移",
+              "content": {
+                "text": "x+3：向左移动3个单位"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "base-parabola",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "vertical-shift",
+              "kind": "note",
+              "role": "竖直平移",
+              "content": {
+                "text": "-4：向下移动4个单位"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "horizontal-shift",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "from": "base-parabola",
+              "to": "vertex-reading",
+              "relation": "左移3，再下移4",
+              "label": "(0,0) → (-3,-4)"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "shape-invariance",
+              "kind": "note",
+              "role": "图像形状",
+              "content": {
+                "text": "开口向上，宽窄不变"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "vertical-shift",
+                "align": "start",
+                "gap": "normal"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "把一次项系数6取一半得3，再平方得9；在原式中显式加9减9，组成 (x+3)²，并合并常数得到 y=(x+3)²-4。图像是 y=x² 左移3个单位、下移4个单位后的抛物线。",
+    "focus": [
+      "顶点式：y=(x+3)²-4",
+      "顶点：(-3,-4)",
+      "对称轴：x=-3",
+      "配方时同时写出 +9 和 -9，避免改变原式或遗漏常数项"
+    ]
+  }
+}

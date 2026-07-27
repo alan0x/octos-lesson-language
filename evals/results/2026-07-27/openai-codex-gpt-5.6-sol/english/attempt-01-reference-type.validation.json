@@ -1,0 +1,12 @@
+{
+  "input": "attempt-01-reference-type.raw.json",
+  "parsed": true,
+  "valid": false,
+  "normalized": false,
+  "error": {
+    "name": "OllError",
+    "code": "OLL_INVALID_REFERENCE",
+    "path": "/steps/4/beats/1/actions/0/place/anchor",
+    "message": "Alias 'meaning-link' has type 'connection'"
+  }
+}

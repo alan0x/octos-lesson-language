@@ -1,0 +1,17 @@
+{
+  "input": "attempt-03-final-contract.raw.json",
+  "parsed": true,
+  "valid": true,
+  "normalized": true,
+  "eventCount": 6,
+  "finalRevision": 4,
+  "nodeCount": 18,
+  "connectionCount": 3,
+  "groupCount": 4,
+  "finalFocus": [
+    "eval-english-contract-v3-001:node:main-clause-node",
+    "eval-english-contract-v3-001:connection:clause-modifies-book",
+    "eval-english-contract-v3-001:group:clause-structure",
+    "eval-english-contract-v3-001:node:full-translation"
+  ]
+}

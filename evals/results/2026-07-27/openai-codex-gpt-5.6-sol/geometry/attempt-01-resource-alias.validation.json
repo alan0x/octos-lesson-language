@@ -1,0 +1,12 @@
+{
+  "input": "attempt-01-resource-alias.raw.json",
+  "parsed": true,
+  "valid": false,
+  "normalized": false,
+  "error": {
+    "name": "OllError",
+    "code": "OLL_REFERENCE_NOT_FOUND",
+    "path": "/steps/0/beats/0/actions/1/targets/0",
+    "message": "Alias 'asset-geometry-001' is not defined before use"
+  }
+}

@@ -1,0 +1,559 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "分析定语从句：The book that you gave me was fascinating.",
+    "goals": [
+      "把原句分成主句成分和定语从句",
+      "识别句子主干 The book was fascinating",
+      "理解 that you gave me 修饰 book",
+      "分析从句内部的主语、谓语和宾语",
+      "准确理解整句话的中文含义"
+    ]
+  },
+  "steps": [
+    {
+      "key": "segment-sentence",
+      "purpose": "先呈现原句，再通过文字标签和分组明确句子分片。",
+      "beats": [
+        {
+          "key": "show-original",
+          "say": "先看完整句子：The book that you gave me was fascinating.",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "original-sentence",
+              "kind": "text",
+              "role": "source-sentence",
+              "content": {
+                "text": "The book that you gave me was fascinating."
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main-board",
+                "align": "center"
+              }
+            }
+          ]
+        },
+        {
+          "key": "show-segments",
+          "say": "可以把它分成三段：The book，that you gave me，was fascinating。中间的 that you gave me 插在主句的主语和谓语之间。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "segment-book",
+              "kind": "text",
+              "role": "sentence-segment",
+              "content": {
+                "text": "The book",
+                "label": "被修饰的名词短语"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "original-sentence",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "segment-clause",
+              "kind": "text",
+              "role": "sentence-segment",
+              "content": {
+                "text": "that you gave me",
+                "label": "定语从句"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "segment-book",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "segment-predicate",
+              "kind": "text",
+              "role": "sentence-segment",
+              "content": {
+                "text": "was fascinating",
+                "label": "主句谓语部分"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "segment-clause",
+                "align": "center",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "sentence-parts",
+              "role": "segmentation",
+              "label": "原句分片",
+              "members": [
+                "segment-book",
+                "segment-clause",
+                "segment-predicate"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "find-main-clause",
+      "purpose": "暂时移开定语从句，显出完整的主句主干。",
+      "beats": [
+        {
+          "key": "extract-main",
+          "say": "先暂时拿掉中间的定语从句 that you gave me，剩下的主干是 The book was fascinating。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "main-clause",
+              "kind": "text",
+              "role": "main-clause",
+              "content": {
+                "text": "The book was fascinating.",
+                "label": "句子主干"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "sentence-parts",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "main-clause",
+              "emphasis": "用边框和文字标签“句子主干”突出，不只依靠颜色"
+            }
+          ]
+        },
+        {
+          "key": "explain-main",
+          "say": "在主干中，The book 是主语，指“这本书”；was fascinating 是谓语部分，表示“很吸引人”或“非常有趣”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "main-subject",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "主语：The book（这本书）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "main-clause",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "main-predicate",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "谓语部分：was fascinating（很吸引人／非常有趣）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "main-subject",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "main-analysis",
+              "role": "main-clause-analysis",
+              "label": "主干结构",
+              "members": [
+                "main-clause",
+                "main-subject",
+                "main-predicate"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-modifier",
+      "purpose": "说明定语从句与先行词 book 的修饰关系。",
+      "beats": [
+        {
+          "key": "identify-antecedent",
+          "say": "that you gave me 是一个定语从句，它修饰前面的名词 book，说明这里说的是哪一本书。book 叫作先行词。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "antecedent",
+              "kind": "text",
+              "role": "antecedent",
+              "content": {
+                "text": "book",
+                "label": "先行词：被定语从句修饰的名词"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "main-analysis",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "relative-clause",
+              "kind": "text",
+              "role": "relative-clause",
+              "content": {
+                "text": "that you gave me",
+                "label": "定语从句：说明是哪一本书"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "antecedent",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "modifier-link",
+              "from": "relative-clause",
+              "to": "antecedent",
+              "relation": "修饰",
+              "label": "that you gave me 修饰 book"
+            }
+          ]
+        },
+        {
+          "key": "explain-that",
+          "say": "that 是关系代词。它一方面把定语从句连接到 book，另一方面在从句内部代替 book，充当 gave 的直接宾语。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "that-function",
+              "kind": "note",
+              "role": "relative-pronoun-explanation",
+              "content": {
+                "text": "that：连接从句与 book；在从句中代替 book，并作 gave 的直接宾语"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "relative-clause",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "that-book-link",
+              "from": "that-function",
+              "to": "antecedent",
+              "relation": "指代",
+              "label": "that 指代 book"
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "that-function",
+              "emphasis": "加粗“直接宾语”并保留文字说明"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "analyze-inner-clause",
+      "purpose": "逐项分析定语从句内部的主语、谓语、直接宾语和间接宾语。",
+      "beats": [
+        {
+          "key": "restore-order",
+          "say": "从句 that you gave me 可以按普通陈述关系理解为 you gave me the book，也就是“你把这本书给了我”。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "restored-clause",
+              "kind": "text",
+              "role": "restored-clause",
+              "content": {
+                "text": "you gave me the book",
+                "label": "从句的普通陈述关系"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "that-function",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "restored-meaning",
+              "kind": "note",
+              "role": "meaning",
+              "content": {
+                "text": "你把这本书给了我"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "restored-clause",
+                "align": "center",
+                "gap": "compact"
+              }
+            }
+          ]
+        },
+        {
+          "key": "label-inner-parts",
+          "say": "具体看从句内部：you 是主语，gave 是谓语动词；me 是间接宾语，表示接受者“我”；that 代替 book，是直接宾语，表示被给予的东西。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "clause-subject",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "主语：you（你）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "restored-meaning",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "clause-verb",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "谓语动词：gave（给了）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "clause-subject",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "indirect-object",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "间接宾语：me（接受者“我”）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "clause-verb",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "direct-object",
+              "kind": "note",
+              "role": "grammar-label",
+              "content": {
+                "text": "直接宾语：that（代替 book，表示被给予的东西）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "indirect-object",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "inner-grammar",
+              "role": "clause-analysis",
+              "label": "从句内部结构",
+              "members": [
+                "clause-subject",
+                "clause-verb",
+                "indirect-object",
+                "direct-object"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "combine-meaning",
+      "purpose": "重新组合主干和修饰信息，给出完整中文含义。",
+      "beats": [
+        {
+          "key": "assemble-structure",
+          "say": "现在把两层结构合起来：主干说“这本书很吸引人”，定语从句补充限定“你给我的”。因此，that you gave me 整体要放到中文名词“书”的前面来理解。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "meaning-main",
+              "kind": "text",
+              "role": "meaning-part",
+              "content": {
+                "text": "主干：这本书很吸引人"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "inner-grammar",
+                "align": "start",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "meaning-modifier",
+              "kind": "text",
+              "role": "meaning-part",
+              "content": {
+                "text": "限定信息：你给我的"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "meaning-main",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "connect",
+              "when": "after_speech",
+              "as": "meaning-link",
+              "from": "meaning-modifier",
+              "to": "meaning-main",
+              "relation": "限定“这本书”",
+              "label": "你给我的 → 这本书"
+            }
+          ]
+        },
+        {
+          "key": "give-translation",
+          "say": "整句话的自然中文是：“你给我的那本书非常有趣。”也可以译为：“你给我的那本书很吸引人。”",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "full-translation",
+              "kind": "text",
+              "role": "final-translation",
+              "content": {
+                "text": "你给我的那本书非常有趣。",
+                "alternative": "你给我的那本书很吸引人。"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "meaning-link",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "when": "after_speech",
+              "target": "full-translation",
+              "emphasis": "用边框和文字标签“完整中文含义”突出"
+            }
+          ]
+        },
+        {
+          "key": "final-map",
+          "say": "最后归纳：The book was fascinating 是主干；that you gave me 是修饰 book 的定语从句；从句里 you 是主语，gave 是谓语，me 是间接宾语，that 是指代 book 的直接宾语。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": [
+                "main-clause",
+                "modifier-link",
+                "inner-grammar",
+                "full-translation"
+              ],
+              "intent": "按主干、修饰关系、从句内部结构、完整含义的顺序回顾"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "final-summary-note",
+              "kind": "note",
+              "role": "lesson-summary",
+              "content": {
+                "lines": [
+                  "主干：The book was fascinating.",
+                  "修饰关系：that you gave me 修饰 book。",
+                  "从句结构：you（主语）＋ gave（谓语）＋ me（间接宾语）＋ that（直接宾语，指代 book）。"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "full-translation",
+                "align": "start",
+                "gap": "spacious"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "The book was fascinating 是句子主干；that you gave me 是修饰 book 的定语从句。that 指代 book，并在从句中作 gave 的直接宾语；you 是主语，gave 是谓语，me 是间接宾语。全句意为“你给我的那本书非常有趣”。",
+    "focus": [
+      "先抽出主干 The book was fascinating",
+      "用文字标签和连接关系确认 that you gave me 修饰 book",
+      "区分从句中的 you、gave、me 和 that",
+      "把英文后置修饰自然转换为中文前置修饰“你给我的那本书”"
+    ]
+  }
+}

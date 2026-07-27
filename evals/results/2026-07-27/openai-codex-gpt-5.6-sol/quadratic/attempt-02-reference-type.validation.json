@@ -1,0 +1,12 @@
+{
+  "input": "attempt-02-reference-type.raw.json",
+  "parsed": true,
+  "valid": false,
+  "normalized": false,
+  "error": {
+    "name": "OllError",
+    "code": "OLL_INVALID_REFERENCE",
+    "path": "/steps/2/beats/3/actions/0/members/3",
+    "message": "Alias 'graph-translation' has type 'connection'"
+  }
+}

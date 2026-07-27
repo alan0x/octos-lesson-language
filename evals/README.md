@@ -8,3 +8,5 @@
 - 教学质量：学科正确性、渐进性、讲述板书一致性和个性化依据。
 
 第一次实验保留模型原始输出，不自动修复，以免掩盖 Authoring Profile 的真实难度。
+
+首份真实模型基线：[`results/2026-07-27/openai-codex-gpt-5.6-sol/REPORT.md`](results/2026-07-27/openai-codex-gpt-5.6-sol/REPORT.md)。

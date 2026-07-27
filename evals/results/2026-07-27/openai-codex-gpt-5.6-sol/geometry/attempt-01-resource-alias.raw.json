@@ -1,0 +1,460 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么要连接辅助线 AD",
+    "goals": [
+      "从受控图片资源中识别已知条件及其不确定性",
+      "解释连接 A 与 D 的动机",
+      "用 SSS 证明两个三角形全等",
+      "由全等推出角平分线和垂线"
+    ]
+  },
+  "steps": [
+    {
+      "key": "read-figure",
+      "purpose": "引用受控图片和区域，区分可靠条件与仅凭外观不能确认的信息。",
+      "beats": [
+        {
+          "key": "show-figure",
+          "say": "先看题目提供的受控图片：这是等腰三角形 ABC，D 位于底边 BC 上。图中的等边标记给出 AB=AC。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "before_speech",
+              "as": "figure",
+              "kind": "image",
+              "role": "题目图形",
+              "content": {
+                "asset_id": "asset-geometry-001",
+                "alt": "等腰三角形 ABC，D 位于底边 BC 上"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "main"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": [
+                "asset-geometry-001#region-triangle",
+                "asset-geometry-001#region-equal-sides"
+              ],
+              "intent": "识别等腰三角形及 AB=AC 的标记"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "equal-sides",
+              "kind": "math",
+              "role": "已知条件",
+              "content": {
+                "text": "AB=AC"
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "figure",
+                "align": "start",
+                "gap": "normal"
+              }
+            }
+          ]
+        },
+        {
+          "key": "check-midpoint",
+          "say": "D 看起来接近 BC 的中间，但点 D 和中点标记的识别置信度只是 medium，所以不能凭图形外观断定 D 是中点。这里应以题目给出的中点标记或已知条件为依据，读取为 BD=DC。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": [
+                "asset-geometry-001#region-d",
+                "asset-geometry-001#region-midpoint"
+              ],
+              "intent": "指出点 D 与中点标记存在视觉识别不确定性"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "midpoint-caution",
+              "kind": "note",
+              "role": "识图提醒",
+              "content": {
+                "text": "不能凭“看起来在中间”判断中点；以标记或已知条件为准"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "equal-sides",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "equal-base",
+              "kind": "math",
+              "role": "已知条件",
+              "content": {
+                "text": "BD=DC"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "midpoint-caution",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "draw-auxiliary",
+      "purpose": "连接 A 与 D，并说明辅助线把已有条件组织成两个可比较的三角形。",
+      "beats": [
+        {
+          "key": "connect-a-d",
+          "say": "现在连接 A 与 D。这样做不是随意添线，而是把大三角形分成 △ABD 和 △ACD：左边已有 AB=AC，底边已有 BD=DC，新画的 AD 又是两个小三角形的公共边。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "connect",
+              "when": "before_speech",
+              "as": "aux-ad",
+              "from": "asset-geometry-001#region-a",
+              "to": "asset-geometry-001#region-d",
+              "relation": "连接 A 与 D，形成公共边 AD"
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "two-triangles",
+              "kind": "text",
+              "role": "辅助线作用",
+              "content": {
+                "text": "连接 AD → 得到 △ABD 与 △ACD"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "figure",
+                "align": "center",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": [
+                "aux-ad",
+                "equal-sides",
+                "equal-base"
+              ],
+              "intent": "呈现辅助线如何把两组已知等边组织到两个三角形中"
+            }
+          ]
+        },
+        {
+          "key": "common-side",
+          "say": "AD 在两个三角形中是同一条边，因此 AD=AD。至此，两组三角形的三对对应边已经齐全。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "emphasize",
+              "when": "during_speech",
+              "target": "aux-ad",
+              "emphasis": "突出公共边"
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "common-side-equality",
+              "kind": "math",
+              "role": "公共边",
+              "content": {
+                "text": "AD=AD"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "equal-base",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "prove-congruence",
+      "purpose": "整理三对对应边，并使用 SSS 判定两个三角形全等。",
+      "beats": [
+        {
+          "key": "collect-sides",
+          "say": "把三对边放在一起看：AB=AC，BD=DC，AD=AD。它们分别是 △ABD 与 △ACD 的三对对应边。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "group",
+              "when": "before_speech",
+              "as": "three-side-pairs",
+              "role": "SSS 条件",
+              "label": "三对对应边相等",
+              "members": [
+                "equal-sides",
+                "equal-base",
+                "common-side-equality"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "during_speech",
+              "targets": [
+                "equal-sides",
+                "equal-base",
+                "common-side-equality"
+              ],
+              "intent": "逐项核对 SSS 所需的三对对应边"
+            }
+          ]
+        },
+        {
+          "key": "apply-sss",
+          "say": "由 AB=AC、BD=DC、AD=AD，根据 SSS，可以得到 △ABD≌△ACD。注意对应顺序是 A 对 A、B 对 C、D 对 D。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "sss-proof",
+              "kind": "math",
+              "role": "全等判定",
+              "content": {
+                "text": "AB=AC，BD=DC，AD=AD ⇒ △ABD≌△ACD（SSS）"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "two-triangles",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "vertex-correspondence",
+              "kind": "note",
+              "role": "对应关系",
+              "content": {
+                "text": "A↔A，B↔C，D↔D"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "sss-proof",
+                "align": "start",
+                "gap": "compact"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "derive-results",
+      "purpose": "利用全等三角形的对应角相等，推出角平分线和垂线。",
+      "beats": [
+        {
+          "key": "angle-bisector",
+          "say": "全等三角形的对应角相等，所以 ∠BAD=∠DAC。这两个角正好组成 ∠BAC，因此 AD 平分 ∠BAC，也就是 AD 是顶角 A 的角平分线。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "equal-apex-angles",
+              "kind": "math",
+              "role": "全等推论",
+              "content": {
+                "text": "∠BAD=∠DAC"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "vertex-correspondence",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "angle-bisector-result",
+              "kind": "math",
+              "role": "角平分线结论",
+              "content": {
+                "text": "AD 平分 ∠BAC"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "equal-apex-angles",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "aux-ad",
+                "angle-bisector-result"
+              ],
+              "intent": "对应图形确认 AD 是顶角的角平分线"
+            }
+          ]
+        },
+        {
+          "key": "perpendicular",
+          "say": "同理由全等可得 ∠ADB=∠ADC。因为 B、D、C 在同一直线上，这两个角是一对邻补角，和为 180°；它们又相等，所以每个都是 90°。因此 AD⊥BC。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "equal-d-angles",
+              "kind": "math",
+              "role": "全等推论",
+              "content": {
+                "text": "∠ADB=∠ADC"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "angle-bisector-result",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "linear-pair",
+              "kind": "math",
+              "role": "邻补角关系",
+              "content": {
+                "text": "∠ADB+∠ADC=180°"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "equal-d-angles",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "right-angles",
+              "kind": "math",
+              "role": "直角结论",
+              "content": {
+                "text": "∠ADB=∠ADC=90°"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "linear-pair",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "write",
+              "when": "after_speech",
+              "as": "perpendicular-result",
+              "kind": "math",
+              "role": "垂线结论",
+              "content": {
+                "text": "AD⊥BC"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "right-angles",
+                "align": "start",
+                "gap": "compact"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "aux-ad",
+                "perpendicular-result"
+              ],
+              "intent": "对应图形确认 AD 垂直于 BC"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "explain-motivation",
+      "purpose": "回扣辅助线的核心动机，形成完整的证明链。",
+      "beats": [
+        {
+          "key": "motivation-chain",
+          "say": "所以，连接 AD 的真正动机是补出公共边，把 AB=AC 和 BD=DC 分配到 △ABD、△ACD 中，从而凑齐 SSS。全等一旦成立，就能同时得到 AD 平分 ∠BAC 和 AD⊥BC。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "when": "during_speech",
+              "as": "reasoning-chain",
+              "kind": "diagram",
+              "role": "证明链总结",
+              "content": {
+                "text": "连接 AD → 公共边 AD=AD → 三对对应边相等 → SSS 全等 → 角平分线与垂线"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "summary",
+                "align": "center"
+              }
+            },
+            {
+              "do": "group",
+              "when": "after_speech",
+              "as": "final-results",
+              "role": "最终结论",
+              "label": "AD 的两个性质",
+              "members": [
+                "angle-bisector-result",
+                "perpendicular-result"
+              ]
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "reasoning-chain",
+                "final-results"
+              ],
+              "intent": "回顾辅助线从构造到结论的完整逻辑"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "连接 AD 是为了利用公共边 AD=AD，把 AB=AC、BD=DC 组织成 △ABD 与 △ACD 的三对对应边；由 SSS 得两三角形全等，进而推出 AD 平分 ∠BAC 且 AD⊥BC。",
+    "focus": [
+      "中点不能只凭图形外观判断，应以标记或已知条件为准",
+      "辅助线 AD 的关键作用是补出两个三角形的公共边",
+      "AB=AC、BD=DC、AD=AD 构成 SSS",
+      "全等推出角平分线和垂线"
+    ]
+  }
+}

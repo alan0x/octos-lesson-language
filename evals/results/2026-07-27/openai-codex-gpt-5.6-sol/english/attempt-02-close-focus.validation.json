@@ -1,0 +1,12 @@
+{
+  "input": "attempt-02-close-focus.raw.json",
+  "parsed": true,
+  "valid": false,
+  "normalized": false,
+  "error": {
+    "name": "OllError",
+    "code": "OLL_INVALID_ALIAS",
+    "path": "/close/focus/0",
+    "message": "Invalid local alias '先移开关系从句，找出主干 The book was fascinating'"
+  }
+}

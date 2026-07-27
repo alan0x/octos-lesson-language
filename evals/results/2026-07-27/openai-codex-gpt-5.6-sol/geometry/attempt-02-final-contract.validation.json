@@ -1,0 +1,16 @@
+{
+  "input": "attempt-02-final-contract.raw.json",
+  "parsed": true,
+  "valid": true,
+  "normalized": true,
+  "eventCount": 7,
+  "finalRevision": 5,
+  "nodeCount": 12,
+  "connectionCount": 1,
+  "groupCount": 1,
+  "finalFocus": [
+    "eval-geometry-contract-v3-001:connection:ad-line",
+    "eval-geometry-contract-v3-001:group:proof-core",
+    "eval-geometry-contract-v3-001:node:reasoning-chain"
+  ]
+}

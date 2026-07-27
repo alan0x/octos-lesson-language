@@ -1,0 +1,16 @@
+{
+  "input": "attempt-03-final-contract.raw.json",
+  "parsed": true,
+  "valid": true,
+  "normalized": true,
+  "eventCount": 5,
+  "finalRevision": 3,
+  "nodeCount": 15,
+  "connectionCount": 6,
+  "groupCount": 2,
+  "finalFocus": [
+    "eval-quadratic-contract-v3-001:group:algebra-result-group",
+    "eval-quadratic-contract-v3-001:group:graph-result-group",
+    "eval-quadratic-contract-v3-001:connection:translation-connection"
+  ]
+}
