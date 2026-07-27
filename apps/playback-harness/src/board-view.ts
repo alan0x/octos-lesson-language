@@ -19,6 +19,17 @@ function appendText(parent: HTMLElement, value: string, className?: string): HTM
   return element;
 }
 
+function latestEmphasis(owner: Record<string, any>, fragmentId?: string): string | undefined {
+  const entries = Array.isArray(owner.emphasis) ? owner.emphasis : [];
+  return [...entries].reverse().find((entry: Record<string, any>) => fragmentId
+    ? entry.target?.fragment_id === fragmentId
+    : !entry.target?.fragment_id)?.emphasis;
+}
+
+function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
+  if (emphasis) element.classList.add(`emphasis-${emphasis}`);
+}
+
 export function mathSource(content: Record<string, any>): string {
   const raw = Array.isArray(content.fragments)
     ? content.fragments.map((fragment: Record<string, any>) => text(fragment.latex || fragment.text)).filter(Boolean).join(" ")
@@ -91,7 +102,8 @@ export function diagramConnectionGeometry(content: Record<string, any>, connecti
   };
 }
 
-function renderDiagram(parent: HTMLElement, content: Record<string, any>): void {
+function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
+  const content = node.content ?? {};
   const points = diagramPoints(content);
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 300 190");
@@ -101,21 +113,21 @@ function renderDiagram(parent: HTMLElement, content: Record<string, any>): void 
     if (members.length < 3) continue;
     const polygon = document.createElementNS(SVG_NS, "polygon");
     polygon.setAttribute("points", members.map((point) => `${point.x},${point.y}`).join(" "));
-    polygon.classList.add("diagram-region"); svg.append(polygon);
+    polygon.classList.add("diagram-region"); polygon.dataset.id = text(region.id); applyEmphasisClass(polygon, latestEmphasis(node, text(region.id))); svg.append(polygon);
   }
   for (const edge of Array.isArray(content.edges) ? content.edges : []) {
     const from = points.get(text(edge.from)); const to = points.get(text(edge.to));
     if (!from || !to) continue;
     const line = document.createElementNS(SVG_NS, "line");
     line.setAttribute("x1", String(from.x)); line.setAttribute("y1", String(from.y)); line.setAttribute("x2", String(to.x)); line.setAttribute("y2", String(to.y));
-    line.classList.add("diagram-edge"); svg.append(line);
+    line.classList.add("diagram-edge"); line.dataset.id = text(edge.id); applyEmphasisClass(line, latestEmphasis(node, text(edge.id))); svg.append(line);
     if (edge.label) {
       const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String((from.x + to.x) / 2)); label.setAttribute("y", String((from.y + to.y) / 2 - 6));
       label.setAttribute("text-anchor", "middle"); label.classList.add("diagram-edge-label"); label.textContent = text(edge.label); svg.append(label);
     }
   }
-  for (const point of points.values()) {
-    const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(point.x)); dot.setAttribute("cy", String(point.y)); dot.setAttribute("r", "4"); dot.classList.add("diagram-point"); svg.append(dot);
+  for (const [pointId, point] of points) {
+    const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(point.x)); dot.setAttribute("cy", String(point.y)); dot.setAttribute("r", "4"); dot.classList.add("diagram-point"); dot.dataset.id = pointId; applyEmphasisClass(dot, latestEmphasis(node, pointId)); svg.append(dot);
     const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x + 8)); label.setAttribute("y", String(point.y - 7)); label.classList.add("diagram-label"); label.textContent = point.label; svg.append(label);
   }
   parent.append(svg);
@@ -126,7 +138,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "plot") { plot(parent, content); return; }
-  if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, content); return; }
+  if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
   if (node.kind === "math") { renderMath(parent, content); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
     appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
@@ -231,9 +243,14 @@ export class InfiniteBoardView {
     this.renderNodes(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
-    const activeId = operation?.action?.node?.id ?? targetId(operation?.action?.target);
-    const activeRect = activeId ? targetRect(board, layout, activeId) : undefined;
-    if (activeRect) this.reveal(activeRect);
+    const focusTargets = operation?.action?.focus?.targets ?? [];
+    const focusRects = focusTargets.map((target: string) => targetRect(board, layout, target)).filter(Boolean) as Rect[];
+    if (focusRects.length) this.focusRect(this.unionRects(focusRects));
+    else {
+      const activeId = operation?.action?.node?.id ?? targetId(operation?.action?.target);
+      const activeRect = activeId ? targetRect(board, layout, activeId) : undefined;
+      if (activeRect) this.reveal(activeRect);
+    }
   }
 
   fit(): void {
@@ -256,7 +273,7 @@ export class InfiniteBoardView {
       element.dataset.id = node.id;
       if (node.id === activeId) element.classList.add("active");
       if (board.focus.includes(node.id)) element.classList.add("focused");
-      if (node.emphasis?.length) element.classList.add("emphasized");
+      applyEmphasisClass(element, latestEmphasis(node));
       setRect(element, layout.nodes[node.id]!);
       renderContent(element, node);
       this.nodes.append(element);
@@ -311,7 +328,7 @@ export class InfiniteBoardView {
 
     const line = document.createElementNS(SVG_NS, "line");
     line.classList.add("diagram-connection"); line.dataset.id = connection.id;
-    if (connection.emphasis?.length) line.classList.add("emphasized");
+    applyEmphasisClass(line, latestEmphasis(connection));
     if (board.focus.includes(connection.id)) line.classList.add("focused");
     line.setAttribute("x1", String(geometry.from.x)); line.setAttribute("y1", String(geometry.from.y));
     line.setAttribute("x2", String(geometry.to.x)); line.setAttribute("y2", String(geometry.to.y));
@@ -337,6 +354,18 @@ export class InfiniteBoardView {
   }
 
   private transform(): void { this.world.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`; }
+  private unionRects(rects: Rect[]): Rect {
+    const left = Math.min(...rects.map((rect) => rect.x)); const top = Math.min(...rects.map((rect) => rect.y));
+    const right = Math.max(...rects.map((rect) => rect.x + rect.width)); const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+    return { x: left, y: top, width: right - left, height: bottom - top };
+  }
+  private focusRect(rect: Rect): void {
+    const viewport = this.viewport.getBoundingClientRect();
+    this.scale = Math.min(1, Math.max(.2, Math.min((viewport.width - 140) / rect.width, (viewport.height - 140) / rect.height)));
+    this.panX = viewport.width / 2 - (rect.x + rect.width / 2) * this.scale;
+    this.panY = viewport.height / 2 - (rect.y + rect.height / 2) * this.scale;
+    this.transform();
+  }
   private reveal(rect: Rect): void {
     const margin = 54;
     const left = this.panX + rect.x * this.scale;

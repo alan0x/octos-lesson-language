@@ -35,3 +35,9 @@ test("node measurement expands visual-heavy kinds", () => {
   assert.ok(measureSemanticNode({ kind: "plot", content: {} }).height > measureSemanticNode({ kind: "text", content: { text: "短句" } }).height);
   assert.ok(measureSemanticNode({ kind: "table", content: { columns: [1, 2, 3, 4], rows: [[1, 2, 3, 4]] } }).width >= 400);
 });
+
+test("node measurement ignores canonical identifiers that are not rendered", () => {
+  const visible = { kind: "math", content: { fragments: [{ latex: "x=1" }] } };
+  const canonical = { kind: "math", content: { fragments: [{ id: "lesson:a-very-long-canonical-fragment-identifier", latex: "x=1" }] } };
+  assert.deepEqual(measureSemanticNode(canonical), measureSemanticNode(visible));
+});

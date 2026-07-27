@@ -23,7 +23,7 @@ npm run harness:dev
 - localStorage checkpoint 与所选课程的刷新恢复；
 - 完整操作时间线和当前 step / beat / phase / revision 调试信息。
 
-内置三份 golden lesson：二次函数配方法、几何图片辅助线和英语定语从句。
+内置四份 golden lesson：二次函数配方法、几何辅助线 V2、几何图片辅助线 V1 回归课和英语定语从句。几何 V2 是当前教学可理解性样板，V1 只保留为旧协议和图片 region 回归样本。
 
 ## 边界
 
@@ -37,4 +37,4 @@ Harness 不调用模型、不生成 OLL、不播放真实 TTS，也不复刻 `/l
 npm test
 ```
 
-自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局和完整 OLL 回归。浏览器验收另外检查三份课程的连续播放、画布可见性、几何 SVG、暂停刷新恢复与控制台错误。
+自动测试覆盖渐进呈现、Beat 边界、checkpoint/refresh 收敛、语义布局、几何 V2 教学关键帧和完整 OLL 回归。浏览器验收另外检查课程的连续播放、画布可见性、焦点可读性、几何 SVG、公式横向裁切、暂停刷新恢复与控制台错误。教学门禁见根目录 `TEACHING-PLAYBACK-ACCEPTANCE.md`。

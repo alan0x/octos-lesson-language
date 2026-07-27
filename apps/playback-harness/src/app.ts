@@ -5,7 +5,8 @@ import { BrowserLessonSession, LocalPlaybackStore, parseCanonicalJsonl } from ".
 
 const fixtures = [
   { id: "quadratic", label: "数学 · 二次函数配方法", path: "/examples/quadratic/lesson.canonical.jsonl" },
-  { id: "geometry", label: "图片 · 几何辅助线", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
+  { id: "geometry", label: "数学 · 几何辅助线 V2", path: "/examples/geometry-auxiliary-line-v2/lesson.canonical.jsonl" },
+  { id: "geometry-v1", label: "回归 · 几何辅助线 V1", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
   { id: "english", label: "语言 · 英语定语从句", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";

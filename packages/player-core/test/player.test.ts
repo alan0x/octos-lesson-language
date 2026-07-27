@@ -37,6 +37,21 @@ const lessons = await Promise.all(manifest.map(async (entry) => {
   return { entry: host, events: normalizeAuthoringLesson(authoring, host) };
 }));
 const quadratic = lessons.find((item) => item.entry.name === "quadratic")!;
+const geometryV2 = lessons.find((item) => item.entry.name === "geometry-auxiliary-line-v2")!;
+
+function localId(value: string | undefined): string | undefined {
+  return value?.split(":").at(-1);
+}
+
+function playToBeatEnds(events: CanonicalEvent[]) {
+  const player = new HeadlessLessonPlayer(events);
+  return player.playAll()
+    .filter((frame) => frame.operation.type === "beat.end")
+    .map((frame) => ({
+      beat: localId(frame.operation.beat_id)!,
+      board: frame.projection.board!,
+    }));
+}
 
 test("every golden lesson passes headless playback conformance", () => {
   for (const lesson of lessons) {
@@ -67,6 +82,68 @@ test("the board grows progressively instead of exposing the final lesson", () =>
   assert.equal(Object.keys(firstCreate.projection.board!.nodes).length, 1);
   assert.ok(Object.keys(firstCreate.projection.board!.nodes).length < finalNodeCount);
   assert.equal(Object.keys(actionFrames.at(-1)!.projection.board!.nodes).length, finalNodeCount);
+});
+
+test("geometry V2 constructs the proof progressively at teaching keyframes", () => {
+  const frames = playToBeatEnds(geometryV2.events);
+  assert.deepEqual(frames.map((frame) => frame.beat), [
+    "show-givens-and-goal",
+    "draw-ad",
+    "match-isosceles-sides",
+    "match-midpoint-halves",
+    "mark-common-side",
+    "conclude-sss",
+    "derive-angle-bisector",
+    "compare-d-angles",
+    "use-straight-angle",
+    "conclude-perpendicular",
+    "show-proof-route",
+  ]);
+
+  const node = (name: string) => `lesson-geometry-v2-001:node:${name}`;
+  const connection = (name: string) => `lesson-geometry-v2-001:connection:${name}`;
+  const fragment = (nodeName: string, name: string) => `${node(nodeName)}:fragment:${name}`;
+  const emphasis = (board: (typeof frames)[number]["board"], owner: string, target: string) => {
+    const entries = board.nodes[owner]?.emphasis ?? board.connections[owner]?.emphasis ?? [];
+    return entries.filter((entry) => {
+      const canonicalTarget = entry.target as { fragment_id?: string; connection_id?: string };
+      return canonicalTarget.fragment_id === target || canonicalTarget.connection_id === target;
+    }).at(-1)?.emphasis;
+  };
+  const rows = (frame: (typeof frames)[number]) => frame.board.nodes[node("sss-table")]?.content.rows as unknown[][] | undefined;
+
+  assert.equal(frames[0]!.board.connections[connection("auxiliary-ad")], undefined, "AD must not exist before the construction beat");
+  assert.ok(frames[1]!.board.connections[connection("auxiliary-ad")], "the construction beat must draw AD");
+  assert.equal(rows(frames[2]!)?.length, 1, "first side pair should create one evidence row");
+  assert.equal(rows(frames[3]!)?.length, 2, "second side pair should add exactly one row");
+  assert.equal(rows(frames[4]!)?.length, 3, "the common side should complete the third row");
+
+  assert.equal(emphasis(frames[2]!.board, node("clean-diagram"), fragment("clean-diagram", "side-ab")), "focus");
+  assert.equal(emphasis(frames[3]!.board, node("clean-diagram"), fragment("clean-diagram", "side-ab")), "resolved");
+  assert.equal(emphasis(frames[3]!.board, node("clean-diagram"), fragment("clean-diagram", "segment-bd")), "focus");
+  assert.equal(emphasis(frames[4]!.board, connection("auxiliary-ad"), connection("auxiliary-ad")), "focus");
+  assert.equal(emphasis(frames[5]!.board, connection("auxiliary-ad"), connection("auxiliary-ad")), "resolved");
+
+  assert.deepEqual(frames[2]!.board.focus, [node("clean-diagram"), node("sss-table")]);
+  assert.deepEqual(frames[5]!.board.focus, [node("sss-table"), node("congruence-result")]);
+  assert.deepEqual(frames[6]!.board.focus, [node("angle-result")]);
+  assert.deepEqual(frames[7]!.board.focus, [node("perpendicular-derivation")]);
+  assert.match(String(frames[8]!.board.nodes[node("perpendicular-derivation")]?.content.latex), /180\^\\circ/);
+  assert.doesNotMatch(String(frames[8]!.board.nodes[node("perpendicular-derivation")]?.content.latex), /\\perp/);
+  assert.match(String(frames[9]!.board.nodes[node("perpendicular-derivation")]?.content.latex), /\\perp/);
+  assert.deepEqual(frames[10]!.board.focus, ["lesson-geometry-v2-001:group:summary-group"]);
+});
+
+test("every geometry V2 beat narrates one visible board transition", () => {
+  for (const event of geometryV2.events) {
+    for (const beat of event.step?.beats ?? []) {
+      assert.ok(beat.narration?.text.trim(), `${beat.id} must contain narration`);
+      const actions = Object.values(beat.stage).flat();
+      assert.ok(actions.length > 0, `${beat.id} must change the classroom state`);
+      assert.ok(actions.some((action) => ["board.create", "board.connect", "board.revise", "board.emphasize"].includes(action.op)), `${beat.id} must produce a visible transition`);
+      assert.ok(beat.stage.after_speech.some((action) => action.op === "board.focus"), `${beat.id} must finish on an explicit teaching focus`);
+    }
+  }
 });
 
 test("pause, checkpoint, refresh and resume converge to the same final state", () => {

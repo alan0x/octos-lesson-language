@@ -1,0 +1,552 @@
+{
+  "board_id": "board-session-geometry-v2-001",
+  "revision": 5,
+  "nodes": {
+    "lesson-geometry-v2-001:node:angle-result": {
+      "id": "lesson-geometry-v2-001:node:angle-result",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-geometry-v2-001:node:angle-result:fragment:angles",
+            "latex": "\\angle BAD=\\angle CAD"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:angle-result:fragment:meaning",
+            "latex": "\\Rightarrow AD\\text{ 平分 }\\angle A"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:congruence-result"
+      }
+    },
+    "lesson-geometry-v2-001:node:clean-diagram": {
+      "id": "lesson-geometry-v2-001:node:clean-diagram",
+      "kind": "diagram",
+      "role": "problem-diagram",
+      "content": {
+        "elements": [
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a",
+            "kind": "point",
+            "label": "A",
+            "semantic_position": "top"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-b",
+            "kind": "point",
+            "label": "B",
+            "semantic_position": "bottom_left"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
+            "kind": "point",
+            "label": "D",
+            "semantic_position": "bottom_center"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-c",
+            "kind": "point",
+            "label": "C",
+            "semantic_position": "bottom_right"
+          }
+        ],
+        "edges": [
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab",
+            "from": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a",
+            "to": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-b",
+            "label": "AB",
+            "marks": [
+              "equal-side"
+            ]
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac",
+            "from": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a",
+            "to": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-c",
+            "label": "AC",
+            "marks": [
+              "equal-side"
+            ]
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd",
+            "from": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-b",
+            "to": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
+            "label": "BD",
+            "marks": [
+              "equal-half"
+            ]
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc",
+            "from": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
+            "to": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-c",
+            "label": "DC",
+            "marks": [
+              "equal-half"
+            ]
+          }
+        ],
+        "regions": [
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
+            "kind": "polygon",
+            "members": [
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a",
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-b",
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+            ],
+            "label": "△ABD"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
+            "kind": "polygon",
+            "members": [
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a",
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-c",
+              "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+            ],
+            "label": "△ACD"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson-origin"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+            "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+          },
+          "emphasis": "resolved"
+        }
+      ]
+    },
+    "lesson-geometry-v2-001:node:congruence-result": {
+      "id": "lesson-geometry-v2-001:node:congruence-result",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-geometry-v2-001:node:congruence-result:fragment:statement",
+            "latex": "\\triangle ABD\\cong\\triangle ACD"
+          },
+          {
+            "id": "lesson-geometry-v2-001:node:congruence-result:fragment:reason",
+            "latex": "\\quad(SSS)"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:sss-table"
+      }
+    },
+    "lesson-geometry-v2-001:node:construction-note": {
+      "id": "lesson-geometry-v2-001:node:construction-note",
+      "kind": "note",
+      "role": "reason",
+      "content": {
+        "title": "② 连接 AD",
+        "text": "得到两个可比较的三角形：△ABD 和 △ACD"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:task-card"
+      }
+    },
+    "lesson-geometry-v2-001:node:perpendicular-derivation": {
+      "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "latex": "\\angle ADB=\\angle ADC=90^\\circ \\Rightarrow AD\\perp BC"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:angle-result"
+      }
+    },
+    "lesson-geometry-v2-001:node:proof-route": {
+      "id": "lesson-geometry-v2-001:node:proof-route",
+      "kind": "diagram",
+      "role": "summary",
+      "content": {
+        "title": "⑤ 整条证明路线",
+        "sequence": [
+          "AB=AC，BD=DC",
+          "连接 AD",
+          "三组边",
+          "SSS 全等",
+          "角平分线 + 垂线"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-geometry-v2-001:node:perpendicular-derivation"
+      }
+    },
+    "lesson-geometry-v2-001:node:sss-table": {
+      "id": "lesson-geometry-v2-001:node:sss-table",
+      "kind": "table",
+      "role": "evidence",
+      "content": {
+        "title": "③ SSS：三组对应边",
+        "columns": [
+          "△ABD",
+          "△ACD",
+          "依据"
+        ],
+        "rows": [
+          [
+            "AB",
+            "AC",
+            "等腰：AB=AC"
+          ],
+          [
+            "BD",
+            "DC",
+            "中点：BD=DC"
+          ],
+          [
+            "AD",
+            "AD",
+            "公共边"
+          ]
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:construction-note"
+      }
+    },
+    "lesson-geometry-v2-001:node:takeaway": {
+      "id": "lesson-geometry-v2-001:node:takeaway",
+      "kind": "note",
+      "role": "summary",
+      "content": {
+        "title": "关键想法",
+        "text": "辅助线不是猜出来的：它要创造能使用已知条件的结构。这里 AD 创造了公共边和两个可比较三角形。"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:proof-route"
+      }
+    },
+    "lesson-geometry-v2-001:node:task-card": {
+      "id": "lesson-geometry-v2-001:node:task-card",
+      "kind": "note",
+      "role": "task",
+      "content": {
+        "title": "① 已知与目标",
+        "items": [
+          "已知：AB = AC，BD = DC",
+          "求证：AD 平分 ∠A",
+          "求证：AD ⟂ BC"
+        ]
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "normal",
+        "anchor": "lesson-geometry-v2-001:node:clean-diagram"
+      }
+    }
+  },
+  "connections": {
+    "lesson-geometry-v2-001:connection:auxiliary-ad": {
+      "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
+      "from": {
+        "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+        "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-a"
+      },
+      "to": {
+        "node_id": "lesson-geometry-v2-001:node:clean-diagram",
+        "fragment_id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d"
+      },
+      "relation": "geometry_segment",
+      "label": "辅助线 AD",
+      "emphasis": [
+        {
+          "target": {
+            "connection_id": "lesson-geometry-v2-001:connection:auxiliary-ad"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "connection_id": "lesson-geometry-v2-001:connection:auxiliary-ad"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "connection_id": "lesson-geometry-v2-001:connection:auxiliary-ad"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "connection_id": "lesson-geometry-v2-001:connection:auxiliary-ad"
+          },
+          "emphasis": "resolved"
+        }
+      ]
+    },
+    "lesson-geometry-v2-001:connection:sss-to-angle": {
+      "id": "lesson-geometry-v2-001:connection:sss-to-angle",
+      "from": {
+        "node_id": "lesson-geometry-v2-001:node:congruence-result",
+        "fragment_id": "lesson-geometry-v2-001:node:congruence-result:fragment:statement"
+      },
+      "to": {
+        "node_id": "lesson-geometry-v2-001:node:angle-result",
+        "fragment_id": "lesson-geometry-v2-001:node:angle-result:fragment:angles"
+      },
+      "relation": "implies",
+      "label": "对应角相等"
+    },
+    "lesson-geometry-v2-001:connection:sss-to-d-angles": {
+      "id": "lesson-geometry-v2-001:connection:sss-to-d-angles",
+      "from": {
+        "node_id": "lesson-geometry-v2-001:node:congruence-result",
+        "fragment_id": "lesson-geometry-v2-001:node:congruence-result:fragment:statement"
+      },
+      "to": {
+        "node_id": "lesson-geometry-v2-001:node:perpendicular-derivation"
+      },
+      "relation": "implies",
+      "label": "对应角相等"
+    }
+  },
+  "groups": {
+    "lesson-geometry-v2-001:group:sss-proof": {
+      "id": "lesson-geometry-v2-001:group:sss-proof",
+      "title": "③ 三组边推出 SSS",
+      "role": "derivation",
+      "members": [
+        "lesson-geometry-v2-001:node:clean-diagram",
+        "lesson-geometry-v2-001:node:sss-table",
+        "lesson-geometry-v2-001:node:congruence-result"
+      ]
+    },
+    "lesson-geometry-v2-001:group:summary-group": {
+      "id": "lesson-geometry-v2-001:group:summary-group",
+      "title": "从这里复述",
+      "role": "summary",
+      "members": [
+        "lesson-geometry-v2-001:node:proof-route",
+        "lesson-geometry-v2-001:node:takeaway"
+      ]
+    },
+    "lesson-geometry-v2-001:group:task-group": {
+      "id": "lesson-geometry-v2-001:group:task-group",
+      "title": "① 看清题目",
+      "role": "task",
+      "members": [
+        "lesson-geometry-v2-001:node:clean-diagram",
+        "lesson-geometry-v2-001:node:task-card"
+      ]
+    }
+  },
+  "focus": [
+    "lesson-geometry-v2-001:group:summary-group"
+  ],
+  "applied_lessons": [
+    "lesson-geometry-v2-001"
+  ],
+  "applied_steps": [
+    "lesson-geometry-v2-001:step:establish-task",
+    "lesson-geometry-v2-001:step:construct-auxiliary-line",
+    "lesson-geometry-v2-001:step:collect-sss-evidence",
+    "lesson-geometry-v2-001:step:derive-conclusions",
+    "lesson-geometry-v2-001:step:organize-proof"
+  ],
+  "applied_actions": [
+    "lesson-geometry-v2-001:action:1:1:1",
+    "lesson-geometry-v2-001:action:1:1:2",
+    "lesson-geometry-v2-001:action:1:1:3",
+    "lesson-geometry-v2-001:action:1:1:4",
+    "lesson-geometry-v2-001:action:2:1:1",
+    "lesson-geometry-v2-001:action:2:1:2",
+    "lesson-geometry-v2-001:action:2:1:3",
+    "lesson-geometry-v2-001:action:2:1:4",
+    "lesson-geometry-v2-001:action:2:1:5",
+    "lesson-geometry-v2-001:action:2:1:6",
+    "lesson-geometry-v2-001:action:3:1:1",
+    "lesson-geometry-v2-001:action:3:1:2",
+    "lesson-geometry-v2-001:action:3:1:3",
+    "lesson-geometry-v2-001:action:3:1:4",
+    "lesson-geometry-v2-001:action:3:1:5",
+    "lesson-geometry-v2-001:action:3:2:1",
+    "lesson-geometry-v2-001:action:3:2:2",
+    "lesson-geometry-v2-001:action:3:2:3",
+    "lesson-geometry-v2-001:action:3:2:4",
+    "lesson-geometry-v2-001:action:3:2:5",
+    "lesson-geometry-v2-001:action:3:2:6",
+    "lesson-geometry-v2-001:action:3:3:1",
+    "lesson-geometry-v2-001:action:3:3:2",
+    "lesson-geometry-v2-001:action:3:3:3",
+    "lesson-geometry-v2-001:action:3:3:4",
+    "lesson-geometry-v2-001:action:3:3:5",
+    "lesson-geometry-v2-001:action:3:4:1",
+    "lesson-geometry-v2-001:action:3:4:2",
+    "lesson-geometry-v2-001:action:3:4:3",
+    "lesson-geometry-v2-001:action:3:4:4",
+    "lesson-geometry-v2-001:action:4:1:1",
+    "lesson-geometry-v2-001:action:4:1:2",
+    "lesson-geometry-v2-001:action:4:1:3",
+    "lesson-geometry-v2-001:action:4:1:4",
+    "lesson-geometry-v2-001:action:4:1:5",
+    "lesson-geometry-v2-001:action:4:2:1",
+    "lesson-geometry-v2-001:action:4:2:2",
+    "lesson-geometry-v2-001:action:4:2:3",
+    "lesson-geometry-v2-001:action:4:2:4",
+    "lesson-geometry-v2-001:action:4:2:5",
+    "lesson-geometry-v2-001:action:4:2:6",
+    "lesson-geometry-v2-001:action:4:3:1",
+    "lesson-geometry-v2-001:action:4:3:2",
+    "lesson-geometry-v2-001:action:4:3:3",
+    "lesson-geometry-v2-001:action:4:4:1",
+    "lesson-geometry-v2-001:action:4:4:2",
+    "lesson-geometry-v2-001:action:4:4:3",
+    "lesson-geometry-v2-001:action:5:1:1",
+    "lesson-geometry-v2-001:action:5:1:2",
+    "lesson-geometry-v2-001:action:5:1:3",
+    "lesson-geometry-v2-001:action:5:1:4"
+  ]
+}

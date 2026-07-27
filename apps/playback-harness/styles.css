@@ -39,7 +39,10 @@ select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; pad
 .board-node::before { content: attr(data-kind); position: absolute; right: 10px; top: 8px; color: #aaa194; font: 9px/1 monospace; text-transform: uppercase; }
 .board-node.active { border-color: #2a9386; box-shadow: 0 0 0 3px rgba(42,147,134,.13), 0 10px 28px rgba(68,57,41,.1); animation: write-in .34s ease both; }
 .board-node.focused { border-color: #7a5aa3; box-shadow: 0 0 0 4px rgba(122,90,163,.13); }
-.board-node.emphasized { background: #fff9dc; }
+.board-node.emphasis-focus { border-color: #e19b35; box-shadow: 0 0 0 4px rgba(225,155,53,.18); }
+.board-node.emphasis-supporting { background: #fff9dc; }
+.board-node.emphasis-warning { border-color: #d95361; }
+.board-node.emphasis-resolved { opacity: .84; }
 .board-node.kind-math { font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
 .math-render { width: 100%; height: 100%; display: grid; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .math-render .katex-display { margin: 0; min-width: max-content; text-align: left; }
@@ -56,13 +59,23 @@ select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; pad
 .diagram-sequence i { color: #7c756b; font-style: normal; }
 .plot-preview { width: 100%; height: 150px; margin-top: 4px; }
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
-.diagram-region { fill: rgba(79,153,141,.08); stroke: none; }
+.diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }
+.diagram-edge.emphasis-focus { stroke: #e15d45; stroke-width: 5; }
+.diagram-edge.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
+.diagram-edge.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.4; }
+.diagram-edge.emphasis-warning { stroke: #cc3447; stroke-width: 5; stroke-dasharray: 7 4; }
+.diagram-region.emphasis-focus { fill: rgba(225,93,69,.19); stroke: #e15d45; stroke-width: 1.8; }
+.diagram-region.emphasis-supporting { fill: rgba(215,154,41,.16); stroke: #d79a29; stroke-width: 1.4; }
+.diagram-region.emphasis-resolved { fill: rgba(47,143,128,.12); stroke: #2f8f80; stroke-width: 1.2; }
+.diagram-point.emphasis-focus { fill: #e15d45; r: 6px; }
 .diagram-edge-label { fill: #766f65; font: 11px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 4px; }
 .diagram-point { fill: #247f74; }
 .diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
 .diagram-connection { stroke: #e34f5f; stroke-width: 3.2; stroke-linecap: round; filter: drop-shadow(0 1px 1px rgba(97,24,32,.18)); }
-.diagram-connection.emphasized, .diagram-connection.focused { stroke-width: 4.4; }
+.diagram-connection.emphasis-focus, .diagram-connection.focused { stroke-width: 4.6; }
+.diagram-connection.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.6; }
+.diagram-connection.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .diagram-connection-badge rect { fill: rgba(255,251,235,.96); stroke: #e4a8ae; stroke-width: 1; }
 .diagram-connection-badge text { fill: #8f2f3a; font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; }
 .image-placeholder { display: grid; place-items: center; height: 120px; border: 1px dashed #9aa9a5; border-radius: 10px; background: linear-gradient(135deg,#e4efec,#f5f2e8); color: #4a625d; text-align: center; padding: 10px; }

@@ -15,6 +15,13 @@
     "contextFile": "session-context.json"
   },
   {
+    "name": "geometry-auxiliary-line-v2",
+    "lessonId": "lesson-geometry-v2-001",
+    "boardId": "board-session-geometry-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
     "name": "english-relative-clause",
     "lessonId": "lesson-english-001",
     "boardId": "board-session-003",

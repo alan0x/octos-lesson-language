@@ -1,0 +1,301 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "连接 AD：一步一步看懂 SSS 全等",
+    "goals": [
+      "看懂连接 AD 后出现的两个三角形",
+      "逐一找到 SSS 所需的三组对应边",
+      "由全等推出角平分线和垂线"
+    ],
+    "adaptation": {
+      "strategies": ["one-change-per-beat", "visual-correspondence", "durable-proof-trace"]
+    }
+  },
+  "steps": [
+    {
+      "key": "establish-task",
+      "purpose": "在同一视野中明确已知、求证和干净几何图",
+      "beats": [
+        {
+          "key": "show-givens-and-goal",
+          "say": "先只看题目。三角形 ABC 中，AB 等于 AC；D 是 BC 的中点，所以 BD 等于 DC。我们要说明两件事：AD 平分顶角 A，并且 AD 垂直 BC。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "clean-diagram",
+              "kind": "diagram",
+              "role": "problem-diagram",
+              "content": {
+                "elements": [
+                  {"as": "point-a", "kind": "point", "label": "A", "semantic_position": "top"},
+                  {"as": "point-b", "kind": "point", "label": "B", "semantic_position": "bottom_left"},
+                  {"as": "point-d", "kind": "point", "label": "D", "semantic_position": "bottom_center"},
+                  {"as": "point-c", "kind": "point", "label": "C", "semantic_position": "bottom_right"}
+                ],
+                "edges": [
+                  {"as": "side-ab", "from": "point-a", "to": "point-b", "label": "AB", "marks": ["equal-side"]},
+                  {"as": "side-ac", "from": "point-a", "to": "point-c", "label": "AC", "marks": ["equal-side"]},
+                  {"as": "segment-bd", "from": "point-b", "to": "point-d", "label": "BD", "marks": ["equal-half"]},
+                  {"as": "segment-dc", "from": "point-d", "to": "point-c", "label": "DC", "marks": ["equal-half"]}
+                ],
+                "regions": [
+                  {"as": "triangle-abd", "kind": "polygon", "members": ["point-a", "point-b", "point-d"], "label": "△ABD"},
+                  {"as": "triangle-acd", "kind": "polygon", "members": ["point-a", "point-c", "point-d"], "label": "△ACD"}
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {
+              "do": "write",
+              "as": "task-card",
+              "kind": "note",
+              "role": "task",
+              "content": {
+                "title": "① 已知与目标",
+                "items": [
+                  "已知：AB = AC，BD = DC",
+                  "求证：AD 平分 ∠A",
+                  "求证：AD ⟂ BC"
+                ]
+              },
+              "place": {"relation": "right_of", "anchor": "clean-diagram", "align": "center", "gap": "normal"}
+            },
+            {"do": "group", "as": "task-group", "role": "task", "label": "① 看清题目", "members": ["clean-diagram", "task-card"]},
+            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "read_givens_and_goal"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "construct-auxiliary-line",
+      "purpose": "画出 AD，并留下为什么要画它的板书",
+      "beats": [
+        {
+          "key": "draw-ad",
+          "say": "现在连接 A 和 D。大三角形立刻被分成左边的三角形 ABD 和右边的三角形 ACD。接下来我们只比较这两个三角形。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "connect", "as": "auxiliary-ad", "from": "clean-diagram#point-a", "to": "clean-diagram#point-d", "relation": "geometry_segment", "label": "辅助线 AD"},
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-abd", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-acd", "emphasis": "supporting"},
+            {
+              "do": "write",
+              "as": "construction-note",
+              "kind": "note",
+              "role": "reason",
+              "content": {"title": "② 连接 AD", "text": "得到两个可比较的三角形：△ABD 和 △ACD"},
+              "place": {"relation": "below", "anchor": "task-card", "align": "start", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["clean-diagram", "construction-note"], "intent": "show_two_triangles"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "collect-sss-evidence",
+      "purpose": "每个 Beat 只加入一组对应边，并逐行扩展证据表",
+      "beats": [
+        {
+          "key": "match-isosceles-sides",
+          "say": "先找第一组边。左边三角形里的 AB，对应右边三角形里的 AC。题目已知 AB 等于 AC，这是等腰条件。",
+          "delivery": "patient",
+          "actions": [
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "supporting"},
+            {"do": "emphasize", "target": "clean-diagram#side-ab", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#side-ac", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "sss-table",
+              "kind": "table",
+              "role": "evidence",
+              "content": {
+                "title": "③ SSS：逐组找对应边",
+                "columns": ["△ABD", "△ACD", "依据"],
+                "rows": [["AB", "AC", "等腰：AB=AC"]]
+              },
+              "place": {"relation": "below", "anchor": "construction-note", "align": "start", "gap": "normal"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["clean-diagram", "sss-table"], "intent": "compare_first_side_pair"}
+          ]
+        },
+        {
+          "key": "match-midpoint-halves",
+          "say": "再找第二组边。左边的 BD 对应右边的 DC。因为 D 是 BC 的中点，所以 BD 等于 DC。",
+          "delivery": "patient",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#side-ab", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "clean-diagram#side-ac", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "clean-diagram#segment-bd", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#segment-dc", "emphasis": "focus"},
+            {
+              "do": "revise",
+              "target": "sss-table",
+              "reason": "加入中点条件对应的第二组边",
+              "content": {
+                "title": "③ SSS：逐组找对应边",
+                "columns": ["△ABD", "△ACD", "依据"],
+                "rows": [["AB", "AC", "等腰：AB=AC"], ["BD", "DC", "中点：BD=DC"]]
+              }
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["clean-diagram", "sss-table"], "intent": "compare_second_side_pair"}
+          ]
+        },
+        {
+          "key": "mark-common-side",
+          "say": "还差第三组。AD 同时属于两个三角形，所以 AD 等于它自己。这叫公共边。现在三组边已经全部找齐。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#segment-bd", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "clean-diagram#segment-dc", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "focus"},
+            {
+              "do": "revise",
+              "target": "sss-table",
+              "reason": "加入公共边作为第三组边",
+              "content": {
+                "title": "③ SSS：三组对应边",
+                "columns": ["△ABD", "△ACD", "依据"],
+                "rows": [["AB", "AC", "等腰：AB=AC"], ["BD", "DC", "中点：BD=DC"], ["AD", "AD", "公共边"]]
+              }
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["clean-diagram", "sss-table"], "intent": "complete_three_side_pairs"}
+          ]
+        },
+        {
+          "key": "conclude-sss",
+          "say": "把三行放在一起看：AB 等于 AC，BD 等于 DC，AD 等于 AD。因此三角形 ABD 与三角形 ACD 根据 SSS 全等。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "auxiliary-ad", "emphasis": "resolved"},
+            {
+              "do": "write",
+              "as": "congruence-result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"fragments": [{"as": "statement", "latex": "\\triangle ABD\\cong\\triangle ACD"}, {"as": "reason", "latex": "\\quad(SSS)"}]},
+              "place": {"relation": "below", "anchor": "sss-table", "align": "start", "gap": "normal"}
+            },
+            {"do": "group", "as": "sss-proof", "role": "derivation", "label": "③ 三组边推出 SSS", "members": ["clean-diagram", "sss-table", "congruence-result"]},
+            {"do": "focus", "when": "after_speech", "targets": ["sss-table", "congruence-result"], "intent": "see_complete_sss_argument"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "derive-conclusions",
+      "purpose": "把全等结论分别转化为角平分线和垂线",
+      "beats": [
+        {
+          "key": "derive-angle-bisector",
+          "say": "先看顶点 A。全等三角形的对应角相等，所以角 BAD 等于角 CAD。这正说明 AD 平分顶角 A。",
+          "delivery": "patient",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#triangle-abd", "emphasis": "focus"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-acd", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "angle-result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"fragments": [{"as": "angles", "latex": "\\angle BAD=\\angle CAD"}, {"as": "meaning", "latex": "\\Rightarrow AD\\text{ 平分 }\\angle A"}]},
+              "place": {"relation": "below", "anchor": "congruence-result", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "sss-to-angle", "from": "congruence-result#statement", "to": "angle-result#angles", "relation": "implies", "label": "对应角相等"},
+            {"do": "focus", "when": "after_speech", "targets": ["angle-result"], "intent": "derive_angle_bisector"}
+          ]
+        },
+        {
+          "key": "compare-d-angles",
+          "say": "再看 D 点。角 ADB 与角 ADC 是全等三角形的一组对应角，所以它们相等。我们先只写下这一步。",
+          "delivery": "careful",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#triangle-abd", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "clean-diagram#triangle-acd", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "clean-diagram#point-d", "emphasis": "focus"},
+            {
+              "do": "write",
+              "as": "perpendicular-derivation",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {"latex": "\\angle ADB=\\angle ADC"},
+              "place": {"relation": "below", "anchor": "angle-result", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "sss-to-d-angles", "from": "congruence-result#statement", "to": "perpendicular-derivation", "relation": "implies", "label": "对应角相等"},
+            {"do": "focus", "when": "after_speech", "targets": ["perpendicular-derivation"], "intent": "compare_angles_at_d"}
+          ]
+        },
+        {
+          "key": "use-straight-angle",
+          "say": "接着用直线 BC。因为 B、D、C 在一条直线上，角 ADB 与角 ADC 相加是 180 度。两个角既相等，和又是 180 度，所以它们各是 90 度。",
+          "delivery": "careful",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#point-d", "emphasis": "focus"},
+            {
+              "do": "revise",
+              "target": "perpendicular-derivation",
+              "reason": "加入平角条件并求出两个直角",
+              "content": {"latex": "\\begin{aligned}\\angle ADB&=\\angle ADC\\\\ \\angle ADB+\\angle ADC&=180^\\circ\\\\ \\therefore \\angle ADB=\\angle ADC&=90^\\circ\\end{aligned}"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["perpendicular-derivation"], "intent": "use_straight_angle"}
+          ]
+        },
+        {
+          "key": "conclude-perpendicular",
+          "say": "角 ADB 是 AD 与 BC 形成的直角，因此 AD 垂直 BC。现在第二个目标也完成了。",
+          "delivery": "emphatic",
+          "actions": [
+            {"do": "emphasize", "target": "clean-diagram#point-d", "emphasis": "resolved"},
+            {
+              "do": "revise",
+              "target": "perpendicular-derivation",
+              "reason": "把九十度角翻译成垂直关系",
+              "content": {"latex": "\\angle ADB=\\angle ADC=90^\\circ \\Rightarrow AD\\perp BC"}
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["perpendicular-derivation"], "intent": "conclude_perpendicular"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "organize-proof",
+      "purpose": "留下可从起点复述的证明路线",
+      "beats": [
+        {
+          "key": "show-proof-route",
+          "say": "最后从头走一遍：题目给出两组相等边；连接 AD 得到公共边；三组边推出 SSS 全等；再由对应角相等，得到角平分线和垂线。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "proof-route",
+              "kind": "diagram",
+              "role": "summary",
+              "content": {"title": "⑤ 整条证明路线", "sequence": ["AB=AC，BD=DC", "连接 AD", "三组边", "SSS 全等", "角平分线 + 垂线"]},
+              "place": {"relation": "below", "anchor": "perpendicular-derivation", "align": "start", "gap": "spacious"}
+            },
+            {
+              "do": "write",
+              "as": "takeaway",
+              "kind": "note",
+              "role": "summary",
+              "content": {"title": "关键想法", "text": "辅助线不是猜出来的：它要创造能使用已知条件的结构。这里 AD 创造了公共边和两个可比较三角形。"},
+              "place": {"relation": "below", "anchor": "proof-route", "align": "start", "gap": "normal"}
+            },
+            {"do": "group", "as": "summary-group", "role": "summary", "label": "从这里复述", "members": ["proof-route", "takeaway"]},
+            {"do": "focus", "when": "after_speech", "targets": ["summary-group"], "intent": "review_from_start_to_finish"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "已知两组边相等，连接 AD 得到公共边，经 SSS 全等推出角平分线和垂线",
+    "focus": ["summary-group"]
+  }
+}

@@ -9,13 +9,19 @@ export interface BoardLayout {
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 
-function serializedLength(value: unknown): number {
-  return JSON.stringify(value ?? "").replace(/[{}[\]"\\]/g, "").length;
+function visibleContentLength(value: unknown): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value).length;
+  if (Array.isArray(value)) return value.reduce((total, item) => total + visibleContentLength(item), 0);
+  if (typeof value !== "object") return 0;
+  return Object.entries(value as Record<string, unknown>)
+    .filter(([key]) => !["id", "as", "asset_id", "source_region"].includes(key))
+    .reduce((total, [, item]) => total + visibleContentLength(item), 0);
 }
 
 export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "width" | "height"> {
   const content = node.content ?? {};
-  const length = serializedLength(content);
+  const length = visibleContentLength(content);
   const kind = String(node.kind ?? "text");
   if (kind === "plot" || kind === "image") return { width: 340, height: 230 };
   if (kind === "table") {
