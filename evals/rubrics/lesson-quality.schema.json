@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://octos.dev/schema/eval/lesson-quality/0.1",
+  "type": "object",
+  "required": ["rubric_version", "case_id", "dimensions", "critical_errors", "confidence", "limitations"],
+  "additionalProperties": false,
+  "properties": {
+    "rubric_version": {"const": "0.1"},
+    "case_id": {"type": "string", "minLength": 1},
+    "dimensions": {
+      "type": "object",
+      "required": ["correctness", "request_coverage", "progression", "narration_board_alignment", "board_use", "continuous_completion", "context_grounding", "no_unsupported_learner_claims"],
+      "additionalProperties": false,
+      "properties": {
+        "correctness": {"$ref": "#/$defs/dimension"},
+        "request_coverage": {"$ref": "#/$defs/dimension"},
+        "progression": {"$ref": "#/$defs/dimension"},
+        "narration_board_alignment": {"$ref": "#/$defs/dimension"},
+        "board_use": {"$ref": "#/$defs/dimension"},
+        "continuous_completion": {"$ref": "#/$defs/dimension"},
+        "context_grounding": {"$ref": "#/$defs/dimension"},
+        "no_unsupported_learner_claims": {"$ref": "#/$defs/dimension"}
+      }
+    },
+    "critical_errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "category", "description", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "severity": {"enum": ["major", "fatal"]},
+          "category": {"enum": ["factual", "coverage", "pedagogy", "alignment", "context", "safety"]},
+          "description": {"type": "string", "minLength": 1},
+          "evidence": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "confidence": {"enum": ["low", "medium", "high"]},
+    "limitations": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "dimension": {
+      "type": "object",
+      "required": ["score", "evidence", "concerns"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {"type": "integer", "minimum": 0, "maximum": 4},
+        "evidence": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"type": "string", "minLength": 1}},
+        "concerns": {"type": "array", "maxItems": 4, "items": {"type": "string"}}
+      }
+    }
+  }
+}
