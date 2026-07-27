@@ -1,0 +1,403 @@
+{
+  "board_id": "board-session-science-transpiration-v2-001",
+  "revision": 3,
+  "nodes": {
+    "lesson-science-transpiration-v2-001:node:condensation-path": {
+      "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+      "kind": "diagram",
+      "role": "mechanism",
+      "content": {
+        "title": "⑤ 从水蒸气到水珠",
+        "sequence": [
+          "看不见的水蒸气",
+          "碰到较凉袋壁",
+          "凝结",
+          "可见水珠"
+        ]
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "spacious",
+        "anchor": "lesson-science-transpiration-v2-001:node:water-path"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:evidence-table": {
+      "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+      "kind": "table",
+      "role": "evidence",
+      "content": {
+        "title": "② 两个装置的直接观察",
+        "columns": [
+          "装置",
+          "叶片",
+          "袋内水珠"
+        ],
+        "rows": [
+          [
+            "左侧",
+            "有叶",
+            "很多"
+          ],
+          [
+            "右侧",
+            "无叶",
+            "几乎没有"
+          ]
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-science-transpiration-v2-001:node:question-card"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:experiment-image": {
+      "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+      "kind": "image",
+      "role": "evidence",
+      "content": {
+        "asset_id": "asset-transpiration-control-001",
+        "alt": "左侧有叶植物袋内有大量水珠，右侧无叶对照袋内近乎无水珠",
+        "regions": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup",
+            "source_region": "asset-transpiration-control-001#region-leafy-setup",
+            "label": "有叶装置",
+            "confidence": "high"
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets",
+            "source_region": "asset-transpiration-control-001#region-droplets",
+            "label": "袋内水珠",
+            "confidence": "high"
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves",
+            "source_region": "asset-transpiration-control-001#region-leaves",
+            "label": "叶片",
+            "confidence": "high"
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "source_region": "asset-transpiration-control-001#region-control-setup",
+            "label": "无叶对照",
+            "confidence": "high"
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-bag",
+            "source_region": "asset-transpiration-control-001#region-control-bag",
+            "label": "近乎无水珠",
+            "confidence": "high"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson-origin"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves"
+          },
+          "emphasis": "supporting"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-bag"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "fragment_id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup"
+          },
+          "emphasis": "supporting"
+        }
+      ]
+    },
+    "lesson-science-transpiration-v2-001:node:first-inference": {
+      "id": "lesson-science-transpiration-v2-001:node:first-inference",
+      "kind": "note",
+      "role": "inference",
+      "content": {
+        "title": "③ 由对照得到的推断",
+        "text": "有叶 → 水珠多；无叶 → 水珠少。因此，水珠的形成与叶片有关。",
+        "details": [
+          "这是由比较得到的推断",
+          "内部运输过程还需要科学模型解释"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-science-transpiration-v2-001:node:evidence-table"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:lesson-route": {
+      "id": "lesson-science-transpiration-v2-001:node:lesson-route",
+      "kind": "diagram",
+      "role": "summary",
+      "content": {
+        "title": "⑧ 整条探究路线",
+        "sequence": [
+          "观察水珠",
+          "比较有叶/无叶",
+          "推断与叶片有关",
+          "建立蒸腾模型",
+          "解释对照结果"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-science-transpiration-v2-001:node:reasoning-layers"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:model-check": {
+      "id": "lesson-science-transpiration-v2-001:node:model-check",
+      "kind": "note",
+      "role": "conclusion",
+      "content": {
+        "title": "⑥ 用模型解释对照结果",
+        "items": [
+          "有叶：气孔多 → 水蒸气多 → 水珠多",
+          "无叶：主要蒸腾表面少 → 水珠少"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-science-transpiration-v2-001:node:experiment-image"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:question-card": {
+      "id": "lesson-science-transpiration-v2-001:node:question-card",
+      "kind": "note",
+      "role": "task",
+      "content": {
+        "title": "① 核心问题",
+        "text": "为什么有叶装置的袋内出现很多水珠，而无叶对照几乎没有？"
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "normal",
+        "anchor": "lesson-science-transpiration-v2-001:node:experiment-image"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:reasoning-layers": {
+      "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+      "kind": "table",
+      "role": "summary",
+      "content": {
+        "title": "⑦ 证据怎样支持解释",
+        "columns": [
+          "层次",
+          "内容",
+          "依据"
+        ],
+        "rows": [
+          [
+            "观察",
+            "有叶袋水珠多；无叶袋水珠少",
+            "图片直接可见"
+          ],
+          [
+            "推断",
+            "水珠形成与叶片有关",
+            "对照比较"
+          ],
+          [
+            "机制",
+            "根吸水→茎运输→气孔释放→凝结",
+            "科学模型"
+          ]
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-science-transpiration-v2-001:node:water-path"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:takeaway": {
+      "id": "lesson-science-transpiration-v2-001:node:takeaway",
+      "kind": "note",
+      "role": "summary",
+      "content": {
+        "title": "一句话结论",
+        "text": "水由根吸收，经茎运到叶片，再以水蒸气从气孔散失；水蒸气在袋壁凝结成水珠。"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-science-transpiration-v2-001:node:lesson-route"
+      }
+    },
+    "lesson-science-transpiration-v2-001:node:water-path": {
+      "id": "lesson-science-transpiration-v2-001:node:water-path",
+      "kind": "diagram",
+      "role": "mechanism",
+      "content": {
+        "title": "④ 植物的蒸腾作用",
+        "sequence": [
+          "土壤中的水",
+          "根吸收",
+          "茎内导管运输",
+          "到达叶片",
+          "气孔释放",
+          "水蒸气"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-science-transpiration-v2-001:node:first-inference"
+      }
+    }
+  },
+  "connections": {
+    "lesson-science-transpiration-v2-001:connection:vapor-to-condensation": {
+      "id": "lesson-science-transpiration-v2-001:connection:vapor-to-condensation",
+      "from": {
+        "node_id": "lesson-science-transpiration-v2-001:node:water-path"
+      },
+      "to": {
+        "node_id": "lesson-science-transpiration-v2-001:node:condensation-path"
+      },
+      "relation": "continues_as",
+      "label": "离开叶片以后"
+    }
+  },
+  "groups": {
+    "lesson-science-transpiration-v2-001:group:experiment-group": {
+      "id": "lesson-science-transpiration-v2-001:group:experiment-group",
+      "title": "① 先看实验，不猜答案",
+      "role": "task",
+      "members": [
+        "lesson-science-transpiration-v2-001:node:experiment-image",
+        "lesson-science-transpiration-v2-001:node:question-card"
+      ]
+    },
+    "lesson-science-transpiration-v2-001:group:summary-group": {
+      "id": "lesson-science-transpiration-v2-001:group:summary-group",
+      "title": "从证据复述到模型",
+      "role": "summary",
+      "members": [
+        "lesson-science-transpiration-v2-001:node:lesson-route",
+        "lesson-science-transpiration-v2-001:node:takeaway"
+      ]
+    }
+  },
+  "focus": [
+    "lesson-science-transpiration-v2-001:group:summary-group"
+  ],
+  "applied_lessons": [
+    "lesson-science-transpiration-v2-001"
+  ],
+  "applied_steps": [
+    "lesson-science-transpiration-v2-001:step:establish-observation",
+    "lesson-science-transpiration-v2-001:step:build-mechanism",
+    "lesson-science-transpiration-v2-001:step:test-and-organize-explanation"
+  ],
+  "applied_actions": [
+    "lesson-science-transpiration-v2-001:action:1:1:1",
+    "lesson-science-transpiration-v2-001:action:1:1:2",
+    "lesson-science-transpiration-v2-001:action:1:1:3",
+    "lesson-science-transpiration-v2-001:action:1:1:4",
+    "lesson-science-transpiration-v2-001:action:1:2:1",
+    "lesson-science-transpiration-v2-001:action:1:2:2",
+    "lesson-science-transpiration-v2-001:action:1:2:3",
+    "lesson-science-transpiration-v2-001:action:1:2:4",
+    "lesson-science-transpiration-v2-001:action:1:3:1",
+    "lesson-science-transpiration-v2-001:action:1:3:2",
+    "lesson-science-transpiration-v2-001:action:1:3:3",
+    "lesson-science-transpiration-v2-001:action:1:3:4",
+    "lesson-science-transpiration-v2-001:action:1:3:5",
+    "lesson-science-transpiration-v2-001:action:1:3:6",
+    "lesson-science-transpiration-v2-001:action:1:4:1",
+    "lesson-science-transpiration-v2-001:action:1:4:2",
+    "lesson-science-transpiration-v2-001:action:1:4:3",
+    "lesson-science-transpiration-v2-001:action:1:4:4",
+    "lesson-science-transpiration-v2-001:action:2:1:1",
+    "lesson-science-transpiration-v2-001:action:2:1:2",
+    "lesson-science-transpiration-v2-001:action:2:2:1",
+    "lesson-science-transpiration-v2-001:action:2:2:2",
+    "lesson-science-transpiration-v2-001:action:2:3:1",
+    "lesson-science-transpiration-v2-001:action:2:3:2",
+    "lesson-science-transpiration-v2-001:action:2:4:1",
+    "lesson-science-transpiration-v2-001:action:2:4:2",
+    "lesson-science-transpiration-v2-001:action:2:4:3",
+    "lesson-science-transpiration-v2-001:action:3:1:1",
+    "lesson-science-transpiration-v2-001:action:3:1:2",
+    "lesson-science-transpiration-v2-001:action:3:1:3",
+    "lesson-science-transpiration-v2-001:action:3:1:4",
+    "lesson-science-transpiration-v2-001:action:3:2:1",
+    "lesson-science-transpiration-v2-001:action:3:2:2",
+    "lesson-science-transpiration-v2-001:action:3:3:1",
+    "lesson-science-transpiration-v2-001:action:3:3:2",
+    "lesson-science-transpiration-v2-001:action:3:3:3",
+    "lesson-science-transpiration-v2-001:action:3:3:4"
+  ]
+}

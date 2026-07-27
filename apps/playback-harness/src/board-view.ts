@@ -1,6 +1,7 @@
 import type { CanonicalAction, SemanticBoardState } from "../../../packages/core/src/index.js";
 import type { PlaybackOperation } from "../../../packages/player-core/src/index.js";
 import katex from "katex";
+import type { ImageAssetResolver } from "./assets.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type Rect } from "./layout.js";
 
@@ -163,7 +164,49 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   parent.append(svg);
 }
 
-function renderContent(parent: HTMLElement, node: Record<string, any>): void {
+function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver): void {
+  const content = node.content ?? {};
+  const asset = resolveAsset(text(content.asset_id));
+  if (!asset) {
+    appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
+    const regions = Array.isArray(content.regions) ? content.regions : [];
+    if (regions.length) {
+      const pills = document.createElement("div"); pills.className = "region-pills";
+      for (const region of regions) {
+        const pill = appendText(pills, text(region.label || region.source_region), "");
+        pill.dataset.id = text(region.id); applyEmphasisClass(pill, latestEmphasis(node, text(region.id)));
+      }
+      parent.append(pills);
+    }
+    return;
+  }
+  const frame = document.createElement("figure");
+  frame.className = "lesson-image-frame";
+  frame.style.aspectRatio = `${asset.intrinsic_width} / ${asset.intrinsic_height}`;
+  const image = document.createElement("img");
+  image.className = "lesson-image";
+  image.src = asset.src;
+  image.alt = text(content.alt || "课程图片");
+  image.draggable = false;
+  frame.append(image);
+  for (const region of Array.isArray(content.regions) ? content.regions : []) {
+    const bounds = asset.regions[text(region.source_region)];
+    if (!bounds) continue;
+    const overlay = document.createElement("div");
+    overlay.className = "image-region";
+    overlay.dataset.id = text(region.id);
+    overlay.dataset.label = text(region.label);
+    Object.assign(overlay.style, {
+      left: `${bounds.x * 100}%`, top: `${bounds.y * 100}%`,
+      width: `${bounds.width * 100}%`, height: `${bounds.height * 100}%`,
+    });
+    applyEmphasisClass(overlay, latestEmphasis(node, text(region.id)));
+    frame.append(overlay);
+  }
+  parent.append(frame);
+}
+
+function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver): void {
   const content = node.content ?? {};
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
@@ -171,17 +214,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>): void {
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
   if (node.kind === "math") { renderMath(parent, node); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
-    appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
-    const regions = Array.isArray(content.regions) ? content.regions : [];
-    if (regions.length) {
-      const pills = document.createElement("div"); pills.className = "region-pills";
-      for (const region of regions) {
-        const pill = appendText(pills, text(region.label || region.as || region.source_region), "");
-        pill.dataset.id = text(region.id); applyEmphasisClass(pill, latestEmphasis(node, text(region.id)));
-      }
-      parent.append(pills);
-    }
-    return;
+    renderImage(parent, node, resolveAsset); return;
   }
   if (node.kind === "table") {
     const table = document.createElement("table"); table.className = "content-table";
@@ -261,6 +294,7 @@ export class InfiniteBoardView {
     private readonly connections: SVGSVGElement,
     private readonly connectionLabels: SVGSVGElement,
     private readonly pointer: HTMLElement,
+    private readonly resolveAsset: ImageAssetResolver = () => undefined,
   ) {
     viewport.addEventListener("wheel", (event) => this.onWheel(event), { passive: false });
     viewport.addEventListener("pointerdown", (event) => this.onPointerDown(event));
@@ -313,7 +347,7 @@ export class InfiniteBoardView {
       if (board.focus.includes(node.id)) element.classList.add("focused");
       applyEmphasisClass(element, latestEmphasis(node));
       setRect(element, layout.nodes[node.id]!);
-      renderContent(element, node);
+      renderContent(element, node, this.resolveAsset);
       this.nodes.append(element);
     }
   }

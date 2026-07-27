@@ -7,6 +7,7 @@ This directory stores deterministic real-browser observations of fixed Canonical
 ```bash
 npm run teaching:observe:geometry
 npm run teaching:observe:quadratic
+npm run teaching:observe:science
 ```
 
 Generic form:
@@ -25,7 +26,7 @@ The runner builds the harness, starts an isolated local server, launches an exis
 
 - `action_frames`: the target of each visible classroom action exists and intersects the viewport;
 - `beats`: the committed teaching focus is fully in view and meets focal size/readability thresholds;
-- global DOM gates: no KaTeX error, content clipping, connection-label/node overlap, duplicated internal diagram line, or browser console warning/error;
+- global DOM gates: no KaTeX error, content clipping, connection-label/node overlap, duplicated internal diagram line, pending/failed lesson image, or browser console warning/error;
 - failure screenshots: captured only for failing cursors and replaced on the next run.
 
 The JSON report is intended for CI and later cross-lesson aggregation. The Markdown report is the review surface for humans.
@@ -48,6 +49,12 @@ Quadratic V2 is the second expected-pass specimen. It separates coefficient
 halving, construction of the perfect square, the `+9-9` invariant, substitution,
 constant simplification and graph interpretation into eleven explicitly focused
 Beats. Its report is stored in `quadratic-v2/`.
+
+Science transpiration V2 is the third expected-pass specimen and the first to
+load a real controlled PNG. It separates direct observation, comparison,
+inference, internal transport, transpiration and condensation across eleven
+Beats. The Observer additionally rejects pending or failed lesson images. Its
+report is stored in `science-transpiration-v2/`.
 
 ## Cross-subject negative probe
 

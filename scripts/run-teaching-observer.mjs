@@ -130,6 +130,7 @@ try {
     const operation = await page.evaluate(() => globalThis.__OLL_HARNESS__.advance());
     if (!operation) break;
     if (operation.type !== "action.apply" && operation.type !== "beat.end") continue;
+    await page.waitForFunction(() => [...document.querySelectorAll("img.lesson-image")].every((image) => image.complete), undefined, { timeout: 3000 });
     const observation = await page.evaluate(() => globalThis.__OLL_HARNESS__.observe());
     lessonId = observation.lesson_id;
     if (operation.type === "beat.end") {

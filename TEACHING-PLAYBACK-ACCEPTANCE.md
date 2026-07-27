@@ -40,6 +40,7 @@
 - diagram 内部动作必须绘制在 diagram 自己的坐标空间中；
 - 唯一教学信息不能只存在于瞬时 pointer、颜色闪烁或已经消失的字幕中；
 - 目标不得被不透明节点、画布边界或其他标签遮挡。
+- 受控图片必须完成真实加载；region 强调必须落在图片空间的实际 overlay，而不是替代文字标签。
 
 自动证据：目标 DOM/SVG 存在、可见、位于 viewport 或已触发明确 camera focus、无遮挡检测通过。
 
@@ -123,6 +124,7 @@ Harness 必须为固定课程输出关键帧观测：
 - 任一 Beat 新建 node 超过 3 个时要求显式豁免；
 - 刷新恢复到相同 Beat 后观测一致；
 - console 无 error/warn。
+- lesson image 不处于 pending 且 `naturalWidth > 0`。
 
 自动门禁不判断“讲解是否聪明”“颜色是否真的帮助理解”或“学生是否学会”。
 
@@ -132,7 +134,7 @@ Harness 必须为固定课程输出关键帧观测：
 npm run teaching:observe -- --lesson geometry --output evals/teaching-playback/geometry-v2/report.json
 ```
 
-当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查 KaTeX 错误、内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染和 console warning/error。几何 V2 基准为 11 个 Beat、51 个动作帧。
+当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查 KaTeX 错误、内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染、图片 pending/加载失败和 console warning/error。当前三个正向基准分别为几何 11 Beat/51 动作帧、二次函数 11/45、图片科学 11/37。
 
 ## 5. 人工盲测协议
 

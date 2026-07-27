@@ -1,7 +1,7 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T13:47:18.948Z",
+  "generated_at": "2026-07-27T14:09:22.280Z",
   "lesson_id": "lesson-quadratic-001",
   "fixture": "quadratic-v1",
   "viewport": {
@@ -42,7 +42,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -82,7 +84,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -122,7 +126,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -162,7 +168,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -202,7 +210,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -242,7 +252,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -282,7 +294,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -322,7 +336,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -362,7 +378,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -485,7 +503,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": false,
@@ -539,7 +559,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -586,7 +608,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -633,7 +657,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -680,7 +706,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -727,7 +755,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -774,7 +804,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -821,7 +853,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -868,7 +902,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -915,7 +951,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -962,7 +1000,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1009,7 +1049,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1056,7 +1098,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1103,7 +1147,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1150,7 +1196,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1197,7 +1245,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1244,7 +1294,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1291,7 +1343,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1338,7 +1392,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1385,7 +1441,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1432,7 +1490,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1479,7 +1539,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1526,7 +1588,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1573,7 +1637,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1620,7 +1686,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,
@@ -1750,7 +1818,9 @@
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
-        "duplicate_internal_connections": []
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
       },
       "gate": {
         "passed": true,

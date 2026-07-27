@@ -38,6 +38,8 @@ export interface TeachingFrameObservation {
   content_overflows: string[];
   label_node_overlaps: Array<{ label_id: string; node_id: string }>;
   duplicate_internal_connections: string[];
+  image_load_failures: string[];
+  image_pending: string[];
 }
 
 export interface TeachingGateIssue {
@@ -188,6 +190,11 @@ export function collectTeachingObservation(input: {
   const internalIds = new Set([...world.querySelectorAll<SVGElement>(".diagram-connection")].map((element) => element.dataset.id).filter(Boolean) as string[]);
   const externalIds = new Set([...world.querySelectorAll<SVGElement>(".connection-line")].map((element) => element.dataset.id).filter(Boolean) as string[]);
   const duplicateInternalConnections = [...internalIds].filter((id) => externalIds.has(id));
+  const images = [...world.querySelectorAll<HTMLImageElement>(".lesson-image")];
+  const imageLoadFailures = images.filter((image) => image.complete && image.naturalWidth === 0)
+    .map((image) => image.closest<HTMLElement>(".board-node")?.dataset.id ?? image.src);
+  const imagePending = images.filter((image) => !image.complete)
+    .map((image) => image.closest<HTMLElement>(".board-node")?.dataset.id ?? image.src);
 
   return {
     profile: "octos.teaching-playback.observation", version: "0.1", lesson_id: operation.lesson_id,
@@ -201,6 +208,7 @@ export function collectTeachingObservation(input: {
     min_focal_body_font_px: minimumFontSize(focalElements), min_focal_diagram_edge_px: minimumDiagramEdge(focalElements),
     math_errors: world.querySelectorAll(".katex-error").length, content_overflows: [...new Set(contentOverflows)],
     label_node_overlaps: labelNodeOverlaps, duplicate_internal_connections: duplicateInternalConnections,
+    image_load_failures: imageLoadFailures, image_pending: imagePending,
   };
 }
 
@@ -212,6 +220,8 @@ export function evaluateTeachingObservation(observation: TeachingFrameObservatio
   if (observation.content_overflows.length) add("G3_CONTENT_OVERFLOW", "Rendered content exceeds its board card", observation.content_overflows);
   if (observation.label_node_overlaps.length) add("G1_LABEL_NODE_OVERLAP", "Connection label overlaps a board node", observation.label_node_overlaps.map((item) => `${item.label_id}->${item.node_id}`));
   if (observation.duplicate_internal_connections.length) add("G1_DUPLICATE_DIAGRAM_CONNECTION", "Diagram-internal connection was also rendered on the outer board", observation.duplicate_internal_connections);
+  if (observation.image_load_failures.length) add("G3_ASSET_LOAD_FAILED", "A lesson image failed to load", observation.image_load_failures);
+  if (observation.image_pending.length) add("G3_ASSET_NOT_READY", "A lesson image was observed before loading completed", observation.image_pending);
 
   if (observation.operation_type === "action.apply" && observation.active_targets.length) {
     const missing = observation.active_targets.filter((target) => !target.visible).map((target) => target.id);

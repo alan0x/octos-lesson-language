@@ -10,13 +10,18 @@ function observation(overrides: Partial<TeachingFrameObservation> = {}): Teachin
     focus_targets: ["node-1"],
     focal_nodes: [{ id: "node-1", kind: "math", x: 100, y: 100, width: 320, height: 120, visible: true, fully_in_view: true }],
     active_targets: [], min_focal_node_width: 320, min_focal_body_font_px: 18, min_focal_diagram_edge_px: null,
-    math_errors: 0, content_overflows: [], label_node_overlaps: [], duplicate_internal_connections: [],
+    math_errors: 0, content_overflows: [], label_node_overlaps: [], duplicate_internal_connections: [], image_load_failures: [], image_pending: [],
     ...overrides,
   };
 }
 
 test("teaching observer accepts a readable beat boundary", () => {
   assert.deepEqual(evaluateTeachingObservation(observation()), { passed: true, issues: [] });
+});
+
+test("teaching observer rejects missing and unfinished lesson assets", () => {
+  const result = evaluateTeachingObservation(observation({ image_load_failures: ["image-1"], image_pending: ["image-2"] }));
+  assert.deepEqual(result.issues.map((issue) => issue.code), ["G3_ASSET_LOAD_FAILED", "G3_ASSET_NOT_READY"]);
 });
 
 test("teaching observer reports independent browser rendering failures", () => {

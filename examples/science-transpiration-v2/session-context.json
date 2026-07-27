@@ -1,0 +1,18 @@
+{
+  "session_id": "session-science-transpiration-v2-001",
+  "request": "解释为什么套在植物枝叶外的塑料袋内出现水珠",
+  "assets": [
+    {
+      "asset_id": "asset-transpiration-control-001",
+      "media_type": "image/png",
+      "alt": "有叶植物与无叶枝条的塑料袋对照实验",
+      "regions": [
+        {"region_id": "asset-transpiration-control-001#region-leafy-setup", "label": "左侧有叶装置", "confidence": "high"},
+        {"region_id": "asset-transpiration-control-001#region-droplets", "label": "左袋内壁水珠", "confidence": "high"},
+        {"region_id": "asset-transpiration-control-001#region-leaves", "label": "左侧叶片", "confidence": "high"},
+        {"region_id": "asset-transpiration-control-001#region-control-setup", "label": "右侧无叶对照", "confidence": "high"},
+        {"region_id": "asset-transpiration-control-001#region-control-bag", "label": "右侧近乎无水珠的袋壁", "confidence": "high"}
+      ]
+    }
+  ]
+}

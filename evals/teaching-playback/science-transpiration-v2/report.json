@@ -1,9 +1,9 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T14:05:15.455Z",
-  "lesson_id": "lesson-quadratic-v2-001",
-  "fixture": "quadratic",
+  "generated_at": "2026-07-27T14:10:32.664Z",
+  "lesson_id": "lesson-science-transpiration-v2-001",
+  "fixture": "science",
   "viewport": {
     "width": 1280,
     "height": 720
@@ -18,10 +18,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 16,
         "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:establish-task:beat:show-problem-and-goal",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
         "viewport": {
           "width": 960,
           "height": 608
@@ -34,23 +34,23 @@
         "new_connections": 0,
         "new_groups": 1,
         "focus_targets": [
-          "lesson-quadratic-v2-001:group:task-group"
+          "lesson-science-transpiration-v2-001:group:experiment-group"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 193,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 163,
+            "y": 189,
+            "width": 340,
+            "height": 230,
             "visible": true,
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:goal-card",
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
             "kind": "note",
-            "x": 526.77,
+            "x": 556.77,
             "y": 250.48,
             "width": 240.46,
             "height": 107.05,
@@ -60,356 +60,6 @@
         ],
         "active_targets": [],
         "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 31,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:isolate-quadratic-part",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 2,
-        "connection_count": 0,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:original"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 45,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:halve-linear-coefficient",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 3,
-        "connection_count": 1,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 60,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 4,
-        "connection_count": 2,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 77,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 5,
-        "connection_count": 3,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:balanced-expression"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 91,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:replace-with-square",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 6,
-        "connection_count": 4,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:grouped-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 105,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:simplify-constant",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 7,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 122,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 2,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 340,
         "min_focal_body_font_px": 16,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -428,29 +78,412 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 136,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 30,
         "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:read-vertex-and-axis",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 9,
-        "connection_count": 7,
+        "node_count": 3,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 1,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola",
-          "lesson-quadratic-v2-001:node:graph-facts"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 46,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 114,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 336,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 60,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 299.1,
+            "y": 133,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 298.82,
+            "y": 344.21,
+            "width": 362.36,
+            "height": 131.58,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 74,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 86,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 98,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 111,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 127,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
             "x": 310,
             "y": 109,
             "width": 340,
@@ -459,18 +492,18 @@
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
             "kind": "note",
             "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
+            "y": 392.46,
+            "width": 248.85,
+            "height": 107.08,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.46,
+        "min_focal_node_width": 248.85,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -489,77 +522,77 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 149,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 139,
         "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:describe-translation",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": 208,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 153,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
         "node_count": 10,
-        "connection_count": 8,
-        "group_count": 1,
-        "new_nodes": 1,
-        "new_connections": 1,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:translation-note"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [],
-        "min_focal_node_width": 308.36,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 165,
-        "operation_type": "beat.end",
-        "beat_id": "lesson-quadratic-v2-001:step:organize-route:beat:show-complete-route",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 12,
-        "connection_count": 8,
+        "connection_count": 1,
         "group_count": 2,
         "new_nodes": 2,
         "new_connections": 0,
         "new_groups": 1,
         "focus_targets": [
-          "lesson-quadratic-v2-001:group:summary-group"
+          "lesson-science-transpiration-v2-001:group:summary-group"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:lesson-route",
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
             "kind": "diagram",
             "x": 340,
             "y": 157.5,
@@ -569,7 +602,7 @@
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:takeaway",
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
             "kind": "note",
             "x": 339.77,
             "y": 343.98,
@@ -601,10 +634,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 8,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:establish-task:beat:show-problem-and-goal",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
         "action_op": "board.create",
         "viewport": {
           "width": 960,
@@ -621,12 +654,12 @@
         "focal_nodes": [],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
             "x": 173.6,
             "y": 153.6,
-            "width": 218.4,
-            "height": 74.88,
+            "width": 265.2,
+            "height": 179.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -650,10 +683,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 9,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:establish-task:beat:show-problem-and-goal",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
         "action_op": "board.create",
         "viewport": {
           "width": 960,
@@ -670,10 +703,10 @@
         "focal_nodes": [],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:goal-card",
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
             "kind": "note",
-            "x": 433.94,
-            "y": 153.19,
+            "x": 480.74,
+            "y": 201.55,
             "width": 187.56,
             "height": 83.5,
             "visible": true,
@@ -699,10 +732,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 10,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:establish-task:beat:show-problem-and-goal",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
         "action_op": "board.group",
         "viewport": {
           "width": 960,
@@ -719,12 +752,12 @@
         "focal_nodes": [],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:group:task-group",
+            "id": "lesson-science-transpiration-v2-001:group:experiment-group",
             "kind": "board-group",
             "x": 173.6,
             "y": 153.6,
-            "width": 500.76,
-            "height": 135.72,
+            "width": 547.56,
+            "height": 232.44,
             "visible": true,
             "fully_in_view": true
           }
@@ -748,10 +781,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 14,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:establish-task:beat:show-problem-and-goal",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
         "action_op": "board.focus",
         "viewport": {
           "width": 960,
@@ -765,23 +798,23 @@
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:group:task-group"
+          "lesson-science-transpiration-v2-001:group:experiment-group"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 193,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 163,
+            "y": 189,
+            "width": 340,
+            "height": 230,
             "visible": true,
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:goal-card",
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
             "kind": "note",
-            "x": 526.77,
+            "x": 556.77,
             "y": 250.48,
             "width": 240.46,
             "height": 107.05,
@@ -791,18 +824,18 @@
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:group:task-group",
+            "id": "lesson-science-transpiration-v2-001:group:experiment-group",
             "kind": "board-group",
-            "x": 159,
-            "y": 217,
-            "width": 642,
-            "height": 174,
+            "x": 129,
+            "y": 155,
+            "width": 702,
+            "height": 298,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
+        "min_focal_body_font_px": 16,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -820,40 +853,184 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 22,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 163,
+            "y": 189,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 556.77,
+            "y": 250.48,
+            "width": 240.46,
+            "height": 107.05,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets",
+            "kind": "image-region",
+            "x": 209.17,
+            "y": 239.83,
+            "width": 111.73,
+            "height": 117.59,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 240.46,
+        "min_focal_body_font_px": 16,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 23,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 163,
+            "y": 189,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 556.77,
+            "y": 250.48,
+            "width": 240.46,
+            "height": 107.05,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves",
+            "kind": "image-region",
+            "x": 221.25,
+            "y": 259.44,
+            "width": 84.55,
+            "height": 94.08,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 240.46,
+        "min_focal_body_font_px": 16,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 24,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:isolate-quadratic-part",
-        "action_op": "board.emphasize",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.create",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 2,
+        "node_count": 3,
         "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:group:task-group"
+          "lesson-science-transpiration-v2-001:group:experiment-group"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 193,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 163,
+            "y": 189,
+            "width": 340,
+            "height": 230,
             "visible": true,
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:goal-card",
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
             "kind": "note",
-            "x": 526.77,
+            "x": 556.77,
             "y": 250.48,
             "width": 240.46,
             "height": 107.05,
@@ -863,18 +1040,18 @@
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:original:fragment:quadratic",
-            "kind": "math-fragment",
-            "x": 300.11,
-            "y": 288.53,
-            "width": 24.27,
-            "height": 30.94,
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 557,
+            "y": 411,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
+        "min_focal_body_font_px": 16,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -892,123 +1069,72 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 25,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 28,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:isolate-quadratic-part",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 2,
-        "connection_count": 0,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:group:task-group"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 193,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          },
-          {
-            "id": "lesson-quadratic-v2-001:node:goal-card",
-            "kind": "note",
-            "x": 526.77,
-            "y": 250.48,
-            "width": 240.46,
-            "height": 107.05,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:original:fragment:linear",
-            "kind": "math-fragment",
-            "x": 327.25,
-            "y": 288.53,
-            "width": 46.19,
-            "height": 30.94,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 29,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:isolate-quadratic-part",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
         "action_op": "board.focus",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 2,
+        "node_count": 3,
         "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:original"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1026,11 +1152,84 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 36,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets",
+            "kind": "image-region",
+            "x": 169.17,
+            "y": 181.83,
+            "width": 111.73,
+            "height": 117.59,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 37,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:halve-linear-coefficient",
-        "action_op": "board.create",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
         "viewport": {
           "width": 960,
           "height": 608
@@ -1043,34 +1242,45 @@
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:original"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 406,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves",
+            "kind": "image-region",
+            "x": 181.25,
+            "y": 201.44,
+            "width": 84.55,
+            "height": 94.08,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1088,51 +1298,62 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 38,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:halve-linear-coefficient",
-        "action_op": "board.connect",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
         "node_count": 3,
-        "connection_count": 1,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:original"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:connection:linear-to-half",
-            "kind": "connection-line",
-            "x": 480,
-            "y": 352,
-            "width": 130.5,
-            "height": 54,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 308.09,
+            "y": 181.83,
+            "width": 114.75,
+            "height": 148.95,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1150,10 +1371,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 39,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:halve-linear-coefficient",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
         "action_op": "board.emphasize",
         "viewport": {
           "width": 960,
@@ -1161,40 +1382,51 @@
         },
         "world_scale": 1,
         "node_count": 3,
-        "connection_count": 1,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:original"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:original",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 124,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient:fragment:result",
-            "kind": "math-fragment",
-            "x": 485.66,
-            "y": 439.03,
-            "width": 38.83,
-            "height": 29.94,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-bag",
+            "kind": "image-region",
+            "x": 314.13,
+            "y": 183.8,
+            "width": 105.69,
+            "height": 123.47,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1212,10 +1444,83 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 43,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 40,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:halve-linear-coefficient",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 131,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 353,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 44,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
         "action_op": "board.focus",
         "viewport": {
           "width": 960,
@@ -1223,40 +1528,61 @@
         },
         "world_scale": 1,
         "node_count": 3,
-        "connection_count": 1,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 114,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 336,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 114,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 336,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1274,113 +1600,62 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 51,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 4,
-        "connection_count": 1,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 406,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 52,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
-        "action_op": "board.connect",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.emphasize",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 4,
-        "connection_count": 2,
+        "node_count": 3,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 114,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 336,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:connection:half-to-square",
-            "kind": "connection-line",
-            "x": 480,
-            "y": 352,
-            "width": 130.5,
-            "height": 54,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup",
+            "kind": "image-region",
+            "x": 163.13,
+            "y": 164.83,
+            "width": 120.8,
+            "height": 148.95,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1398,51 +1673,62 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 53,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
         "action_op": "board.emphasize",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 4,
-        "connection_count": 2,
+        "node_count": 3,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": 114,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 336,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:square-identity:fragment:expanded",
-            "kind": "math-fragment",
-            "x": 361.83,
-            "y": 438.53,
-            "width": 124.48,
-            "height": 30.94,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 308.09,
+            "y": 164.83,
+            "width": 114.75,
+            "height": 148.95,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1460,51 +1746,62 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 54,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
-        "action_op": "board.emphasize",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.create",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
         "node_count": 4,
-        "connection_count": 2,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:half-coefficient"
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:half-coefficient",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 123,
+            "y": -10,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": false
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 517,
+            "y": 212,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:square-identity:fragment:factored",
-            "kind": "math-fragment",
-            "x": 511.48,
-            "y": 438.53,
-            "width": 86.67,
-            "height": 30.94,
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 516.72,
+            "y": 423.21,
+            "width": 362.36,
+            "height": 131.58,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1522,10 +1819,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 58,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:construct-square:beat:build-perfect-square",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
         "action_op": "board.focus",
         "viewport": {
           "width": 960,
@@ -1533,40 +1830,61 @@
         },
         "world_scale": 1,
         "node_count": 4,
-        "connection_count": 2,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 299.1,
+            "y": 133,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 298.82,
+            "y": 344.21,
+            "width": 362.36,
+            "height": 131.58,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 299.1,
+            "y": 133,
+            "width": 320,
+            "height": 158,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 298.82,
+            "y": 344.21,
+            "width": 362.36,
+            "height": 131.58,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1584,10 +1902,10 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
+        "lesson_id": "lesson-science-transpiration-v2-001",
         "cursor": 68,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
         "action_op": "board.create",
         "viewport": {
           "width": 960,
@@ -1595,1624 +1913,42 @@
         },
         "world_scale": 1,
         "node_count": 5,
-        "connection_count": 2,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 440,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 69,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 5,
-        "connection_count": 2,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression:fragment:add-nine",
-            "kind": "math-fragment",
-            "x": 494.66,
-            "y": 473.03,
-            "width": 31.91,
-            "height": 29.94,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 70,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 5,
-        "connection_count": 2,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression:fragment:subtract-nine",
-            "kind": "math-fragment",
-            "x": 529.44,
-            "y": 473.03,
-            "width": 31.91,
-            "height": 29.94,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 71,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 5,
-        "connection_count": 3,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:square-identity"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:square-identity",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:cancel-nine",
-            "kind": "connection-line",
-            "x": 480,
-            "y": 440,
-            "width": 0,
-            "height": 48,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 75,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:add-and-subtract-nine",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 5,
-        "connection_count": 3,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:balanced-expression"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 83,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:replace-with-square",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 6,
-        "connection_count": 3,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:balanced-expression"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 406,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 84,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:replace-with-square",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 6,
-        "connection_count": 4,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:balanced-expression"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:identity-to-grouped",
-            "kind": "connection-line",
-            "x": 480,
-            "y": 168,
-            "width": 130.5,
-            "height": 238,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 85,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:replace-with-square",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 6,
-        "connection_count": 4,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:balanced-expression"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:balanced-expression",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form:fragment:square",
-            "kind": "math-fragment",
-            "x": 418.95,
-            "y": 438.53,
-            "width": 86.67,
-            "height": 30.94,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 89,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:replace-with-square",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 6,
-        "connection_count": 4,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:grouped-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 97,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:simplify-constant",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 7,
-        "connection_count": 4,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:grouped-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 340,
-            "y": 406,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 98,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:simplify-constant",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 7,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:grouped-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:constants-to-vertical",
-            "kind": "connection-line",
-            "x": 480,
-            "y": 352,
-            "width": 130.5,
-            "height": 54,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 99,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:simplify-constant",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 7,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:grouped-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:grouped-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form:fragment:vertical",
-            "kind": "math-fragment",
-            "x": 529.98,
-            "y": 439.03,
-            "width": 31.91,
-            "height": 29.94,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 103,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:preserve-equality:beat:simplify-constant",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 7,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 113,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 198,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 566,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 114,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "action_op": "teacher.point",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 5,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 198,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola:fragment:vertex",
-            "kind": "plot-point",
-            "x": 718.73,
-            "y": 367.43,
-            "width": 10,
-            "height": 10,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 115,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 6,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 198,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:square-to-axis",
-            "kind": "connection-line",
-            "x": 478,
-            "y": 304,
-            "width": 88,
-            "height": 0,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 116,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:vertex-form"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:vertex-form",
-            "kind": "math",
-            "x": 198,
-            "y": 256,
-            "width": 280,
-            "height": 96,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:vertical-to-vertex",
-            "kind": "connection-line",
-            "x": 478,
-            "y": 144.25,
-            "width": 88,
-            "height": 159.75,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 120,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:locate-vertex",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 340,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 128,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:read-vertex-and-axis",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola:fragment:vertex",
-            "kind": "plot-point",
-            "x": 460.73,
-            "y": 365.43,
-            "width": 14,
-            "height": 14,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 340,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 129,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:read-vertex-and-axis",
-        "action_op": "board.emphasize",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 8,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 189,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola:fragment:symmetry-axis",
-            "kind": "plot-guide",
-            "x": 467.73,
-            "y": 261,
-            "width": 0,
-            "height": 130,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 340,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 130,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:read-vertex-and-axis",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 9,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 164,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
-            "kind": "note",
-            "x": 309.77,
-            "y": 447.48,
-            "width": 240.46,
-            "height": 107.05,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 340,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 134,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:read-vertex-and-axis",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 9,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola",
-          "lesson-quadratic-v2-001:node:graph-facts"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 109,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          },
-          {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
-            "kind": "note",
-            "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": 109,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": true
-          },
-          {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
-            "kind": "note",
-            "x": 309.77,
-            "y": 392.48,
-            "width": 240.46,
-            "height": 107.05,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 142,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:describe-translation",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 10,
-        "connection_count": 7,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola",
-          "lesson-quadratic-v2-001:node:graph-facts"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": -20,
-            "width": 340,
-            "height": 230,
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 299.1,
+            "y": -9,
+            "width": 320,
+            "height": 158,
             "visible": true,
             "fully_in_view": false
           },
           {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
             "kind": "note",
-            "x": 309.77,
-            "y": 263.48,
-            "width": 240.46,
-            "height": 107.05,
+            "x": 298.82,
+            "y": 202.21,
+            "width": 362.36,
+            "height": 131.58,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 309.72,
-            "y": 423.33,
-            "width": 308.36,
-            "height": 131.34,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 143,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:describe-translation",
-        "action_op": "board.connect",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 10,
-        "connection_count": 8,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:parabola",
-          "lesson-quadratic-v2-001:node:graph-facts"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:parabola",
-            "kind": "plot",
-            "x": 310,
-            "y": -20,
-            "width": 340,
-            "height": 230,
-            "visible": true,
-            "fully_in_view": false
-          },
-          {
-            "id": "lesson-quadratic-v2-001:node:graph-facts",
-            "kind": "note",
-            "x": 309.77,
-            "y": 263.48,
-            "width": 240.46,
-            "height": 107.05,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:connection:graph-to-translation",
-            "kind": "connection-line",
-            "x": 466.56,
-            "y": 210,
-            "width": 164.19,
-            "height": 214,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 240.46,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 147,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:interpret-graph:beat:describe-translation",
-        "action_op": "board.focus",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 10,
-        "connection_count": 8,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:translation-note"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 238.33,
-            "width": 308.36,
-            "height": 131.34,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "min_focal_node_width": 308.36,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": null,
-        "math_errors": 0,
-        "content_overflows": [],
-        "label_node_overlaps": [],
-        "duplicate_internal_connections": [],
-        "image_load_failures": [],
-        "image_pending": []
-      },
-      "gate": {
-        "passed": true,
-        "issues": []
-      }
-    },
-    {
-      "observation": {
-        "profile": "octos.teaching-playback.observation",
-        "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 157,
-        "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:organize-route:beat:show-complete-route",
-        "action_op": "board.create",
-        "viewport": {
-          "width": 960,
-          "height": 608
-        },
-        "world_scale": 1,
-        "node_count": 11,
-        "connection_count": 8,
-        "group_count": 1,
-        "new_nodes": 0,
-        "new_connections": 0,
-        "new_groups": 0,
-        "focus_targets": [
-          "lesson-quadratic-v2-001:node:translation-note"
-        ],
-        "focal_nodes": [
-          {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 202.33,
-            "width": 308.36,
-            "height": 131.34,
-            "visible": true,
-            "fully_in_view": true
-          }
-        ],
-        "active_targets": [
-          {
-            "id": "lesson-quadratic-v2-001:node:lesson-route",
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
             "kind": "diagram",
-            "x": 326.1,
+            "x": 299.1,
             "y": 421,
             "width": 280,
             "height": 133,
@@ -3220,7 +1956,7 @@
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 320,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3239,42 +1975,1004 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 158,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 72,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:organize-route:beat:show-complete-route",
-        "action_op": "board.create",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
+        "action_op": "board.focus",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 12,
-        "connection_count": 8,
+        "node_count": 5,
+        "connection_count": 0,
         "group_count": 1,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:translation-note"
+          "lesson-science-transpiration-v2-001:node:water-path"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 42.33,
-            "width": 308.36,
-            "height": 131.34,
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:node:takeaway",
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 80,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 84,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 92,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 96,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 104,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 258,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 626,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 105,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 258,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:connection:vapor-to-condensation",
+            "kind": "connection-line",
+            "x": 538,
+            "y": 228.63,
+            "width": 88,
+            "height": 75.38,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 109,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 340,
+            "y": 237.5,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 119,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 816,
+            "y": 706,
+            "width": 280,
+            "height": 133,
+            "visible": false,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup",
+            "kind": "image-region",
+            "x": 94.13,
+            "y": 104.83,
+            "width": 120.8,
+            "height": 148.95,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 120,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 816,
+            "y": 706,
+            "width": 280,
+            "height": 133,
+            "visible": false,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 239.09,
+            "y": 104.83,
+            "width": 114.75,
+            "height": 148.95,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 121,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 816,
+            "y": 706,
+            "width": 280,
+            "height": 133,
+            "visible": false,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
             "kind": "note",
-            "x": 325.87,
+            "x": 53.77,
+            "y": 337.46,
+            "width": 248.85,
+            "height": 107.08,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 280,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 125,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 310,
+            "y": 109,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 309.77,
+            "y": 392.46,
+            "width": 248.85,
+            "height": 107.08,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 310,
+            "y": 109,
+            "width": 340,
+            "height": 230,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 309.77,
+            "y": 392.46,
+            "width": 248.85,
+            "height": 107.08,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 248.85,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 133,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 192,
+            "y": -511,
+            "width": 340,
+            "height": 230,
+            "visible": false,
+            "fully_in_view": false
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 191.77,
+            "y": -227.54,
+            "width": 248.85,
+            "height": 107.08,
+            "visible": false,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 586,
+            "y": 362,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 248.85,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 137,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": 208,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": 208,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 145,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 9,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": 141,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
+            "kind": "diagram",
+            "x": 320,
+            "y": 421,
+            "width": 280,
+            "height": 133,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 320,
+        "min_focal_body_font_px": 14,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 146,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 960,
+          "height": 608
+        },
+        "world_scale": 1,
+        "node_count": 10,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": -19,
+            "width": 320,
+            "height": 192,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 319.77,
             "y": 447.48,
             "width": 240.46,
             "height": 107.05,
@@ -3282,7 +2980,7 @@
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 320,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3301,42 +2999,42 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 159,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 147,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:organize-route:beat:show-complete-route",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
         "action_op": "board.group",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 12,
-        "connection_count": 8,
+        "node_count": 10,
+        "connection_count": 1,
         "group_count": 2,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:node:translation-note"
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:translation-note",
-            "kind": "note",
-            "x": 325.82,
-            "y": 42.33,
-            "width": 308.36,
-            "height": 131.34,
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 320,
+            "y": -19,
+            "width": 320,
+            "height": 192,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:group:summary-group",
+            "id": "lesson-science-transpiration-v2-001:group:summary-group",
             "kind": "board-group",
-            "x": 292.1,
+            "x": 286,
             "y": 227,
             "width": 348,
             "height": 361,
@@ -3344,7 +3042,7 @@
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 308.36,
+        "min_focal_node_width": 320,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3363,28 +3061,28 @@
       "observation": {
         "profile": "octos.teaching-playback.observation",
         "version": "0.1",
-        "lesson_id": "lesson-quadratic-v2-001",
-        "cursor": 163,
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 151,
         "operation_type": "action.apply",
-        "beat_id": "lesson-quadratic-v2-001:step:organize-route:beat:show-complete-route",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
         "action_op": "board.focus",
         "viewport": {
           "width": 960,
           "height": 608
         },
         "world_scale": 1,
-        "node_count": 12,
-        "connection_count": 8,
+        "node_count": 10,
+        "connection_count": 1,
         "group_count": 2,
         "new_nodes": 0,
         "new_connections": 0,
         "new_groups": 0,
         "focus_targets": [
-          "lesson-quadratic-v2-001:group:summary-group"
+          "lesson-science-transpiration-v2-001:group:summary-group"
         ],
         "focal_nodes": [
           {
-            "id": "lesson-quadratic-v2-001:node:lesson-route",
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
             "kind": "diagram",
             "x": 340,
             "y": 157.5,
@@ -3394,7 +3092,7 @@
             "fully_in_view": true
           },
           {
-            "id": "lesson-quadratic-v2-001:node:takeaway",
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
             "kind": "note",
             "x": 339.77,
             "y": 343.98,
@@ -3406,7 +3104,7 @@
         ],
         "active_targets": [
           {
-            "id": "lesson-quadratic-v2-001:group:summary-group",
+            "id": "lesson-science-transpiration-v2-001:group:summary-group",
             "kind": "board-group",
             "x": 306,
             "y": 123.5,

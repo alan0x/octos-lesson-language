@@ -1,5 +1,6 @@
 import type { CanonicalEvent } from "../../../packages/core/src/index.js";
 import "katex/dist/katex.min.css";
+import { resolveHarnessAsset } from "./assets.js";
 import { InfiniteBoardView } from "./board-view.js";
 import { BrowserLessonSession, LocalPlaybackStore, parseCanonicalJsonl } from "./runtime.js";
 import { collectTeachingObservation, evaluateTeachingObservation, type TeachingFrameObservation, type TeachingGateResult } from "./teaching-observer.js";
@@ -9,6 +10,7 @@ const fixtures = [
   { id: "quadratic-v1", label: "探针 · 二次函数配方法 V1", path: "/examples/quadratic/lesson.canonical.jsonl" },
   { id: "geometry", label: "数学 · 几何辅助线 V2", path: "/examples/geometry-auxiliary-line-v2/lesson.canonical.jsonl" },
   { id: "geometry-v1", label: "回归 · 几何辅助线 V1", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
+  { id: "science", label: "科学 · 植物蒸腾作用 V2", path: "/examples/science-transpiration-v2/lesson.canonical.jsonl" },
   { id: "english", label: "语言 · 英语定语从句", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
@@ -42,7 +44,7 @@ lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
 const boardView = new InfiniteBoardView(
   requireElement("#viewport"), requireElement("#world"), requireElement("#node-layer"), requireElement("#group-layer"),
-  requireElement<SVGSVGElement>("#connection-layer"), requireElement<SVGSVGElement>("#connection-label-layer"), requireElement("#pointer"),
+  requireElement<SVGSVGElement>("#connection-layer"), requireElement<SVGSVGElement>("#connection-label-layer"), requireElement("#pointer"), resolveHarnessAsset,
 );
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
