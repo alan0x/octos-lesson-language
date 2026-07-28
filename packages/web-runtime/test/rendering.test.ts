@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { diagramConnectionGeometry, mathSource } from "../src/board-view.js";
+import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
@@ -56,4 +57,63 @@ test("diagram-internal connections resolve exact fragment coordinates", () => {
   assert.deepEqual(geometry.from, { x: 150, y: 24 });
   assert.deepEqual(geometry.to, { x: 150, y: 164 });
   assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
+});
+
+test("focus keeps a readable target steady when it is already visible", () => {
+  const current = { panX: 80, panY: 60, scale: .78 };
+  assert.strictEqual(
+    planFocusCamera(
+      { x: 120, y: 140, width: 520, height: 120 },
+      current,
+      { width: 1200, height: 800 },
+    ),
+    current,
+  );
+});
+
+test("focus does not zoom a visible narrow card when the classroom scale is already comfortable", () => {
+  const current = { panX: 80, panY: 60, scale: .61 };
+  assert.strictEqual(
+    planFocusCamera(
+      { x: 120, y: 140, width: 240, height: 120 },
+      current,
+      { width: 1200, height: 800 },
+    ),
+    current,
+  );
+});
+
+test("focus only changes scale when the target is unreadable or does not fit", () => {
+  const tiny = planFocusCamera(
+    { x: 1200, y: 900, width: 500, height: 120 },
+    { panX: 0, panY: 0, scale: .2 },
+    { width: 1200, height: 800 },
+  );
+  assert.equal(tiny.scale, .56);
+
+  const large = planFocusCamera(
+    { x: 100, y: 100, width: 1800, height: 1100 },
+    { panX: 0, panY: 0, scale: .78 },
+    { width: 1200, height: 800 },
+  );
+  assert.ok(large.scale < .78);
+});
+
+test("reveal pans without changing zoom and stays still for visible nodes", () => {
+  const current = { panX: 80, panY: 60, scale: .78 };
+  assert.strictEqual(
+    planRevealCamera(
+      { x: 120, y: 140, width: 420, height: 120 },
+      current,
+      { width: 1200, height: 800 },
+    ),
+    current,
+  );
+  const revealed = planRevealCamera(
+    { x: 120, y: 1100, width: 420, height: 120 },
+    current,
+    { width: 1200, height: 800 },
+  );
+  assert.equal(revealed.scale, current.scale);
+  assert.notEqual(revealed.panY, current.panY);
 });

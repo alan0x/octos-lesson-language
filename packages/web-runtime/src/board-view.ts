@@ -2,6 +2,7 @@ import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.j
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
+import { planFocusCamera, planRevealCamera } from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 
@@ -286,7 +287,6 @@ function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAs
   if (content.caption) appendText(parent, text(content.caption), "node-caption");
 }
 
-function targetId(target: Record<string, any> | undefined): string | undefined { return target?.node_id ?? target?.group_id ?? target?.connection_id; }
 function connectionTargetRect(board: SemanticBoardState, layout: BoardLayout, target: Record<string, any>): Rect | undefined {
   const nodeId = target?.node_id;
   const fragmentId = target?.fragment_id;
@@ -358,8 +358,8 @@ export class InfiniteBoardView {
     const focusTargets = operation?.action?.focus?.targets ?? [];
     const focusRects = focusTargets.map((target: string) => targetRect(board, layout, target)).filter(Boolean) as Rect[];
     if (focusRects.length) this.focusRect(this.unionRects(focusRects));
-    else {
-      const activeId = operation?.action?.node?.id ?? targetId(operation?.action?.target);
+    else if (operation?.action?.op === "board.create") {
+      const activeId = operation.action.node?.id;
       const activeRect = activeId ? targetRect(board, layout, activeId) : undefined;
       if (activeRect) this.reveal(activeRect);
     }
@@ -539,21 +539,24 @@ export class InfiniteBoardView {
   }
   private focusRect(rect: Rect): void {
     const viewport = this.viewport.getBoundingClientRect();
-    this.scale = Math.min(1, Math.max(.2, Math.min((viewport.width - 140) / rect.width, (viewport.height - 140) / rect.height)));
-    this.panX = viewport.width / 2 - (rect.x + rect.width / 2) * this.scale;
-    this.panY = viewport.height / 2 - (rect.y + rect.height / 2) * this.scale;
+    const camera = planFocusCamera(
+      rect,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+    );
+    this.panX = camera.panX;
+    this.panY = camera.panY;
+    this.scale = camera.scale;
     this.transform();
   }
   private reveal(rect: Rect): void {
-    const margin = 54;
-    const left = this.panX + rect.x * this.scale;
-    const right = left + rect.width * this.scale;
-    const top = this.panY + rect.y * this.scale;
-    const bottom = top + rect.height * this.scale;
-    if (left < margin) this.panX += margin - left;
-    else if (right > this.viewport.clientWidth - margin) this.panX -= right - (this.viewport.clientWidth - margin);
-    if (top < margin) this.panY += margin - top;
-    else if (bottom > this.viewport.clientHeight - margin) this.panY -= bottom - (this.viewport.clientHeight - margin);
+    const camera = planRevealCamera(
+      rect,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      { width: this.viewport.clientWidth, height: this.viewport.clientHeight },
+    );
+    this.panX = camera.panX;
+    this.panY = camera.panY;
     this.transform();
   }
   private onWheel(event: WheelEvent): void { event.preventDefault(); const rect = this.viewport.getBoundingClientRect(); this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top); }
