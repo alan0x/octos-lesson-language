@@ -59,44 +59,84 @@ test("diagram-internal connections resolve exact fragment coordinates", () => {
   assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
 });
 
-test("focus keeps a readable target steady when it is already visible", () => {
-  const current = { panX: 80, panY: 60, scale: .78 };
+test("focus keeps an already composed target steady", () => {
+  const current = { panX: 141.08235294117645, panY: 200.47058823529412, scale: .9976470588235294 };
   assert.strictEqual(
     planFocusCamera(
-      { x: 120, y: 140, width: 520, height: 120 },
+      [{ x: 120, y: 140, width: 680, height: 120 }],
       current,
       { width: 1200, height: 800 },
+      "detail",
     ),
     current,
   );
 });
 
-test("focus does not zoom a visible narrow card when the classroom scale is already comfortable", () => {
+test("detail focus derives its zoom from target size instead of a fixed camera scale", () => {
   const current = { panX: 80, panY: 60, scale: .61 };
-  assert.strictEqual(
-    planFocusCamera(
-      { x: 120, y: 140, width: 240, height: 120 },
-      current,
-      { width: 1200, height: 800 },
-    ),
+  const narrow = planFocusCamera(
+    [{ x: 120, y: 140, width: 240, height: 120 }],
     current,
+    { width: 1200, height: 800 },
+    "detail",
   );
+  const wide = planFocusCamera(
+    [{ x: 120, y: 140, width: 900, height: 120 }],
+    current,
+    { width: 1200, height: 800 },
+    "detail",
+  );
+  assert.equal(narrow.scale, 1);
+  assert.ok(wide.scale > current.scale && wide.scale < narrow.scale);
 });
 
-test("focus only changes scale when the target is unreadable or does not fit", () => {
+test("focus changes scale when the target is too small or the teaching scene is too large", () => {
   const tiny = planFocusCamera(
-    { x: 1200, y: 900, width: 500, height: 120 },
+    [{ x: 1200, y: 900, width: 500, height: 120 }],
     { panX: 0, panY: 0, scale: .2 },
     { width: 1200, height: 800 },
+    "detail",
   );
-  assert.equal(tiny.scale, .56);
+  assert.equal(tiny.scale, 1);
 
   const large = planFocusCamera(
-    { x: 100, y: 100, width: 1800, height: 1100 },
+    [{ x: 100, y: 100, width: 1800, height: 1100 }],
     { panX: 0, panY: 0, scale: .78 },
     { width: 1200, height: 800 },
+    "overview",
   );
   assert.ok(large.scale < .78);
+});
+
+test("relationship focus composes all declared targets as one attention scene", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 100, y: 120, width: 420, height: 180 },
+      { x: 620, y: 120, width: 420, height: 180 },
+    ],
+    { panX: 0, panY: 0, scale: .35 },
+    { width: 1200, height: 800 },
+    "relationship",
+  );
+  assert.ok(focused.scale > .35);
+  const sceneCenterX = 570;
+  assert.ok(Math.abs(focused.panX + sceneCenterX * focused.scale - 600) < .001,
+    "the complete two-card relationship should be centered");
+});
+
+test("overview focus keeps small member cards readable inside a larger group", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 100, y: 100, width: 846, height: 330 },
+      { x: 134, y: 134, width: 480, height: 260 },
+      { x: 668, y: 184, width: 249, height: 130 },
+    ],
+    { panX: 60, panY: 80, scale: .78 },
+    { width: 960, height: 608 },
+    "overview",
+  );
+  assert.ok(focused.scale > .96 && focused.scale < .97);
+  assert.ok(249 * focused.scale >= 240);
 });
 
 test("reveal pans without changing zoom and stays still for visible nodes", () => {

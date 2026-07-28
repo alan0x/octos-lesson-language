@@ -2,7 +2,7 @@
 
 - Lesson: `lesson-science-transpiration-v2-001`
 - Viewport: 1280 × 720
-- Browser: 150.0.7871.184
+- Browser: 150.0.7871.187
 - Result: **PASS**
 - Expected result: **PASS** (met)
 - Beat keyframes: 11
@@ -11,13 +11,13 @@
 | Beat | Cursor | Scale | Min card | Min text | Min diagram edge | New nodes | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | show-experiment-and-question | 16 | 1 | 240.59 | 16 | — | 2 | PASS |
-| observe-left-droplets | 30 | 1 | 320 | 14 | — | 1 | PASS |
-| compare-leafless-control | 46 | 1 | 320 | 14 | — | 0 | PASS |
-| infer-leaf-relationship | 60 | 1 | 320 | 14 | — | 1 | PASS |
+| observe-left-droplets | 30 | 0.83 | 264.61 | 14 | — | 1 | PASS |
+| compare-leafless-control | 46 | 0.8 | 257.04 | 14 | — | 0 | PASS |
+| infer-leaf-relationship | 60 | 0.89 | 285.26 | 14 | — | 1 | PASS |
 | absorb-water-through-roots | 74 | 1 | 280 | 14 | — | 1 | PASS |
 | transport-water-to-leaves | 86 | 1 | 280 | 14 | — | 0 | PASS |
 | release-water-vapor | 98 | 1 | 280 | 14 | — | 0 | PASS |
 | condense-on-bag | 111 | 1 | 280 | 14 | — | 1 | PASS |
-| return-to-experiment | 127 | 0.99 | 247.46 | 14 | — | 1 | PASS |
+| return-to-experiment | 127 | 0.97 | 240.62 | 14 | — | 1 | PASS |
 | separate-evidence-and-model | 139 | 1 | 320 | 14 | — | 1 | PASS |
 | show-complete-route | 153 | 1 | 240.69 | 14 | — | 2 | PASS |

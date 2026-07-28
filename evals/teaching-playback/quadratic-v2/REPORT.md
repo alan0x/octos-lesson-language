@@ -2,7 +2,7 @@
 
 - Lesson: `lesson-quadratic-v2-001`
 - Viewport: 1280 × 720
-- Browser: 150.0.7871.184
+- Browser: 150.0.7871.187
 - Result: **PASS**
 - Expected result: **PASS** (met)
 - Beat keyframes: 11

@@ -2,7 +2,7 @@ import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.j
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
-import { planFocusCamera, planRevealCamera } from "./camera.js";
+import { planFocusCamera, planRevealCamera, type AttentionMode } from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 
@@ -311,6 +311,7 @@ export class InfiniteBoardView {
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private dragging?: { x: number; y: number; panX: number; panY: number };
+  private manualMotionTimer?: ReturnType<typeof setTimeout>;
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
   private readonly groupElements = new Map<string, HTMLElement>();
@@ -352,15 +353,20 @@ export class InfiniteBoardView {
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
-    this.syncGroups(board, layout);
+    this.syncGroups(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
-    const focusTargets = operation?.action?.focus?.targets ?? [];
-    const focusRects = focusTargets.map((target: string) => targetRect(board, layout, target)).filter(Boolean) as Rect[];
-    if (focusRects.length) this.focusRect(this.unionRects(focusRects));
-    else if (operation?.action?.op === "board.create") {
-      const activeId = operation.action.node?.id;
-      const activeRect = activeId ? targetRect(board, layout, activeId) : undefined;
+    const operationFocus = operation?.action?.focus?.targets ?? [];
+    const focusTargets = operationFocus.length
+      ? operationFocus
+      : operation?.type === "beat.end"
+        ? board.focus
+        : [];
+    const focusRects = this.resolveFocusRects(focusTargets, board, layout);
+    if (focusRects.length) this.focusRects(focusTargets, focusRects, board);
+    else if (["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
+      const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
+      const activeRect = targetRect(board, layout, activeTarget);
       if (activeRect) this.reveal(activeRect);
     }
   }
@@ -381,8 +387,9 @@ export class InfiniteBoardView {
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
     this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
+    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
     this.dragging = undefined;
-    this.viewport.classList.remove("dragging");
+    this.viewport.classList.remove("dragging", "manual-navigation");
   }
 
   private clearBoard(): void {
@@ -392,6 +399,7 @@ export class InfiniteBoardView {
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
     const activeCreateId = action?.op === "board.create" ? action.node?.id : undefined;
+    const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     const measured: MeasuredNodeSizes = {};
     for (const [id, element] of this.nodeElements) {
       if (board.nodes[id]) continue;
@@ -414,6 +422,7 @@ export class InfiniteBoardView {
       element.dataset.kind = kind;
       if (created && node.id === activeCreateId) element.classList.add("active");
       if (board.focus.includes(node.id)) element.classList.add("focused");
+      if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");
       applyEmphasisClass(element, latestEmphasis(node));
       const signature = nodeContentSignature(node);
       if (this.nodeContentSignatures.get(node.id) !== signature) {
@@ -447,7 +456,8 @@ export class InfiniteBoardView {
     }
   }
 
-  private syncGroups(board: SemanticBoardState, layout: BoardLayout): void {
+  private syncGroups(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): void {
+    const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     for (const [id, element] of this.groupElements) {
       if (board.groups[id]) continue;
       element.remove(); this.groupElements.delete(id);
@@ -461,6 +471,7 @@ export class InfiniteBoardView {
       }
       element.className = "board-group";
       if (board.focus.includes(group.id)) element.classList.add("focused");
+      if (arrivingFocus?.has(group.id)) element.classList.add("focus-arrive");
       setRect(element, rect);
       const label = element.querySelector<HTMLElement>(".group-label");
       if (label) label.textContent = text(group.title || group.role || "知识组");
@@ -484,6 +495,7 @@ export class InfiniteBoardView {
         ? stackConnectionLabel(computeConnectionRoute(fromRect, toRect, labelText, internalFragments), occupiedLabels)
         : computeConnectionRoute(fromRect, toRect, labelText, internalFragments);
       const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);
+      if (this.operation?.action?.op === "board.focus" && this.operation.action.focus?.targets.includes(connection.id)) path.classList.add("focus-arrive");
       if (labelText) {
         const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("connection-label-badge"); badge.dataset.id = connection.id;
         const background = document.createElementNS(SVG_NS, "rect"); background.setAttribute("x", String(route.label.x - route.label.width / 2)); background.setAttribute("y", String(route.label.y - route.label.height / 2)); background.setAttribute("width", String(route.label.width)); background.setAttribute("height", String(route.label.height)); background.setAttribute("rx", "9");
@@ -532,17 +544,37 @@ export class InfiniteBoardView {
   }
 
   private transform(): void { this.world.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`; }
-  private unionRects(rects: Rect[]): Rect {
-    const left = Math.min(...rects.map((rect) => rect.x)); const top = Math.min(...rects.map((rect) => rect.y));
-    const right = Math.max(...rects.map((rect) => rect.x + rect.width)); const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
-    return { x: left, y: top, width: right - left, height: bottom - top };
+  private resolveFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
+    const rects: Rect[] = [];
+    const visited = new Set<string>();
+    const visit = (id: string): void => {
+      if (visited.has(id)) return;
+      visited.add(id);
+      const rect = targetRect(board, layout, id);
+      if (rect) rects.push(rect);
+      const group = board.groups[id];
+      for (const member of group?.members ?? []) visit(member);
+      const connection = board.connections[id];
+      for (const endpoint of [connection?.from, connection?.to]) {
+        const endpointId = endpoint?.node_id ?? endpoint?.group_id ?? endpoint?.connection_id;
+        if (endpointId) visit(endpointId);
+      }
+    };
+    for (const id of targetIds) visit(id);
+    return rects;
   }
-  private focusRect(rect: Rect): void {
+  private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
     const viewport = this.viewport.getBoundingClientRect();
+    const mode: AttentionMode = targetIds.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
+      ? "relationship"
+      : targetIds.some((id) => Boolean(board.groups[id]))
+        ? "overview"
+        : "detail";
     const camera = planFocusCamera(
-      rect,
+      rects,
       { panX: this.panX, panY: this.panY, scale: this.scale },
       viewport,
+      mode,
     );
     this.panX = camera.panX;
     this.panY = camera.panY;
@@ -559,7 +591,14 @@ export class InfiniteBoardView {
     this.panY = camera.panY;
     this.transform();
   }
-  private onWheel(event: WheelEvent): void { event.preventDefault(); const rect = this.viewport.getBoundingClientRect(); this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top); }
+  private onWheel(event: WheelEvent): void {
+    event.preventDefault();
+    this.viewport.classList.add("manual-navigation");
+    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    const rect = this.viewport.getBoundingClientRect();
+    this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top);
+    this.manualMotionTimer = setTimeout(() => this.viewport.classList.remove("manual-navigation"), 140);
+  }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
   private onPointerDown(event: PointerEvent): void { if ((event.target as HTMLElement).closest("button")) return; this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
   private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }

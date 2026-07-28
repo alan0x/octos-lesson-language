@@ -11,11 +11,27 @@ export interface ViewportSize {
   height: number;
 }
 
+export type AttentionMode = "detail" | "relationship" | "overview";
+
 const FOCUS_MARGIN = 70;
 const REVEAL_MARGIN = FOCUS_MARGIN;
-const MIN_READABLE_FOCUS_WIDTH = 280;
-const AUTOMATIC_ZOOM_IN_THRESHOLD = .45;
-const MAX_AUTOMATIC_FOCUS_SCALE = .82;
+const MIN_READABLE_FOCUS_WIDTH = 240;
+const MIN_AUTOMATIC_SCALE = .18;
+const MAX_AUTOMATIC_SCALE = 1;
+
+const COMPOSITION_TARGET: Record<AttentionMode, number> = {
+  detail: .64,
+  relationship: .72,
+  overview: .78,
+};
+
+function unionRects(rects: Rect[]): Rect {
+  const left = Math.min(...rects.map((rect) => rect.x));
+  const top = Math.min(...rects.map((rect) => rect.y));
+  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
 
 function visibleAt(
   rect: Rect,
@@ -45,36 +61,36 @@ function centeredCamera(
   };
 }
 
+/**
+ * Compose an explicit teaching focus. The resulting scale is not a camera preset:
+ * it is derived from the target geometry and current viewport so the complete
+ * teaching scene stays readable and occupies a deliberate share of the view.
+ */
 export function planFocusCamera(
-  rect: Rect,
+  targets: Rect[],
   current: CameraState,
   viewport: ViewportSize,
+  mode: AttentionMode,
 ): CameraState {
-  const readable = rect.width * current.scale >= MIN_READABLE_FOCUS_WIDTH;
-  const comfortable = readable || current.scale >= AUTOMATIC_ZOOM_IN_THRESHOLD;
-  if (comfortable && visibleAt(rect, current, viewport, FOCUS_MARGIN)) return current;
-
+  if (!targets.length) return current;
+  const scene = unionRects(targets);
+  const safeWidth = Math.max(1, viewport.width - FOCUS_MARGIN * 2);
+  const safeHeight = Math.max(1, viewport.height - FOCUS_MARGIN * 2);
   const fitScale = Math.min(
-    1,
+    MAX_AUTOMATIC_SCALE,
     Math.max(
-      .2,
-      Math.min(
-        (viewport.width - FOCUS_MARGIN * 2) / Math.max(1, rect.width),
-        (viewport.height - FOCUS_MARGIN * 2) / Math.max(1, rect.height),
-      ),
+      MIN_AUTOMATIC_SCALE,
+      Math.min(safeWidth / Math.max(1, scene.width), safeHeight / Math.max(1, scene.height)),
     ),
   );
-  const readableScale = Math.min(1, MIN_READABLE_FOCUS_WIDTH / Math.max(1, rect.width));
-  let scale = current.scale;
-  if (scale > fitScale) scale = fitScale;
-  else if (
-    scale < AUTOMATIC_ZOOM_IN_THRESHOLD
-    && scale < readableScale
-    && readableScale <= fitScale
-  ) {
-    scale = Math.min(readableScale, MAX_AUTOMATIC_FOCUS_SCALE);
-  }
-  return centeredCamera(rect, scale, viewport);
+
+  const sceneExtent = Math.max(scene.width / safeWidth, scene.height / safeHeight);
+  const compositionScale = COMPOSITION_TARGET[mode] / Math.max(.001, sceneExtent);
+  const readableScale = Math.max(...targets.map((rect) => MIN_READABLE_FOCUS_WIDTH / Math.max(1, rect.width)));
+  const scale = Math.min(fitScale, Math.max(MIN_AUTOMATIC_SCALE, readableScale, compositionScale));
+
+  if (scale === current.scale && visibleAt(scene, current, viewport, FOCUS_MARGIN)) return current;
+  return centeredCamera(scene, scale, viewport);
 }
 
 export function planRevealCamera(

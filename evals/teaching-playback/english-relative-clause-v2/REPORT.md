@@ -2,7 +2,7 @@
 
 - Lesson: `lesson-english-v2-001`
 - Viewport: 1280 × 720
-- Browser: 150.0.7871.184
+- Browser: 150.0.7871.187
 - Result: **PASS**
 - Expected result: **PASS** (met)
 - Beat keyframes: 11
@@ -11,7 +11,7 @@
 | Beat | Cursor | Scale | Min card | Min text | Min diagram edge | New nodes | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | show-sentence-and-goal | 16 | 1 | 302.87 | 14 | — | 2 | PASS |
-| bracket-relative-clause | 29 | 1 | 254.29 | 16 | — | 1 | PASS |
+| bracket-relative-clause | 29 | 0.99 | 252.02 | 16 | — | 1 | PASS |
 | remove-relative-clause | 44 | 1 | 240 | 16 | — | 1 | PASS |
 | label-main-roles | 60 | 1 | 240 | 14 | — | 1 | PASS |
 | attach-clause-to-book | 77 | 1 | 265.09 | 16 | — | 1 | PASS |
@@ -20,4 +20,4 @@
 | label-inner-roles | 122 | 1 | 240 | 14 | — | 1 | PASS |
 | combine-meaning-layers | 136 | 1 | 320 | 14 | — | 1 | PASS |
 | translate-in-chinese-order | 151 | 1 | 240 | 16 | — | 1 | PASS |
-| show-complete-route | 165 | 1 | 280 | 14 | — | 2 | PASS |
+| show-complete-route | 165 | 0.97 | 270.4 | 14 | — | 2 | PASS |

@@ -1,14 +1,14 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T15:05:54.746Z",
+  "generated_at": "2026-07-28T05:43:46.903Z",
   "lesson_id": "lesson-geometry-v2-001",
   "fixture": "geometry",
   "viewport": {
     "width": 1280,
     "height": 720
   },
-  "browser": "150.0.7871.184",
+  "browser": "150.0.7871.187",
   "passed": true,
   "expected_result": "pass",
   "expectation_met": true,
@@ -158,7 +158,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -173,28 +173,28 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -226,7 +226,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -241,28 +241,28 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -294,7 +294,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.76,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -309,28 +309,28 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 153.47,
-            "y": 70,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 159.75,
+            "y": 79,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 561.82,
-            "y": 388.88,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 244.71,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 143.75,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -362,7 +362,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -377,26 +377,26 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 250.4,
-            "y": 131.5,
-            "width": 320,
-            "height": 195,
+            "x": 255.75,
+            "y": 135.52,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 250.4,
-            "y": 380.5,
-            "width": 459.19,
-            "height": 96,
+            "x": 255.75,
+            "y": 378.72,
+            "width": 448.49,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -431,7 +431,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -445,16 +445,16 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 177.6,
-            "y": 256,
-            "width": 604.8,
-            "height": 96,
+            "x": 217.6,
+            "y": 262.35,
+            "width": 524.8,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -550,7 +550,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.77,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -564,16 +564,16 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 140,
-            "y": 231.5,
-            "width": 680,
-            "height": 145,
+            "x": 217.6,
+            "y": 248.05,
+            "width": 524.8,
+            "height": 111.91,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 680,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -610,7 +610,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.88,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -624,16 +624,16 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 256,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 261.56,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 524.79,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -670,7 +670,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -684,26 +684,26 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 340,
-            "y": 127,
-            "width": 280,
-            "height": 142,
+            "x": 358,
+            "y": 149.75,
+            "width": 244.01,
+            "height": 123.75,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 339.66,
-            "y": 322.4,
-            "width": 276.08,
-            "height": 159.2,
+            "x": 357.7,
+            "y": 320.03,
+            "width": 240.59,
+            "height": 138.74,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 276.08,
+        "min_focal_node_width": 240.59,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1710,18 +1710,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 52,
-            "y": 4,
+            "x": 36,
+            "y": -12,
             "width": 480,
             "height": 260,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 585.75,
-            "y": 252.48,
+            "x": 569.75,
+            "y": 236.48,
             "width": 240.5,
             "height": 115.05,
             "visible": true,
@@ -1732,8 +1732,8 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 586,
-            "y": 421,
+            "x": 570,
+            "y": 405,
             "width": 320,
             "height": 133,
             "visible": true,
@@ -1775,7 +1775,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1790,20 +1790,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -1812,27 +1812,27 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1865,7 +1865,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1880,20 +1880,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -1902,17 +1902,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab",
             "kind": "diagram-edge",
-            "x": 223.18,
-            "y": 128.3,
-            "width": 97.7,
-            "height": 126.65,
+            "x": 253.63,
+            "y": 149.14,
+            "width": 86.12,
+            "height": 111.63,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1945,7 +1945,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1960,20 +1960,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -1982,17 +1982,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac",
             "kind": "diagram-edge",
-            "x": 320.88,
-            "y": 128.3,
-            "width": 97.7,
-            "height": 126.65,
+            "x": 339.75,
+            "y": 149.14,
+            "width": 86.12,
+            "height": 111.63,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2025,7 +2025,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2040,20 +2040,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -2062,17 +2062,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd",
             "kind": "diagram-edge",
-            "x": 223.18,
-            "y": 254.95,
-            "width": 97.7,
+            "x": 253.63,
+            "y": 260.77,
+            "width": 86.12,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2105,7 +2105,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2120,20 +2120,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 70,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 424.83,
-            "width": 272.29,
-            "height": 113.17,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 99.75,
             "visible": true,
             "fully_in_view": true
           }
@@ -2142,17 +2142,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc",
             "kind": "diagram-edge",
-            "x": 320.88,
-            "y": 254.95,
-            "width": 97.7,
+            "x": 339.75,
+            "y": 260.77,
+            "width": 86.12,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2185,7 +2185,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.85,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2200,20 +2200,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 116.66,
-            "y": 59.62,
-            "width": 408.44,
-            "height": 221.24,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 414.45,
-            "width": 272.29,
-            "height": 139.55,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
@@ -2222,17 +2222,17 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 571.05,
-            "y": 414.45,
-            "width": 272.29,
-            "height": 139.55,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 272.29,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 159.96,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2265,7 +2265,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2280,20 +2280,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
@@ -2302,27 +2302,27 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2355,7 +2355,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2370,20 +2370,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
@@ -2392,17 +2392,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd",
             "kind": "diagram-edge",
-            "x": 236.88,
-            "y": 245.08,
-            "width": 92.49,
+            "x": 253.63,
+            "y": 260.77,
+            "width": 86.12,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2435,7 +2435,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2450,20 +2450,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
@@ -2472,17 +2472,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc",
             "kind": "diagram-edge",
-            "x": 329.37,
-            "y": 245.08,
-            "width": 92.49,
+            "x": 339.75,
+            "y": 260.77,
+            "width": 86.12,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2515,7 +2515,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2530,20 +2530,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 70,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 97.75,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 405.9,
-            "width": 257.76,
-            "height": 132.1,
+            "x": 560.25,
+            "y": 410.5,
+            "width": 240,
+            "height": 123,
             "visible": true,
             "fully_in_view": true
           }
@@ -2552,17 +2552,17 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 329.37,
-            "y": 125.19,
+            "x": 339.75,
+            "y": 149.14,
             "width": 0,
-            "height": 119.89,
+            "height": 111.63,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2595,7 +2595,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.81,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2610,20 +2610,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 136.05,
-            "y": 61.03,
-            "width": 386.64,
-            "height": 209.43,
+            "x": 159.75,
+            "y": 79,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 396.93,
-            "width": 257.76,
-            "height": 157.07,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
@@ -2632,17 +2632,17 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 566.19,
-            "y": 396.93,
-            "width": 257.76,
-            "height": 157.07,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 257.76,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 151.42,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2675,7 +2675,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.76,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2690,20 +2690,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 153.47,
-            "y": 70,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 159.75,
+            "y": 79,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 561.82,
-            "y": 388.88,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
@@ -2712,27 +2712,27 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 153.47,
-            "y": 70,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 159.75,
+            "y": 79,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 561.82,
-            "y": 388.88,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 244.71,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 143.75,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2765,7 +2765,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.76,
+        "world_scale": 0.75,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2780,20 +2780,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 153.47,
-            "y": 70,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 159.75,
+            "y": 79,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 561.82,
-            "y": 388.88,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 560.25,
+            "y": 391.75,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
@@ -2802,17 +2802,17 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 337,
-            "y": 122.39,
+            "x": 339.75,
+            "y": 130.39,
             "width": 0,
-            "height": 113.82,
+            "height": 111.63,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 244.71,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 143.75,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2845,7 +2845,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.76,
+        "world_scale": 0.75,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 1,
@@ -2860,20 +2860,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 146.49,
-            "y": -28.71,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 145.1,
+            "y": -33.5,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 554.85,
-            "y": 290.18,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 545.6,
+            "y": 279.25,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
@@ -2882,17 +2882,17 @@
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 554.85,
-            "y": 480.59,
-            "width": 351.14,
-            "height": 73.41,
+            "x": 545.6,
+            "y": 466,
+            "width": 344.39,
+            "height": 72,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 244.71,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 143.75,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2926,7 +2926,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 0.76,
+        "world_scale": 0.75,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -2941,20 +2941,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 146.49,
-            "y": -28.71,
-            "width": 367.06,
-            "height": 198.82,
+            "x": 145.1,
+            "y": -33.5,
+            "width": 360,
+            "height": 195,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 554.85,
-            "y": 290.18,
-            "width": 244.71,
-            "height": 149.12,
+            "x": 545.6,
+            "y": 279.25,
+            "width": 240,
+            "height": 146.25,
             "visible": true,
             "fully_in_view": true
           }
@@ -2963,17 +2963,17 @@
           {
             "id": "lesson-geometry-v2-001:group:sss-proof",
             "kind": "board-group",
-            "x": 120.49,
-            "y": -54.71,
-            "width": 811.5,
-            "height": 634.71,
+            "x": 119.6,
+            "y": -59,
+            "width": 795.89,
+            "height": 622.5,
             "visible": true,
             "fully_in_view": false
           }
         ],
-        "min_focal_node_width": 244.71,
+        "min_focal_node_width": 240,
         "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 143.75,
+        "min_focal_diagram_edge_px": 140.99,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -3007,7 +3007,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3022,20 +3022,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 250.4,
-            "y": 131.5,
-            "width": 320,
-            "height": 195,
+            "x": 255.75,
+            "y": 135.52,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 250.4,
-            "y": 380.5,
-            "width": 459.19,
-            "height": 96,
+            "x": 255.75,
+            "y": 378.72,
+            "width": 448.49,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
@@ -3044,25 +3044,25 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 250.4,
-            "y": 131.5,
-            "width": 320,
-            "height": 195,
+            "x": 255.75,
+            "y": 135.52,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 250.4,
-            "y": 380.5,
-            "width": 459.19,
-            "height": 96,
+            "x": 255.75,
+            "y": 378.72,
+            "width": 448.49,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3098,7 +3098,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3113,20 +3113,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 588,
-            "y": 471,
-            "width": 320,
-            "height": 195,
+            "x": 591.56,
+            "y": 477.28,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 588,
-            "y": 720,
-            "width": 459.19,
-            "height": 96,
+            "x": 591.56,
+            "y": 720.48,
+            "width": 448.49,
+            "height": 93.76,
             "visible": false,
             "fully_in_view": false
           }
@@ -3135,15 +3135,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
             "kind": "diagram-region",
-            "x": 179.18,
-            "y": 122.52,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 192.26,
+            "y": 136.92,
+            "width": 112.15,
+            "height": 145.37,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3179,7 +3179,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3194,20 +3194,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 588,
-            "y": 471,
-            "width": 320,
-            "height": 195,
+            "x": 591.56,
+            "y": 477.28,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 588,
-            "y": 720,
-            "width": 459.19,
-            "height": 96,
+            "x": 591.56,
+            "y": 720.48,
+            "width": 448.49,
+            "height": 93.76,
             "visible": false,
             "fully_in_view": false
           }
@@ -3216,15 +3216,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
             "kind": "diagram-region",
-            "x": 294,
-            "y": 122.52,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 304.41,
+            "y": 136.92,
+            "width": 112.15,
+            "height": 145.37,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3260,7 +3260,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 6,
         "connection_count": 1,
         "group_count": 2,
@@ -3275,20 +3275,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 301.2,
-            "y": 59,
-            "width": 320,
-            "height": 195,
+            "x": 299.29,
+            "y": 54.54,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 301.2,
-            "y": 308,
-            "width": 459.19,
-            "height": 96,
+            "x": 299.29,
+            "y": 297.73,
+            "width": 448.49,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
@@ -3297,15 +3297,15 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 301.2,
-            "y": 458,
-            "width": 604.8,
-            "height": 96,
+            "x": 299.29,
+            "y": 444.24,
+            "width": 590.7,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3342,7 +3342,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.98,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3357,20 +3357,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 301.2,
-            "y": 59,
-            "width": 320,
-            "height": 195,
+            "x": 299.29,
+            "y": 54.54,
+            "width": 312.54,
+            "height": 190.46,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 301.2,
-            "y": 308,
-            "width": 459.19,
-            "height": 96,
+            "x": 299.29,
+            "y": 297.73,
+            "width": 448.49,
+            "height": 93.76,
             "visible": true,
             "fully_in_view": true
           }
@@ -3379,15 +3379,15 @@
           {
             "id": "lesson-geometry-v2-001:connection:sss-to-angle",
             "kind": "connection-line",
-            "x": 554.1,
-            "y": 404,
-            "width": 292.79,
-            "height": 54,
+            "x": 546.3,
+            "y": 391.5,
+            "width": 285.97,
+            "height": 52.74,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 320,
+        "min_focal_node_width": 312.54,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3424,7 +3424,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3438,10 +3438,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 177.6,
-            "y": 256,
-            "width": 604.8,
-            "height": 96,
+            "x": 217.6,
+            "y": 262.35,
+            "width": 524.8,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": true
           }
@@ -3450,15 +3450,15 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 177.6,
-            "y": 256,
-            "width": 604.8,
-            "height": 96,
+            "x": 217.6,
+            "y": 262.35,
+            "width": 524.8,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3495,7 +3495,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3509,10 +3509,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 588,
-            "y": 870,
-            "width": 604.8,
-            "height": 96,
+            "x": 533.37,
+            "y": 778.06,
+            "width": 524.8,
+            "height": 83.3,
             "visible": false,
             "fully_in_view": false
           }
@@ -3521,15 +3521,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
             "kind": "diagram-region",
-            "x": 179.18,
-            "y": 122.52,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 178.62,
+            "y": 129.45,
+            "width": 99.63,
+            "height": 129.15,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3566,7 +3566,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3580,10 +3580,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 588,
-            "y": 870,
-            "width": 604.8,
-            "height": 96,
+            "x": 533.37,
+            "y": 778.06,
+            "width": 524.8,
+            "height": 83.3,
             "visible": false,
             "fully_in_view": false
           }
@@ -3592,15 +3592,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
             "kind": "diagram-region",
-            "x": 294,
-            "y": 122.52,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 278.25,
+            "y": 129.45,
+            "width": 99.63,
+            "height": 129.15,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3637,7 +3637,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3651,10 +3651,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 588,
-            "y": 870,
-            "width": 604.8,
-            "height": 96,
+            "x": 533.37,
+            "y": 778.06,
+            "width": 524.8,
+            "height": 83.3,
             "visible": false,
             "fully_in_view": false
           }
@@ -3663,15 +3663,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 287.62,
-            "y": 264.98,
-            "width": 12.76,
-            "height": 12.76,
+            "x": 272.72,
+            "y": 253.07,
+            "width": 11.07,
+            "height": 11.07,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3708,7 +3708,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 7,
         "connection_count": 2,
         "group_count": 2,
@@ -3722,10 +3722,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 588,
-            "y": 308,
-            "width": 604.8,
-            "height": 96,
+            "x": 533.37,
+            "y": 324.54,
+            "width": 524.8,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": false
           }
@@ -3734,15 +3734,15 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 588,
-            "y": 458,
-            "width": 280,
-            "height": 96,
+            "x": 533.37,
+            "y": 454.7,
+            "width": 242.96,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3780,7 +3780,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -3794,10 +3794,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 588,
-            "y": 308,
-            "width": 604.8,
-            "height": 96,
+            "x": 533.37,
+            "y": 324.54,
+            "width": 524.8,
+            "height": 83.3,
             "visible": true,
             "fully_in_view": false
           }
@@ -3806,15 +3806,15 @@
           {
             "id": "lesson-geometry-v2-001:connection:sss-to-d-angles",
             "kind": "connection-line",
-            "x": 742.34,
-            "y": 254,
-            "width": 262.33,
-            "height": 204,
+            "x": 667.29,
+            "y": 277.68,
+            "width": 227.63,
+            "height": 177.02,
             "visible": true,
-            "fully_in_view": false
+            "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 604.8,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -3938,8 +3938,8 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 588,
-            "y": 1020,
+            "x": 604,
+            "y": 1036,
             "width": 280,
             "height": 96,
             "visible": false,
@@ -3950,8 +3950,8 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 287.62,
-            "y": 264.98,
+            "x": 303.62,
+            "y": 280.98,
             "width": 12.76,
             "height": 12.76,
             "visible": true,
@@ -4010,8 +4010,8 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 226,
-            "y": 409,
+            "x": 210,
+            "y": 393,
             "width": 680,
             "height": 145,
             "visible": true,
@@ -4022,8 +4022,8 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 226,
-            "y": 409,
+            "x": 210,
+            "y": 393,
             "width": 680,
             "height": 145,
             "visible": true,
@@ -4068,7 +4068,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.77,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4082,10 +4082,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 140,
-            "y": 231.5,
-            "width": 680,
-            "height": 145,
+            "x": 217.6,
+            "y": 248.05,
+            "width": 524.8,
+            "height": 111.91,
             "visible": true,
             "fully_in_view": true
           }
@@ -4094,15 +4094,15 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 140,
-            "y": 231.5,
-            "width": 680,
-            "height": 145,
+            "x": 217.6,
+            "y": 248.05,
+            "width": 524.8,
+            "height": 111.91,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 680,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4140,7 +4140,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.77,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4154,10 +4154,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 588,
-            "y": 1020,
-            "width": 680,
-            "height": 145,
+            "x": 482.12,
+            "y": 815.52,
+            "width": 524.8,
+            "height": 111.91,
             "visible": false,
             "fully_in_view": false
           }
@@ -4166,15 +4166,15 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 289.75,
-            "y": 267.11,
-            "width": 8.51,
-            "height": 8.51,
+            "x": 251.94,
+            "y": 234.47,
+            "width": 6.56,
+            "height": 6.56,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 680,
+        "min_focal_node_width": 524.8,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4212,7 +4212,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.77,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4226,10 +4226,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 312.4,
-            "y": 458,
-            "width": 593.59,
-            "height": 96,
+            "x": 431.88,
+            "y": 463.91,
+            "width": 458.11,
+            "height": 74.09,
             "visible": true,
             "fully_in_view": true
           }
@@ -4238,15 +4238,15 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 312.4,
-            "y": 458,
-            "width": 593.59,
-            "height": 96,
+            "x": 431.88,
+            "y": 463.91,
+            "width": 458.11,
+            "height": 74.09,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 458.11,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4284,7 +4284,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.88,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4298,10 +4298,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 256,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 261.56,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
@@ -4310,15 +4310,15 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 256,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 261.56,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 524.79,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4356,7 +4356,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.88,
         "node_count": 8,
         "connection_count": 3,
         "group_count": 2,
@@ -4370,10 +4370,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 228,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 249.78,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
@@ -4382,15 +4382,15 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 183.2,
-            "y": 412,
-            "width": 280,
-            "height": 142,
+            "x": 217.6,
+            "y": 412.46,
+            "width": 247.55,
+            "height": 125.54,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 524.79,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4429,7 +4429,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.88,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 2,
@@ -4443,10 +4443,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 16,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 62.36,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
@@ -4455,15 +4455,15 @@
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 182.86,
-            "y": 395.4,
-            "width": 276.08,
-            "height": 159.2,
+            "x": 217.3,
+            "y": 397.78,
+            "width": 244.08,
+            "height": 140.75,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 524.79,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4503,7 +4503,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.88,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -4517,10 +4517,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 183.2,
-            "y": 16,
-            "width": 593.59,
-            "height": 96,
+            "x": 217.6,
+            "y": 62.36,
+            "width": 524.79,
+            "height": 84.87,
             "visible": true,
             "fully_in_view": true
           }
@@ -4529,15 +4529,15 @@
           {
             "id": "lesson-geometry-v2-001:group:summary-group",
             "kind": "board-group",
-            "x": 149.2,
-            "y": 166,
-            "width": 348,
-            "height": 422,
+            "x": 187.54,
+            "y": 194.97,
+            "width": 307.67,
+            "height": 373.09,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 593.59,
+        "min_focal_node_width": 524.79,
         "min_focal_body_font_px": 24,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -4577,7 +4577,7 @@
           "width": 960,
           "height": 608
         },
-        "world_scale": 1,
+        "world_scale": 0.87,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -4591,20 +4591,20 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 340,
-            "y": 127,
-            "width": 280,
-            "height": 142,
+            "x": 358,
+            "y": 149.75,
+            "width": 244.01,
+            "height": 123.75,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 339.66,
-            "y": 322.4,
-            "width": 276.08,
-            "height": 159.2,
+            "x": 357.7,
+            "y": 320.03,
+            "width": 240.59,
+            "height": 138.74,
             "visible": true,
             "fully_in_view": true
           }
@@ -4613,15 +4613,15 @@
           {
             "id": "lesson-geometry-v2-001:group:summary-group",
             "kind": "board-group",
-            "x": 306,
-            "y": 93,
-            "width": 348,
-            "height": 422,
+            "x": 328.37,
+            "y": 120.12,
+            "width": 303.27,
+            "height": 367.76,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 276.08,
+        "min_focal_node_width": 240.59,
         "min_focal_body_font_px": 14,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
