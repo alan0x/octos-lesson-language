@@ -30,5 +30,6 @@ export {
   LocalPlaybackStore,
   operationDelay,
   parseCanonicalJsonl,
+  type BrowserLessonSessionOptions,
   type PlaybackStore,
 } from "./runtime.js";

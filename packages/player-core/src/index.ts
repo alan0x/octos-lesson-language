@@ -12,6 +12,7 @@ import {
   type SemanticBoardState,
 } from "../../core/src/index.js";
 import type {
+  PlaybackAppendResult,
   PlaybackCheckpoint,
   PlaybackConformanceResult,
   PlaybackFrame,
@@ -23,6 +24,10 @@ import type {
 export type * from "./types.js";
 
 const PHASES: ActionPhase[] = ["before_speech", "during_speech", "after_speech"];
+
+export interface PlaybackCompileOptions {
+  allowIncomplete?: boolean;
+}
 
 export class PlaybackError extends OllError {
   constructor(code: string, path: string, message: string) {
@@ -45,8 +50,12 @@ function fingerprintEvents(events: CanonicalEvent[]): string {
   return `fnv1a32:${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
-export function compilePlaybackOperations(events: CanonicalEvent[]): PlaybackOperation[] {
-  if (events.length < 2) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open and lesson.close");
+export function compilePlaybackOperations(
+  events: CanonicalEvent[],
+  options: PlaybackCompileOptions = {},
+): PlaybackOperation[] {
+  if (events.length < 1) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open");
+  if (!options.allowIncomplete && events.length < 2) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open and lesson.close");
   const lessonId = events[0]!.lesson_id;
   const operations: PlaybackOperation[] = [];
   const actionIds = new Set<string>();
@@ -62,13 +71,17 @@ export function compilePlaybackOperations(events: CanonicalEvent[]): PlaybackOpe
     if (event.lesson_id !== lessonId) playbackFail("OLL_PLAYBACK_LESSON_MISMATCH", `/events/${eventIndex}/lesson_id`, "All Canonical Events must use the same lesson_id");
     if (event.sequence !== eventIndex) playbackFail("OLL_PLAYBACK_SEQUENCE", `/events/${eventIndex}/sequence`, `Expected sequence ${eventIndex}, received ${event.sequence}`);
     if (eventIndex === 0 && event.event !== "lesson.open") playbackFail("OLL_PLAYBACK_BOUNDARY", "/events/0/event", "First event must be lesson.open");
-    if (eventIndex === events.length - 1 && event.event !== "lesson.close") playbackFail("OLL_PLAYBACK_BOUNDARY", `/events/${eventIndex}/event`, "Last event must be lesson.close");
+    if (!options.allowIncomplete && eventIndex === events.length - 1 && event.event !== "lesson.close") playbackFail("OLL_PLAYBACK_BOUNDARY", `/events/${eventIndex}/event`, "Last event must be lesson.close");
     if (event.event === "lesson.close" && eventIndex !== events.length - 1) playbackFail("OLL_PLAYBACK_AFTER_CLOSE", `/events/${eventIndex}/event`, "No event may follow lesson.close");
   });
 
   push({ type: "lesson.open", event_index: 0 });
-  for (let eventIndex = 1; eventIndex < events.length - 1; eventIndex += 1) {
+  for (let eventIndex = 1; eventIndex < events.length; eventIndex += 1) {
     const event = events[eventIndex]!;
+    if (event.event === "lesson.close") {
+      push({ type: "lesson.close", event_index: eventIndex });
+      continue;
+    }
     if (event.event !== "lesson.step" || !event.step) playbackFail("OLL_PLAYBACK_BOUNDARY", `/events/${eventIndex}`, "Only lesson.step is allowed between open and close");
     const step = event.step;
     if (stepIds.has(step.id)) playbackFail("OLL_DUPLICATE_STEP_ID", `/events/${eventIndex}/step/id`, `Step '${step.id}' is duplicated`);
@@ -97,39 +110,47 @@ export function compilePlaybackOperations(events: CanonicalEvent[]): PlaybackOpe
     }
     push({ type: "step.commit", event_index: eventIndex, step_id: step.id });
   }
-  push({ type: "lesson.close", event_index: events.length - 1 });
   return operations;
 }
 
 export class HeadlessLessonPlayer {
   readonly operations: PlaybackOperation[];
-  readonly program_fingerprint: string;
-  private readonly events: CanonicalEvent[];
+  private events: CanonicalEvent[];
   private projection: PlaybackProjection;
   private frames: PlaybackFrame[] = [];
+  private readonly allowIncomplete: boolean;
 
-  constructor(events: CanonicalEvent[]) {
+  constructor(events: CanonicalEvent[], options: PlaybackCompileOptions = {}) {
+    this.allowIncomplete = options.allowIncomplete ?? false;
     this.events = structuredClone(events);
-    this.operations = compilePlaybackOperations(this.events);
-    this.program_fingerprint = fingerprintEvents(this.events);
+    this.operations = compilePlaybackOperations(this.events, options);
     this.projection = {
       status: "ready", cursor: 0, total_operations: this.operations.length,
       lesson_id: this.events[0]!.lesson_id, board: null,
     };
   }
 
-  static fromCheckpoint(events: CanonicalEvent[], checkpoint: PlaybackCheckpoint): HeadlessLessonPlayer {
-    const player = new HeadlessLessonPlayer(events);
+  static fromCheckpoint(
+    events: CanonicalEvent[],
+    checkpoint: PlaybackCheckpoint,
+    options: PlaybackCompileOptions = {},
+  ): HeadlessLessonPlayer {
+    const player = new HeadlessLessonPlayer(events, options);
     if (checkpoint.profile !== "octos.playback.checkpoint" || checkpoint.version !== "0.1") playbackFail("OLL_CHECKPOINT_VERSION", "checkpoint", "Unsupported checkpoint profile or version");
     if (checkpoint.program_fingerprint !== player.program_fingerprint) playbackFail("OLL_CHECKPOINT_PROGRAM_MISMATCH", "checkpoint.program_fingerprint", "Checkpoint does not belong to this Canonical program");
     if (checkpoint.lesson_id !== player.projection.lesson_id) playbackFail("OLL_CHECKPOINT_LESSON_MISMATCH", "checkpoint.lesson_id", "Checkpoint lesson_id does not match");
     if (checkpoint.cursor < 1 || checkpoint.cursor > player.operations.length) playbackFail("OLL_CHECKPOINT_CURSOR", "checkpoint.cursor", "Checkpoint cursor is outside the operation stream");
     if (checkpoint.projection.cursor !== checkpoint.cursor || checkpoint.projection.total_operations !== player.operations.length) playbackFail("OLL_CHECKPOINT_PROJECTION", "checkpoint.projection", "Checkpoint projection metadata is inconsistent");
     player.projection = structuredClone(checkpoint.projection);
-    player.projection.status = checkpoint.cursor === player.operations.length ? "completed" : "paused";
+    player.projection.status = checkpoint.cursor === player.operations.length
+      ? player.isClosed ? "completed" : "waiting"
+      : "paused";
     return player;
   }
 
+  get program_fingerprint(): string { return fingerprintEvents(this.events); }
+  get canonicalEvents(): CanonicalEvent[] { return structuredClone(this.events); }
+  get isClosed(): boolean { return this.events.at(-1)?.event === "lesson.close"; }
   get status(): PlaybackStatus { return this.projection.status; }
   get cursor(): number { return this.projection.cursor; }
   get trace(): PlaybackFrame[] { return structuredClone(this.frames); }
@@ -144,27 +165,69 @@ export class HeadlessLessonPlayer {
   resume(): void {
     if (this.projection.status === "completed") return;
     if (!this.projection.board) playbackFail("OLL_PLAYBACK_NOT_OPEN", "player", "Cannot resume before lesson.open");
-    this.projection.status = "playing";
+    this.projection.status = this.projection.cursor < this.operations.length ? "playing" : "waiting";
+  }
+
+  appendEvents(events: CanonicalEvent[]): PlaybackAppendResult {
+    if (!this.allowIncomplete) {
+      playbackFail("OLL_PLAYBACK_NOT_INCREMENTAL", "player", "This player was not created for incremental playback");
+    }
+    const candidate = structuredClone(this.events);
+    let accepted = 0;
+    let duplicates = 0;
+    for (const event of events) {
+      if (event.sequence < candidate.length) {
+        if (JSON.stringify(candidate[event.sequence]) !== JSON.stringify(event)) {
+          playbackFail("OLL_PLAYBACK_EVENT_CONFLICT", `/events/${event.sequence}`, `Sequence ${event.sequence} conflicts with an accepted event`);
+        }
+        duplicates += 1;
+        continue;
+      }
+      if (event.sequence !== candidate.length) {
+        playbackFail("OLL_PLAYBACK_SEQUENCE", `/events/${candidate.length}/sequence`, `Expected sequence ${candidate.length}, received ${event.sequence}`);
+      }
+      candidate.push(structuredClone(event));
+      accepted += 1;
+    }
+
+    const compiled = compilePlaybackOperations(candidate, { allowIncomplete: true });
+    if (accepted > 0) {
+      const priorStatus = this.projection.status;
+      this.events = candidate;
+      this.operations.splice(0, this.operations.length, ...compiled);
+      this.projection.total_operations = this.operations.length;
+      if (priorStatus === "waiting" && this.projection.cursor < this.operations.length) {
+        this.projection.status = "paused";
+      }
+    }
+    return { accepted, duplicates, total_events: this.events.length, closed: this.isClosed };
   }
 
   checkpoint(): PlaybackCheckpoint {
     if (!this.projection.board) playbackFail("OLL_PLAYBACK_NOT_OPEN", "player", "Cannot checkpoint before lesson.open");
     const projection = structuredClone(this.projection);
-    projection.status = projection.cursor === projection.total_operations ? "completed" : "paused";
+    projection.status = projection.cursor === projection.total_operations
+      ? this.isClosed ? "completed" : "waiting"
+      : "paused";
     return {
       profile: "octos.playback.checkpoint", version: "0.1", program_fingerprint: this.program_fingerprint,
       lesson_id: projection.lesson_id, cursor: projection.cursor, projection,
+      ...(this.allowIncomplete ? { canonical_events: this.canonicalEvents } : {}),
     };
   }
 
   advance(): PlaybackFrame | null {
     if (this.projection.status === "completed") return null;
+    if (this.projection.status === "waiting" && this.projection.cursor >= this.operations.length) return null;
+    if (this.projection.status === "waiting") this.projection.status = "playing";
     if (this.projection.status === "paused") playbackFail("OLL_PLAYBACK_PAUSED", "player", "Call resume() before advancing a paused player");
     this.projection.status = "playing";
     const operation = this.operations[this.projection.cursor]!;
     this.applyOperation(operation);
     this.projection.cursor += 1;
-    if (this.projection.cursor === this.operations.length) this.projection.status = "completed";
+    if (this.projection.cursor === this.operations.length) {
+      this.projection.status = this.isClosed ? "completed" : "waiting";
+    }
     const frame = { operation: structuredClone(operation), projection: structuredClone(this.projection) };
     this.frames.push(frame);
     return frame;
@@ -172,7 +235,7 @@ export class HeadlessLessonPlayer {
 
   playAll(): PlaybackFrame[] {
     const frames: PlaybackFrame[] = [];
-    while (this.projection.status !== "completed") frames.push(this.advance()!);
+    while (this.projection.status !== "completed" && this.projection.status !== "waiting") frames.push(this.advance()!);
     return frames;
   }
 

@@ -383,3 +383,43 @@ test("event sequence and close boundaries are enforced before playback", () => {
   afterClose.at(-1)!.sequence = afterClose.length - 1;
   assert.throws(() => new HeadlessLessonPlayer(afterClose), (error) => error instanceof PlaybackError && error.code === "OLL_PLAYBACK_AFTER_CLOSE");
 });
+
+test("incremental playback waits at an accepted prefix and resumes through lesson.close", () => {
+  const player = new HeadlessLessonPlayer(quadratic.events.slice(0, 2), { allowIncomplete: true });
+  player.playAll();
+  assert.equal(player.status, "waiting");
+  assert.deepEqual(player.snapshot.board?.applied_steps, [quadratic.events[1]!.step!.id]);
+
+  for (const event of quadratic.events.slice(2)) {
+    const result = player.appendEvents([event]);
+    assert.equal(result.accepted, 1);
+    assert.equal(result.duplicates, 0);
+    player.resume();
+    player.playAll();
+  }
+
+  assert.equal(player.status, "completed");
+  assert.deepEqual(player.finalState(), reduceCanonicalEvents(quadratic.events));
+});
+
+test("incremental append is idempotent and rejects gaps or conflicting retries atomically", () => {
+  const prefix = quadratic.events.slice(0, 2);
+  const player = new HeadlessLessonPlayer(prefix, { allowIncomplete: true });
+  const duplicate = player.appendEvents([structuredClone(prefix[1]!)]);
+  assert.deepEqual(duplicate, { accepted: 0, duplicates: 1, total_events: 2, closed: false });
+
+  const before = player.canonicalEvents;
+  const conflict = structuredClone(prefix[1]!);
+  conflict.step!.purpose = "conflicting retry";
+  assert.throws(
+    () => player.appendEvents([conflict]),
+    (error) => error instanceof PlaybackError && error.code === "OLL_PLAYBACK_EVENT_CONFLICT",
+  );
+  const gap = structuredClone(quadratic.events[2]!);
+  gap.sequence = 4;
+  assert.throws(
+    () => player.appendEvents([gap]),
+    (error) => error instanceof PlaybackError && error.code === "OLL_PLAYBACK_SEQUENCE",
+  );
+  assert.deepEqual(player.canonicalEvents, before);
+});

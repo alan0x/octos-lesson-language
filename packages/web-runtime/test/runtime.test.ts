@@ -47,3 +47,41 @@ test("advanceBeat stops at a visible classroom boundary", () => {
   assert.equal(session.status, "paused");
   assert.ok(session.cursor < session.operations.length);
 });
+
+test("incremental browser session preserves the board while Canonical Steps arrive", () => {
+  const store = new MemoryStore();
+  const prefix = structuredClone(events.slice(0, 2));
+  const session = new BrowserLessonSession(prefix, store, "stream", { incremental: true });
+  while (session.status !== "waiting") session.advance();
+  const firstBoard = session.projection.board;
+  assert.ok(firstBoard);
+  const firstNodes = Object.keys(firstBoard.nodes);
+  const firstCursor = session.cursor;
+
+  const appended = session.appendEvents([structuredClone(events[2]!)]);
+  assert.equal(appended.accepted, 1);
+  assert.ok(session.operations.length > firstCursor);
+  while (session.status !== "waiting") session.advance();
+  assert.ok(firstNodes.every((id) => Boolean(session.projection.board?.nodes[id])));
+  assert.ok(session.cursor > firstCursor);
+});
+
+test("incremental browser session persists the expanded program checkpoint", () => {
+  const store = new MemoryStore();
+  const prefix = structuredClone(events.slice(0, 2));
+  const first = new BrowserLessonSession(prefix, store, "stream", { incremental: true });
+  while (first.status !== "waiting") first.advance();
+  first.appendEvents([structuredClone(events[2]!)]);
+  first.advance();
+
+  const restored = new BrowserLessonSession(
+    structuredClone(events.slice(0, 1)),
+    store,
+    "stream",
+    { incremental: true },
+  );
+  assert.equal(restored.cursor, first.cursor);
+  assert.equal(restored.projection.total_operations, first.projection.total_operations);
+  assert.deepEqual(restored.projection.board, first.projection.board);
+  assert.deepEqual(restored.events, first.events);
+});

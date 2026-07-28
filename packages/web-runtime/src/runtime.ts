@@ -1,5 +1,12 @@
 import type { CanonicalEvent } from "../../core/src/index.js";
-import { HeadlessLessonPlayer, type PlaybackCheckpoint, type PlaybackFrame, type PlaybackOperation, type PlaybackProjection } from "../../player-core/src/index.js";
+import {
+  HeadlessLessonPlayer,
+  type PlaybackAppendResult,
+  type PlaybackCheckpoint,
+  type PlaybackFrame,
+  type PlaybackOperation,
+  type PlaybackProjection,
+} from "../../player-core/src/index.js";
 
 export interface PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined;
@@ -29,10 +36,15 @@ export function operationDelay(operation: PlaybackOperation, speed = 1): number 
   return Math.max(18, base / speed);
 }
 
+export interface BrowserLessonSessionOptions {
+  incremental?: boolean;
+}
+
 export class BrowserLessonSession {
   private player: HeadlessLessonPlayer;
   private timer?: ReturnType<typeof setTimeout>;
   private playing = false;
+  private followAppends = false;
   private speed = 1;
   private currentFrame?: PlaybackFrame;
   private readonly listeners = new Set<() => void>();
@@ -41,6 +53,7 @@ export class BrowserLessonSession {
     readonly events: CanonicalEvent[],
     private readonly store: PlaybackStore,
     private readonly storageKey: string,
+    private readonly options: BrowserLessonSessionOptions = {},
   ) {
     this.player = this.restorePlayer();
     if (this.player.cursor > 0) this.currentFrame = {
@@ -61,6 +74,11 @@ export class BrowserLessonSession {
 
   play(): void {
     if (this.player.status === "completed" || this.playing) return;
+    this.followAppends = true;
+    if (this.player.status === "waiting") {
+      this.emit();
+      return;
+    }
     if (this.player.status === "paused") this.player.resume();
     this.playing = true;
     this.emit();
@@ -69,6 +87,7 @@ export class BrowserLessonSession {
 
   pause(): void {
     this.playing = false;
+    this.followAppends = false;
     if (this.timer) clearTimeout(this.timer);
     if (this.player.cursor > 0 && this.player.status !== "completed") this.player.pause();
     this.persist();
@@ -96,13 +115,29 @@ export class BrowserLessonSession {
     this.pause();
     let frame: PlaybackFrame | undefined;
     do { frame = this.advance(); } while (frame && frame.operation.type !== "beat.end" && this.player.status !== "completed");
-    if (this.player.status !== "completed") this.pause();
+    if (this.player.status !== "completed" && this.player.status !== "waiting") this.pause();
+  }
+
+  appendEvents(events: CanonicalEvent[]): PlaybackAppendResult {
+    const result = this.player.appendEvents(events);
+    if (result.accepted > 0) {
+      this.events.splice(0, this.events.length, ...this.player.canonicalEvents);
+      this.persist();
+      this.emit();
+      if (this.followAppends && !this.playing && this.player.status !== "completed") {
+        if (this.player.status === "paused") this.player.resume();
+        this.playing = true;
+        this.emit();
+        this.tick();
+      }
+    }
+    return result;
   }
 
   reset(): void {
     this.pause();
     this.store.remove(this.storageKey);
-    this.player = new HeadlessLessonPlayer(this.events);
+    this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;
     this.emit();
   }
@@ -112,6 +147,7 @@ export class BrowserLessonSession {
     const frame = this.advance();
     if (!frame || this.player.status === "completed") {
       this.playing = false;
+      if (this.player.status === "completed") this.followAppends = false;
       this.emit();
       return;
     }
@@ -120,9 +156,17 @@ export class BrowserLessonSession {
 
   private restorePlayer(): HeadlessLessonPlayer {
     const checkpoint = this.store.load(this.storageKey);
-    if (!checkpoint) return new HeadlessLessonPlayer(this.events);
-    try { return HeadlessLessonPlayer.fromCheckpoint(this.events, checkpoint); }
-    catch { this.store.remove(this.storageKey); return new HeadlessLessonPlayer(this.events); }
+    const options = { allowIncomplete: this.options.incremental };
+    if (!checkpoint) return new HeadlessLessonPlayer(this.events, options);
+    try {
+      const events = this.options.incremental && checkpoint.canonical_events?.length
+        ? checkpoint.canonical_events
+        : this.events;
+      const player = HeadlessLessonPlayer.fromCheckpoint(events, checkpoint, options);
+      this.events.splice(0, this.events.length, ...player.canonicalEvents);
+      return player;
+    }
+    catch { this.store.remove(this.storageKey); return new HeadlessLessonPlayer(this.events, options); }
   }
 
   private persist(): void {

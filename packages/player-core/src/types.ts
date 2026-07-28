@@ -1,6 +1,6 @@
-import type { ActionPhase, CanonicalAction, Delivery, SemanticBoardState } from "../../core/src/index.js";
+import type { ActionPhase, CanonicalAction, CanonicalEvent, Delivery, SemanticBoardState } from "../../core/src/index.js";
 
-export type PlaybackStatus = "ready" | "playing" | "paused" | "completed";
+export type PlaybackStatus = "ready" | "playing" | "paused" | "waiting" | "completed";
 export type PlaybackOperationType =
   | "lesson.open" | "step.begin" | "beat.begin"
   | "phase.begin" | "action.apply" | "phase.end"
@@ -48,6 +48,14 @@ export interface PlaybackCheckpoint {
   lesson_id: string;
   cursor: number;
   projection: PlaybackProjection;
+  canonical_events?: CanonicalEvent[];
+}
+
+export interface PlaybackAppendResult {
+  accepted: number;
+  duplicates: number;
+  total_events: number;
+  closed: boolean;
 }
 
 export interface PlaybackConformanceResult {
