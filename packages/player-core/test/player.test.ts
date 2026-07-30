@@ -15,6 +15,7 @@ import {
 import {
   HeadlessLessonPlayer,
   PlaybackError,
+  buildPlaybackOutline,
   compilePlaybackOperations,
   runPlaybackConformance,
 } from "../src/index.js";
@@ -400,6 +401,49 @@ test("incremental playback waits at an accepted prefix and resumes through lesso
 
   assert.equal(player.status, "completed");
   assert.deepEqual(player.finalState(), reduceCanonicalEvents(quadratic.events));
+});
+
+test("playback outline exposes stable Step and Beat seek boundaries", () => {
+  const outline = buildPlaybackOutline(quadratic.events);
+  assert.equal(outline.length, quadratic.events.length - 2);
+  assert.equal(outline[0]?.title, quadratic.events[1]?.step?.purpose);
+  assert.equal(outline[0]?.beats.length, quadratic.events[1]?.step?.beats.length);
+  assert.ok((outline[0]?.start_cursor ?? -1) < (outline[0]?.end_cursor ?? -1));
+  assert.ok((outline[0]?.focus_targets.length ?? 0) > 0);
+  assert.ok(
+    quadratic.events[1]?.step?.beats[0]?.narration?.text.startsWith(
+      outline[0]?.beats[0]?.title ?? "",
+    ),
+  );
+});
+
+test("seek deterministically rebuilds playback state in both directions", () => {
+  const player = new HeadlessLessonPlayer(quadratic.events);
+  const [firstStep, secondStep] = player.outline;
+  assert.ok(firstStep);
+  assert.ok(secondStep);
+
+  player.seek(secondStep.end_cursor);
+  assert.equal(player.status, "paused");
+  assert.deepEqual(
+    player.snapshot.board?.applied_steps,
+    [firstStep.id, secondStep.id],
+  );
+
+  const expected = new HeadlessLessonPlayer(quadratic.events);
+  while (expected.cursor < firstStep.end_cursor) expected.advance();
+  player.seek(firstStep.end_cursor);
+  assert.equal(player.cursor, expected.cursor);
+  assert.deepEqual(player.snapshot.board, expected.snapshot.board);
+
+  player.seek(0);
+  assert.equal(player.status, "ready");
+  assert.equal(player.snapshot.board, null);
+  assert.throws(
+    () => player.seek(player.operations.length + 1),
+    (error) =>
+      error instanceof PlaybackError && error.code === "OLL_PLAYBACK_CURSOR",
+  );
 });
 
 test("incremental append is idempotent and rejects gaps or conflicting retries atomically", () => {

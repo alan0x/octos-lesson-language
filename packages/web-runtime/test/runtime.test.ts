@@ -75,6 +75,33 @@ test("advanceBeat stops at a visible classroom boundary", () => {
   assert.ok(session.cursor < session.operations.length);
 });
 
+test("browser session seeks to Step and Beat boundaries and persists the result", () => {
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "lesson");
+  const [firstStep, secondStep] = session.outline;
+  assert.ok(firstStep);
+  assert.ok(secondStep);
+
+  session.seekToStep(secondStep.id);
+  assert.equal(session.cursor, secondStep.end_cursor);
+  assert.equal(session.status, "paused");
+  assert.deepEqual(
+    session.projection.board?.applied_steps,
+    [firstStep.id, secondStep.id],
+  );
+  assert.deepEqual(session.attentionTargets, secondStep.focus_targets);
+
+  const restored = new BrowserLessonSession(events, store, "lesson");
+  assert.equal(restored.cursor, secondStep.end_cursor);
+  assert.deepEqual(restored.projection.board, session.projection.board);
+
+  const beat = firstStep.beats[0]!;
+  restored.seekToBeat(beat.id, "start");
+  assert.equal(restored.cursor, beat.start_cursor);
+  assert.equal(restored.advance()?.operation.type, "beat.begin");
+  assert.deepEqual(restored.attentionTargets, []);
+});
+
 test("incremental browser session preserves the board while Canonical Steps arrive", () => {
   const store = new MemoryStore();
   const prefix = structuredClone(events.slice(0, 2));

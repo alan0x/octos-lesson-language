@@ -16,6 +16,7 @@ import type {
   PlaybackCheckpoint,
   PlaybackConformanceResult,
   PlaybackFrame,
+  PlaybackOutlineStep,
   PlaybackOperation,
   PlaybackProjection,
   PlaybackStatus,
@@ -113,6 +114,86 @@ export function compilePlaybackOperations(
   return operations;
 }
 
+function narrationPreview(text: string | undefined, fallback: string): string {
+  const normalized = text?.replace(/\s+/g, " ").trim();
+  if (!normalized) return fallback;
+  const sentence = normalized.match(/^.*?[。！？.!?]/)?.[0]?.trim();
+  const preview = sentence || normalized;
+  return preview.length > 42 ? `${preview.slice(0, 41).trimEnd()}…` : preview;
+}
+
+function actionTargetIds(action: PlaybackOperation["action"]): string[] {
+  if (!action) return [];
+  if (action.op === "board.focus") return action.focus?.targets ?? [];
+  const target = action.target;
+  return [
+    action.node?.id,
+    action.connection?.id,
+    action.group?.id,
+    target?.node_id,
+    target?.group_id,
+    target?.connection_id,
+  ].filter((id): id is string => Boolean(id));
+}
+
+function focusTargets(
+  operations: PlaybackOperation[],
+  start: number,
+  end: number,
+): string[] {
+  const scoped = operations.slice(start, end + 1);
+  const declaredFocus = scoped
+    .filter((operation) => operation.action?.op === "board.focus")
+    .flatMap((operation) => operation.action?.focus?.targets ?? []);
+  const candidates = declaredFocus.length > 0
+    ? declaredFocus
+    : scoped.flatMap((operation) => actionTargetIds(operation.action));
+  return [...new Set(candidates)];
+}
+
+export function buildPlaybackOutline(
+  events: CanonicalEvent[],
+  operations = compilePlaybackOperations(events, { allowIncomplete: true }),
+): PlaybackOutlineStep[] {
+  const steps: PlaybackOutlineStep[] = [];
+  for (const [eventIndex, event] of events.entries()) {
+    if (event.event !== "lesson.step" || !event.step) continue;
+    const stepStart = operations.findIndex(
+      (operation) => operation.type === "step.begin" && operation.step_id === event.step!.id,
+    );
+    const stepEnd = operations.findIndex(
+      (operation) => operation.type === "step.commit" && operation.step_id === event.step!.id,
+    );
+    if (stepStart < 0 || stepEnd < 0) continue;
+    steps.push({
+      id: event.step.id,
+      title: event.step.purpose,
+      event_index: eventIndex,
+      start_cursor: stepStart,
+      end_cursor: stepEnd + 1,
+      focus_targets: focusTargets(operations, stepStart, stepEnd),
+      beats: event.step.beats.flatMap((beat, beatIndex) => {
+        const beatStart = operations.findIndex(
+          (operation) => operation.type === "beat.begin" && operation.beat_id === beat.id,
+        );
+        const beatEnd = operations.findIndex(
+          (operation) => operation.type === "beat.end" && operation.beat_id === beat.id,
+        );
+        if (beatStart < 0 || beatEnd < 0) return [];
+        return [{
+          id: beat.id,
+          title: narrationPreview(beat.narration?.text, `讲解片段 ${beatIndex + 1}`),
+          event_index: eventIndex,
+          start_cursor: beatStart,
+          end_cursor: beatEnd + 1,
+          focus_targets: focusTargets(operations, beatStart, beatEnd),
+        }];
+      }),
+    });
+  }
+  return steps;
+}
+
 export class HeadlessLessonPlayer {
   readonly operations: PlaybackOperation[];
   private events: CanonicalEvent[];
@@ -155,6 +236,9 @@ export class HeadlessLessonPlayer {
   get cursor(): number { return this.projection.cursor; }
   get trace(): PlaybackFrame[] { return structuredClone(this.frames); }
   get snapshot(): PlaybackProjection { return structuredClone(this.projection); }
+  get outline(): PlaybackOutlineStep[] {
+    return buildPlaybackOutline(this.events, this.operations);
+  }
 
   pause(): void {
     if (this.projection.status === "completed") return;
@@ -237,6 +321,35 @@ export class HeadlessLessonPlayer {
     const frames: PlaybackFrame[] = [];
     while (this.projection.status !== "completed" && this.projection.status !== "waiting") frames.push(this.advance()!);
     return frames;
+  }
+
+  seek(cursor: number): PlaybackProjection {
+    if (!Number.isInteger(cursor) || cursor < 0 || cursor > this.operations.length) {
+      playbackFail(
+        "OLL_PLAYBACK_CURSOR",
+        "cursor",
+        `Cursor ${cursor} is outside the operation stream`,
+      );
+    }
+    this.projection = {
+      status: "ready",
+      cursor: 0,
+      total_operations: this.operations.length,
+      lesson_id: this.events[0]!.lesson_id,
+      board: null,
+    };
+    this.frames = [];
+    while (this.projection.cursor < cursor) {
+      const operation = this.operations[this.projection.cursor]!;
+      this.applyOperation(operation);
+      this.projection.cursor += 1;
+    }
+    this.projection.status = cursor === 0
+      ? "ready"
+      : cursor === this.operations.length
+        ? this.isClosed ? "completed" : "waiting"
+        : "paused";
+    return this.snapshot;
   }
 
   finalState(): SemanticBoardState {

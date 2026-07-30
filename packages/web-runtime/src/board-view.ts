@@ -405,7 +405,7 @@ export class InfiniteBoardView {
     const operationFocus = operation?.action?.focus?.targets ?? [];
     const focusTargets = operationFocus.length
       ? operationFocus
-      : operation?.type === "beat.end"
+      : operation?.type === "beat.end" || operation?.type === "step.commit"
         ? board.focus
         : [];
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
@@ -431,6 +431,14 @@ export class InfiniteBoardView {
   setViewportInsets(insets: ViewportInsets): void {
     this.viewportInsets = { ...insets };
     this.resize();
+  }
+
+  focusTargets(targetIds: string[]): void {
+    if (!this.layout || !this.board || targetIds.length === 0) return;
+    const rects = this.resolveFocusRects(targetIds, this.board, this.layout);
+    if (rects.length === 0) return;
+    this.resumeAutomaticCamera();
+    this.focusRects(targetIds, rects, this.board);
   }
 
   resize(): void {

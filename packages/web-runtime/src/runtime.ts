@@ -4,6 +4,7 @@ import {
   type PlaybackAppendResult,
   type PlaybackCheckpoint,
   type PlaybackFrame,
+  type PlaybackOutlineStep,
   type PlaybackOperation,
   type PlaybackProjection,
 } from "../../player-core/src/index.js";
@@ -142,6 +143,7 @@ export class BrowserLessonSession {
   private playing = false;
   private followAppends = false;
   private speed = 1;
+  private seekAttentionTargets: string[] = [];
   private currentFrame?: PlaybackFrame;
   private readonly listeners = new Set<() => void>();
 
@@ -168,7 +170,9 @@ export class BrowserLessonSession {
   get operations(): PlaybackOperation[] { return this.player.operations; }
   get cursor(): number { return this.player.cursor; }
   get projection(): PlaybackProjection { return this.player.snapshot; }
+  get outline(): PlaybackOutlineStep[] { return this.player.outline; }
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
+  get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
   get isPlaying(): boolean { return this.playing; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
 
@@ -210,6 +214,7 @@ export class BrowserLessonSession {
     if (this.player.status === "completed") return undefined;
     if (this.player.status === "paused") this.player.resume();
     const frame = this.player.advance() ?? undefined;
+    this.seekAttentionTargets = [];
     this.currentFrame = frame;
     if (frame?.operation.type === "narration.begin" && frame.operation.narration) {
       this.narrationRemainingBaseMs = narrationDuration(
@@ -240,6 +245,58 @@ export class BrowserLessonSession {
     if (this.player.status !== "completed" && this.player.status !== "waiting") this.pause();
   }
 
+  seek(cursor: number, attentionTargets: string[] = []): void {
+    this.freezeScheduledDelay();
+    this.discardScheduledDelay();
+    this.playing = false;
+    this.followAppends = false;
+    this.narrationRemainingBaseMs = undefined;
+    this.seekAttentionTargets = [...attentionTargets];
+    const projection = this.player.seek(cursor);
+    this.currentFrame = cursor > 0
+      ? {
+          operation: this.player.operations[cursor - 1]!,
+          projection,
+        }
+      : undefined;
+    const narration = projection.current_narration;
+    if (narration) {
+      this.narrationRemainingBaseMs = narrationDuration(
+        narration.text,
+        narration.delivery,
+      );
+    }
+    if (cursor === 0) this.store.remove(this.storageKey);
+    else this.persist();
+    this.emit();
+  }
+
+  seekToStep(
+    stepId: string,
+    boundary: "start" | "end" = "end",
+  ): void {
+    const step = this.outline.find((item) => item.id === stepId);
+    if (!step) throw new RangeError(`Unknown lesson step '${stepId}'`);
+    this.seek(
+      boundary === "start" ? step.start_cursor : step.end_cursor,
+      step.focus_targets,
+    );
+  }
+
+  seekToBeat(
+    beatId: string,
+    boundary: "start" | "end" = "end",
+  ): void {
+    const beat = this.outline
+      .flatMap((step) => step.beats)
+      .find((item) => item.id === beatId);
+    if (!beat) throw new RangeError(`Unknown lesson beat '${beatId}'`);
+    this.seek(
+      boundary === "start" ? beat.start_cursor : beat.end_cursor,
+      beat.focus_targets,
+    );
+  }
+
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult {
     const result = this.player.appendEvents(events);
     if (result.accepted > 0) {
@@ -260,6 +317,7 @@ export class BrowserLessonSession {
     this.pause();
     this.discardScheduledDelay();
     this.narrationRemainingBaseMs = undefined;
+    this.seekAttentionTargets = [];
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;

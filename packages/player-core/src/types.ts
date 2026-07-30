@@ -58,6 +58,25 @@ export interface PlaybackAppendResult {
   closed: boolean;
 }
 
+export interface PlaybackOutlineBeat {
+  id: string;
+  title: string;
+  event_index: number;
+  start_cursor: number;
+  end_cursor: number;
+  focus_targets: string[];
+}
+
+export interface PlaybackOutlineStep {
+  id: string;
+  title: string;
+  event_index: number;
+  start_cursor: number;
+  end_cursor: number;
+  focus_targets: string[];
+  beats: PlaybackOutlineBeat[];
+}
+
 export interface PlaybackConformanceResult {
   lesson_id: string;
   operation_count: number;
