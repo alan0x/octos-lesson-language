@@ -52,6 +52,22 @@ The host owns the page, lesson acquisition, learner/session identity, errors, TT
 
 `mountInfiniteBoard()` creates only the internal board layers inside the supplied viewport. Host overlays such as narration, controls and the Octos avatar remain untouched. Call `mounted.destroy()` when unmounting the page.
 
+## Teaching clock
+
+Continuous playback has one content-aware teaching pace; there is no separate
+legacy or instant playback mode. The Runtime derives a minimum reading budget
+for each narration from its CJK characters, Latin words, mathematical tokens,
+punctuation and `delivery`. Visible board actions receive delays based on their
+operation and content, and Beat/Step boundaries add short classroom pauses.
+Board work performed during speech consumes the same narration budget, so the
+two proceed in parallel instead of being timed twice.
+
+`pause()` preserves the remaining wait, `setSpeed()` rescales it, and manual
+`step()` / `advanceBeat()` deliberately skip it. A host restoring a completed
+lesson for review should advance the session to the available end without
+calling `play()`. TTS may run alongside this clock, but the Runtime does not
+attempt millisecond-level audio synchronization.
+
 ## Testing API
 
 `octos-lesson-language/web-runtime/testing` exports the real-Chrome teaching Observer and gates. It is intentionally separate from the production surface.

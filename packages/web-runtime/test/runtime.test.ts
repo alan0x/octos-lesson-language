@@ -1,10 +1,16 @@
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { reduceCanonicalEvents } from "../../core/src/index.js";
 import type { PlaybackCheckpoint } from "../../player-core/src/index.js";
-import { BrowserLessonSession, parseCanonicalJsonl, type PlaybackStore } from "../src/runtime.js";
+import {
+  BrowserLessonSession,
+  narrationDuration,
+  operationDelay,
+  parseCanonicalJsonl,
+  type PlaybackStore,
+} from "../src/runtime.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -15,6 +21,27 @@ class MemoryStore implements PlaybackStore {
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
 const events = parseCanonicalJsonl(source);
+
+function advanceToFirstNarration(session: BrowserLessonSession): string {
+  let text: string | undefined;
+  while (!text) {
+    const frame = session.advance();
+    assert.ok(frame, "the fixture must contain narration");
+    if (frame.operation.type === "narration.begin") {
+      text = frame.operation.narration?.text;
+    }
+  }
+  return text;
+}
+
+function tickElapsed(context: TestContext, duration: number): void {
+  const wholeMilliseconds = Math.floor(duration);
+  for (let elapsed = 0; elapsed < wholeMilliseconds; elapsed += 1) {
+    context.mock.timers.tick(1);
+  }
+  const remainder = duration - wholeMilliseconds;
+  if (remainder > 0) context.mock.timers.tick(remainder);
+}
 
 test("browser session progressively reveals and checkpoints a lesson", () => {
   const store = new MemoryStore();
@@ -84,4 +111,99 @@ test("incremental browser session persists the expanded program checkpoint", () 
   assert.equal(restored.projection.total_operations, first.projection.total_operations);
   assert.deepEqual(restored.projection.board, first.projection.board);
   assert.deepEqual(restored.events, first.events);
+});
+
+test("narration pacing accounts for reading load, delivery, and speed", () => {
+  const short = narrationDuration("先看这里。", "neutral");
+  const long = narrationDuration(
+    "我们先把原式写下来，再一步一步观察每个数字为什么会发生变化。",
+    "neutral",
+  );
+  const careful = narrationDuration(
+    "我们先把原式写下来，再一步一步观察每个数字为什么会发生变化。",
+    "careful",
+  );
+
+  assert.ok(short >= 1_800);
+  assert.ok(long > short);
+  assert.ok(careful > long);
+  assert.equal(narrationDuration("请观察这个等式。", "neutral", 2), narrationDuration("请观察这个等式。", "neutral") / 2);
+});
+
+test("visible board work gets a content-aware teaching delay", () => {
+  const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");
+  const create = session.operations.find((operation) =>
+    operation.type === "action.apply" && operation.action?.op === "board.create"
+  );
+  const point = session.operations.find((operation) =>
+    operation.type === "action.apply" && operation.action?.op === "teacher.point"
+  );
+
+  assert.ok(create);
+  assert.ok(point);
+  assert.ok(operationDelay(create) >= 1_100);
+  assert.equal(operationDelay(point), 450);
+  assert.equal(operationDelay(point, 2), 225);
+});
+
+test("continuous playback keeps narration visible for its reading budget", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");
+  const text = advanceToFirstNarration(session);
+  const budget = narrationDuration(text);
+
+  session.play();
+  tickElapsed(context, budget - 1);
+  assert.equal(session.projection.current_narration?.text, text);
+
+  tickElapsed(context, 2);
+  assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+test("pause and resume preserve the remaining narration budget", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");
+  const text = advanceToFirstNarration(session);
+  const budget = narrationDuration(text);
+
+  session.play();
+  tickElapsed(context, 1_000);
+  session.pause();
+  context.mock.timers.tick(60_000);
+  assert.equal(session.projection.current_narration?.text, text);
+
+  session.play();
+  tickElapsed(context, budget - 1_001);
+  assert.equal(session.projection.current_narration?.text, text);
+  tickElapsed(context, 2);
+  assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+test("changing speed reschedules the remaining teaching wait", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");
+  const text = advanceToFirstNarration(session);
+  const budget = narrationDuration(text);
+
+  session.play();
+  tickElapsed(context, 1_000);
+  session.setSpeed(2);
+  tickElapsed(context, (budget - 1_000) / 2 - 1);
+  assert.equal(session.projection.current_narration?.text, text);
+  tickElapsed(context, 2);
+  assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+test("manual Beat advance skips teaching waits", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");
+  const text = advanceToFirstNarration(session);
+  session.play();
+  context.mock.timers.tick(250);
+
+  session.advanceBeat();
+
+  assert.equal(session.currentOperation?.type, "beat.end");
+  assert.equal(session.status, "paused");
+  assert.notEqual(session.projection.current_narration?.text, text);
 });

@@ -28,6 +28,7 @@ export {
 export {
   BrowserLessonSession,
   LocalPlaybackStore,
+  narrationDuration,
   operationDelay,
   parseCanonicalJsonl,
   type BrowserLessonSessionOptions,
