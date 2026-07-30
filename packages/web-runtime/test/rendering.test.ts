@@ -1,8 +1,19 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { diagramConnectionGeometry, emphasisClassName, isPlainTextMathContent, mathSource } from "../src/board-view.js";
+import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, isPlainTextMathContent, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
+
+function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
+  for (let index = 1; index < points.length; index += 1) {
+    const prior = points[index - 1]!;
+    const point = points[index]!;
+    assert.ok(
+      prior.x === point.x || prior.y === point.y,
+      `segment ${index - 1} must be horizontal or vertical`,
+    );
+  }
+}
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
@@ -32,8 +43,9 @@ test("connections attach to card boundaries instead of running through card cent
   const route = computeConnectionRoute(from, to, "去掉无关视觉信息");
   assert.equal(route.start.x, 300);
   assert.equal(route.end.x, 350);
-  assert.ok(route.label.y < from.y, "narrow-gap label should be routed above both cards");
-  assert.match(routePath(route), /^M .+ C .+/);
+  assertOrthogonal(route.points);
+  assert.doesNotMatch(routePath(route), / C /);
+  assert.match(routePath(route), / Q /, "orthogonal corners should use a small radius");
 });
 
 test("overlapping group connections route above both group boundaries", () => {
@@ -42,9 +54,9 @@ test("overlapping group connections route above both group boundaries", () => {
   const route = computeConnectionRoute(from, to, "从直观到证明");
   assert.deepEqual(route.start, { x: 480, y: 120 });
   assert.deepEqual(route.end, { x: 1040, y: 130 });
-  assert.ok(route.control1.y < from.y);
-  assert.ok(route.control2.y < to.y);
-  assert.ok(route.label.y < route.control1.y);
+  assert.ok(route.points[1]!.y < from.y);
+  assert.ok(route.points.at(-2)!.y < to.y);
+  assertOrthogonal(route.points);
 });
 
 test("diagram fragment connections keep their endpoints inside the diagram", () => {
@@ -56,13 +68,44 @@ test("diagram fragment connections keep their endpoints inside the diagram", () 
 });
 
 test("connection labels stack instead of covering one another", () => {
-  const from = { x: 40, y: 80, width: 260, height: 120 };
-  const to = { x: 340, y: 80, width: 320, height: 120 };
+  const from = { x: 40, y: 80, width: 100, height: 120 };
+  const to = { x: 500, y: 80, width: 100, height: 120 };
   const occupied: Array<{ x: number; y: number; width: number; height: number }> = [];
   const first = stackConnectionLabel(computeConnectionRoute(from, to, "对应角相等"), occupied);
   const second = stackConnectionLabel(computeConnectionRoute(from, to, "对应角相等且构成平角"), occupied);
-  assert.ok(second.label.y < first.label.y);
-  assert.notEqual(routePath(first), routePath(second));
+  assert.notDeepEqual(
+    { x: second.label.x, y: second.label.y },
+    { x: first.label.x, y: first.label.y },
+  );
+  assert.equal(routePath(first), routePath(second), "label avoidance must not bend or move the connector");
+  assert.equal(first.label.hidden, undefined);
+  assert.equal(second.label.hidden, undefined);
+});
+
+test("vertical card connections stay between their endpoints instead of detouring to a far edge", () => {
+  const from = { x: 120, y: 280, width: 680, height: 136 };
+  const to = { x: 120, y: 470, width: 286, height: 130 };
+  const route = computeConnectionRoute(from, to, "");
+  assertOrthogonal(route.points);
+  assert.ok(Math.max(...route.points.map((point) => point.x)) <= from.x + from.width);
+  assert.ok(Math.min(...route.points.map((point) => point.y)) >= from.y + from.height);
+  assert.ok(Math.max(...route.points.map((point) => point.y)) <= to.y);
+});
+
+test("connection routing avoids nearby cards without considering distant topics", () => {
+  const from = { x: 0, y: 0, width: 100, height: 100 };
+  const to = { x: 400, y: 0, width: 100, height: 100 };
+  const blocker = { x: 220, y: 35, width: 60, height: 100 };
+  const distantTopic = { x: 10_000, y: 10_000, width: 600, height: 400 };
+  const route = computeConnectionRoute(from, to, "", false, [blocker, distantTopic]);
+  assertOrthogonal(route.points);
+  assert.ok(Math.min(...route.points.map((point) => point.y)) < from.y);
+  assert.ok(Math.max(...route.points.map((point) => point.x)) < 1_000);
+});
+
+test("connection labels require explicit learner-facing text", () => {
+  assert.equal(connectionDisplayLabel({ relation: "evolves_to" }), "");
+  assert.equal(connectionDisplayLabel({ relation: "derives", label: "推导出" }), "推导出");
 });
 
 test("diagram-internal connections resolve exact fragment coordinates", () => {

@@ -180,6 +180,10 @@ export interface InfiniteBoardElements {
   pointer: HTMLElement;
 }
 
+export function connectionDisplayLabel(connection: Record<string, any>): string {
+  return text(connection.label);
+}
+
 export interface MountedInfiniteBoard {
   view: InfiniteBoardView;
   elements: InfiniteBoardElements;
@@ -191,7 +195,7 @@ export function diagramConnectionGeometry(content: Record<string, any>, connecti
   const from = points.get(text(connection.from?.fragment_id));
   const to = points.get(text(connection.to?.fragment_id));
   if (!from || !to) return undefined;
-  const label = text(connection.label || connection.relation);
+  const label = connectionDisplayLabel(connection);
   const width = Math.min(112, Math.max(42, [...label].reduce((total, character) => total + (/[^\u0000-\u00ff]/.test(character) ? 12 : 7), 0) + 16));
   return {
     from: { x: from.x, y: from.y }, to: { x: to.x, y: to.y }, label,
@@ -584,14 +588,20 @@ export class InfiniteBoardView {
       if (this.renderInternalDiagramConnection(board, connection)) continue;
       const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
-      const labelText = text(connection.label || connection.relation);
+      const labelText = connectionDisplayLabel(connection);
       const internalFragments = connection.from.node_id === connection.to.node_id && Boolean(connection.from.fragment_id && connection.to.fragment_id);
+      const routeObstacles = Object.entries(layout.nodes)
+        .filter(([nodeId]) => nodeId !== connection.from.node_id && nodeId !== connection.to.node_id)
+        .map(([, rect]) => rect);
       const route = labelText
-        ? stackConnectionLabel(computeConnectionRoute(fromRect, toRect, labelText, internalFragments), occupiedLabels)
-        : computeConnectionRoute(fromRect, toRect, labelText, internalFragments);
+        ? stackConnectionLabel(
+            computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles),
+            occupiedLabels,
+          )
+        : computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles);
       const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);
       if (this.operation?.action?.op === "board.focus" && this.operation.action.focus?.targets.includes(connection.id)) path.classList.add("focus-arrive");
-      if (labelText) {
+      if (labelText && !route.label.hidden) {
         const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("connection-label-badge"); badge.dataset.id = connection.id;
         const background = document.createElementNS(SVG_NS, "rect"); background.setAttribute("x", String(route.label.x - route.label.width / 2)); background.setAttribute("y", String(route.label.y - route.label.height / 2)); background.setAttribute("width", String(route.label.width)); background.setAttribute("height", String(route.label.height)); background.setAttribute("rx", "9");
         const label = document.createElementNS(SVG_NS, "text"); label.classList.add("connection-label"); label.setAttribute("x", String(route.label.x)); label.setAttribute("y", String(route.label.y)); label.setAttribute("text-anchor", "middle"); label.setAttribute("dominant-baseline", "middle"); label.textContent = labelText;
