@@ -96,6 +96,19 @@ test("focus keeps an already composed target steady", () => {
   );
 });
 
+test("focus recenters a merely visible target that is outside the teaching center", () => {
+  const current = { panX: 80, panY: 60, scale: 1 };
+  const focused = planFocusCamera(
+    [{ x: 120, y: 140, width: 240, height: 120 }],
+    current,
+    { width: 1200, height: 800 },
+    "detail",
+  );
+  assert.notStrictEqual(focused, current);
+  assert.equal(focused.panX + 240, 600);
+  assert.equal(focused.panY + 200, 400);
+});
+
 test("detail focus derives its zoom from target size instead of a fixed camera scale", () => {
   const current = { panX: 80, panY: 60, scale: .61 };
   const narrow = planFocusCamera(
@@ -146,6 +159,22 @@ test("relationship focus composes all declared targets as one attention scene", 
   const sceneCenterX = 570;
   assert.ok(Math.abs(focused.panX + sceneCenterX * focused.scale - 600) < .001,
     "the complete two-card relationship should be centered");
+});
+
+test("focus centers teaching content inside the host's unobstructed viewport", () => {
+  const focused = planFocusCamera(
+    [{ x: 1000, y: 800, width: 420, height: 160 }],
+    { panX: 0, panY: 0, scale: .78 },
+    { width: 1200, height: 800 },
+    "detail",
+    { top: 90, right: 260, bottom: 180, left: 20 },
+  );
+  const targetCenterX = 1_210;
+  const targetCenterY = 880;
+  const safeCenterX = (20 + 70 + 1200 - 260 - 70) / 2;
+  const safeCenterY = (90 + 70 + 800 - 180 - 70) / 2;
+  assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
+  assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - safeCenterY) < .001);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

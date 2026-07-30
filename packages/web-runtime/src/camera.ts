@@ -11,6 +11,13 @@ export interface ViewportSize {
   height: number;
 }
 
+export interface ViewportInsets {
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
+}
+
 export type AttentionMode = "detail" | "relationship" | "overview";
 
 const FOCUS_MARGIN = 70;
@@ -38,27 +45,60 @@ function visibleAt(
   camera: CameraState,
   viewport: ViewportSize,
   margin: number,
+  insets: ViewportInsets,
 ): boolean {
+  const safe = safeViewport(viewport, insets, margin);
   const left = camera.panX + rect.x * camera.scale;
   const right = left + rect.width * camera.scale;
   const top = camera.panY + rect.y * camera.scale;
   const bottom = top + rect.height * camera.scale;
-  return left >= margin
-    && right <= viewport.width - margin
-    && top >= margin
-    && bottom <= viewport.height - margin;
+  return left >= safe.left
+    && right <= safe.right
+    && top >= safe.top
+    && bottom <= safe.bottom;
+}
+
+function inset(value: number | undefined): number {
+  return Number.isFinite(value) ? Math.max(0, value ?? 0) : 0;
+}
+
+function safeViewport(
+  viewport: ViewportSize,
+  insets: ViewportInsets,
+  margin: number,
+): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
+  const left = inset(insets.left) + margin;
+  const top = inset(insets.top) + margin;
+  const right = Math.max(left + 1, viewport.width - inset(insets.right) - margin);
+  const bottom = Math.max(top + 1, viewport.height - inset(insets.bottom) - margin);
+  return { left, top, right, bottom, width: right - left, height: bottom - top };
 }
 
 function centeredCamera(
   rect: Rect,
   scale: number,
   viewport: ViewportSize,
+  insets: ViewportInsets,
 ): CameraState {
+  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
   return {
     scale,
-    panX: viewport.width / 2 - (rect.x + rect.width / 2) * scale,
-    panY: viewport.height / 2 - (rect.y + rect.height / 2) * scale,
+    panX: safe.left + safe.width / 2 - (rect.x + rect.width / 2) * scale,
+    panY: safe.top + safe.height / 2 - (rect.y + rect.height / 2) * scale,
   };
+}
+
+function composedAt(
+  rect: Rect,
+  camera: CameraState,
+  viewport: ViewportSize,
+  insets: ViewportInsets,
+): boolean {
+  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
+  const sceneCenterX = camera.panX + (rect.x + rect.width / 2) * camera.scale;
+  const sceneCenterY = camera.panY + (rect.y + rect.height / 2) * camera.scale;
+  return Math.abs(sceneCenterX - (safe.left + safe.width / 2)) < 1
+    && Math.abs(sceneCenterY - (safe.top + safe.height / 2)) < 1;
 }
 
 /**
@@ -71,11 +111,13 @@ export function planFocusCamera(
   current: CameraState,
   viewport: ViewportSize,
   mode: AttentionMode,
+  insets: ViewportInsets = {},
 ): CameraState {
   if (!targets.length) return current;
   const scene = unionRects(targets);
-  const safeWidth = Math.max(1, viewport.width - FOCUS_MARGIN * 2);
-  const safeHeight = Math.max(1, viewport.height - FOCUS_MARGIN * 2);
+  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
+  const safeWidth = safe.width;
+  const safeHeight = safe.height;
   const fitScale = Math.min(
     MAX_AUTOMATIC_SCALE,
     Math.max(
@@ -89,24 +131,30 @@ export function planFocusCamera(
   const readableScale = Math.max(...targets.map((rect) => MIN_READABLE_FOCUS_WIDTH / Math.max(1, rect.width)));
   const scale = Math.min(fitScale, Math.max(MIN_AUTOMATIC_SCALE, readableScale, compositionScale));
 
-  if (scale === current.scale && visibleAt(scene, current, viewport, FOCUS_MARGIN)) return current;
-  return centeredCamera(scene, scale, viewport);
+  if (
+    Math.abs(scale - current.scale) < .000_001
+    && visibleAt(scene, current, viewport, FOCUS_MARGIN, insets)
+    && composedAt(scene, current, viewport, insets)
+  ) return current;
+  return centeredCamera(scene, scale, viewport, insets);
 }
 
 export function planRevealCamera(
   rect: Rect,
   current: CameraState,
   viewport: ViewportSize,
+  insets: ViewportInsets = {},
 ): CameraState {
-  if (visibleAt(rect, current, viewport, REVEAL_MARGIN)) return current;
+  if (visibleAt(rect, current, viewport, REVEAL_MARGIN, insets)) return current;
+  const safe = safeViewport(viewport, insets, REVEAL_MARGIN);
   let { panX, panY } = current;
   const left = panX + rect.x * current.scale;
   const right = left + rect.width * current.scale;
   const top = panY + rect.y * current.scale;
   const bottom = top + rect.height * current.scale;
-  if (left < REVEAL_MARGIN) panX += REVEAL_MARGIN - left;
-  else if (right > viewport.width - REVEAL_MARGIN) panX -= right - (viewport.width - REVEAL_MARGIN);
-  if (top < REVEAL_MARGIN) panY += REVEAL_MARGIN - top;
-  else if (bottom > viewport.height - REVEAL_MARGIN) panY -= bottom - (viewport.height - REVEAL_MARGIN);
+  if (left < safe.left) panX += safe.left - left;
+  else if (right > safe.right) panX -= right - safe.right;
+  if (top < safe.top) panY += safe.top - top;
+  else if (bottom > safe.bottom) panY -= bottom - safe.bottom;
   return { panX, panY, scale: current.scale };
 }

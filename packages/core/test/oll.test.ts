@@ -79,6 +79,21 @@ test("normalization is deterministic", () => {
   );
 });
 
+test("normalization carries the host region onto the board and created nodes", () => {
+  const events = normalizeAuthoringLesson(source, {
+    ...host,
+    regionId: "topic-quadratic",
+  });
+  assert.equal(events[0]!.board?.region_id, "topic-quadratic");
+  const createdNodes = events
+    .flatMap((event) => event.step?.beats ?? [])
+    .flatMap((beat) => Object.values(beat.stage).flat())
+    .filter((action) => action.op === "board.create")
+    .map((action) => action.node);
+  assert.ok(createdNodes.length > 0);
+  assert.ok(createdNodes.every((node) => node?.region_id === "topic-quadratic"));
+});
+
 test("replaying a canonical step is idempotent", () => {
   const events = normalizeAuthoringLesson(source, host);
   const duplicatedStep = structuredClone(events[1]);

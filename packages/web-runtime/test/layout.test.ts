@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { reduceCanonicalEvents } from "../../core/src/index.js";
+import { reduceCanonicalEvents, type SemanticBoardState } from "../../core/src/index.js";
 import { computeBoardLayout, measureSemanticNode, targetRect } from "../src/layout.js";
 import { parseCanonicalJsonl } from "../src/runtime.js";
 
@@ -53,4 +53,57 @@ test("measured browser heights replace estimates and move dependent nodes", () =
   assert.equal(expanded.nodes[firstNodeId]!.height, estimated.nodes[firstNodeId]!.height + 180);
   assert.ok(expanded.nodes[dependentNode.id]!.y >= expanded.nodes[firstNodeId]!.y + expanded.nodes[firstNodeId]!.height);
   assert.ok(expanded.nodes[dependentNode.id]!.y > estimated.nodes[dependentNode.id]!.y);
+});
+
+test("a new topic starts beyond prior group bounds without moving existing content", () => {
+  const oldTopic: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      "old-a": {
+        id: "old-a",
+        region_id: "topic-old",
+        content: { text: "旧课程" },
+        placement: { relation: "new_region" },
+      },
+      "old-b": {
+        id: "old-b",
+        region_id: "topic-old",
+        content: { text: "旧课程答案" },
+        placement: { relation: "below", anchor: "old-a" },
+      },
+    },
+    groups: {
+      "old-group": {
+        id: "old-group",
+        members: ["old-a", "old-b"],
+      },
+    },
+    connections: {},
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const priorLayout = computeBoardLayout(oldTopic);
+  const combined: SemanticBoardState = structuredClone(oldTopic);
+  combined.nodes["new-a"] = {
+    id: "new-a",
+    region_id: "topic-new",
+    content: { text: "圆周长公式" },
+    placement: { relation: "new_region" },
+  };
+  combined.nodes["new-b"] = {
+    id: "new-b",
+    region_id: "topic-new",
+    content: { text: "C = πd" },
+    placement: { relation: "below", anchor: "new-a" },
+  };
+
+  const layout = computeBoardLayout(combined);
+  assert.deepEqual(layout.nodes["old-a"], priorLayout.nodes["old-a"]);
+  assert.deepEqual(layout.nodes["old-b"], priorLayout.nodes["old-b"]);
+  const oldGroup = layout.groups["old-group"]!;
+  assert.ok(layout.nodes["new-a"]!.x > oldGroup.x + oldGroup.width);
+  assert.equal(layout.nodes["new-b"]!.x, layout.nodes["new-a"]!.x);
 });

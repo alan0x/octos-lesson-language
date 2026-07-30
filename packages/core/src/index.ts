@@ -471,6 +471,7 @@ function normalizeAction(
         role: action.role,
         content: normalizeAddressableContent(host, nodeId, action.content),
         placement: normalizePlacement(registry, action.place),
+        ...(host.regionId ? { region_id: host.regionId } : {}),
       },
     };
   }
@@ -557,6 +558,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
         board_id: host.boardId,
         base_revision: host.baseRevision,
         region_intent: host.regionIntent ?? "new_topic",
+        ...(host.regionId ? { region_id: host.regionId } : {}),
       },
       lesson: structuredClone(document.lesson),
     },

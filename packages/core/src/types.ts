@@ -147,6 +147,7 @@ export interface NormalizationHost {
   boardId: string;
   baseRevision: number;
   regionIntent?: "new_topic" | "continue_topic" | "extend_near_anchor";
+  regionId?: string;
   resourceContext?: ResourceContext;
 }
 
@@ -187,6 +188,7 @@ export interface CanonicalEvent {
     board_id: string;
     base_revision: number;
     region_intent: string;
+    region_id?: string;
   };
   lesson?: AuthoringLesson["lesson"];
   step?: {

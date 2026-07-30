@@ -10,6 +10,9 @@ export interface BoardLayout {
 export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
+const REGION_COLUMN_GAP = 720;
+const REGION_ROW_GAP = 560;
+const TOPIC_GUTTER = 180;
 
 function visibleContentLength(value: unknown): number {
   if (value === null || value === undefined) return 0;
@@ -74,7 +77,7 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
 export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes: MeasuredNodeSizes = {}): BoardLayout {
   const nodes: Record<string, Rect> = {};
   const groups: Record<string, Rect> = {};
-  let regionIndex = 0;
+  const regions = new Map<string, { x: number; y: number; itemIndex: number }>();
 
   const groupRect = (id: string, seen = new Set<string>()): Rect | undefined => {
     if (groups[id]) return groups[id];
@@ -82,10 +85,29 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
     seen.add(id);
     const group = state.groups[id];
     if (!group) return undefined;
-    const members = (group.members ?? []).map((member: string) => nodes[member] ?? groupRect(member, seen)).filter(Boolean) as Rect[];
+    const members = (group.members ?? []).map((member: string) => nodes[member] ?? groupRect(member, new Set(seen)));
+    if (members.some((rect: Rect | undefined) => !rect)) return undefined;
     const rect = union(members, 34);
     if (rect) groups[id] = rect;
     return rect;
+  };
+
+  const groupContains = (groupId: string, nodeId: string, seen = new Set<string>()): boolean => {
+    if (seen.has(groupId)) return false;
+    seen.add(groupId);
+    const members = state.groups[groupId]?.members ?? [];
+    return members.some((member: string) => member === nodeId
+      || Boolean(state.groups[member] && groupContains(member, nodeId, seen)));
+  };
+
+  const collisionRects = (nodeId: string): Rect[] => {
+    for (const groupId of Object.keys(state.groups)) groupRect(groupId);
+    return [
+      ...Object.values(nodes),
+      ...Object.entries(groups)
+        .filter(([groupId]) => !groupContains(groupId, nodeId))
+        .map(([, rect]) => rect),
+    ];
   };
 
   for (const node of Object.values(state.nodes)) {
@@ -96,9 +118,25 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
     let x = 100;
     let y = 90;
     if (!anchor || placement.relation === "new_region") {
-      x = 100 + (regionIndex % 2) * 720;
-      y = 90 + Math.floor(regionIndex / 2) * 560;
-      regionIndex += 1;
+      const regionId = typeof node.region_id === "string" && node.region_id
+        ? node.region_id
+        : "__legacy__";
+      let region = regions.get(regionId);
+      if (!region) {
+        const occupied = collisionRects(node.id);
+        const right = occupied.length
+          ? Math.max(...occupied.map((rect) => rect.x + rect.width))
+          : 100 - TOPIC_GUTTER;
+        region = {
+          x: regions.size === 0 ? 100 : right + TOPIC_GUTTER,
+          y: 90,
+          itemIndex: 0,
+        };
+        regions.set(regionId, region);
+      }
+      x = region.x + (region.itemIndex % 2) * REGION_COLUMN_GAP;
+      y = region.y + Math.floor(region.itemIndex / 2) * REGION_ROW_GAP;
+      region.itemIndex += 1;
     } else if (placement.relation === "below") {
       x = anchor.x;
       y = anchor.y + anchor.height + gap;
@@ -123,7 +161,7 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
     let candidate: Rect = { x, y, ...size };
     if (!["inside", "overlay"].includes(placement.relation)) {
       let guard = 0;
-      while (Object.values(nodes).some((rect) => intersects(candidate, rect)) && guard < 40) {
+      while (collisionRects(node.id).some((rect) => intersects(candidate, rect)) && guard < 40) {
         candidate = { ...candidate, y: candidate.y + 36 };
         guard += 1;
       }

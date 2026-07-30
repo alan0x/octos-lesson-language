@@ -8,6 +8,7 @@ export {
   type InfiniteBoardElements,
   type MountedInfiniteBoard,
 } from "./board-view.js";
+export type { CameraState, ViewportInsets, ViewportSize } from "./camera.js";
 export {
   boundaryPoint,
   computeConnectionRoute,

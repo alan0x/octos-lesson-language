@@ -2,7 +2,11 @@ import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.j
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
-import { planFocusCamera, planRevealCamera, type AttentionMode } from "./camera.js";
+import {
+  planFocusCamera,
+  type AttentionMode,
+  type ViewportInsets,
+} from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 
@@ -345,8 +349,10 @@ export class InfiniteBoardView {
   private layout?: BoardLayout;
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
+  private lastAttentionTargets: string[] = [];
   private dragging?: { x: number; y: number; panX: number; panY: number };
   private manualMotionTimer?: ReturnType<typeof setTimeout>;
+  private viewportInsets: ViewportInsets = {};
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
   private readonly groupElements = new Map<string, HTMLElement>();
@@ -378,6 +384,7 @@ export class InfiniteBoardView {
   }
 
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
+    if (this.board?.board_id !== board?.board_id) this.lastAttentionTargets = [];
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
@@ -398,20 +405,72 @@ export class InfiniteBoardView {
         ? board.focus
         : [];
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
-    if (focusRects.length) this.focusRects(focusTargets, focusRects, board);
+    if (focusRects.length) {
+      this.resumeAutomaticCamera();
+      this.focusRects(focusTargets, focusRects, board);
+    }
     else if (["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeRect = targetRect(board, layout, activeTarget);
-      if (activeRect) this.reveal(activeRect);
+      if (activeRect) {
+        this.resumeAutomaticCamera();
+        const activeId = operation?.action?.op === "board.create"
+          ? operation.action.node?.id
+          : operation?.action?.target?.node_id
+            ?? operation?.action?.target?.group_id
+            ?? operation?.action?.target?.connection_id;
+        this.focusRects(activeId ? [activeId] : [], [activeRect], board);
+      }
     }
+  }
+
+  setViewportInsets(insets: ViewportInsets): void {
+    this.viewportInsets = { ...insets };
+    this.resize();
+  }
+
+  resize(): void {
+    if (!this.layout || !this.board || this.viewport.classList.contains("manual-navigation")) return;
+    const operationFocus = this.operation?.action?.focus?.targets ?? [];
+    const operationFocusRects = this.resolveFocusRects(operationFocus, this.board, this.layout);
+    if (operationFocusRects.length) {
+      this.focusRects(operationFocus, operationFocusRects, this.board);
+      return;
+    }
+    const activeTarget = this.operation?.action?.op === "board.create"
+      ? this.operation.action.node?.id
+      : this.operation?.action?.target;
+    const activeRect = targetRect(this.board, this.layout, activeTarget);
+    if (activeRect) {
+      const activeId = this.operation?.action?.op === "board.create"
+        ? this.operation.action.node?.id
+        : this.operation?.action?.target?.node_id
+          ?? this.operation?.action?.target?.group_id
+          ?? this.operation?.action?.target?.connection_id;
+      this.focusRects(activeId ? [activeId] : [], [activeRect], this.board);
+      return;
+    }
+    const priorRects = this.resolveFocusRects(this.lastAttentionTargets, this.board, this.layout);
+    if (priorRects.length) {
+      this.focusRects(this.lastAttentionTargets, priorRects, this.board);
+      return;
+    }
+    const focusRects = this.resolveFocusRects(this.board.focus, this.board, this.layout);
+    if (focusRects.length) this.focusRects(this.board.focus, focusRects, this.board);
   }
 
   fit(): void {
     if (!this.layout) return;
-    const rect = this.viewport.getBoundingClientRect();
-    this.scale = Math.min(1, Math.max(.18, Math.min((rect.width - 100) / this.layout.bounds.width, (rect.height - 100) / this.layout.bounds.height)));
-    this.panX = (rect.width - this.layout.bounds.width * this.scale) / 2 - this.layout.bounds.x * this.scale;
-    this.panY = (rect.height - this.layout.bounds.height * this.scale) / 2 - this.layout.bounds.y * this.scale;
+    const camera = planFocusCamera(
+      [this.layout.bounds],
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      this.viewport.getBoundingClientRect(),
+      "overview",
+      this.viewportInsets,
+    );
+    this.scale = camera.scale;
+    this.panX = camera.panX;
+    this.panY = camera.panY;
     this.transform();
   }
 
@@ -430,6 +489,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
+    this.lastAttentionTargets = [];
   }
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
@@ -599,6 +659,7 @@ export class InfiniteBoardView {
     return rects;
   }
   private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
+    if (targetIds.length) this.lastAttentionTargets = [...targetIds];
     const viewport = this.viewport.getBoundingClientRect();
     const mode: AttentionMode = targetIds.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
       ? "relationship"
@@ -610,34 +671,36 @@ export class InfiniteBoardView {
       { panX: this.panX, panY: this.panY, scale: this.scale },
       viewport,
       mode,
+      this.viewportInsets,
     );
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
     this.transform();
   }
-  private reveal(rect: Rect): void {
-    const camera = planRevealCamera(
-      rect,
-      { panX: this.panX, panY: this.panY, scale: this.scale },
-      { width: this.viewport.clientWidth, height: this.viewport.clientHeight },
-    );
-    this.panX = camera.panX;
-    this.panY = camera.panY;
-    this.transform();
-  }
   private onWheel(event: WheelEvent): void {
     event.preventDefault();
-    this.viewport.classList.add("manual-navigation");
-    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    this.beginManualNavigation();
     const rect = this.viewport.getBoundingClientRect();
     this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top);
-    this.manualMotionTimer = setTimeout(() => this.viewport.classList.remove("manual-navigation"), 140);
+  }
+  private beginManualNavigation(): void {
+    this.viewport.classList.add("manual-navigation");
+    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    this.manualMotionTimer = setTimeout(() => {
+      this.manualMotionTimer = undefined;
+      this.viewport.classList.remove("manual-navigation");
+    }, 2_200);
+  }
+  private resumeAutomaticCamera(): void {
+    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    this.manualMotionTimer = undefined;
+    this.viewport.classList.remove("manual-navigation");
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
-  private onPointerDown(event: PointerEvent): void { if ((event.target as HTMLElement).closest("button")) return; this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
-  private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }
-  private onPointerUp(): void { this.dragging = undefined; this.viewport.classList.remove("dragging"); }
+  private onPointerDown(event: PointerEvent): void { if ((event.target as HTMLElement).closest("button")) return; this.beginManualNavigation(); this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
+  private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.beginManualNavigation(); this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }
+  private onPointerUp(): void { if (this.dragging) this.beginManualNavigation(); this.dragging = undefined; this.viewport.classList.remove("dragging"); }
 }
 
 export function mountInfiniteBoard(

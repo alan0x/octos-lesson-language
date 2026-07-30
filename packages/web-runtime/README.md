@@ -52,6 +52,12 @@ The host owns the page, lesson acquisition, learner/session identity, errors, TT
 
 `mountInfiniteBoard()` creates only the internal board layers inside the supplied viewport. Host overlays such as narration, controls and the Octos avatar remain untouched. Call `mounted.destroy()` when unmounting the page.
 
+Hosts with persistent overlays should call
+`mounted.view.setViewportInsets({ top, right, bottom, left })`. Automatic
+teaching focus is then composed inside the unobstructed rectangle instead of
+the raw canvas viewport. The method also reframes the current teaching target,
+so it can be called from a `ResizeObserver`.
+
 ## Teaching clock
 
 Continuous playback has one content-aware teaching pace; there is no separate
