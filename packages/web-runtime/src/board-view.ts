@@ -8,6 +8,7 @@ import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSize
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
+const EMPHASIS_KINDS = new Set(["focus", "supporting", "warning", "resolved"]);
 
 function text(value: unknown): string { return typeof value === "string" || typeof value === "number" ? String(value) : ""; }
 function setRect(element: HTMLElement, rect: Rect): void {
@@ -29,8 +30,19 @@ function latestEmphasis(owner: Record<string, any>, fragmentId?: string): string
     : !entry.target?.fragment_id)?.emphasis;
 }
 
+export function emphasisClassName(emphasis: string | undefined): string | undefined {
+  const normalized = emphasis?.trim().toLowerCase();
+  if (!normalized) return undefined;
+  // The frozen OLL schema permits descriptive strings here, while the visual
+  // runtime currently exposes four semantic emphasis styles. Unknown values
+  // still mean "draw attention"; degrade them to focus instead of injecting
+  // model-authored prose into DOMTokenList and crashing the whole lesson.
+  return `emphasis-${EMPHASIS_KINDS.has(normalized) ? normalized : "focus"}`;
+}
+
 function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
-  if (emphasis) element.classList.add(`emphasis-${emphasis}`);
+  const className = emphasisClassName(emphasis);
+  if (className) element.classList.add(className);
 }
 
 function syncEmphasisClass(element: Element, emphasis: string | undefined): void {
@@ -53,10 +65,33 @@ export function mathSource(content: Record<string, any>): string {
   return trimmed;
 }
 
+export function isPlainTextMathContent(content: Record<string, any>): boolean {
+  return typeof content.text === "string"
+    && content.text.trim().length > 0
+    && !content.latex
+    && !content.expression
+    && !content.statement
+    && !content.rule
+    && !content.derivation
+    && !content.result
+    && !Array.isArray(content.fragments);
+}
+
 function renderMath(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
   const fragments = Array.isArray(content.fragments) ? content.fragments as Record<string, any>[] : [];
   const element = document.createElement("div"); element.className = "math-render";
+  // Authoring models occasionally classify a multi-line explanation as a
+  // math card while supplying only `content.text`. Feeding that prose to
+  // KaTeX collapses line breaks into one enormous formula and forces a
+  // horizontal scrollbar. Keep the semantic card, but render its actual
+  // payload as readable multi-line text when no mathematical source exists.
+  if (isPlainTextMathContent(content)) {
+    element.classList.add("math-plain-text");
+    element.textContent = content.text;
+    parent.append(element);
+    return;
+  }
   if (fragments.length) {
     element.classList.add("math-fragments");
     for (const fragment of fragments) {

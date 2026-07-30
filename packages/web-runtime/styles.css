@@ -20,6 +20,7 @@
 .math-render { width: 100%; min-height: 56px; display: grid; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
 .math-render .katex-display { margin: 0; min-width: max-content; text-align: left; }
 .math-render .katex { font-size: 1.04em; }
+.math-render.math-plain-text { display: block; min-height: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 20px; line-height: 1.55; }
 .math-render.math-fragments { display: flex; align-items: center; justify-content: center; align-content: center; flex-wrap: wrap; column-gap: .12em; row-gap: .3em; }
 .math-fragment, .text-fragment { border-radius: 5px; transition: background .2s ease, box-shadow .2s ease, opacity .2s ease; }
 .math-fragment.emphasis-focus, .text-fragment.emphasis-focus { background: #ffe5ad; box-shadow: 0 0 0 3px rgba(225,155,53,.24); }

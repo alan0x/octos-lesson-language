@@ -38,10 +38,29 @@ export function connectionLabelWidth(label: string): number {
 export function computeConnectionRoute(fromRect: Rect, toRect: Rect, label: string, useCenters = false): ConnectionRoute {
   const fromCenter = center(fromRect);
   const toCenter = center(toRect);
-  const start = useCenters ? fromCenter : boundaryPoint(fromRect, toCenter);
-  const end = useCenters ? toCenter : boundaryPoint(toRect, fromCenter);
   const width = connectionLabelWidth(label);
   const height = 24;
+
+  // A group can grow around descendants after the nodes themselves have been
+  // placed. Two related groups may therefore overlap even though their anchor
+  // cards were laid out side by side. A normal boundary-to-boundary route then
+  // reverses direction inside the overlap and cuts through cards. Attach to
+  // the top edges and route above both groups so both endpoints stay visible.
+  if (!useCenters && overlaps(fromRect, toRect, 0)) {
+    const start = { x: fromCenter.x, y: fromRect.y };
+    const end = { x: toCenter.x, y: toRect.y };
+    const routeY = Math.min(fromRect.y, toRect.y) - 38;
+    const middleX = (start.x + end.x) / 2;
+    return {
+      start,
+      end,
+      control1: { x: start.x, y: routeY },
+      control2: { x: end.x, y: routeY },
+      label: { x: middleX, y: routeY - 10, width, height },
+    };
+  }
+  const start = useCenters ? fromCenter : boundaryPoint(fromRect, toCenter);
+  const end = useCenters ? toCenter : boundaryPoint(toRect, fromCenter);
   const dx = end.x - start.x;
   const dy = end.y - start.y;
 

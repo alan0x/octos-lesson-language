@@ -32,6 +32,27 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     return { width: Math.min(600, Math.max(320, columns * 100)), height: 90 + rows * 34 };
   }
   if (kind === "diagram") return { width: Math.min(480, Math.max(280, length * 3.2)), height: Math.min(260, 105 + Math.ceil(length / 60) * 28) };
+  if (
+    kind === "math"
+    && typeof content.text === "string"
+    && !content.latex
+    && !content.expression
+    && !content.statement
+    && !content.rule
+    && !content.derivation
+    && !content.result
+    && !Array.isArray(content.fragments)
+  ) {
+    const sourceLines = content.text.split(/\r?\n/);
+    const visualLines = sourceLines.reduce(
+      (total: number, line: string) => total + Math.max(1, Math.ceil([...line].length / 30)),
+      0,
+    );
+    return {
+      width: Math.min(620, Math.max(360, Math.max(...sourceLines.map((line: string) => [...line].length), 1) * 18)),
+      height: Math.max(112, 44 + visualLines * 31),
+    };
+  }
   if (kind === "math") return { width: Math.min(680, Math.max(280, length * 11.2)), height: length > 65 ? 136 : 96 };
   return { width: Math.min(440, Math.max(240, length * 5.4)), height: Math.min(260, 82 + Math.ceil(length / 48) * 24) };
 }

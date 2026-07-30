@@ -1,13 +1,26 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { diagramConnectionGeometry, mathSource } from "../src/board-view.js";
+import { diagramConnectionGeometry, emphasisClassName, isPlainTextMathContent, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
   assert.equal(mathSource({ statement: "\\[\\triangle ABD\\cong\\triangle ACD\\]" }), "\\triangle ABD\\cong\\triangle ACD");
   assert.equal(mathSource({ fragments: [{ latex: "x^2" }, { latex: "6x" }] }), "x^2 6x");
+});
+
+test("text-only math content is identified for readable prose fallback", () => {
+  assert.equal(isPlainTextMathContent({ text: "核心推导：\n(-1) × (-1) = 1" }), true);
+  assert.equal(isPlainTextMathContent({ text: "说明", latex: "(-1)\\times(-1)=1" }), false);
+  assert.equal(isPlainTextMathContent({ fragments: [{ latex: "x=1" }] }), false);
+});
+
+test("model-authored emphasis prose degrades to a safe focus class", () => {
+  assert.equal(emphasisClassName("supporting"), "emphasis-supporting");
+  assert.equal(emphasisClassName("  WARNING  "), "emphasis-warning");
+  assert.equal(emphasisClassName("结论：(-3) × (-2) = 6"), "emphasis-focus");
+  assert.equal(emphasisClassName(undefined), undefined);
 });
 
 test("connections attach to card boundaries instead of running through card centers", () => {
@@ -21,6 +34,17 @@ test("connections attach to card boundaries instead of running through card cent
   assert.equal(route.end.x, 350);
   assert.ok(route.label.y < from.y, "narrow-gap label should be routed above both cards");
   assert.match(routePath(route), /^M .+ C .+/);
+});
+
+test("overlapping group connections route above both group boundaries", () => {
+  const from = { x: 100, y: 120, width: 760, height: 520 };
+  const to = { x: 680, y: 130, width: 720, height: 640 };
+  const route = computeConnectionRoute(from, to, "从直观到证明");
+  assert.deepEqual(route.start, { x: 480, y: 120 });
+  assert.deepEqual(route.end, { x: 1040, y: 130 });
+  assert.ok(route.control1.y < from.y);
+  assert.ok(route.control2.y < to.y);
+  assert.ok(route.label.y < route.control1.y);
 });
 
 test("diagram fragment connections keep their endpoints inside the diagram", () => {
