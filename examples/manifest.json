@@ -49,5 +49,13 @@
     "baseRevision": 0,
     "regionIntent": "new_topic",
     "contextFile": "session-context.json"
+  },
+  {
+    "name": "learner-context-number-line-v2",
+    "lessonId": "lesson-learner-context-number-line-v2-001",
+    "boardId": "board-session-learner-context-number-line-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic",
+    "contextFile": "session-context.json"
   }
 ]

@@ -1,0 +1,53 @@
+[
+  {
+    "id": "R-001",
+    "description": "stream stops in the middle of a JSON document",
+    "driver": "partial-json",
+    "requirements": ["OLL-INC-003", "OLL-INC-004"],
+    "expected": "reject incomplete document before any event is accepted"
+  },
+  {
+    "id": "R-002",
+    "description": "an accepted Step is delivered again",
+    "driver": "duplicate-step",
+    "requirements": ["OLL-INC-007", "OLL-DET-006"],
+    "expected": "report one duplicate and preserve the projection"
+  },
+  {
+    "id": "R-003",
+    "description": "a later Step arrives before the next sequence",
+    "driver": "sequence-gap",
+    "requirements": ["OLL-INC-008"],
+    "expected": "reject atomically with OLL_PLAYBACK_SEQUENCE"
+  },
+  {
+    "id": "R-004",
+    "description": "the page refreshes at a playback checkpoint",
+    "driver": "checkpoint-refresh",
+    "requirements": ["OLL-DET-005", "OLL-DET-006"],
+    "expected": "restore and converge to the reducer final state"
+  },
+  {
+    "id": "R-005",
+    "description": "the semantic snapshot is unavailable",
+    "driver": "log-rebuild",
+    "requirements": ["OLL-DET-001", "OLL-DET-003"],
+    "expected": "rebuild the same canonical BoardState from the event log"
+  },
+  {
+    "id": "R-006",
+    "description": "a later Step contains an invalid Canonical action",
+    "driver": "invalid-later-step",
+    "requirements": ["OLL-INC-004", "OLL-INC-006"],
+    "expected": "keep the committed prefix unchanged and surface the error"
+  },
+  {
+    "id": "R-007",
+    "description": "TTS fails while narration remains available",
+    "driver": "web-tts-failure",
+    "requirements": ["OLL-TCH-002", "OLL-TIME-004"],
+    "status": "covered_in_octos_web",
+    "evidence": "../octos-web/src/learning/oll/use-oll-narration-tts.test.ts",
+    "expected": "keep accessible narration visible and continue or explicitly pause"
+  }
+]

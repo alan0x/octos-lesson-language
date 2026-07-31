@@ -6,12 +6,12 @@ Octos Lesson Language（OLL）是一种用于描述 AI 家庭教师课堂行为�
 
 ## 当前状态
 
-OLL 处于 **v0.1 Release Candidate 1**。Authoring 与 Canonical 协议表面已冻结，可进入参考前端 Runtime 集成；它仍不是稳定版，也不代表儿童产品已经完成验收。
+OLL 处于 **v0.1 Release Candidate 1**。Authoring 与 Canonical 的已实现协议表面保持兼容，可继续参考前端 Runtime 集成；它仍不是稳定版，也尚未满足全部冻结门槛。
 
 1. 表达能力：手写 OLL 是否足以描述真实、渐进、可继续的跨学科课程；
 2. 可生成性：目标大模型是否能稳定生成高质量的 OLL Authoring Profile。
 
-表达、可生成、headless playback 与教学质量门已经完成。RC 阶段只接受兼容性修复；新增动作或改变语义必须有 decision record 和回归证据。
+Core、headless playback、可生成性与教学质量已有大量证据，但 Phase 0/1 尚未正式退出。当前 MUST 证据和发布阻断项见 [TRACEABILITY.md](./TRACEABILITY.md) 与 [PHASE-0-1-EXIT.md](./PHASE-0-1-EXIT.md)。RC 阶段只接受兼容性修复；新增动作或改变语义必须有 decision record 和回归证据。
 
 ## 两个 Profile
 
@@ -39,6 +39,8 @@ REQUIREMENTS.md                 语言需求
 AUTHORING.md                    模型生成 Profile 规范草案
 SPEC.md                         Canonical Profile 规范草案
 CONFORMANCE.md                  一致性与测试计划
+TRACEABILITY.md                 MUST 需求到测试与缺口的追踪矩阵
+PHASE-0-1-EXIT.md               Phase 0/1 退出审查
 decisions/                      语言决策记录
 schema/authoring/               模型生成 Schema
 schema/canonical/               Runtime Schema
@@ -69,7 +71,7 @@ npm run check:examples
 npm run harness:dev
 ```
 
-然后访问 `http://127.0.0.1:4173`。Harness 直接读取七份 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。Harness 本身只保留 fixture、控制和调试外壳，白板与浏览器播放能力来自同仓库的 `octos-lesson-language/web-runtime`。
+然后访问 `http://127.0.0.1:4173`。Harness 直接读取 manifest 中的 Canonical JSONL，支持逐操作、逐 Beat、连续播放、变速、缩放/拖动画布，以及暂停后刷新恢复。它用于验证 OLL 是否真的能变成一堂渐进课程，不依赖 `/learn`，也不是生产 UI。Harness 本身只保留 fixture、控制和调试外壳，白板与浏览器播放能力来自同仓库的 `octos-lesson-language/web-runtime`。
 
 运行真实 Chrome 教学播放观测：
 
@@ -105,9 +107,10 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 - 二次函数配方法 V2：把系数折半、完全平方、等式不变量、代数替换、常数合并与图像解释拆成 11 个可聚焦 Beat；
 - 几何图片与辅助线：受控 asset region、diagram 内部元素、几何 connection 和视觉不确定性；
 - 植物蒸腾作用 V2：真实受控图片、对照观察、证据与推断分层、机制模型和回到图片检验解释；
-- 英语定语从句 V2：普通文本 fragment、主干提取、先行词连接、普通句还原、关系代词替换和双语语序重组。
+- 英语定语从句 V2：普通文本 fragment、主干提取、先行词连接、普通句还原、关系代词替换和双语语序重组；
+- 学习者背景适配 V2：根据有来源的视觉偏好和工作记忆支持需求，用数轴和三个短步骤讲解负数加法，不写回学习者判断。
 
-七份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何、二次函数和英语各保留一个 V1 负向样本，几何、二次函数、图片科学与英语各有一个 V2 教学可理解性样板。
+八份课程均具有 Authoring Lesson、Canonical Events、expected Semantic BoardState 和 TypeScript Core 测试；几何、二次函数和英语各保留一个 V1 负向样本，五个 V2 课程构成 Phase 0 人工评审集。V-005 同板追问的上一轮节点引用仍是冻结阻断项，不能由页面视觉拼接替代。
 
 几何实验已经实际改变语言：connection 现在是可强调目标；diagram 的 element、edge 和 region 是可寻址 fragment，内部引用必须验证并规范化。21 个未见 case 的 105 次生成实验、边界修订和 121 堂真实 Canonical Lesson 的 headless playback conformance 已完成。
 

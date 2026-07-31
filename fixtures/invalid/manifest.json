@@ -1,0 +1,91 @@
+[
+  {
+    "id": "I-001",
+    "description": "malformed JSON",
+    "layer": "parse",
+    "input": "invalid-json.txt",
+    "expected": {"code": "OLL_INVALID_JSON", "path": ""}
+  },
+  {
+    "id": "I-002",
+    "description": "unsupported Authoring version",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "set", "pointer": "/version", "value": "9.9"},
+    "expected": {"code": "OLL_UNSUPPORTED_PROFILE", "path": ""}
+  },
+  {
+    "id": "I-005",
+    "description": "duplicate local node alias",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "set", "pointer": "/steps/0/beats/0/actions/1/as", "value": "original"},
+    "expected": {"code": "OLL_DUPLICATE_ALIAS", "path": "/steps/0/beats/0/actions/1/as"}
+  },
+  {
+    "id": "I-006",
+    "description": "placement references a node that does not exist",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "set", "pointer": "/steps/0/beats/0/actions/1/place/anchor", "value": "not-created"},
+    "expected": {"code": "OLL_REFERENCE_NOT_FOUND", "path": "/steps/0/beats/0/actions/1/place/anchor"}
+  },
+  {
+    "id": "I-007",
+    "description": "emphasis references a fragment that does not exist",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "set", "pointer": "/steps/1/beats/0/actions/0/target", "value": "original#not-created"},
+    "expected": {"code": "OLL_REFERENCE_NOT_FOUND", "path": "/steps/1/beats/0/actions/0/target"}
+  },
+  {
+    "id": "I-008",
+    "description": "revision references a node that does not exist",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {
+      "op": "set",
+      "pointer": "/steps/0/beats/0/actions/0",
+      "value": {
+        "do": "revise",
+        "target": "not-created",
+        "content": {"text": "replacement"},
+        "reason": "invalid fixture"
+      }
+    },
+    "expected": {"code": "OLL_REFERENCE_NOT_FOUND", "path": "/steps/0/beats/0/actions/0/target"}
+  },
+  {
+    "id": "I-009",
+    "description": "relative placement omits its anchor",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "delete", "pointer": "/steps/0/beats/0/actions/1/place/anchor"},
+    "expected": {"code": "OLL_INVALID_REFERENCE", "path": "/steps/0/beats/0/actions/1/place/anchor"}
+  },
+  {
+    "id": "I-012",
+    "description": "image uses an asset outside Session Context",
+    "layer": "semantic",
+    "base": "geometry-auxiliary-line",
+    "context": "session-context.json",
+    "mutation": {"op": "set", "pointer": "/steps/0/beats/0/actions/0/content/asset_id", "value": "asset-not-authorized"},
+    "expected": {"code": "OLL_RESOURCE_DENIED", "path": "/steps/0/beats/0/actions/0/content/asset_id"}
+  },
+  {
+    "id": "I-014",
+    "description": "unknown core Authoring operation",
+    "layer": "semantic",
+    "base": "quadratic",
+    "mutation": {"op": "set", "pointer": "/steps/0/beats/0/actions/0/do", "value": "execute-script"},
+    "expected": {"code": "OLL_INVALID_OPERATION", "path": "/steps/0/beats/0/actions/0/do"}
+  },
+  {
+    "id": "I-015",
+    "description": "action payload omits a field required by its operation",
+    "layer": "schema",
+    "base": "quadratic",
+    "mutation": {"op": "delete", "pointer": "/steps/0/beats/0/actions/0/as"},
+    "expected": {"code": "OLL_SCHEMA_INVALID", "path": "/steps/0/beats/0/actions/0"}
+  }
+]

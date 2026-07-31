@@ -1,0 +1,214 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用数轴理解 3+(-5)",
+    "goals": [
+      "把负数加法解释成数轴上的移动",
+      "算出 3+(-5) 的结果",
+      "形成可复用的方向判断方法"
+    ],
+    "adaptation": {
+      "strategies": [
+        "concrete-before-symbolic",
+        "one-move-per-beat",
+        "short-visible-instructions"
+      ],
+      "context_refs": [
+        "learner:math-prefers-visual-models",
+        "learner:support-working-memory"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "read-expression",
+      "purpose": "先区分起点、运算和第二个数的符号",
+      "beats": [
+        {
+          "key": "show-expression",
+          "say": "我们先不背口诀，只看三件事。数字 3 是起点，加号表示要做一次加法，括号里的负 5 决定移动方向和步数。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "problem",
+              "kind": "math",
+              "role": "problem",
+              "content": {
+                "fragments": [
+                  {"as": "start", "latex": "3"},
+                  {"as": "operation", "latex": "+"},
+                  {"as": "delta", "latex": "(-5)"}
+                ],
+                "caption": "要计算的式子"
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {
+              "do": "write",
+              "as": "reading-guide",
+              "kind": "note",
+              "role": "support",
+              "content": {
+                "title": "只记住三件事",
+                "items": ["从 3 出发", "加一个负数", "移动 5 格"]
+              },
+              "place": {"relation": "right_of", "anchor": "problem", "align": "center", "gap": "normal"}
+            },
+            {
+              "do": "group",
+              "as": "task-group",
+              "role": "task",
+              "label": "① 读懂式子",
+              "members": ["problem", "reading-guide"]
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "separate_start_operation_and_delta"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "move-on-number-line",
+      "purpose": "用一个可见移动解释负数加法",
+      "beats": [
+        {
+          "key": "place-start",
+          "say": "先把起点 3 放到数轴上。现在还没有移动，所以我们的注意力只在 3。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "number-line",
+              "kind": "diagram",
+              "role": "model",
+              "content": {
+                "elements": [
+                  {"as": "minus-three", "kind": "point", "label": "-3"},
+                  {"as": "minus-two", "kind": "point", "label": "-2"},
+                  {"as": "minus-one", "kind": "point", "label": "-1"},
+                  {"as": "zero", "kind": "point", "label": "0"},
+                  {"as": "one", "kind": "point", "label": "1"},
+                  {"as": "two", "kind": "point", "label": "2"},
+                  {"as": "three", "kind": "point", "label": "3"}
+                ],
+                "edges": [
+                  {"as": "axis", "from": "minus-three", "to": "three", "label": "数轴"}
+                ],
+                "caption": "从 3 出发"
+              },
+              "place": {"relation": "below", "anchor": "task-group", "align": "start", "gap": "spacious"}
+            },
+            {"do": "point", "target": "number-line#three"},
+            {"do": "emphasize", "target": "number-line#three", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["number-line"], "intent": "locate_start_at_three"}
+          ]
+        },
+        {
+          "key": "move-left-five",
+          "say": "加上负 5，表示从 3 向左移动 5 格。依次经过 2、1、0、负 1，最后停在负 2。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "connect",
+              "as": "move",
+              "from": "number-line#three",
+              "to": "number-line#minus-two",
+              "relation": "moves_left",
+              "label": "向左 5 格"
+            },
+            {"do": "emphasize", "target": "number-line#three", "emphasis": "resolved"},
+            {"do": "emphasize", "target": "number-line#minus-two", "emphasis": "focus"},
+            {"do": "point", "target": "number-line#minus-two"},
+            {"do": "focus", "when": "after_speech", "targets": ["number-line", "move"], "intent": "see_leftward_move_and_destination"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "return-to-symbols",
+      "purpose": "把数轴移动重新写成算式结论",
+      "beats": [
+        {
+          "key": "write-result",
+          "say": "数轴上的终点是负 2，所以 3 加负 5 等于负 2。这个答案不是来自口诀，而是来自一次向左 5 格的移动。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "result",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {
+                "fragments": [
+                  {"as": "expression", "latex": "3+(-5)"},
+                  {"as": "equals", "latex": "="},
+                  {"as": "answer", "latex": "-2"}
+                ],
+                "caption": "数轴终点就是答案"
+              },
+              "place": {"relation": "below", "anchor": "number-line", "align": "start", "gap": "normal"}
+            },
+            {"do": "connect", "as": "destination-to-answer", "from": "number-line#minus-two", "to": "result#answer", "relation": "becomes", "label": "终点"},
+            {"do": "emphasize", "target": "result#answer", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["result"], "intent": "connect_destination_to_symbolic_answer"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "form-reusable-method",
+      "purpose": "用短步骤减轻工作记忆负担",
+      "beats": [
+        {
+          "key": "show-three-step-method",
+          "say": "以后遇到类似题，只按三个短步骤做：先找起点，再看第二个数决定方向和步数，最后读终点。加正数向右，加负数向左。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "method",
+              "kind": "note",
+              "role": "summary",
+              "content": {
+                "title": "② 三步数轴法",
+                "items": [
+                  "1. 找起点",
+                  "2. 正数向右，负数向左",
+                  "3. 移动后读终点"
+                ]
+              },
+              "place": {"relation": "right_of", "anchor": "result", "align": "center", "gap": "spacious"}
+            },
+            {
+              "do": "write",
+              "as": "takeaway",
+              "kind": "note",
+              "role": "takeaway",
+              "content": {
+                "title": "本题",
+                "items": ["从 3 出发", "向左 5 格", "停在 -2"]
+              },
+              "place": {"relation": "below", "anchor": "method", "align": "start", "gap": "normal"}
+            },
+            {
+              "do": "group",
+              "as": "summary-group",
+              "role": "summary",
+              "label": "③ 可复用的方法",
+              "members": ["method", "takeaway"]
+            },
+            {"do": "focus", "when": "after_speech", "targets": ["summary-group"], "intent": "retain_short_reusable_method"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "3+(-5) 可以看成从 3 向左移动 5 格，终点是 -2；同类题可使用找起点、定方向、读终点的三步数轴法。",
+    "focus": ["summary-group"]
+  }
+}

@@ -265,6 +265,22 @@ export function assertAuthoringSchema(document: unknown): asserts document is Au
   }
 }
 
+export function parseAuthoringLessonJson(
+  source: string,
+  resourceContext: ResourceContext | null = null,
+): AuthoringLesson {
+  let document: unknown;
+  try {
+    document = JSON.parse(source);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid JSON";
+    fail("OLL_INVALID_JSON", "", message);
+  }
+  assertAuthoringSchema(document);
+  validateAuthoringLesson(document, resourceContext);
+  return document;
+}
+
 export function validateAuthoringLesson(document: AuthoringLesson, resourceContext: ResourceContext | null = null): { registry: Registry } {
   requireObject(document, "");
   if (document.dsl !== "octos.lesson" || document.version !== "0.1" || document.profile !== "authoring") {

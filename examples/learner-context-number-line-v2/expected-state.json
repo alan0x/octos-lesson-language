@@ -1,0 +1,291 @@
+{
+  "board_id": "board-session-learner-context-number-line-v2-001",
+  "revision": 4,
+  "nodes": {
+    "lesson-learner-context-number-line-v2-001:node:method": {
+      "id": "lesson-learner-context-number-line-v2-001:node:method",
+      "kind": "note",
+      "role": "summary",
+      "content": {
+        "title": "② 三步数轴法",
+        "items": [
+          "1. 找起点",
+          "2. 正数向右，负数向左",
+          "3. 移动后读终点"
+        ]
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "spacious",
+        "anchor": "lesson-learner-context-number-line-v2-001:node:result"
+      }
+    },
+    "lesson-learner-context-number-line-v2-001:node:number-line": {
+      "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+      "kind": "diagram",
+      "role": "model",
+      "content": {
+        "elements": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-three",
+            "kind": "point",
+            "label": "-3"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two",
+            "kind": "point",
+            "label": "-2"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-one",
+            "kind": "point",
+            "label": "-1"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:zero",
+            "kind": "point",
+            "label": "0"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:one",
+            "kind": "point",
+            "label": "1"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:two",
+            "kind": "point",
+            "label": "2"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "kind": "point",
+            "label": "3"
+          }
+        ],
+        "edges": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:axis",
+            "from": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-three",
+            "to": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "label": "数轴"
+          }
+        ],
+        "caption": "从 3 出发"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "spacious",
+        "anchor": "lesson-learner-context-number-line-v2-001:group:task-group"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three"
+          },
+          "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    },
+    "lesson-learner-context-number-line-v2-001:node:problem": {
+      "id": "lesson-learner-context-number-line-v2-001:node:problem",
+      "kind": "math",
+      "role": "problem",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem:fragment:start",
+            "latex": "3"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem:fragment:operation",
+            "latex": "+"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem:fragment:delta",
+            "latex": "(-5)"
+          }
+        ],
+        "caption": "要计算的式子"
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson-origin"
+      }
+    },
+    "lesson-learner-context-number-line-v2-001:node:reading-guide": {
+      "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+      "kind": "note",
+      "role": "support",
+      "content": {
+        "title": "只记住三件事",
+        "items": [
+          "从 3 出发",
+          "加一个负数",
+          "移动 5 格"
+        ]
+      },
+      "placement": {
+        "relation": "right_of",
+        "align": "center",
+        "gap": "normal",
+        "anchor": "lesson-learner-context-number-line-v2-001:node:problem"
+      }
+    },
+    "lesson-learner-context-number-line-v2-001:node:result": {
+      "id": "lesson-learner-context-number-line-v2-001:node:result",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result:fragment:expression",
+            "latex": "3+(-5)"
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result:fragment:equals",
+            "latex": "="
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result:fragment:answer",
+            "latex": "-2"
+          }
+        ],
+        "caption": "数轴终点就是答案"
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-learner-context-number-line-v2-001:node:number-line"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-learner-context-number-line-v2-001:node:result",
+            "fragment_id": "lesson-learner-context-number-line-v2-001:node:result:fragment:answer"
+          },
+          "emphasis": "focus"
+        }
+      ]
+    },
+    "lesson-learner-context-number-line-v2-001:node:takeaway": {
+      "id": "lesson-learner-context-number-line-v2-001:node:takeaway",
+      "kind": "note",
+      "role": "takeaway",
+      "content": {
+        "title": "本题",
+        "items": [
+          "从 3 出发",
+          "向左 5 格",
+          "停在 -2"
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-learner-context-number-line-v2-001:node:method"
+      }
+    }
+  },
+  "connections": {
+    "lesson-learner-context-number-line-v2-001:connection:destination-to-answer": {
+      "id": "lesson-learner-context-number-line-v2-001:connection:destination-to-answer",
+      "from": {
+        "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+        "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two"
+      },
+      "to": {
+        "node_id": "lesson-learner-context-number-line-v2-001:node:result",
+        "fragment_id": "lesson-learner-context-number-line-v2-001:node:result:fragment:answer"
+      },
+      "relation": "becomes",
+      "label": "终点"
+    },
+    "lesson-learner-context-number-line-v2-001:connection:move": {
+      "id": "lesson-learner-context-number-line-v2-001:connection:move",
+      "from": {
+        "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+        "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three"
+      },
+      "to": {
+        "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+        "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two"
+      },
+      "relation": "moves_left",
+      "label": "向左 5 格"
+    }
+  },
+  "groups": {
+    "lesson-learner-context-number-line-v2-001:group:summary-group": {
+      "id": "lesson-learner-context-number-line-v2-001:group:summary-group",
+      "title": "③ 可复用的方法",
+      "role": "summary",
+      "members": [
+        "lesson-learner-context-number-line-v2-001:node:method",
+        "lesson-learner-context-number-line-v2-001:node:takeaway"
+      ]
+    },
+    "lesson-learner-context-number-line-v2-001:group:task-group": {
+      "id": "lesson-learner-context-number-line-v2-001:group:task-group",
+      "title": "① 读懂式子",
+      "role": "task",
+      "members": [
+        "lesson-learner-context-number-line-v2-001:node:problem",
+        "lesson-learner-context-number-line-v2-001:node:reading-guide"
+      ]
+    }
+  },
+  "focus": [
+    "lesson-learner-context-number-line-v2-001:group:summary-group"
+  ],
+  "applied_lessons": [
+    "lesson-learner-context-number-line-v2-001"
+  ],
+  "applied_steps": [
+    "lesson-learner-context-number-line-v2-001:step:read-expression",
+    "lesson-learner-context-number-line-v2-001:step:move-on-number-line",
+    "lesson-learner-context-number-line-v2-001:step:return-to-symbols",
+    "lesson-learner-context-number-line-v2-001:step:form-reusable-method"
+  ],
+  "applied_actions": [
+    "lesson-learner-context-number-line-v2-001:action:1:1:1",
+    "lesson-learner-context-number-line-v2-001:action:1:1:2",
+    "lesson-learner-context-number-line-v2-001:action:1:1:3",
+    "lesson-learner-context-number-line-v2-001:action:1:1:4",
+    "lesson-learner-context-number-line-v2-001:action:2:1:1",
+    "lesson-learner-context-number-line-v2-001:action:2:1:2",
+    "lesson-learner-context-number-line-v2-001:action:2:1:3",
+    "lesson-learner-context-number-line-v2-001:action:2:1:4",
+    "lesson-learner-context-number-line-v2-001:action:2:2:1",
+    "lesson-learner-context-number-line-v2-001:action:2:2:2",
+    "lesson-learner-context-number-line-v2-001:action:2:2:3",
+    "lesson-learner-context-number-line-v2-001:action:2:2:4",
+    "lesson-learner-context-number-line-v2-001:action:2:2:5",
+    "lesson-learner-context-number-line-v2-001:action:3:1:1",
+    "lesson-learner-context-number-line-v2-001:action:3:1:2",
+    "lesson-learner-context-number-line-v2-001:action:3:1:3",
+    "lesson-learner-context-number-line-v2-001:action:3:1:4",
+    "lesson-learner-context-number-line-v2-001:action:4:1:1",
+    "lesson-learner-context-number-line-v2-001:action:4:1:2",
+    "lesson-learner-context-number-line-v2-001:action:4:1:3",
+    "lesson-learner-context-number-line-v2-001:action:4:1:4"
+  ]
+}

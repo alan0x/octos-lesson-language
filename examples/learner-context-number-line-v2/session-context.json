@@ -1,0 +1,21 @@
+{
+  "session_id": "session-learner-context-number-line-v2-001",
+  "request": "我总是记混负数加减，请用图帮我理解 3+(-5)",
+  "learner_context": {
+    "authorized": true,
+    "records": [
+      {
+        "ref": "learner:math-prefers-visual-models",
+        "kind": "preference",
+        "value": "数学概念优先使用图示和具体移动解释",
+        "source": "learner_explicit"
+      },
+      {
+        "ref": "learner:support-working-memory",
+        "kind": "support_need",
+        "value": "一次呈现一个变化，并把方法压缩成不超过三个短步骤",
+        "source": "guardian_confirmed"
+      }
+    ]
+  }
+}
