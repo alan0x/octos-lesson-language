@@ -81,6 +81,41 @@ export function isPlainTextMathContent(content: Record<string, any>): boolean {
     && !Array.isArray(content.fragments);
 }
 
+export function mathDisplayLines(source: string): string[] {
+  const parts = source
+    .split(/\s*(?:=>|⟹|⇒|\\Rightarrow|\\Longrightarrow|\\implies)\s*/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length < 2 || (parts.length === 2 && source.length < 52)) {
+    return [source];
+  }
+  return [parts[0]!, ...parts.slice(1).map((part) => `\\Rightarrow ${part}`)];
+}
+
+export function fitMathScale(contentWidth: number, availableWidth: number): number {
+  if (contentWidth <= 0 || availableWidth <= 0 || contentWidth <= availableWidth) return 1;
+  return availableWidth / contentWidth;
+}
+
+function fitRenderedMath(parent: HTMLElement): void {
+  const render = parent.querySelector<HTMLElement>(".math-render");
+  if (!render || render.classList.contains("math-fragments") || render.classList.contains("math-plain-text")) return;
+  const displays = render.querySelectorAll<HTMLElement>(".katex-display");
+  for (const display of displays) {
+    const formula = display.querySelector<HTMLElement>(".katex");
+    const container = display.closest<HTMLElement>(".math-line") ?? render;
+    if (!formula) continue;
+    display.classList.remove("math-fitted");
+    formula.style.removeProperty("transform");
+    formula.style.removeProperty("transform-origin");
+    const scale = fitMathScale(formula.scrollWidth, container.clientWidth);
+    if (scale >= 1) continue;
+    display.classList.add("math-fitted");
+    formula.style.transform = `scale(${scale})`;
+    formula.style.transformOrigin = "left center";
+  }
+}
+
 function renderMath(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
   const fragments = Array.isArray(content.fragments) ? content.fragments as Record<string, any>[] : [];
@@ -108,6 +143,18 @@ function renderMath(parent: HTMLElement, node: Record<string, any>): void {
   }
   const source = mathSource(content);
   if (!source) { element.textContent = "（空公式）"; parent.append(element); return; }
+  const lines = mathDisplayLines(source);
+  if (lines.length > 1) {
+    element.classList.add("math-lines");
+    for (const line of lines) {
+      const part = document.createElement("div");
+      part.className = "math-line";
+      katex.render(line, part, { displayMode: true, throwOnError: false, strict: "ignore", trust: false, output: "htmlAndMathml" });
+      element.append(part);
+    }
+    parent.append(element);
+    return;
+  }
   katex.render(source, element, { displayMode: true, throwOnError: false, strict: "ignore", trust: false, output: "htmlAndMathml" });
   parent.append(element);
 }
@@ -539,6 +586,7 @@ export class InfiniteBoardView {
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
+      if (kind === "math") fitRenderedMath(element);
       if (!fixedVisualSize) element.style.height = "auto";
       const provisional = layout.nodes[node.id]!;
       measured[node.id] = {

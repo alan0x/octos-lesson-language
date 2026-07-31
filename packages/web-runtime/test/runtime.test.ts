@@ -187,6 +187,31 @@ test("continuous playback keeps narration visible for its reading budget", (cont
   assert.notEqual(session.projection.current_narration?.text, text);
 });
 
+test("external narration timing waits for the matching audio completion", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(
+    events,
+    new MemoryStore(),
+    "external-narration",
+    { narrationTiming: "external" },
+  );
+  const text = advanceToFirstNarration(session);
+  const beatId = session.currentOperation?.beat_id;
+  assert.ok(beatId);
+
+  session.play();
+  tickElapsed(context, 120_000);
+  assert.equal(
+    session.projection.current_narration?.text,
+    text,
+    "the estimated reading clock must not cut off real audio",
+  );
+
+  session.completeNarration(beatId);
+  tickElapsed(context, 120_000);
+  assert.notEqual(session.projection.current_narration?.text, text);
+});
+
 test("pause and resume preserve the remaining narration budget", (context) => {
   context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
   const session = new BrowserLessonSession(events, new MemoryStore(), "lesson");

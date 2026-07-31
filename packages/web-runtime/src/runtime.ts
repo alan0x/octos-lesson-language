@@ -131,6 +131,11 @@ export function operationDelay(operation: PlaybackOperation, speed = 1): number 
 
 export interface BrowserLessonSessionOptions {
   incremental?: boolean;
+  /**
+   * `estimated` advances from narration using the Runtime's reading budget.
+   * `external` waits for the host audio player to call completeNarration().
+   */
+  narrationTiming?: "estimated" | "external";
 }
 
 export class BrowserLessonSession {
@@ -140,6 +145,7 @@ export class BrowserLessonSession {
   private scheduledBaseDelay?: number;
   private scheduledSpeed = 1;
   private narrationRemainingBaseMs?: number;
+  private completedExternalNarrationBeatId?: string;
   private playing = false;
   private followAppends = false;
   private speed = 1;
@@ -159,7 +165,7 @@ export class BrowserLessonSession {
       projection: this.player.snapshot,
     };
     const narration = this.player.snapshot.current_narration;
-    if (narration) {
+    if (narration && this.options.narrationTiming !== "external") {
       this.narrationRemainingBaseMs = narrationDuration(
         narration.text,
         narration.delivery,
@@ -217,12 +223,16 @@ export class BrowserLessonSession {
     this.seekAttentionTargets = [];
     this.currentFrame = frame;
     if (frame?.operation.type === "narration.begin" && frame.operation.narration) {
-      this.narrationRemainingBaseMs = narrationDuration(
-        frame.operation.narration.text,
-        frame.operation.narration.delivery,
-      );
+      this.completedExternalNarrationBeatId = undefined;
+      this.narrationRemainingBaseMs = this.options.narrationTiming === "external"
+        ? undefined
+        : narrationDuration(
+            frame.operation.narration.text,
+            frame.operation.narration.delivery,
+          );
     } else if (frame?.operation.type === "narration.end") {
       this.narrationRemainingBaseMs = undefined;
+      this.completedExternalNarrationBeatId = undefined;
     }
     this.persist();
     this.emit();
@@ -245,12 +255,37 @@ export class BrowserLessonSession {
     if (this.player.status !== "completed" && this.player.status !== "waiting") this.pause();
   }
 
+  /**
+   * Release an externally timed narration boundary. Stale completions are
+   * ignored so an interrupted clip from the previous Beat cannot advance the
+   * current lesson.
+   */
+  completeNarration(beatId: string): void {
+    if (this.options.narrationTiming !== "external") return;
+    if (
+      !this.player.snapshot.current_narration ||
+      this.player.snapshot.current_beat_id !== beatId
+    ) {
+      return;
+    }
+    this.completedExternalNarrationBeatId = beatId;
+    const nextOperation = this.player.operations[this.player.cursor];
+    if (
+      this.playing &&
+      this.scheduledBaseDelay === undefined &&
+      nextOperation?.type === "narration.end"
+    ) {
+      this.tick();
+    }
+  }
+
   seek(cursor: number, attentionTargets: string[] = []): void {
     this.freezeScheduledDelay();
     this.discardScheduledDelay();
     this.playing = false;
     this.followAppends = false;
     this.narrationRemainingBaseMs = undefined;
+    this.completedExternalNarrationBeatId = undefined;
     this.seekAttentionTargets = [...attentionTargets];
     const projection = this.player.seek(cursor);
     this.currentFrame = cursor > 0
@@ -260,7 +295,7 @@ export class BrowserLessonSession {
         }
       : undefined;
     const narration = projection.current_narration;
-    if (narration) {
+    if (narration && this.options.narrationTiming !== "external") {
       this.narrationRemainingBaseMs = narrationDuration(
         narration.text,
         narration.delivery,
@@ -317,6 +352,7 @@ export class BrowserLessonSession {
     this.pause();
     this.discardScheduledDelay();
     this.narrationRemainingBaseMs = undefined;
+    this.completedExternalNarrationBeatId = undefined;
     this.seekAttentionTargets = [];
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
@@ -329,6 +365,14 @@ export class BrowserLessonSession {
     const nextOperation = this.player.operations[this.player.cursor];
     if (
       nextOperation?.type === "narration.end" &&
+      this.options.narrationTiming === "external"
+    ) {
+      if (this.completedExternalNarrationBeatId !== nextOperation.beat_id) return;
+      this.completedExternalNarrationBeatId = undefined;
+    }
+    if (
+      nextOperation?.type === "narration.end" &&
+      this.options.narrationTiming !== "external" &&
       this.narrationRemainingBaseMs !== undefined &&
       this.narrationRemainingBaseMs > 0
     ) {

@@ -17,9 +17,13 @@
 .board-node.emphasis-warning { border-color: #d95361; }
 .board-node.emphasis-resolved { opacity: .84; }
 .board-node.kind-math { font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
-.math-render { width: 100%; min-height: 56px; display: grid; align-items: center; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.math-render { width: 100%; min-height: 56px; display: grid; align-items: center; overflow: hidden; }
 .math-render .katex-display { margin: 0; min-width: max-content; text-align: left; }
+.math-render .katex-display.math-fitted { width: 100%; min-width: 0; overflow: hidden; }
 .math-render .katex { font-size: 1.04em; }
+.math-render.math-lines { display: flex; min-height: 0; flex-direction: column; align-items: stretch; gap: .24em; overflow: visible; }
+.math-render.math-lines .math-line { min-width: 0; }
+.math-render.math-lines .katex-display { min-width: 0; overflow: visible; }
 .math-render.math-plain-text { display: block; min-height: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 20px; line-height: 1.55; }
 .math-render.math-fragments { display: flex; align-items: center; justify-content: center; align-content: center; flex-wrap: wrap; column-gap: .12em; row-gap: .3em; }
 .math-fragment, .text-fragment { border-radius: 5px; transition: background .2s ease, box-shadow .2s ease, opacity .2s ease; }

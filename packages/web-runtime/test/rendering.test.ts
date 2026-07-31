@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, isPlainTextMathContent, mathSource } from "../src/board-view.js";
+import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -25,6 +25,24 @@ test("text-only math content is identified for readable prose fallback", () => {
   assert.equal(isPlainTextMathContent({ text: "核心推导：\n(-1) × (-1) = 1" }), true);
   assert.equal(isPlainTextMathContent({ text: "说明", latex: "(-1)\\times(-1)=1" }), false);
   assert.equal(isPlainTextMathContent({ fragments: [{ latex: "x=1" }] }), false);
+});
+
+test("long implication chains become readable display lines", () => {
+  assert.deepEqual(
+    mathDisplayLines("[(x+3)+x]\\times2=30 => (2x+3)\\times2=30 => 2x+3=15"),
+    [
+      "[(x+3)+x]\\times2=30",
+      "\\Rightarrow (2x+3)\\times2=30",
+      "\\Rightarrow 2x+3=15",
+    ],
+  );
+  assert.deepEqual(mathDisplayLines("x+1=2"), ["x+1=2"]);
+});
+
+test("single-line math scales down to the available card width", () => {
+  assert.equal(fitMathScale(800, 600), 0.75);
+  assert.equal(fitMathScale(400, 600), 1);
+  assert.equal(fitMathScale(0, 600), 1);
 });
 
 test("model-authored emphasis prose degrades to a safe focus class", () => {

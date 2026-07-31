@@ -15,9 +15,9 @@ Phase 1, but they remain visible here.
 | --- | --- | --- |
 | OLL-STR-001, OLL-STR-002, OLL-STR-003, OLL-STR-004, OLL-STR-005, OLL-STR-006 | Pass | `schema/authoring/v0.1.schema.json`; `packages/core/test/oll.test.ts` validates and normalizes every complete lesson; every manifest example produces ordered Step and Beat IDs. No branch or loop action exists. |
 | OLL-TCH-001, OLL-TCH-003, OLL-TCH-005 | Pass | Narration, point targets, and provider-neutral delivery are normalized in `packages/core/src/index.ts`; Player tests prove narration markers and addressable targets. |
-| OLL-TCH-002 | Pass | Narration is accessible text and participates in playback; `octos-web` now speaks active OLL narration in text-input mode without acquiring a microphone. R-007 proves synthesis failure leaves visible narration and lesson playback intact. |
+| OLL-TCH-002 | Pass | Narration is accessible text and participates in playback; `octos-web` sends active OLL narration from both text-input and voice-input learning modes through one profile-scoped Octos TTS endpoint. That endpoint reuses the system's resolved provider, cloud credentials, and reply voice. R-007 proves synthesis failure leaves visible narration and lesson playback intact. |
 | OLL-TIME-001, OLL-TIME-002, OLL-TIME-003 | Pass | `compilePlaybackOperations` creates one Beat timeline with before/during/after phases and no model-authored millisecond field; absolute duration fields are rejected. |
-| OLL-TIME-004 | Pass | Reducer semantics are TTS-independent; the Web Runtime text-input TTS path and R-007 failure test keep the same lesson playable without synthesized audio. |
+| OLL-TIME-004 | Pass | Reducer semantics are TTS-independent; the shared Web Runtime narration path and R-007 failure test keep the same lesson playable without synthesized audio. |
 
 ## Board, view, and resource semantics
 
@@ -90,5 +90,6 @@ testable, but the language is **not frozen**. Release blockers are:
 3. the learner-suggestion channel boundary;
 4. exact disposition of remaining invalid cases and error-code registry;
 5. product-owner review of the five handwritten lessons;
-6. fixed DSL E2E and removal of the chat/artifact fallback. Text-input TTS now
-   has unit evidence but still needs real-browser acceptance.
+6. fixed DSL E2E and removal of the chat/artifact fallback. Shared
+   provider-backed narration for text and voice input now has unit evidence but
+   still needs real-browser acceptance.

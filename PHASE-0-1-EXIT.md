@@ -32,7 +32,7 @@ Phase 0 cannot exit until:
 | Reference normalizer and reducer | Pass | All manifest examples match canonical JSONL and expected state; Player final state matches Reducer. |
 | Valid fixtures | Partial | Five cross-domain V2 lessons exist; V-005 prior-node reference is not expressible yet. |
 | Invalid fixtures | Partial | I-001/I-002/I-005/I-006/I-007/I-008/I-009/I-012/I-014/I-015 run in CI. I-003/I-004/I-010/I-011/I-013 require fixtures or explicit profile-level disposition. |
-| Recovery fixtures | Pass across repositories | R-001 through R-006 run in this repository. R-007 records the Web Runtime test that preserves narration and playback when browser synthesis fails. |
+| Recovery fixtures | Pass across repositories | R-001 through R-006 run in this repository. R-007 records the Web integration test that preserves narration and playback when the configured system TTS provider fails. |
 | CLI-equivalent commands | Pass | `npm test`, `npm run check:examples`, and `npm run generate:goldens`; eval runs additionally use parameterized `npm run playback:conformance -- --source … --output …`. |
 | CI | Added | `.github/workflows/ci.yml` runs typecheck, full tests, example goldens, and playback conformance. |
 
