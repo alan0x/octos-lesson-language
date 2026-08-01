@@ -26,6 +26,7 @@
 .math-render.math-lines .katex-display { min-width: 0; overflow: visible; }
 .math-render.math-plain-text { display: block; min-height: 0; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 20px; line-height: 1.55; }
 .math-render.math-fragments { display: flex; align-items: center; justify-content: center; align-content: center; flex-wrap: wrap; column-gap: .12em; row-gap: .3em; }
+.inline-math { display: inline-block; max-width: 100%; vertical-align: baseline; white-space: nowrap; }
 .math-fragment, .text-fragment { border-radius: 5px; transition: background .2s ease, box-shadow .2s ease, opacity .2s ease; }
 .math-fragment.emphasis-focus, .text-fragment.emphasis-focus { background: #ffe5ad; box-shadow: 0 0 0 3px rgba(225,155,53,.24); }
 .math-fragment.emphasis-supporting, .text-fragment.emphasis-supporting { background: #fff0a8; text-decoration: underline 2px #d79a29; text-underline-offset: 4px; }

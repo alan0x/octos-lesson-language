@@ -19,10 +19,86 @@ function setRect(element: HTMLElement, rect: Rect): void {
   Object.assign(element.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.width}px`, height: `${rect.height}px` });
 }
 
+export interface InlineTextSegment {
+  kind: "text" | "math";
+  value: string;
+}
+
+function isEscaped(value: string, cursor: number): boolean {
+  let escapes = 0;
+  for (let prior = cursor - 1; prior >= 0 && value[prior] === "\\"; prior -= 1) escapes += 1;
+  return escapes % 2 !== 0;
+}
+
+function closingDollar(value: string, start: number, delimiter: "$" | "$$"): number {
+  for (let cursor = start; cursor < value.length; cursor += 1) {
+    if (!value.startsWith(delimiter, cursor) || isEscaped(value, cursor)) continue;
+    if (delimiter === "$" && value[cursor + 1] === "$") continue;
+    if (delimiter === "$$" && value[cursor + 2] === "$") continue;
+    return cursor;
+  }
+  return -1;
+}
+
+export function inlineMathSegments(value: string): InlineTextSegment[] {
+  const segments: InlineTextSegment[] = [];
+  let textStart = 0;
+  let cursor = 0;
+  const appendMath = (start: number, end: number, delimiterLength: number): boolean => {
+    const source = value.slice(start + delimiterLength, end).trim();
+    if (!source) return false;
+    if (start > textStart) segments.push({ kind: "text", value: value.slice(textStart, start) });
+    segments.push({ kind: "math", value: source });
+    cursor = end + delimiterLength;
+    textStart = cursor;
+    return true;
+  };
+
+  while (cursor < value.length) {
+    if (value.startsWith("$$", cursor) && !isEscaped(value, cursor)) {
+      const end = closingDollar(value, cursor + 2, "$$");
+      if (end >= 0 && appendMath(cursor, end, 2)) continue;
+    } else if (value.startsWith("\\(", cursor) && !isEscaped(value, cursor)) {
+      const end = value.indexOf("\\)", cursor + 2);
+      if (end >= 0 && appendMath(cursor, end, 2)) continue;
+    } else if (value[cursor] === "$" && value[cursor + 1] !== "$" && !isEscaped(value, cursor)) {
+      const end = closingDollar(value, cursor + 1, "$");
+      if (end >= 0 && appendMath(cursor, end, 1)) continue;
+    }
+    cursor += 1;
+  }
+  if (textStart < value.length) segments.push({ kind: "text", value: value.slice(textStart) });
+  return segments.length ? segments : [{ kind: "text", value }];
+}
+
+function renderInlineText(element: HTMLElement, value: string): void {
+  const segments = inlineMathSegments(value);
+  if (segments.every((segment) => segment.kind === "text")) {
+    element.textContent = value;
+  } else {
+    for (const segment of segments) {
+      if (segment.kind === "text") {
+        element.append(document.createTextNode(segment.value));
+        continue;
+      }
+      const math = document.createElement("span");
+      math.className = "inline-math";
+      katex.render(segment.value, math, {
+        displayMode: false,
+        throwOnError: false,
+        strict: "ignore",
+        trust: false,
+        output: "htmlAndMathml",
+      });
+      element.append(math);
+    }
+  }
+}
+
 function appendText(parent: HTMLElement, value: string, className?: string): HTMLElement {
   const element = document.createElement("div");
   if (className) element.className = className;
-  element.textContent = value;
+  renderInlineText(element, value);
   parent.append(element);
   return element;
 }
@@ -337,12 +413,12 @@ function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAs
     const table = document.createElement("table"); table.className = "content-table";
     if (Array.isArray(content.columns)) {
       const row = document.createElement("tr");
-      for (const column of content.columns) { const cell = document.createElement("th"); cell.textContent = text(column); row.append(cell); }
+      for (const column of content.columns) { const cell = document.createElement("th"); renderInlineText(cell, text(column)); row.append(cell); }
       table.append(row);
     }
     for (const values of Array.isArray(content.rows) ? content.rows : []) {
       const row = document.createElement("tr");
-      for (const value of values) { const cell = document.createElement("td"); cell.textContent = text(value); row.append(cell); }
+      for (const value of values) { const cell = document.createElement("td"); renderInlineText(cell, text(value)); row.append(cell); }
       table.append(row);
     }
     parent.append(table); return;
@@ -351,7 +427,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAs
     const fragments = document.createElement("div"); fragments.className = "text-fragments";
     for (const fragment of content.fragments) {
       const part = document.createElement("span"); part.className = "text-fragment"; part.dataset.id = text(fragment.id);
-      part.textContent = text(fragment.text || fragment.latex); applyEmphasisClass(part, latestEmphasis(node, text(fragment.id))); fragments.append(part);
+      renderInlineText(part, text(fragment.text || fragment.latex)); applyEmphasisClass(part, latestEmphasis(node, text(fragment.id))); fragments.append(part);
     }
     parent.append(fragments);
   } else if (node.kind === "diagram" && (Array.isArray(content.sequence) || Array.isArray(content.items))) {
@@ -371,7 +447,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAs
   const items = content.items ?? content.details ?? content.lines;
   if (Array.isArray(items)) {
     const list = document.createElement("ul"); list.className = "content-list";
-    for (const item of items) { const li = document.createElement("li"); li.textContent = text(item) || JSON.stringify(item); list.append(li); }
+    for (const item of items) { const li = document.createElement("li"); renderInlineText(li, text(item) || JSON.stringify(item)); list.append(li); }
     parent.append(list);
   }
   if (content.caption) appendText(parent, text(content.caption), "node-caption");

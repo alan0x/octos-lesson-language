@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
+import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -25,6 +25,27 @@ test("text-only math content is identified for readable prose fallback", () => {
   assert.equal(isPlainTextMathContent({ text: "核心推导：\n(-1) × (-1) = 1" }), true);
   assert.equal(isPlainTextMathContent({ text: "说明", latex: "(-1)\\times(-1)=1" }), false);
   assert.equal(isPlainTextMathContent({ fragments: [{ latex: "x=1" }] }), false);
+});
+
+test("ordinary text separates explicit inline LaTeX without treating unmatched dollars as math", () => {
+  assert.deepEqual(
+    inlineMathSegments("若式子 $\\sqrt{x-1}$ 有意义，则 \\(x \\ge 1\\)，费用为 $5"),
+    [
+      { kind: "text", value: "若式子 " },
+      { kind: "math", value: "\\sqrt{x-1}" },
+      { kind: "text", value: " 有意义，则 " },
+      { kind: "math", value: "x \\ge 1" },
+      { kind: "text", value: "，费用为 $5" },
+    ],
+  );
+  assert.deepEqual(inlineMathSegments("普通文字不含公式"), [
+    { kind: "text", value: "普通文字不含公式" },
+  ]);
+  assert.deepEqual(inlineMathSegments("结论是 $$x=1$$。"), [
+    { kind: "text", value: "结论是 " },
+    { kind: "math", value: "x=1" },
+    { kind: "text", value: "。" },
+  ]);
 });
 
 test("long implication chains become readable display lines", () => {
