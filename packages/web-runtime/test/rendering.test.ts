@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
+import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -71,6 +71,19 @@ test("model-authored emphasis prose degrades to a safe focus class", () => {
   assert.equal(emphasisClassName("  WARNING  "), "emphasis-warning");
   assert.equal(emphasisClassName("结论：(-3) × (-2) = 6"), "emphasis-focus");
   assert.equal(emphasisClassName(undefined), undefined);
+});
+
+test("beat boundaries preserve the latest visible teaching target", () => {
+  const boundary = {
+    operation_id: "lesson:beat:end",
+    type: "beat.end",
+    lesson_id: "lesson",
+    event_index: 3,
+  } as const;
+  assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], ["current-problem"]), [
+    "current-problem",
+  ]);
+  assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
 });
 
 test("connections attach to card boundaries instead of running through card centers", () => {

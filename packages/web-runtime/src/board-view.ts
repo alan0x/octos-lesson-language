@@ -120,6 +120,17 @@ export function emphasisClassName(emphasis: string | undefined): string | undefi
   return `emphasis-${EMPHASIS_KINDS.has(normalized) ? normalized : "focus"}`;
 }
 
+export function cameraFocusTargets(
+  operation: PlaybackOperation | undefined,
+  boardFocus: string[],
+  lastAttentionTargets: string[],
+): string[] {
+  const operationFocus = operation?.action?.focus?.targets ?? [];
+  if (operationFocus.length) return operationFocus;
+  if (operation?.type !== "beat.end" && operation?.type !== "step.commit") return [];
+  return lastAttentionTargets.length ? lastAttentionTargets : boardFocus;
+}
+
 function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
   const className = emphasisClassName(emphasis);
   if (className) element.classList.add(className);
@@ -525,12 +536,11 @@ export class InfiniteBoardView {
     this.syncGroups(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
-    const operationFocus = operation?.action?.focus?.targets ?? [];
-    const focusTargets = operationFocus.length
-      ? operationFocus
-      : operation?.type === "beat.end" || operation?.type === "step.commit"
-        ? board.focus
-        : [];
+    const focusTargets = cameraFocusTargets(
+      operation,
+      board.focus,
+      this.lastAttentionTargets,
+    );
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (focusRects.length) {
       this.resumeAutomaticCamera();
