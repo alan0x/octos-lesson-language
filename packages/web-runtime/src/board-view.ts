@@ -9,6 +9,7 @@ import {
 } from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
+import { plotPathData, samplePlotExpression, type PlotRange } from "./plot.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
@@ -246,36 +247,161 @@ function renderMath(parent: HTMLElement, node: Record<string, any>): void {
   parent.append(element);
 }
 
+const PLOT_LEFT = 28;
+const PLOT_RIGHT = 292;
+const PLOT_TOP = 8;
+const PLOT_BOTTOM = 132;
+
+function plotRange(value: unknown, fallback: PlotRange): PlotRange {
+  const candidate = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const min = Number(candidate.min);
+  const max = Number(candidate.max);
+  return Number.isFinite(min) && Number.isFinite(max) && max > min ? { min, max } : fallback;
+}
+
+function plotTicks(range: PlotRange, count = 4): number[] {
+  return Array.from({ length: count + 1 }, (_, index) => range.min + (range.max - range.min) * index / count);
+}
+
+function plotTickLabel(value: number): string {
+  const rounded = Math.abs(value) < 1e-10 ? 0 : Number(value.toPrecision(3));
+  return String(rounded);
+}
+
+function appendPlotLine(
+  svg: SVGSVGElement,
+  className: string,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): SVGLineElement {
+  const line = document.createElementNS(SVG_NS, "line");
+  line.setAttribute("x1", String(x1));
+  line.setAttribute("y1", String(y1));
+  line.setAttribute("x2", String(x2));
+  line.setAttribute("y2", String(y2));
+  line.classList.add(className);
+  svg.append(line);
+  return line;
+}
+
+function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number, anchor = "middle"): void {
+  const label = document.createElementNS(SVG_NS, "text");
+  label.setAttribute("x", String(x));
+  label.setAttribute("y", String(y));
+  label.setAttribute("text-anchor", anchor);
+  label.classList.add("plot-axis-label");
+  label.textContent = value;
+  svg.append(label);
+}
+
 function plot(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
+  const axes = content.axes ?? {};
+  const xRange = plotRange(axes.x, { min: -5, max: 5 });
+  const yRange = plotRange(axes.y, { min: -5, max: 5 });
+  const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
+  const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 300 150");
   svg.classList.add("plot-preview");
-  const axisX = document.createElementNS(SVG_NS, "path");
-  axisX.setAttribute("d", "M 15 108 H 285 M 150 10 V 140"); axisX.setAttribute("stroke", "#9a958c"); axisX.setAttribute("fill", "none");
-  const curve = document.createElementNS(SVG_NS, "path");
-  curve.setAttribute("d", "M 35 24 Q 95 134 150 122 Q 205 134 265 24"); curve.setAttribute("stroke", "#23877c"); curve.setAttribute("stroke-width", "3"); curve.setAttribute("fill", "none");
-  const curveFragment = content.curves?.[0];
-  if (curveFragment?.id) { curve.dataset.id = text(curveFragment.id); applyEmphasisClass(curve, latestEmphasis(node, text(curveFragment.id))); }
-  svg.append(axisX);
-  const axes = content.axes ?? {}; const xRange = axes.x ?? { min: -5, max: 5 }; const yRange = axes.y ?? { min: -5, max: 5 };
-  const mapX = (value: number) => 15 + (value - Number(xRange.min)) / Math.max(1, Number(xRange.max) - Number(xRange.min)) * 270;
-  const mapY = (value: number) => 140 - (value - Number(yRange.min)) / Math.max(1, Number(yRange.max) - Number(yRange.min)) * 130;
+
+  for (const value of plotTicks(xRange)) {
+    const x = mapX(value);
+    appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
+    appendPlotLabel(svg, plotTickLabel(value), x, 146);
+  }
+  for (const value of plotTicks(yRange)) {
+    const y = mapY(value);
+    appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
+    appendPlotLabel(svg, plotTickLabel(value), PLOT_LEFT - 5, y + 3, "end");
+  }
+  const xAxisY = Math.min(PLOT_BOTTOM, Math.max(PLOT_TOP, mapY(0)));
+  const yAxisX = Math.min(PLOT_RIGHT, Math.max(PLOT_LEFT, mapX(0)));
+  appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
+  appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+
   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
-    const line = document.createElementNS(SVG_NS, "line"); const x = mapX(Number(guide.value));
-    line.setAttribute("x1", String(x)); line.setAttribute("x2", String(x)); line.setAttribute("y1", "10"); line.setAttribute("y2", "140");
-    line.classList.add("plot-guide"); line.dataset.id = text(guide.id); applyEmphasisClass(line, latestEmphasis(node, text(guide.id))); svg.append(line);
+    const value = Number(guide.value);
+    if (!Number.isFinite(value)) continue;
+    const horizontal = guide.kind === "horizontal_line";
+    const line = horizontal
+      ? appendPlotLine(svg, "plot-guide", PLOT_LEFT, mapY(value), PLOT_RIGHT, mapY(value))
+      : appendPlotLine(svg, "plot-guide", mapX(value), PLOT_TOP, mapX(value), PLOT_BOTTOM);
+    line.dataset.id = text(guide.id);
+    applyEmphasisClass(line, latestEmphasis(node, text(guide.id)));
+    if (guide.label) {
+      appendPlotLabel(
+        svg,
+        text(guide.label),
+        horizontal ? PLOT_RIGHT - 3 : mapX(value) + 4,
+        horizontal ? mapY(value) - 4 : PLOT_TOP + 10,
+        horizontal ? "end" : "start",
+      );
+    }
   }
-  svg.append(curve);
+
+  const curves = Array.isArray(content.curves) ? content.curves : [];
+  const renderedCurves: Array<{ curve: Record<string, any>; series: number }> = [];
+  curves.forEach((curve: Record<string, any>, index: number) => {
+    const expression = text(curve.expression);
+    if (!expression) return;
+    try {
+      const pathData = plotPathData(samplePlotExpression(expression, xRange, yRange), mapX, mapY);
+      if (!pathData) return;
+      const path = document.createElementNS(SVG_NS, "path");
+      const series = index % 6;
+      path.setAttribute("d", pathData);
+      path.classList.add("plot-curve", `plot-series-${series}`);
+      if (curve.id) {
+        path.dataset.id = text(curve.id);
+        applyEmphasisClass(path, latestEmphasis(node, text(curve.id)));
+      }
+      svg.append(path);
+      renderedCurves.push({ curve, series });
+    } catch {
+      // Invalid model-authored expressions must not crash the rest of the lesson.
+    }
+  });
+
   for (const point of Array.isArray(content.points) ? content.points : []) {
-    const x = mapX(Number(point.x)); const y = mapY(Number(point.y));
-    const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(x)); dot.setAttribute("cy", String(y)); dot.setAttribute("r", "5");
-    dot.classList.add("plot-point"); dot.dataset.id = text(point.id); applyEmphasisClass(dot, latestEmphasis(node, text(point.id))); svg.append(dot);
-    if (point.label) { const pointLabel = document.createElementNS(SVG_NS, "text"); pointLabel.setAttribute("x", String(x + 8)); pointLabel.setAttribute("y", String(y - 8)); pointLabel.classList.add("plot-label"); pointLabel.textContent = text(point.label); svg.append(pointLabel); }
+    const pointX = Number(point.x);
+    const pointY = Number(point.y);
+    if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) continue;
+    const x = mapX(pointX);
+    const y = mapY(pointY);
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("cx", String(x));
+    dot.setAttribute("cy", String(y));
+    dot.setAttribute("r", "5");
+    dot.classList.add("plot-point");
+    dot.dataset.id = text(point.id);
+    applyEmphasisClass(dot, latestEmphasis(node, text(point.id)));
+    svg.append(dot);
+    if (point.label) {
+      const pointLabel = document.createElementNS(SVG_NS, "text");
+      pointLabel.setAttribute("x", String(x + 8));
+      pointLabel.setAttribute("y", String(y - 8));
+      pointLabel.classList.add("plot-label");
+      pointLabel.textContent = text(point.label);
+      svg.append(pointLabel);
+    }
   }
-  const label = curveFragment?.label ?? curveFragment?.expression;
-  if (label) appendText(parent, String(label), "node-caption");
   parent.append(svg);
+
+  if (renderedCurves.length) {
+    const legend = document.createElement("div");
+    legend.className = "plot-legend";
+    for (const { curve, series } of renderedCurves) {
+      appendText(
+        legend,
+        text(curve.label || curve.expression),
+        `plot-legend-item plot-series-${series}`,
+      );
+    }
+    parent.append(legend);
+  }
 }
 
 function diagramPosition(position: string | undefined, index: number, total: number): { x: number; y: number } {
