@@ -16,6 +16,7 @@ import { resolveHarnessAsset } from "./assets.js";
 
 const fixtures = [
   { id: "quadratic", label: "数学 · 二次函数配方法 V2", path: "/examples/quadratic-v2/lesson.canonical.jsonl" },
+  { id: "unit-circle", label: "数学 · 单位圆与正弦图像", path: "/examples/unit-circle-sine/lesson.canonical.jsonl" },
   { id: "quadratic-v1", label: "探针 · 二次函数配方法 V1", path: "/examples/quadratic/lesson.canonical.jsonl" },
   { id: "geometry", label: "数学 · 几何辅助线 V2", path: "/examples/geometry-auxiliary-line-v2/lesson.canonical.jsonl" },
   { id: "geometry-v1", label: "回归 · 几何辅助线 V1", path: "/examples/geometry-auxiliary-line/lesson.canonical.jsonl" },
