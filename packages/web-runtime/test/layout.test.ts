@@ -33,6 +33,7 @@ test("layout resolves node, group and connection targets", () => {
 
 test("node measurement expands visual-heavy kinds", () => {
   assert.ok(measureSemanticNode({ kind: "plot", content: {} }).height > measureSemanticNode({ kind: "text", content: { text: "短句" } }).height);
+  assert.ok(measureSemanticNode({ kind: "geometry", content: {} }).height > measureSemanticNode({ kind: "plot", content: {} }).height);
   assert.ok(measureSemanticNode({ kind: "table", content: { columns: [1, 2, 3, 4], rows: [[1, 2, 3, 4]] } }).width >= 400);
 });
 

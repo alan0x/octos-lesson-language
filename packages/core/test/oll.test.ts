@@ -134,6 +134,76 @@ test("rejects an internal diagram reference that is not defined", () => {
   );
 });
 
+function unitCircleLesson(): AuthoringLesson {
+  const lesson = structuredClone(source);
+  lesson.steps[0]!.beats[0]!.actions.unshift({
+    do: "write",
+    as: "unit-circle",
+    kind: "geometry",
+    role: "diagram",
+    content: {
+      title: "单位圆",
+      axes: {
+        x: { min: -1.25, max: 1.25, label: "x" },
+        y: { min: -1.25, max: 1.25, label: "y" },
+        equal_scale: true,
+      },
+      points: [
+        { as: "origin", x: 0, y: 0, label: "O" },
+        { as: "point-p", x: .5, y: .8660254, label: "P(cos θ, sin θ)" },
+        { as: "foot", x: .5, y: 0, label: "" },
+      ],
+      circles: [
+        { as: "circle", center: "origin", radius: 1, label: "r = 1" },
+      ],
+      segments: [
+        { as: "radius", from: "origin", to: "point-p", label: "r = 1", style: "solid" },
+        { as: "projection", from: "point-p", to: "foot", label: "sin θ", style: "projection" },
+      ],
+      arcs: [
+        { as: "angle", center: "origin", radius: .28, start_angle: 0, end_angle: Math.PI / 3, label: "θ" },
+      ],
+    },
+    place: { relation: "new_region" },
+  });
+  return lesson;
+}
+
+test("validates and normalizes addressable coordinate geometry", () => {
+  const lesson = unitCircleLesson();
+  assert.deepEqual(validateAuthoringSchema(lesson), { valid: true, errors: [] });
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const state = reduceCanonicalEvents(events);
+  const geometry = state.nodes[`${host.lessonId}:node:unit-circle`];
+  const originId = `${geometry.id}:fragment:origin`;
+  const pointId = `${geometry.id}:fragment:point-p`;
+  assert.equal(geometry.kind, "geometry");
+  assert.equal(geometry.content.circles[0].center, originId);
+  assert.equal(geometry.content.segments[0].from, originId);
+  assert.equal(geometry.content.segments[0].to, pointId);
+  assert.equal(geometry.content.arcs[0].center, originId);
+});
+
+test("rejects geometry that would distort a circle", () => {
+  const invalid = unitCircleLesson();
+  (invalid.steps[0]!.beats[0]!.actions[0] as any).content.axes.equal_scale = false;
+  assert.equal(validateAuthoringSchema(invalid).valid, false);
+  assert.throws(
+    () => validateAuthoringLesson(invalid),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
+  );
+});
+
+test("rejects geometry primitives that reference a missing point", () => {
+  const invalid = unitCircleLesson();
+  (invalid.steps[0]!.beats[0]!.actions[0] as any).content.circles[0].center = "missing-center";
+  assert.throws(
+    () => validateAuthoringLesson(invalid),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
+  );
+});
+
 test("rejects model-authored absolute board coordinates", () => {
   const invalid = structuredClone(source);
   (invalid as any).steps[0].beats[0].actions[0].place.x = 120;
@@ -242,4 +312,9 @@ test("image Schema requires the canonical asset_id field", () => {
   assert.equal(result.valid, false);
   assert.ok(result.errors.some((error) => error.keyword === "required"));
   assert.ok(result.errors.some((error) => error.keyword === "additionalProperties"));
+});
+
+test("authoring schema exposes coordinate geometry as a first-class node kind", () => {
+  assert.ok(authoringSchema.$defs.action.properties.kind.enum.includes("geometry"));
+  assert.equal(authoringSchema.$defs.geometryContent.properties.axes.properties.equal_scale.const, true);
 });

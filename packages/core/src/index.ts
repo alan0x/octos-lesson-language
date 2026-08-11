@@ -124,7 +124,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -151,6 +151,69 @@ function validateStructuredContent(content: JsonObject, path: string, addressabl
           fail("OLL_REFERENCE_NOT_FOUND", `${path}/regions/${regionIndex}/members/${memberIndex}`, `Diagram element '${member}' is not defined`);
         }
       });
+    });
+  }
+}
+
+function requireFiniteNumber(value: unknown, path: string): number {
+  const number = Number(value);
+  if (!Number.isFinite(number)) fail("OLL_INVALID_OPERATION_PAYLOAD", path, "Expected a finite number");
+  return number;
+}
+
+function validateGeometryContent(action: WriteAction, path: string): void {
+  if (action.kind !== "geometry") return;
+  const content = action.content;
+  requireObject(content.axes, `${path}/content/axes`);
+  for (const axisName of ["x", "y"] as const) {
+    const axisPath = `${path}/content/axes/${axisName}`;
+    requireObject(content.axes[axisName], axisPath);
+    const min = requireFiniteNumber(content.axes[axisName].min, `${axisPath}/min`);
+    const max = requireFiniteNumber(content.axes[axisName].max, `${axisPath}/max`);
+    if (max <= min) fail("OLL_INVALID_OPERATION_PAYLOAD", axisPath, "Geometry axis max must be greater than min");
+  }
+  if (content.axes.equal_scale !== true) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/equal_scale`, "Geometry requires equal_scale=true");
+  }
+
+  requireArray(content.points, `${path}/content/points`);
+  const pointAliases = new Set<string>();
+  content.points.forEach((point, index: number) => {
+    const pointPath = `${path}/content/points/${index}`;
+    requireObject(point, pointPath);
+    requireAlias(point.as, `${pointPath}/as`);
+    pointAliases.add(point.as);
+    requireFiniteNumber(point.x, `${pointPath}/x`);
+    requireFiniteNumber(point.y, `${pointPath}/y`);
+  });
+
+  const requirePointReference = (value: unknown, referencePath: string) => {
+    requireAlias(value, referencePath);
+    if (!pointAliases.has(value)) {
+      fail("OLL_REFERENCE_NOT_FOUND", referencePath, `Geometry point '${value}' is not defined`);
+    }
+  };
+  for (const [field, references] of [
+    ["circles", ["center"]],
+    ["segments", ["from", "to"]],
+    ["arcs", ["center"]],
+  ] as const) {
+    if (content[field] === undefined) continue;
+    if (!Array.isArray(content[field])) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/${field}`, "Expected an array");
+    }
+    content[field].forEach((item: JsonObject, index: number) => {
+      const itemPath = `${path}/content/${field}/${index}`;
+      requireObject(item, itemPath);
+      for (const reference of references) requirePointReference(item[reference], `${itemPath}/${reference}`);
+      if (field === "circles" || field === "arcs") {
+        const radius = requireFiniteNumber(item.radius, `${itemPath}/radius`);
+        if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/radius`, "Radius must be greater than zero");
+      }
+      if (field === "arcs") {
+        requireFiniteNumber(item.start_angle, `${itemPath}/start_angle`);
+        requireFiniteNumber(item.end_angle, `${itemPath}/end_angle`);
+      }
     });
   }
 }
@@ -333,6 +396,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
+          validateGeometryContent(action, actionPath);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
@@ -388,7 +452,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -397,6 +461,16 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       if (field === "edges") {
         normalized.from = `${nodeId}:fragment:${item.from}`;
         normalized.to = `${nodeId}:fragment:${item.to}`;
+      }
+      if (field === "circles") {
+        normalized.center = `${nodeId}:fragment:${item.center}`;
+      }
+      if (field === "segments") {
+        normalized.from = `${nodeId}:fragment:${item.from}`;
+        normalized.to = `${nodeId}:fragment:${item.to}`;
+      }
+      if (field === "arcs") {
+        normalized.center = `${nodeId}:fragment:${item.center}`;
       }
       if (field === "regions" && Array.isArray(item.members)) {
         normalized.members = item.members.map((member: string) => `${nodeId}:fragment:${member}`);

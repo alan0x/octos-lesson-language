@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
+import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -176,6 +176,28 @@ test("diagram-internal connections resolve exact fragment coordinates", () => {
   assert.deepEqual(geometry.from, { x: 150, y: 24 });
   assert.deepEqual(geometry.to, { x: 150, y: 164 });
   assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
+});
+
+test("geometry viewport preserves equal coordinate scale for circles", () => {
+  const viewport = geometryViewport({
+    x: { min: -1.25, max: 1.25 },
+    y: { min: -1.25, max: 1.25 },
+    equal_scale: true,
+  });
+  assert.ok(viewport.scale > 0);
+  assert.equal(viewport.mapX(1) - viewport.mapX(0), viewport.mapY(0) - viewport.mapY(1));
+});
+
+test("geometry arc uses the same rendered radius in both SVG dimensions", () => {
+  const viewport = geometryViewport({
+    x: { min: -1.25, max: 1.25 },
+    y: { min: -1.25, max: 1.25 },
+    equal_scale: true,
+  });
+  const path = geometryArcPath(viewport, { x: 0, y: 0 }, .3, 0, Math.PI / 3);
+  const radius = .3 * viewport.scale;
+  assert.match(path, new RegExp(`A ${radius} ${radius} 0 0 0`));
+  assert.ok(path.startsWith(`M ${viewport.mapX(.3)} ${viewport.mapY(0)}`));
 });
 
 test("focus keeps an already composed target steady", () => {

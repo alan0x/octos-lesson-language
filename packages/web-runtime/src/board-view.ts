@@ -404,6 +404,166 @@ function plot(parent: HTMLElement, node: Record<string, any>): void {
   }
 }
 
+const GEOMETRY_LEFT = 30;
+const GEOMETRY_RIGHT = 288;
+const GEOMETRY_TOP = 10;
+const GEOMETRY_BOTTOM = 194;
+
+export interface GeometryViewport {
+  xRange: PlotRange;
+  yRange: PlotRange;
+  scale: number;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  mapX(value: number): number;
+  mapY(value: number): number;
+}
+
+export function geometryViewport(axes: Record<string, any>): GeometryViewport {
+  const xRange = plotRange(axes?.x, { min: -1.25, max: 1.25 });
+  const yRange = plotRange(axes?.y, { min: -1.25, max: 1.25 });
+  const width = GEOMETRY_RIGHT - GEOMETRY_LEFT;
+  const height = GEOMETRY_BOTTOM - GEOMETRY_TOP;
+  const scale = Math.min(width / (xRange.max - xRange.min), height / (yRange.max - yRange.min));
+  const renderedWidth = (xRange.max - xRange.min) * scale;
+  const renderedHeight = (yRange.max - yRange.min) * scale;
+  const left = GEOMETRY_LEFT + (width - renderedWidth) / 2;
+  const top = GEOMETRY_TOP + (height - renderedHeight) / 2;
+  return {
+    xRange,
+    yRange,
+    scale,
+    left,
+    right: left + renderedWidth,
+    top,
+    bottom: top + renderedHeight,
+    mapX: (value: number) => left + (value - xRange.min) * scale,
+    mapY: (value: number) => top + (yRange.max - value) * scale,
+  };
+}
+
+export function geometryArcPath(
+  viewport: GeometryViewport,
+  center: { x: number; y: number },
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+): string {
+  const delta = endAngle - startAngle;
+  const startX = viewport.mapX(center.x + Math.cos(startAngle) * radius);
+  const startY = viewport.mapY(center.y + Math.sin(startAngle) * radius);
+  const endX = viewport.mapX(center.x + Math.cos(endAngle) * radius);
+  const endY = viewport.mapY(center.y + Math.sin(endAngle) * radius);
+  const largeArc = Math.abs(delta) > Math.PI ? 1 : 0;
+  const sweep = delta >= 0 ? 0 : 1;
+  const renderedRadius = radius * viewport.scale;
+  return `M ${startX} ${startY} A ${renderedRadius} ${renderedRadius} 0 ${largeArc} ${sweep} ${endX} ${endY}`;
+}
+
+function appendGeometryLabel(svg: SVGSVGElement, value: unknown, x: number, y: number, anchor = "start"): void {
+  const label = document.createElementNS(SVG_NS, "text");
+  label.setAttribute("x", String(x));
+  label.setAttribute("y", String(y));
+  label.setAttribute("text-anchor", anchor);
+  label.classList.add("geometry-label");
+  label.textContent = text(value);
+  svg.append(label);
+}
+
+function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
+  const content = node.content ?? {};
+  const viewport = geometryViewport(content.axes ?? {});
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 300 210");
+  svg.classList.add("geometry-preview");
+
+  for (const value of plotTicks(viewport.xRange)) {
+    const x = viewport.mapX(value);
+    appendPlotLine(svg, "geometry-grid", x, GEOMETRY_TOP, x, GEOMETRY_BOTTOM);
+    appendGeometryLabel(svg, plotTickLabel(value), x, 207, "middle");
+  }
+  for (const value of plotTicks(viewport.yRange)) {
+    const y = viewport.mapY(value);
+    appendPlotLine(svg, "geometry-grid", GEOMETRY_LEFT, y, GEOMETRY_RIGHT, y);
+    appendGeometryLabel(svg, plotTickLabel(value), GEOMETRY_LEFT - 5, y + 3, "end");
+  }
+  const xAxisY = Math.min(GEOMETRY_BOTTOM, Math.max(GEOMETRY_TOP, viewport.mapY(0)));
+  const yAxisX = Math.min(GEOMETRY_RIGHT, Math.max(GEOMETRY_LEFT, viewport.mapX(0)));
+  appendPlotLine(svg, "geometry-axis", GEOMETRY_LEFT, xAxisY, GEOMETRY_RIGHT, xAxisY);
+  appendPlotLine(svg, "geometry-axis", yAxisX, GEOMETRY_TOP, yAxisX, GEOMETRY_BOTTOM);
+  appendGeometryLabel(svg, content.axes?.x?.label ?? "x", GEOMETRY_RIGHT - 2, xAxisY - 5, "end");
+  appendGeometryLabel(svg, content.axes?.y?.label ?? "y", yAxisX + 5, GEOMETRY_TOP + 10);
+
+  const points = new Map<string, Record<string, any>>();
+  for (const point of Array.isArray(content.points) ? content.points : []) {
+    const x = Number(point.x);
+    const y = Number(point.y);
+    if (point.id && Number.isFinite(x) && Number.isFinite(y)) points.set(text(point.id), { ...point, x, y });
+  }
+
+  for (const circle of Array.isArray(content.circles) ? content.circles : []) {
+    const center = points.get(text(circle.center));
+    const radius = Number(circle.radius);
+    if (!center || !Number.isFinite(radius) || radius <= 0) continue;
+    const element = document.createElementNS(SVG_NS, "circle");
+    element.setAttribute("cx", String(viewport.mapX(center.x)));
+    element.setAttribute("cy", String(viewport.mapY(center.y)));
+    element.setAttribute("r", String(radius * viewport.scale));
+    element.classList.add("geometry-circle");
+    element.dataset.id = text(circle.id);
+    applyEmphasisClass(element, latestEmphasis(node, text(circle.id)));
+    svg.append(element);
+    if (circle.label) appendGeometryLabel(svg, circle.label, viewport.mapX(center.x + radius) - 4, viewport.mapY(center.y) - 8, "end");
+  }
+
+  for (const segment of Array.isArray(content.segments) ? content.segments : []) {
+    const from = points.get(text(segment.from));
+    const to = points.get(text(segment.to));
+    if (!from || !to) continue;
+    const line = appendPlotLine(svg, "geometry-segment", viewport.mapX(from.x), viewport.mapY(from.y), viewport.mapX(to.x), viewport.mapY(to.y));
+    line.classList.add(`geometry-segment-${text(segment.style || "solid")}`);
+    line.dataset.id = text(segment.id);
+    applyEmphasisClass(line, latestEmphasis(node, text(segment.id)));
+    if (segment.label) appendGeometryLabel(svg, segment.label, (viewport.mapX(from.x) + viewport.mapX(to.x)) / 2 + 5, (viewport.mapY(from.y) + viewport.mapY(to.y)) / 2 - 6);
+  }
+
+  for (const arc of Array.isArray(content.arcs) ? content.arcs : []) {
+    const center = points.get(text(arc.center));
+    const radius = Number(arc.radius);
+    const startAngle = Number(arc.start_angle);
+    const endAngle = Number(arc.end_angle);
+    if (!center || ![radius, startAngle, endAngle].every(Number.isFinite) || radius <= 0) continue;
+    const path = document.createElementNS(SVG_NS, "path");
+    path.setAttribute("d", geometryArcPath(viewport, { x: center.x, y: center.y }, radius, startAngle, endAngle));
+    path.classList.add("geometry-arc");
+    path.dataset.id = text(arc.id);
+    applyEmphasisClass(path, latestEmphasis(node, text(arc.id)));
+    svg.append(path);
+    if (arc.label) {
+      const middle = (startAngle + endAngle) / 2;
+      appendGeometryLabel(svg, arc.label, viewport.mapX(center.x + Math.cos(middle) * (radius + .1)), viewport.mapY(center.y + Math.sin(middle) * (radius + .1)), "middle");
+    }
+  }
+
+  for (const point of points.values()) {
+    if (point.visible === false) continue;
+    const x = viewport.mapX(point.x);
+    const y = viewport.mapY(point.y);
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("cx", String(x));
+    dot.setAttribute("cy", String(y));
+    dot.setAttribute("r", "4.5");
+    dot.classList.add("geometry-point");
+    dot.dataset.id = text(point.id);
+    applyEmphasisClass(dot, latestEmphasis(node, text(point.id)));
+    svg.append(dot);
+    if (point.label) appendGeometryLabel(svg, point.label, x + 7, y - 7);
+  }
+  parent.append(svg);
+}
+
 function diagramPosition(position: string | undefined, index: number, total: number): { x: number; y: number } {
   const semantic: Record<string, { x: number; y: number }> = {
     top: { x: 150, y: 24 }, top_left: { x: 58, y: 34 }, top_right: { x: 242, y: 34 },
@@ -540,6 +700,7 @@ function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAs
   const content = node.content ?? {};
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
+  if (node.kind === "geometry") { renderGeometry(parent, node); return; }
   if (node.kind === "plot") { plot(parent, node); return; }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
   if (node.kind === "math") { renderMath(parent, node); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
@@ -773,7 +934,7 @@ export class InfiniteBoardView {
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
-      const fixedVisualSize = kind === "plot"
+      const fixedVisualSize = kind === "plot" || kind === "geometry"
         || (kind === "diagram" && Array.isArray(node.content?.elements));
       let element = this.nodeElements.get(node.id);
       const created = !element;

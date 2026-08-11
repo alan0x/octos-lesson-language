@@ -258,6 +258,7 @@ Beat 可以没有 narration，例如只移动焦点；但 Beat 不能同时没�
 | `math` | LaTeX fragment 序列 |
 | `shape` | 受限几何图元与标签 |
 | `diagram` | 节点与边组成的受限图示数据 |
+| `geometry` | 等比例坐标系中的圆、点、线段、投影和角弧 |
 | `plot` | 坐标范围、函数表达式、点和辅助线 |
 | `image` | 受控 `asset_id`、裁剪或标注引用 |
 | `table` | 行列和单元格文本或数学内容 |
@@ -298,6 +299,49 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 `diagram` 可以包含 `elements`、`edges` 和 `regions`，每一项都具有稳定 fragment ID。Canonical edge 的 `from`/`to` 和 region 的 `members` 必须是同一 diagram 内 fragment ID。
 
 当 `board.connect` 的两个端点属于同一 diagram 且 relation 为 `geometry_segment` 时，Runtime 将其解释为 diagram 内几何线段，而不是两个白板卡片之间的外部连接线。
+
+#### Geometry content
+
+`geometry` 与 `diagram` 的职责不同：`diagram` 表示语义节点关系，`geometry`
+表示必须保持度量关系的坐标几何。Runtime 必须对 x/y 使用相同像素比例，不能把圆拉伸为椭圆。
+
+```json
+{
+  "kind": "geometry",
+  "content": {
+    "axes": {
+      "x": {"min": -1.25, "max": 1.25, "label": "x"},
+      "y": {"min": -1.25, "max": 1.25, "label": "y"},
+      "equal_scale": true
+    },
+    "points": [
+      {"as": "origin", "x": 0, "y": 0, "label": "O"},
+      {"as": "point-p", "x": 0.5, "y": 0.8660254, "label": "P(cos θ, sin θ)"},
+      {"as": "foot", "x": 0.5, "y": 0}
+    ],
+    "circles": [
+      {"as": "unit-circle", "center": "origin", "radius": 1, "label": "r = 1"}
+    ],
+    "segments": [
+      {"as": "radius", "from": "origin", "to": "point-p", "style": "solid"},
+      {"as": "projection", "from": "point-p", "to": "foot", "label": "sin θ", "style": "projection"}
+    ],
+    "arcs": [
+      {"as": "theta", "center": "origin", "radius": 0.28, "start_angle": 0, "end_angle": 1.0471975512, "label": "θ"}
+    ]
+  }
+}
+```
+
+规则：
+
+- `points` 提供几何坐标，并可通过 `visible=false` 作为隐藏构造点；
+- `circles.center`、`segments.from/to` 和 `arcs.center` 必须引用同一 geometry 中声明的 point alias；
+- `radius` 必须为正数；角度使用弧度，正方向为逆时针；
+- `segments.style` 可以是 `solid`、`dashed` 或 `projection`；
+- 所有 primitive 都通过 `as` 获得稳定 fragment ID，可以被 point/emphasize/focus 引用；
+- Authoring Profile 必须声明 `equal_scale=true`，Runtime 负责确定实际像素坐标；
+- 模型不得输出 SVG、路径字符串或像素坐标。
 
 ### 9.2 `board.revise`
 

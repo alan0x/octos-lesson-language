@@ -66,6 +66,21 @@
 .plot-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 3px; color: #625c53; font-size: 14px; }
 .plot-legend-item { display: flex; align-items: center; gap: 5px; }
 .plot-legend-item::before { content: ""; width: 15px; border-top: 3px solid var(--plot-series-color); border-radius: 999px; }
+.geometry-preview { width: 100%; height: calc(100% - 24px); min-height: 210px; overflow: hidden; }
+.geometry-grid { stroke: #e7e1d6; stroke-width: .75; }
+.geometry-axis { stroke: #777168; stroke-width: 1.5; }
+.geometry-circle { fill: rgba(35,135,124,.035); stroke: #23877c; stroke-width: 2.6; vector-effect: non-scaling-stroke; }
+.geometry-segment { stroke: #526b67; stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.geometry-segment-dashed, .geometry-segment-projection { stroke-dasharray: 6 4; }
+.geometry-segment-projection { stroke: #b95873; }
+.geometry-arc { fill: none; stroke: #c7832e; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+.geometry-point { fill: #e15d45; stroke: #fffdf7; stroke-width: 1.8; }
+.geometry-label { fill: #374b47; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
+.geometry-circle.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
+.geometry-circle.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
+.geometry-circle.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
+.geometry-circle.emphasis-resolved, .geometry-segment.emphasis-resolved, .geometry-arc.emphasis-resolved { opacity: .68; }
+.geometry-point.emphasis-focus { fill: #e15d45; r: 6px; }
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }
