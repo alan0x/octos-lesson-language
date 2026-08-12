@@ -53,6 +53,7 @@ export class InkRuntime {
   private savedChangeRevision = 0;
   private saveTimer?: ReturnType<typeof setTimeout>;
   private saveQueue: Promise<InkDocumentRecord | null> = Promise.resolve(null);
+  private restoreFailure?: unknown;
   private suppressSave = false;
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
   private readonly unsubscribeCamera: () => void;
@@ -65,7 +66,10 @@ export class InkRuntime {
     this.prepareEditor();
     this.unsubscribeCamera = options.board.subscribeCamera((camera) => this.syncCamera(camera));
     this.setMode("navigate");
-    this.ready = this.restoreSavedDocument();
+    this.ready = this.restoreSavedDocument().catch((cause) => {
+      this.restoreFailure = cause;
+      throw cause;
+    });
   }
 
   static mount(options: MountInkRuntimeOptions): InkRuntime {
@@ -190,6 +194,7 @@ export class InkRuntime {
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
 
   saveNow(): Promise<InkDocumentRecord | null> {
+    if (this.restoreFailure) return Promise.reject(this.restoreFailure);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
     const svg = this.editor.toSVG().outerHTML;
@@ -228,7 +233,9 @@ export class InkRuntime {
   serialize(): string { return this.editor.toSVG().outerHTML; }
 
   async destroy(): Promise<void> {
-    await this.saveNow();
+    try { await this.ready; }
+    catch { /* Keep a failed restore read-only; never replace the saved source. */ }
+    if (!this.restoreFailure) await this.saveNow();
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.unsubscribeCamera();
     this.options.board.setInputOwner("runtime");

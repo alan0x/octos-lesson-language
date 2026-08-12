@@ -63,3 +63,26 @@ test("ink persistence stays separate from the Canonical playback checkpoint", as
   assert.deepEqual(store.load("oll-ink:lesson-1"), record);
   assert.equal(storage.getItem("oll-playback:lesson-1"), JSON.stringify({ cursor: 12 }));
 });
+
+test("reading a corrupted saved resource never rewrites its recoverable source", async () => {
+  const storage = new MemoryStorage();
+  const key = "oll-ink:damaged";
+  const damagedSource = JSON.stringify({
+    format: "oll.student-ink.svg",
+    format_version: 1,
+    editor: { name: "js-draw", version: "1.33.0" },
+    document_id: "lesson-1:student-ink",
+    document_version: 1,
+    checksum: { algorithm: "sha-256", value: "invalid" },
+    updated_at: "2026-08-12T12:00:00.000Z",
+    svg: '<svg viewBox="0 0 10 10"/>',
+  });
+  storage.setItem(key, damagedSource);
+  const store = new LocalInkDocumentStore(storage);
+
+  assert.throws(
+    () => store.load(key),
+    (error) => error instanceof InkRuntimeError && error.code === "INK_INVALID_RECORD",
+  );
+  assert.equal(storage.getItem(key), damagedSource);
+});
