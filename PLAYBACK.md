@@ -67,7 +67,11 @@ Checkpoint 至少包含：
 - 下一个 operation cursor；
 - 完整 Playback Projection。
 
+浏览器 Runtime 若正在播放 `lesson.variable.animate`，还必须保存当前变量值以及动画动作 ID、起点、终点和完成比例。该字段属于浏览器播放恢复信息，不改变 Canonical Lesson；Headless Player 可以忽略它。
+
 恢复时 fingerprint、lesson ID 或 cursor 不匹配必须失败。为避免刷新后自动发声，未完成 checkpoint 恢复为 `paused`，宿主显式调用 `resume()` 后继续。
+
+学生拖动公开变量控件属于宿主输入，不新增或重放 Canonical action。Runtime 先暂停并取消当前变量自动动画，再把学生选择的值写入 Projection 和 checkpoint。之后的 Canonical 变量动作仍可显式改变它。
 
 ## 6. Conformance
 

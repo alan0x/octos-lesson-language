@@ -7,6 +7,7 @@ import {
   commitCanonicalStep,
   createSemanticBoardState,
   reduceCanonicalEvents,
+  setLessonVariable,
   type ActionPhase,
   type CanonicalEvent,
   type SemanticBoardState,
@@ -355,6 +356,12 @@ export class HeadlessLessonPlayer {
   finalState(): SemanticBoardState {
     if (this.projection.status !== "completed" || !this.projection.board) playbackFail("OLL_PLAYBACK_INCOMPLETE", "player", "Lesson playback is not complete");
     return canonicalizeState(this.projection.board);
+  }
+
+  setVariable(alias: string, value: number): SemanticBoardState {
+    if (!this.projection.board) playbackFail("OLL_PLAYBACK_NOT_OPEN", "player", "Cannot set a variable before lesson.open");
+    this.projection.board = setLessonVariable(this.projection.board, alias, value);
+    return structuredClone(this.projection.board);
   }
 
   private applyOperation(operation: PlaybackOperation): void {

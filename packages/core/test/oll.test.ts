@@ -239,6 +239,7 @@ test("authoring schema declares each action payload required by the validator", 
     focus: ["targets", "intent"],
     point: ["target"],
     expression: ["expression"],
+    animate: ["variable", "value"],
   });
 });
 
@@ -375,5 +376,58 @@ test("rejects invalid lesson variables and value bindings with explicit errors",
   assert.throws(
     () => validateAuthoringLesson(unknownTarget),
     (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND" && error.path.endsWith("/target"),
+  );
+});
+
+test("normalizes variable animation and reduces it to the semantic end value", () => {
+  const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
+  const events = normalizeAuthoringLesson(interactive.source, interactive.entry);
+  const animation = events
+    .flatMap((event) => event.step?.beats ?? [])
+    .flatMap((beat) => Object.values(beat.stage).flat())
+    .find((action) => action.op === "lesson.variable.animate");
+  assert.deepEqual(animation?.animation, {
+    variable: "theta",
+    to: 2 * Math.PI,
+    easing: "linear",
+    duration_intent: "extended",
+  });
+  assert.equal(reduceCanonicalEvents(events).variables?.theta?.value, 2 * Math.PI);
+});
+
+test("rejects invalid variable animation declarations", () => {
+  const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
+  const unknown = structuredClone(interactive.source);
+  const animation = unknown.steps[0]!.beats[0]!.actions.find((action) => action.do === "animate")!;
+  if (animation.do !== "animate") throw new Error("expected animation action");
+  animation.variable = "missing";
+  assert.throws(
+    () => validateAuthoringLesson(unknown),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND" && error.path.endsWith("/variable"),
+  );
+
+  const outOfRange = structuredClone(interactive.source);
+  const invalidAnimation = outOfRange.steps[0]!.beats[0]!.actions.find((action) => action.do === "animate")!;
+  if (invalidAnimation.do !== "animate") throw new Error("expected animation action");
+  invalidAnimation.value = 7;
+  assert.throws(
+    () => validateAuthoringLesson(outOfRange),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_VARIABLE" && error.path.endsWith("/value"),
+  );
+
+  const invalidEasing = structuredClone(interactive.source);
+  const invalidEasingAnimation = invalidEasing.steps[0]!.beats[0]!.actions.find((action) => action.do === "animate")!;
+  (invalidEasingAnimation as any).easing = "bounce";
+  assert.throws(
+    () => validateAuthoringLesson(invalidEasing),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD" && error.path.endsWith("/easing"),
+  );
+
+  const invalidDuration = structuredClone(interactive.source);
+  const invalidDurationAnimation = invalidDuration.steps[0]!.beats[0]!.actions.find((action) => action.do === "animate")!;
+  (invalidDurationAnimation as any).duration_intent = "500ms";
+  assert.throws(
+    () => validateAuthoringLesson(invalidDuration),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD" && error.path.endsWith("/duration_intent"),
   );
 });

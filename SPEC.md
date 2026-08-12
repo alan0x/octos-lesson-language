@@ -149,6 +149,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - `initial`、`min`、`max` 必须是有限数值，满足 `min < max` 和 `min <= initial <= max`；
 - `label`、`unit` 是可选显示元数据，不能触发隐式单位换算；
 - `lesson.open` 初始化 Semantic BoardState 中的变量当前值；Snapshot 必须保留该值。
+- 可选 `control: {"kind":"slider","step":0.01}` 允许 Web Runtime 显示学生可拖动滑杆；`step` 必须为正数且不大于变量范围。
 
 当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
 
@@ -506,6 +507,25 @@ Reducer 在创建节点时用当前变量值计算全部 binding。当前 Author
 ```
 
 v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表情是辅助信息，不得承载唯一教学含义。
+
+### 9.9 `lesson.variable.animate`
+
+```json
+{
+  "action_id": "action-rotate-one-cycle",
+  "op": "lesson.variable.animate",
+  "animation": {
+    "variable": "theta",
+    "to": 6.283185307179586,
+    "easing": "linear",
+    "duration_intent": "extended"
+  }
+}
+```
+
+动作把变量从执行前的当前值变到 `to`。`to` 必须在变量范围内。Headless Reducer 直接应用终值；Web Runtime 才生成中间帧。`duration_intent` 只表达 `brief`、`normal`、`extended` 三档教学节奏，不能换成毫秒。用户在动画中拖动变量控件时，Runtime 终止该自动动画并保存用户值。
+
+暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
 
 ## 10. 相对布局
 

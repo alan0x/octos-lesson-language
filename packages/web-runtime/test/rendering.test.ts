@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
+import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
 import { planFocusCamera, planRevealCamera } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -84,6 +84,17 @@ test("beat boundaries preserve the latest visible teaching target", () => {
     "current-problem",
   ]);
   assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
+});
+
+test("variable animation focuses every node driven by the shared variable", () => {
+  const board = {
+    nodes: {
+      circle: { id: "circle", content: { bindings: [{ expression: "cos(theta)" }] } },
+      plot: { id: "plot", content: { bindings: [{ expression: "sin(theta)" }] } },
+      note: { id: "note", content: { text: "theta is mentioned but not bound" } },
+    },
+  } as any;
+  assert.deepEqual(variableAnimationFocusTargets(board, "theta"), ["circle", "plot"]);
 });
 
 test("connections attach to card boundaries instead of running through card centers", () => {

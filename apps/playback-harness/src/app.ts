@@ -4,6 +4,7 @@ import {
   BrowserLessonSession,
   LocalPlaybackStore,
   mountInfiniteBoard,
+  mountVariableControls,
   parseCanonicalJsonl,
 } from "../../../packages/web-runtime/src/index.js";
 import {
@@ -36,6 +37,7 @@ declare global {
       reset(): void;
       advance(): unknown;
       advanceBeat(): void;
+      setVariable(alias: string, value: number): void;
       observe(): TeachingFrameObservation;
       evaluate(observation: TeachingFrameObservation): TeachingGateResult;
     };
@@ -55,8 +57,13 @@ lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
 const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), resolveHarnessAsset);
 const boardView = mountedBoard.view;
+boardView.setViewportInsets({ bottom: 190 });
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
+const variableControls = mountVariableControls(
+  requireElement("#variable-controls"),
+  (alias, value) => session.setVariable(alias, value),
+);
 let events: CanonicalEvent[] = [];
 let unsubscribe: (() => void) | undefined;
 
@@ -67,7 +74,9 @@ async function loadLesson(id: string): Promise<void> {
   if (!response.ok) throw new Error(`Failed to load ${fixture.path}: ${response.status}`);
   events = parseCanonicalJsonl(await response.text());
   unsubscribe?.(); session?.pause();
-  session = new BrowserLessonSession(events, store, `oll-harness:${events[0]!.lesson_id}`);
+  session = new BrowserLessonSession(events, store, `oll-harness:${events[0]!.lesson_id}`, {
+    reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
+  });
   unsubscribe = session.subscribe(render);
   render();
   requestAnimationFrame(() => boardView.fit());
@@ -77,6 +86,7 @@ function render(): void {
   const projection = session.projection;
   const operation = session.currentOperation;
   boardView.render(projection.board, operation);
+  variableControls.render(projection.board, session.activeVariableAnimation);
   const title = events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL Lesson";
   requireElement("#lesson-title").textContent = title;
   const status = session.status;
@@ -100,6 +110,9 @@ function renderState(status: string): void {
     nodes: board ? Object.keys(board.nodes).length : 0,
     connections: board ? Object.keys(board.connections).length : 0,
     groups: board ? Object.keys(board.groups).length : 0,
+    variables: board?.variables
+      ? Object.entries(board.variables).map(([alias, variable]) => `${alias}=${Number(variable.value.toFixed(3))}`).join(", ")
+      : "—",
   };
   const grid = requireElement("#state-grid"); grid.replaceChildren();
   for (const [key, value] of Object.entries(values)) {
@@ -129,6 +142,7 @@ const harnessApi: Window["__OLL_HARNESS__"] = window.__OLL_HARNESS__ = {
   reset() { session.reset(); boardView.fit(); },
   advance() { return session.step()?.operation ?? null; },
   advanceBeat() { session.advanceBeat(); },
+  setVariable(alias: string, value: number) { session.setVariable(alias, value); },
   observe() {
     const board = session.projection.board;
     const operation = session.currentOperation;

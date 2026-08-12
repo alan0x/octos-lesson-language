@@ -4,11 +4,13 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { reduceCanonicalEvents } from "../../core/src/index.js";
 import type { PlaybackCheckpoint } from "../../player-core/src/index.js";
+import { computeBoardLayout } from "../src/layout.js";
 import {
   BrowserLessonSession,
   narrationDuration,
   operationDelay,
   parseCanonicalJsonl,
+  variableAnimationDuration,
   type PlaybackStore,
 } from "../src/runtime.js";
 
@@ -21,6 +23,8 @@ class MemoryStore implements PlaybackStore {
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
 const events = parseCanonicalJsonl(source);
+const unitCircleSource = await readFile(resolve(process.cwd(), "examples/unit-circle-sine/lesson.canonical.jsonl"), "utf8");
+const unitCircleEvents = parseCanonicalJsonl(unitCircleSource);
 
 function advanceToFirstNarration(session: BrowserLessonSession): string {
   let text: string | undefined;
@@ -258,4 +262,67 @@ test("manual Beat advance skips teaching waits", (context) => {
   assert.equal(session.currentOperation?.type, "beat.end");
   assert.equal(session.status, "paused");
   assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+function advanceToVariableAnimation(session: BrowserLessonSession): void {
+  while (!session.activeVariableAnimation) {
+    assert.ok(session.advance(), "unit-circle fixture must contain a variable animation");
+  }
+}
+
+test("variable animation advances one shared value and survives pause and refresh", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(unitCircleEvents, store, "unit-circle");
+  advanceToVariableAnimation(first);
+  assert.equal(first.projection.board?.variables?.theta?.value, 0);
+
+  first.play();
+  tickElapsed(context, variableAnimationDuration("extended") / 2);
+  const halfway = first.projection.board?.variables?.theta?.value ?? 0;
+  assert.ok(halfway > 3 && halfway < 3.2);
+  const point = first.projection.board?.nodes["lesson-unit-circle-sine-001:node:unit-circle"]?.content.points
+    .find((item: any) => item.id.endsWith(":point-p"));
+  const current = first.projection.board?.nodes["lesson-unit-circle-sine-001:node:sine-plot"]?.content.points
+    .find((item: any) => item.id.endsWith(":current-angle"));
+  assert.ok(Math.abs(point.y - Math.sin(halfway)) < 1e-12);
+  assert.ok(Math.abs(current.x - halfway) < 1e-12);
+  assert.ok(Math.abs(current.y - point.y) < 1e-12);
+  const layout = computeBoardLayout(first.projection.board!);
+  assert.ok(
+    layout.nodes["lesson-unit-circle-sine-001:node:sine-plot"]!.x
+      > layout.nodes["lesson-unit-circle-sine-001:node:unit-circle"]!.x,
+    "changing a variable must not reorder nodes or reverse relative placement",
+  );
+
+  first.pause();
+  const pausedValue = first.projection.board?.variables?.theta?.value;
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "unit-circle");
+  assert.ok(restored.activeVariableAnimation);
+  assert.equal(restored.projection.board?.variables?.theta?.value, pausedValue);
+  restored.play();
+  tickElapsed(context, variableAnimationDuration("extended") / 2 + 40);
+  assert.equal(restored.activeVariableAnimation, undefined);
+  assert.equal(restored.projection.board?.variables?.theta?.value, 2 * Math.PI);
+});
+
+test("manual slider input cancels automatic animation and restores the chosen value", () => {
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(unitCircleEvents, store, "unit-circle-manual");
+  advanceToVariableAnimation(session);
+  session.setVariable("theta", Math.PI / 2);
+  assert.equal(session.status, "paused");
+  assert.equal(session.activeVariableAnimation, undefined);
+  assert.equal(session.projection.board?.variables?.theta?.value, Math.PI / 2);
+
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "unit-circle-manual");
+  assert.equal(restored.projection.board?.variables?.theta?.value, Math.PI / 2);
+});
+
+test("reduced motion applies the animation end state without intermediate frames", () => {
+  const session = new BrowserLessonSession(unitCircleEvents, new MemoryStore(), "unit-circle-reduced", { reducedMotion: true });
+  let frame;
+  do { frame = session.advance(); } while (frame?.operation.action?.op !== "lesson.variable.animate");
+  assert.equal(session.activeVariableAnimation, undefined);
+  assert.equal(session.projection.board?.variables?.theta?.value, 2 * Math.PI);
 });

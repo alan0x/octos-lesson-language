@@ -26,7 +26,7 @@ select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; pad
 .progress-track { height: 5px; overflow: hidden; background: #ded9d0; border-radius: 999px; }
 .progress-track span { display: block; width: 0; height: 100%; border-radius: inherit; background: #24877c; transition: width .18s ease; }
 #progress-label { color: #716a60; font: 11px/1 monospace; text-align: right; }
-.narration { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); max-width: min(720px, 76%); padding: 14px 18px; border-radius: 16px; background: rgba(27,57,53,.92); color: white; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-family: "STKaiti", "Kaiti SC", sans-serif; font-size: 18px; line-height: 1.55; }
+.narration { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); max-width: min(720px, 76%); padding: 14px 18px; border-radius: 16px; background: rgba(27,57,53,.92); color: white; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-family: "STKaiti", "Kaiti SC", sans-serif; font-size: 18px; line-height: 1.55; }
 .camera-controls { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 5px; }
 .camera-controls button { box-shadow: 0 4px 15px rgba(0,0,0,.08); }
 .canvas-hint { position: absolute; left: 14px; bottom: 16px; color: #938b7f; font-size: 11px; }

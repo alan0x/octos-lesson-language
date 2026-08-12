@@ -43,13 +43,17 @@ const ACTIONS = new Set<AuthoringAction["do"]>([
   "focus",
   "point",
   "expression",
+  "animate",
 ]);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
+const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
+const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
 const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
   "intent", "expression", "reason",
+  "variable", "value", "easing", "duration_intent",
 ]);
 
 export class OllError extends Error {
@@ -111,6 +115,10 @@ function validateLessonVariables(document: AuthoringLesson): Map<string, number>
     const max = requireFiniteNumber(variable.max, `${path}/max`);
     if (max <= min) fail("OLL_INVALID_VARIABLE", path, "Variable max must be greater than min");
     if (initial < min || initial > max) fail("OLL_INVALID_VARIABLE", `${path}/initial`, "Variable initial value is outside its range");
+    if (variable.control?.step !== undefined) {
+      const step = requireFiniteNumber(variable.control.step, `${path}/control/step`);
+      if (step <= 0 || step > max - min) fail("OLL_INVALID_VARIABLE", `${path}/control/step`, "Slider step must be greater than zero and no larger than the variable range");
+    }
     values.set(variable.as, initial);
   }
   return values;
@@ -379,6 +387,15 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
     requireString(action.target, `${path}/target`);
   } else if (action.do === "expression") {
     requireString(action.expression, `${path}/expression`);
+  } else if (action.do === "animate") {
+    requireVariableAlias(action.variable, `${path}/variable`);
+    requireFiniteNumber(action.value, `${path}/value`);
+    if (action.easing !== undefined && !ANIMATION_EASINGS.has(action.easing)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/easing`, `Unknown animation easing '${action.easing}'`);
+    }
+    if (action.duration_intent !== undefined && !ANIMATION_DURATION_INTENTS.has(action.duration_intent)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/duration_intent`, `Unknown animation duration intent '${action.duration_intent}'`);
+    }
   }
 }
 
@@ -495,6 +512,15 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateGeometryContent(action, actionPath);
           validateValueBindings(action, actionPath, lessonVariables);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
+          return;
+        }
+
+        if (action.do === "animate") {
+          const variable = document.lesson.variables?.find((candidate) => candidate.as === action.variable);
+          if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/variable`, `Variable '${action.variable}' is not declared`);
+          if (action.value < variable.min || action.value > variable.max) {
+            fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `Animation target for '${action.variable}' is outside its range`);
+          }
           return;
         }
 
@@ -680,6 +706,18 @@ function normalizeAction(
   if (action.do === "expression") {
     return { action_id: actionId, op: "teacher.expression", expression: action.expression };
   }
+  if (action.do === "animate") {
+    return {
+      action_id: actionId,
+      op: "lesson.variable.animate",
+      animation: {
+        variable: action.variable,
+        to: action.value,
+        easing: action.easing ?? "linear",
+        duration_intent: action.duration_intent ?? "normal",
+      },
+    };
+  }
   if (action.do === "connect") {
     return {
       action_id: actionId,
@@ -820,6 +858,7 @@ export function createSemanticBoardState(open: CanonicalEvent): SemanticBoardSta
       max: variable.max,
       ...(variable.label ? { label: variable.label } : {}),
       ...(variable.unit ? { unit: variable.unit } : {}),
+      ...(variable.control ? { control: structuredClone(variable.control) } : {}),
     },
   ]));
   return {
@@ -931,6 +970,10 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
   } else if (action.op === "teacher.expression") {
     if (!action.expression) fail("OLL_INVALID_EVENT", "action.expression", "teacher.expression requires expression");
+  } else if (action.op === "lesson.variable.animate") {
+    if (!action.animation) fail("OLL_INVALID_EVENT", "action.animation", "lesson.variable.animate requires animation");
+    const updated = setLessonVariable(state, action.animation.variable, action.animation.to);
+    Object.assign(state, updated);
   } else {
     fail("OLL_INVALID_OPERATION", "action.op", `Unknown canonical operation '${action.op}'`);
   }
@@ -950,7 +993,7 @@ export function setLessonVariable(state: SemanticBoardState, alias: string, valu
   for (const node of Object.values(updated.nodes)) {
     node.content = evaluateContentBindings(node.content, values);
   }
-  return canonicalizeState(updated);
+  return updated;
 }
 
 export function commitCanonicalStep(state: SemanticBoardState, stepId: string): boolean {

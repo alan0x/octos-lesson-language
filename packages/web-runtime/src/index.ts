@@ -4,6 +4,7 @@ export {
   diagramConnectionGeometry,
   mathSource,
   mountInfiniteBoard,
+  variableAnimationFocusTargets,
   type DiagramConnectionGeometry,
   type InfiniteBoardElements,
   type MountedInfiniteBoard,
@@ -35,3 +36,10 @@ export {
   type BrowserLessonSessionOptions,
   type PlaybackStore,
 } from "./runtime.js";
+export {
+  VariableControlsView,
+  formatVariableValue,
+  mountVariableControls,
+  variableControlModels,
+  type VariableControlModel,
+} from "./variable-controls.js";

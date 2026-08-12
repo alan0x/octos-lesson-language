@@ -132,6 +132,17 @@ export function cameraFocusTargets(
   return lastAttentionTargets.length ? lastAttentionTargets : boardFocus;
 }
 
+export function variableAnimationFocusTargets(
+  board: SemanticBoardState,
+  variable: string,
+): string[] {
+  const token = new RegExp(`(^|[^a-z0-9_])${variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9_]|$)`, "i");
+  return Object.values(board.nodes)
+    .filter((node) => (Array.isArray(node.content?.bindings) ? node.content.bindings : [])
+      .some((binding: Record<string, unknown>) => typeof binding.expression === "string" && token.test(binding.expression)))
+    .map((node) => node.id);
+}
+
 function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
   const className = emphasisClassName(emphasis);
   if (className) element.classList.add(className);
@@ -823,11 +834,12 @@ export class InfiniteBoardView {
     this.syncGroups(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
-    const focusTargets = cameraFocusTargets(
-      operation,
-      board.focus,
-      this.lastAttentionTargets,
-    );
+    const animatedTargets = operation?.action?.animation
+      ? variableAnimationFocusTargets(board, operation.action.animation.variable)
+      : [];
+    const focusTargets = animatedTargets.length
+      ? animatedTargets
+      : cameraFocusTargets(operation, board.focus, this.lastAttentionTargets);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (focusRects.length) {
       this.resumeAutomaticCamera();

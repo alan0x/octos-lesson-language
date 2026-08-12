@@ -120,6 +120,7 @@
 .connection-label-badge rect { fill: rgba(250,248,242,.97); stroke: #c9d5d1; stroke-width: 1; }
 .connection-label { fill: #52605c; font: 11px/1 ui-sans-serif, system-ui, sans-serif; }
 .teacher-pointer { position: absolute; width: 26px; height: 26px; display: grid; place-items: center; color: #ef5d69; font-size: 19px; filter: drop-shadow(0 3px 5px rgba(0,0,0,.2)); animation: pointer-pulse .8s infinite alternate; pointer-events: none; }
+.teacher-pointer[hidden] { display: none; }
 }
 @keyframes write-in { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
 @keyframes pointer-pulse { to { transform: scale(1.25); } }
@@ -128,4 +129,33 @@
 @media (prefers-reduced-motion: reduce) {
   .oll-board-runtime .world { transition: none; }
   .board-node.focus-arrive, .board-group.focus-arrive { animation: none; }
+}
+
+.oll-variable-controls {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 8px;
+  width: min(560px, calc(100% - 180px));
+  padding: 10px 14px;
+  border: 1px solid rgba(183, 176, 164, .82);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, .94);
+  box-shadow: 0 8px 28px rgba(55, 48, 38, .14);
+  backdrop-filter: blur(10px);
+}
+
+.oll-variable-controls[hidden] { display: none; }
+.oll-variable-control { display: grid; grid-template-columns: minmax(90px, auto) minmax(180px, 1fr) 78px; align-items: center; gap: 12px; }
+.oll-variable-label { overflow: hidden; color: #4e4941; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.oll-variable-control input { width: 100%; accent-color: #17877b; cursor: ew-resize; }
+.oll-variable-control output { color: #176b62; font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
+.oll-variable-control.animating output { color: #c96735; }
+.oll-variable-control.animating input { accent-color: #d87841; }
+
+@media (prefers-reduced-motion: reduce) {
+  .oll-variable-control.animating output { color: #176b62; }
 }

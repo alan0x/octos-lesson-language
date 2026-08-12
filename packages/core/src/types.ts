@@ -79,6 +79,14 @@ export interface ExpressionAction extends BaseAction {
   expression: string;
 }
 
+export interface AnimateVariableAction extends BaseAction {
+  do: "animate";
+  variable: string;
+  value: number;
+  easing?: "linear" | "ease_in_out";
+  duration_intent?: "brief" | "normal" | "extended";
+}
+
 export type AuthoringAction =
   | WriteAction
   | ReviseAction
@@ -87,7 +95,8 @@ export type AuthoringAction =
   | GroupAction
   | FocusAction
   | PointAction
-  | ExpressionAction;
+  | ExpressionAction
+  | AnimateVariableAction;
 
 export interface AuthoringBeat {
   key: Alias;
@@ -109,6 +118,10 @@ export interface AuthoringVariable {
   max: number;
   label?: string;
   unit?: string;
+  control?: {
+    kind: "slider";
+    step?: number;
+  };
 }
 
 export interface AuthoringLesson {
@@ -184,6 +197,12 @@ export interface CanonicalAction {
   target?: CanonicalTarget;
   emphasis?: string;
   expression?: string;
+  animation?: {
+    variable: string;
+    to: number;
+    easing: "linear" | "ease_in_out";
+    duration_intent: "brief" | "normal" | "extended";
+  };
   revision?: { content: JsonObject; reason: string };
 }
 
@@ -234,6 +253,10 @@ export interface SemanticBoardState {
     max: number;
     label?: string;
     unit?: string;
+    control?: {
+      kind: "slider";
+      step?: number;
+    };
   }>;
 }
 

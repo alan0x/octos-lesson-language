@@ -170,6 +170,12 @@ Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是
 
 变量别名使用 `^[a-z][a-z0-9_]{0,63}$`，且不能使用 `sin`、`pi` 等保留数学名称。`unit` 只供显示，不会让 Runtime 自动换算。
 
+需要让学生直接调整变量时，变量可以声明滑杆：
+
+```json
+"control": {"kind":"slider","step":0.01}
+```
+
 Geometry 和 Plot 节点可以用 `content.bindings` 把自己的数值字段绑定到变量：
 
 ```json
@@ -257,6 +263,22 @@ Geometry 和 Plot 节点可以用 `content.bindings` 把自己的数值字段绑
 
 分别控制老师指向已存在内容和有限表情 token。它们不能承载唯一教学信息。
 
+### `animate`
+
+把一个已声明变量从当前值连续变化到目标值：
+
+```json
+{
+  "do": "animate",
+  "variable": "theta",
+  "value": 6.283185307179586,
+  "easing": "linear",
+  "duration_intent": "extended"
+}
+```
+
+`easing` 可选 `linear` 或 `ease_in_out`；`duration_intent` 可选 `brief`、`normal` 或 `extended`。两者缺省为 `linear` 和 `normal`。模型不能写动画毫秒、帧率或 CSS。Headless Reducer 直接得到动作终值，Web Runtime 负责中间帧、暂停恢复和降低动态效果。
+
 ## 7. 动作阶段
 
 动作可以声明 `before_speech`、`during_speech` 或 `after_speech`；缺省为 `during_speech`。模型不能输出毫秒时间。
@@ -294,4 +316,4 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 - 已开始模型可生成性评测；first-pass 结果必须与教学质量分开报告；
 - Authoring Schema 仍可能过于冗长；
 - 任何无法由真实课程解释的字段都应删除，而不是为了完整感保留。
-- 数值变量和 binding 已进入第一个 headless 实施切片；自动动画、拖动控件和浏览器输入事件尚未进入当前合同。
+- 数值变量、binding、变量动画和滑杆控制已经进入实现；直接拖动 Geometry 图元、循环动画和多变量时间线尚未进入当前合同。

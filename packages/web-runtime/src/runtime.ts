@@ -7,6 +7,7 @@ import {
   type PlaybackOutlineStep,
   type PlaybackOperation,
   type PlaybackProjection,
+  type PlaybackVariableAnimation,
 } from "../../player-core/src/index.js";
 
 export interface PlaybackStore {
@@ -129,6 +130,14 @@ export function operationDelay(operation: PlaybackOperation, speed = 1): number 
   return Math.max(18, operationBaseDelay(operation) / normalizedSpeed(speed));
 }
 
+export function variableAnimationDuration(
+  intent: PlaybackVariableAnimation["duration_intent"],
+  speed = 1,
+): number {
+  const duration = intent === "brief" ? 1_800 : intent === "extended" ? 5_400 : 3_200;
+  return Math.max(32, duration / normalizedSpeed(speed));
+}
+
 export interface BrowserLessonSessionOptions {
   incremental?: boolean;
   /**
@@ -136,6 +145,7 @@ export interface BrowserLessonSessionOptions {
    * `external` waits for the host audio player to call completeNarration().
    */
   narrationTiming?: "estimated" | "external";
+  reducedMotion?: boolean;
 }
 
 export class BrowserLessonSession {
@@ -151,6 +161,10 @@ export class BrowserLessonSession {
   private speed = 1;
   private seekAttentionTargets: string[] = [];
   private currentFrame?: PlaybackFrame;
+  private variableAnimation?: PlaybackVariableAnimation;
+  private variableAnimationTimer?: ReturnType<typeof setTimeout>;
+  private variableAnimationStartedAt?: number;
+  private variableAnimationStartProgress = 0;
   private readonly listeners = new Set<() => void>();
 
   constructor(
@@ -180,6 +194,7 @@ export class BrowserLessonSession {
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
   get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
   get isPlaying(): boolean { return this.playing; }
+  get activeVariableAnimation(): PlaybackVariableAnimation | undefined { return this.variableAnimation ? structuredClone(this.variableAnimation) : undefined; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
 
   subscribe(listener: () => void): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }
@@ -187,7 +202,9 @@ export class BrowserLessonSession {
     const nextSpeed = normalizedSpeed(speed);
     if (nextSpeed === this.speed) return;
     this.freezeScheduledDelay();
+    this.freezeVariableAnimation();
     this.speed = nextSpeed;
+    if (this.playing && this.variableAnimation) this.scheduleVariableAnimation();
     if (this.playing && this.scheduledBaseDelay !== undefined) {
       this.schedulePendingDelay();
     }
@@ -203,12 +220,17 @@ export class BrowserLessonSession {
     if (this.player.status === "paused") this.player.resume();
     this.playing = true;
     this.emit();
+    if (this.variableAnimation) {
+      this.scheduleVariableAnimation();
+      return;
+    }
     if (this.scheduledBaseDelay !== undefined) this.schedulePendingDelay();
     else this.tick();
   }
 
   pause(): void {
     this.freezeScheduledDelay();
+    this.freezeVariableAnimation();
     this.playing = false;
     this.followAppends = false;
     if (this.player.cursor > 0 && this.player.status !== "completed") this.player.pause();
@@ -218,7 +240,15 @@ export class BrowserLessonSession {
 
   advance(): PlaybackFrame | undefined {
     if (this.player.status === "completed") return undefined;
+    if (this.variableAnimation) this.completeVariableAnimation();
     if (this.player.status === "paused") this.player.resume();
+    const nextOperation = this.player.operations[this.player.cursor];
+    const animation = nextOperation?.action?.op === "lesson.variable.animate"
+      ? nextOperation.action.animation
+      : undefined;
+    const from = animation
+      ? this.player.snapshot.board?.variables?.[animation.variable]?.value
+      : undefined;
     const frame = this.player.advance() ?? undefined;
     this.seekAttentionTargets = [];
     this.currentFrame = frame;
@@ -233,6 +263,25 @@ export class BrowserLessonSession {
     } else if (frame?.operation.type === "narration.end") {
       this.narrationRemainingBaseMs = undefined;
       this.completedExternalNarrationBeatId = undefined;
+    }
+    if (
+      frame?.operation.type === "action.apply"
+      && frame.operation.action?.animation
+      && from !== undefined
+      && from !== frame.operation.action.animation.to
+      && !this.options.reducedMotion
+    ) {
+      const declaration = frame.operation.action.animation;
+      this.player.setVariable(declaration.variable, from);
+      this.variableAnimation = {
+        action_id: frame.operation.action.action_id,
+        variable: declaration.variable,
+        from,
+        to: declaration.to,
+        progress: 0,
+        easing: declaration.easing,
+        duration_intent: declaration.duration_intent,
+      };
     }
     this.persist();
     this.emit();
@@ -286,6 +335,7 @@ export class BrowserLessonSession {
     this.followAppends = false;
     this.narrationRemainingBaseMs = undefined;
     this.completedExternalNarrationBeatId = undefined;
+    this.discardVariableAnimation();
     this.seekAttentionTargets = [...attentionTargets];
     const projection = this.player.seek(cursor);
     this.currentFrame = cursor > 0
@@ -354,6 +404,7 @@ export class BrowserLessonSession {
     this.narrationRemainingBaseMs = undefined;
     this.completedExternalNarrationBeatId = undefined;
     this.seekAttentionTargets = [];
+    this.discardVariableAnimation();
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;
@@ -386,7 +437,95 @@ export class BrowserLessonSession {
       this.emit();
       return;
     }
+    if (this.variableAnimation) {
+      this.scheduleVariableAnimation();
+      return;
+    }
     this.scheduleBaseDelay(operationBaseDelay(frame.operation));
+  }
+
+  setVariable(alias: string, value: number): void {
+    this.pause();
+    this.discardVariableAnimation();
+    this.player.setVariable(alias, value);
+    this.persist();
+    this.emit();
+  }
+
+  private easedVariableProgress(animation: PlaybackVariableAnimation): number {
+    if (animation.easing === "ease_in_out") {
+      return animation.progress < .5
+        ? 2 * animation.progress * animation.progress
+        : 1 - (-2 * animation.progress + 2) ** 2 / 2;
+    }
+    return animation.progress;
+  }
+
+  private applyVariableAnimationProgress(progress: number): void {
+    const animation = this.variableAnimation;
+    if (!animation) return;
+    animation.progress = Math.max(0, Math.min(1, progress));
+    const eased = this.easedVariableProgress(animation);
+    this.player.setVariable(animation.variable, animation.from + (animation.to - animation.from) * eased);
+  }
+
+  private scheduleVariableAnimation(): void {
+    const animation = this.variableAnimation;
+    if (!this.playing || !animation) return;
+    if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
+    this.variableAnimationStartProgress = animation.progress;
+    this.variableAnimationStartedAt = Date.now();
+    const duration = variableAnimationDuration(animation.duration_intent, this.speed);
+    const remainingDuration = duration * (1 - animation.progress);
+    const update = () => {
+      const active = this.variableAnimation;
+      if (!this.playing || !active || this.variableAnimationStartedAt === undefined) return;
+      const elapsed = Math.max(0, Date.now() - this.variableAnimationStartedAt);
+      const progress = this.variableAnimationStartProgress
+        + (1 - this.variableAnimationStartProgress) * Math.min(1, elapsed / Math.max(1, remainingDuration));
+      this.applyVariableAnimationProgress(progress);
+      this.emit();
+      if (progress >= 1) {
+        this.variableAnimation = undefined;
+        this.variableAnimationTimer = undefined;
+        this.variableAnimationStartedAt = undefined;
+        this.persist();
+        this.scheduleBaseDelay(180);
+        return;
+      }
+      this.variableAnimationTimer = setTimeout(update, 16);
+    };
+    this.variableAnimationTimer = setTimeout(update, 16);
+  }
+
+  private freezeVariableAnimation(): void {
+    if (!this.variableAnimation || this.variableAnimationStartedAt === undefined) return;
+    const duration = variableAnimationDuration(this.variableAnimation.duration_intent, this.speed);
+    const remainingDuration = duration * (1 - this.variableAnimationStartProgress);
+    const elapsed = Math.max(0, Date.now() - this.variableAnimationStartedAt);
+    const progress = this.variableAnimationStartProgress
+      + (1 - this.variableAnimationStartProgress) * Math.min(1, elapsed / Math.max(1, remainingDuration));
+    this.applyVariableAnimationProgress(progress);
+    if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
+    this.variableAnimationTimer = undefined;
+    this.variableAnimationStartedAt = undefined;
+  }
+
+  private completeVariableAnimation(): void {
+    const animation = this.variableAnimation;
+    if (!animation) return;
+    if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
+    this.player.setVariable(animation.variable, animation.to);
+    this.variableAnimation = undefined;
+    this.variableAnimationTimer = undefined;
+    this.variableAnimationStartedAt = undefined;
+  }
+
+  private discardVariableAnimation(): void {
+    if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
+    this.variableAnimation = undefined;
+    this.variableAnimationTimer = undefined;
+    this.variableAnimationStartedAt = undefined;
   }
 
   private scheduleBaseDelay(baseDelay: number): void {
@@ -453,6 +592,7 @@ export class BrowserLessonSession {
         ? checkpoint.canonical_events
         : this.events;
       const player = HeadlessLessonPlayer.fromCheckpoint(events, checkpoint, options);
+      this.variableAnimation = checkpoint.variable_animation ? structuredClone(checkpoint.variable_animation) : undefined;
       this.events.splice(0, this.events.length, ...player.canonicalEvents);
       return player;
     }
@@ -461,7 +601,11 @@ export class BrowserLessonSession {
 
   private persist(): void {
     if (this.player.cursor === 0) return;
-    try { this.store.save(this.storageKey, this.player.checkpoint()); } catch {}
+    try {
+      const checkpoint = this.player.checkpoint();
+      if (this.variableAnimation) checkpoint.variable_animation = structuredClone(this.variableAnimation);
+      this.store.save(this.storageKey, checkpoint);
+    } catch {}
   }
 
   private emit(): void { for (const listener of this.listeners) listener(); }

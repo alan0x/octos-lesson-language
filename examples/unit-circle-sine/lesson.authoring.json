@@ -18,7 +18,8 @@
         "min": 0,
         "max": 6.283185307179586,
         "label": "旋转角 θ",
-        "unit": "rad"
+        "unit": "rad",
+        "control": {"kind": "slider", "step": 0.01}
       }
     ],
     "adaptation": {
@@ -102,6 +103,7 @@
               "place": {"relation": "right_of", "anchor": "unit-circle", "align": "center", "gap": "spacious"}
             },
             {"do": "connect", "as": "height-to-wave", "from": "unit-circle#point-p", "to": "sine-plot#sine-curve", "relation": "maps_to", "label": "纵坐标随角度展开"},
+            {"do": "animate", "variable": "theta", "value": 6.283185307179586, "easing": "linear", "duration_intent": "extended"},
             {"do": "focus", "when": "after_speech", "targets": ["unit-circle", "sine-plot"], "intent": "compare_circle_height_with_sine_wave"}
           ]
         }

@@ -90,7 +90,7 @@
       "required": ["do"],
       "additionalProperties": false,
       "properties": {
-        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression"]},
+        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate"]},
         "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
         "as": {"$ref": "#/$defs/alias"},
         "kind": {"enum": ["text", "math", "shape", "diagram", "geometry", "plot", "image", "table", "note"]},
@@ -107,6 +107,10 @@
         "targets": {"type": "array", "items": {"type": "string"}},
         "intent": {"type": "string"},
         "expression": {"type": "string"},
+        "variable": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+        "value": {"type": "number"},
+        "easing": {"enum": ["linear", "ease_in_out"]},
+        "duration_intent": {"enum": ["brief", "normal", "extended"]},
         "reason": {"type": "string"}
       },
       "allOf": [
@@ -162,6 +166,10 @@
         {
           "if": {"properties": {"do": {"const": "expression"}}},
           "then": {"required": ["expression"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "animate"}}},
+          "then": {"required": ["variable", "value"]}
         }
       ]
     },
@@ -261,7 +269,16 @@
         "min": {"type": "number"},
         "max": {"type": "number"},
         "label": {"type": "string", "maxLength": 80},
-        "unit": {"type": "string", "maxLength": 32}
+        "unit": {"type": "string", "maxLength": 32},
+        "control": {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "slider"},
+            "step": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
       }
     },
     "plotContent": {
