@@ -1,22 +1,30 @@
 # OLL Ink Runtime
 
-这是可选的学生笔迹适配包。它把 `js-draw 1.33.0` 接到 OLL Web Runtime 的镜头和输入控制接口上，但不把学生原稿写进 Canonical OLL。
+这是学生笔迹适配包。它把 `js-draw 1.33.0` 提供的画笔、橡皮、框选和撤销能力接入 OLL 白板，但不把学生原稿写进 Canonical OLL。
 
-宿主只在学生进入书写模式时加载本包及其样式：
+书写是白板的常驻能力，不是需要进入和退出的独立模式。宿主创建白板时同时挂载 Ink Runtime，并让它跟随白板一起存活：
 
 ```ts
-const { mountInkRuntime } = await import("octos-lesson-language/ink-runtime");
-await import("octos-lesson-language/ink-runtime/styles.css");
+import { mountInkRuntime } from "octos-lesson-language/ink-runtime";
+import "octos-lesson-language/ink-runtime/styles.css";
 
 const ink = mountInkRuntime({
   board: mountedBoard.view,
   viewport: mountedBoard.elements.viewport,
   storageKey: `ink:${sessionId}`,
   documentId: `${sessionId}:student-ink`,
+  locale: "zh-CN",
 });
 await ink.ready;
-ink.setMode("draw");
 ```
+
+默认工具是 `navigate`。宿主工具栏调用 `setMode("draw")`、`setMode("erase")`、`setMode("select")` 或 `setMode("navigate")`，这只是切换白板当前工具，不会挂载、隐藏或销毁笔迹。只有整个白板卸载时才调用 `destroy()`。
+
+Ink Runtime 和课程节点是同一个 `world` 的子元素，因此只经过一次共同的平移和缩放。它不创建独立的全屏输入层：白板视口收到的指针事件会根据当前工具交给白板导航或 Ink Runtime。`js-draw` 内部视口固定不动，浏览、缩放或教学镜头移动全部由 OLL 白板控制。
+
+当前框选只负责确认“哪些笔迹被选中”，不会移动、缩放或旋转学生原稿。选择框出现、在选区内拖动以及 `js-draw` 的自动聚焦都不得改变笔迹坐标；颜色修改由宿主工具栏显式触发。
+
+`setPenColor()` 修改后续笔迹的颜色。框选笔迹后，`setSelectionColor()` 修改选中原稿的颜色，这项修改进入同一套撤销、保存和完整性校验流程。宿主负责提供颜色按钮和工具栏；Ink Runtime 只提供状态和操作，不加载 `js-draw` 的默认工具栏。
 
 `InkDocumentRecord` 保存完整 SVG、格式版本、精确编辑器版本、文档版本、SHA-256 和更新时间。它必须使用独立于 `BrowserLessonSession` checkpoint 的存储键。中文、英文、公式和手绘图形使用同一种 SVG 保存方式。
 

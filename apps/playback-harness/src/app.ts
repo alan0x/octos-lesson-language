@@ -112,6 +112,10 @@ function renderInkState(state: InkRuntimeState): void {
   tools.hidden = false;
   requireElement<HTMLButtonElement>("#ink-enable").hidden = true;
   requireElement("#ink-status").textContent = latestInkError || `${state.component_count} 项笔迹 · 已选 ${state.selected_count} · v${state.document_version}${state.saved ? " · 已保存" : " · 保存中"}${latestInkSource ? ` · 快照 ${latestInkSource.source_id.split(":").at(-1)?.slice(0, 8)}` : ""}`;
+  requireElement<HTMLInputElement>("#ink-pen-color").value = state.pen_color;
+  const selectionColorControl = requireElement<HTMLElement>("#ink-selection-color-control");
+  selectionColorControl.hidden = state.selected_count === 0;
+  if (state.selection_color) requireElement<HTMLInputElement>("#ink-selection-color").value = state.selection_color;
   for (const button of tools.querySelectorAll<HTMLButtonElement>("[data-ink-mode]")) {
     const active = button.dataset.inkMode === state.mode;
     button.classList.toggle("active", active);
@@ -294,6 +298,12 @@ requireElement("#ink-tools").addEventListener("click", (event) => {
       renderInkState(inkRuntime!.state);
     });
   }
+});
+requireElement<HTMLInputElement>("#ink-pen-color").addEventListener("input", (event) => {
+  inkRuntime?.setPenColor((event.target as HTMLInputElement).value);
+});
+requireElement<HTMLInputElement>("#ink-selection-color").addEventListener("input", (event) => {
+  void inkRuntime?.setSelectionColor((event.target as HTMLInputElement).value);
 });
 window.addEventListener("resize", () => boardView.fit());
 

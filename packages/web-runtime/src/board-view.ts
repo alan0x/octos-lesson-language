@@ -923,6 +923,26 @@ export class InfiniteBoardView {
 
   getInputOwner(): BoardInputOwner { return this.inputOwner; }
 
+  /**
+   * Adds a course-owned layer to the board's world coordinate space.
+   *
+   * The layer inherits the exact same pan/zoom transform as lesson nodes,
+   * connections, and plots. Interactive content must use this instead of
+   * mounting a second full-viewport canvas with a separately synchronized
+   * camera.
+   */
+  mountWorldLayer(layer: HTMLElement): () => void {
+    if (layer.ownerDocument !== this.viewport.ownerDocument) {
+      throw new Error("Board world layers must belong to the viewport document");
+    }
+    layer.dataset.ollBoardWorldLayer = "";
+    this.world.append(layer);
+    return () => {
+      delete layer.dataset.ollBoardWorldLayer;
+      layer.remove();
+    };
+  }
+
   focusTargets(targetIds: string[]): void {
     if (!this.layout || !this.board || targetIds.length === 0) return;
     const rects = this.resolveFocusRects(targetIds, this.board, this.layout);
