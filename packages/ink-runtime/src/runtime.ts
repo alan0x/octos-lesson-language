@@ -102,6 +102,7 @@ export class InkRuntime {
   }
 
   private prepareEditor(): void {
+    this.enableInfiniteCanvas();
     for (const tool of this.editor.toolController.getMatchingTools(PanZoomTool)) tool.setEnabled(false);
     for (const pen of this.editor.toolController.getMatchingTools(PenTool)) {
       pen.setPressureSensitivityEnabled(true);
@@ -126,6 +127,13 @@ export class InkRuntime {
     });
   }
 
+  private enableInfiniteCanvas(): void {
+    // js-draw uses a fixed export rectangle by default and renders that rectangle
+    // as a grey page boundary. Student ink lives on Octos' infinite board, so its
+    // export bounds must follow the ink instead of appearing as a separate page.
+    this.editor.dispatchNoAnnounce(this.editor.image.setAutoresizeEnabled(true), false);
+  }
+
   private syncCamera(camera: CameraState): void {
     this.editor.viewport.resetTransform(
       Mat33.translation(Vec2.of(camera.panX, camera.panY)).rightMul(Mat33.scaling2D(camera.scale)),
@@ -144,7 +152,12 @@ export class InkRuntime {
       throw new InkRuntimeError("INK_INVALID_RECORD", "Saved ink document belongs to a different session");
     }
     this.suppressSave = true;
-    try { await this.editor.loadFromSVG(record.svg); }
+    try {
+      await this.editor.loadFromSVG(record.svg);
+      // Documents saved before infinite-canvas mode may restore js-draw's fixed
+      // export rectangle. Normalize them without adding an undoable user action.
+      this.enableInfiniteCanvas();
+    }
     finally { this.suppressSave = false; }
     this.documentVersion = record.document_version;
     this.savedSvg = this.editor.toSVG().outerHTML;
