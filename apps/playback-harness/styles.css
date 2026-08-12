@@ -26,10 +26,16 @@ select { border: 1px solid #d3cec2; border-radius: 8px; background: #fffdf8; pad
 .progress-track { height: 5px; overflow: hidden; background: #ded9d0; border-radius: 999px; }
 .progress-track span { display: block; width: 0; height: 100%; border-radius: inherit; background: #24877c; transition: width .18s ease; }
 #progress-label { color: #716a60; font: 11px/1 monospace; text-align: right; }
-.narration { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); max-width: min(720px, 76%); padding: 14px 18px; border-radius: 16px; background: rgba(27,57,53,.92); color: white; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-family: "STKaiti", "Kaiti SC", sans-serif; font-size: 18px; line-height: 1.55; }
-.camera-controls { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 5px; }
+.narration { position: absolute; z-index: 9; left: 50%; bottom: 96px; transform: translateX(-50%); max-width: min(720px, 76%); padding: 14px 18px; border-radius: 16px; background: rgba(27,57,53,.92); color: white; box-shadow: 0 10px 30px rgba(0,0,0,.18); font-family: "STKaiti", "Kaiti SC", sans-serif; font-size: 18px; line-height: 1.55; }
+.camera-controls { position: absolute; z-index: 9; right: 14px; bottom: 14px; display: flex; gap: 5px; }
 .camera-controls button { box-shadow: 0 4px 15px rgba(0,0,0,.08); }
-.canvas-hint { position: absolute; left: 14px; bottom: 16px; color: #938b7f; font-size: 11px; }
+.canvas-hint { position: absolute; z-index: 7; left: 14px; bottom: 16px; color: #938b7f; font-size: 11px; }
+.ink-controls { position: absolute; z-index: 20; left: 14px; top: 14px; display: flex; align-items: center; gap: 6px; }
+.ink-controls button { flex: 0 0 auto; padding: 7px 10px; box-shadow: 0 4px 15px rgba(0,0,0,.08); white-space: nowrap; }
+.ink-tools { display: flex; align-items: center; gap: 5px; padding: 6px; border: 1px solid #c9c2b6; border-radius: 13px; background: rgba(255,253,248,.96); box-shadow: 0 5px 20px rgba(53,45,34,.12); }
+.ink-tools[hidden], #ink-enable[hidden] { display: none; }
+.ink-tools button.active { border-color: #207b70; background: #207b70; color: white; }
+#ink-status { min-width: 150px; margin: 0 5px; color: #716a60; font: 10px/1.3 monospace; }
 .debug-panel { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #242825; color: #e8ece9; border-left: 1px solid #151815; }
 .debug-panel section { padding: 15px 16px; border-bottom: 1px solid #3a3e3a; }
 .debug-panel h2 { margin: 0 0 11px; color: #aeb9b3; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }

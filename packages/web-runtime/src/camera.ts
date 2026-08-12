@@ -6,6 +6,30 @@ export interface CameraState {
   scale: number;
 }
 
+export interface BoardPoint {
+  x: number;
+  y: number;
+}
+
+/** Convert a point in persistent whiteboard coordinates to viewport-local pixels. */
+export function boardToViewportPoint(point: BoardPoint, camera: CameraState): BoardPoint {
+  return {
+    x: camera.panX + point.x * camera.scale,
+    y: camera.panY + point.y * camera.scale,
+  };
+}
+
+/** Convert viewport-local pixels back to persistent whiteboard coordinates. */
+export function viewportToBoardPoint(point: BoardPoint, camera: CameraState): BoardPoint {
+  if (!Number.isFinite(camera.scale) || camera.scale <= 0) {
+    throw new Error("Camera scale must be a positive finite number");
+  }
+  return {
+    x: (point.x - camera.panX) / camera.scale,
+    y: (point.y - camera.panY) / camera.scale,
+  };
+}
+
 export interface ViewportSize {
   width: number;
   height: number;

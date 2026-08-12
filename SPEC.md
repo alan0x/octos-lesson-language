@@ -153,6 +153,25 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 
 当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
 
+### 5.5 学生笔迹资源不属于 OLL
+
+学生原稿不放进 `lesson.open`、Canonical Event 或 Semantic BoardState。浏览器宿主把它作为独立资源保存，最低记录如下：
+
+```json
+{
+  "format": "oll.student-ink.svg",
+  "format_version": 1,
+  "editor": {"name": "js-draw", "version": "1.33.0"},
+  "document_id": "session-123:student-ink",
+  "document_version": 4,
+  "checksum": {"algorithm": "sha-256", "value": "..."},
+  "updated_at": "2026-08-12T12:00:00.000Z",
+  "svg": "<svg>...</svg>"
+}
+```
+
+手写中文、英文、公式和草图使用同一种 SVG 文档。识别结果不是这个资源的一部分。选区快照另存 `source_id`、选区 SVG、白板范围和当时的 `document_version`；不得保存 `js-draw` 内部组件编号。OLL 动作没有修改或删除学生笔迹的权限。
+
 ## 6. `lesson.step`
 
 一个 Step 是增量生成、验证和执行的原子单位。

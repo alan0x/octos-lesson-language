@@ -52,6 +52,15 @@ The host owns the page, lesson acquisition, learner/session identity, errors, TT
 
 `mountInfiniteBoard()` creates only the internal board layers inside the supplied viewport. Host overlays such as narration, controls and the Octos avatar remain untouched. Call `mounted.destroy()` when unmounting the page.
 
+The board exposes the integration boundary used by optional input layers:
+
+- `getCameraState()` reads the camera actually visible during a transition;
+- `subscribeCamera()` reports target and intermediate camera frames;
+- `boardToViewport()` / `viewportToBoard()` convert stable board coordinates;
+- `setInputOwner()` explicitly hands pointer/wheel input to the Runtime, ink, or a future course-object interaction.
+
+The optional `octos-lesson-language/ink-runtime` uses only this public boundary. Do not statically import it on an ordinary lesson route; load its JavaScript and stylesheet when the learner enables writing.
+
 Hosts with persistent overlays should call
 `mounted.view.setViewportInsets({ top, right, bottom, left })`. Automatic
 teaching focus is then composed inside the unobstructed rectangle instead of

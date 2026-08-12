@@ -3,8 +3,12 @@ import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
 import {
+  boardToViewportPoint,
   planFocusCamera,
+  viewportToBoardPoint,
   type AttentionMode,
+  type BoardPoint,
+  type CameraState,
   type ViewportInsets,
 } from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
@@ -621,6 +625,9 @@ export interface MountedInfiniteBoard {
   destroy(): void;
 }
 
+export type BoardInputOwner = "runtime" | "ink" | "course-object";
+export type CameraListener = (camera: CameraState) => void;
+
 export function diagramConnectionGeometry(content: Record<string, any>, connection: Record<string, any>): DiagramConnectionGeometry | undefined {
   const points = diagramPoints(content);
   const from = points.get(text(connection.from?.fragment_id));
@@ -788,7 +795,11 @@ export class InfiniteBoardView {
   private lastAttentionTargets: string[] = [];
   private dragging?: { x: number; y: number; panX: number; panY: number };
   private manualMotionTimer?: ReturnType<typeof setTimeout>;
+  private cameraFrame?: number;
+  private cameraNotifyUntil = 0;
+  private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
+  private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
   private readonly groupElements = new Map<string, HTMLElement>();
@@ -865,6 +876,53 @@ export class InfiniteBoardView {
     this.resize();
   }
 
+  /** Returns the camera currently visible on screen, including CSS-transition frames. */
+  getCameraState(): CameraState {
+    const transform = this.hostWindow.getComputedStyle(this.world).transform;
+    if (transform && transform !== "none") {
+      const match2d = /^matrix\(([^)]+)\)$/.exec(transform);
+      if (match2d) {
+        const values = match2d[1]!.split(",").map(Number);
+        if (values.length === 6 && values.every(Number.isFinite)) {
+          return { panX: values[4]!, panY: values[5]!, scale: Math.hypot(values[0]!, values[1]!) };
+        }
+      }
+      const match3d = /^matrix3d\(([^)]+)\)$/.exec(transform);
+      if (match3d) {
+        const values = match3d[1]!.split(",").map(Number);
+        if (values.length === 16 && values.every(Number.isFinite)) {
+          return { panX: values[12]!, panY: values[13]!, scale: Math.hypot(values[0]!, values[1]!) };
+        }
+      }
+    }
+    return { panX: this.panX, panY: this.panY, scale: this.scale };
+  }
+
+  subscribeCamera(listener: CameraListener): () => void {
+    this.cameraListeners.add(listener);
+    listener(this.getCameraState());
+    return () => this.cameraListeners.delete(listener);
+  }
+
+  boardToViewport(point: BoardPoint): BoardPoint {
+    return boardToViewportPoint(point, this.getCameraState());
+  }
+
+  viewportToBoard(point: BoardPoint): BoardPoint {
+    return viewportToBoardPoint(point, this.getCameraState());
+  }
+
+  setInputOwner(owner: BoardInputOwner): void {
+    if (owner === this.inputOwner) return;
+    this.inputOwner = owner;
+    if (owner !== "runtime") {
+      this.dragging = undefined;
+      this.viewport.classList.remove("dragging");
+    }
+  }
+
+  getInputOwner(): BoardInputOwner { return this.inputOwner; }
+
   focusTargets(targetIds: string[]): void {
     if (!this.layout || !this.board || targetIds.length === 0) return;
     const rects = this.resolveFocusRects(targetIds, this.board, this.layout);
@@ -926,7 +984,9 @@ export class InfiniteBoardView {
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
     this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
     if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.dragging = undefined;
+    this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
   }
 
@@ -1089,7 +1149,22 @@ export class InfiniteBoardView {
     this.pointer.style.left = `${rect.x + rect.width - 8}px`; this.pointer.style.top = `${rect.y - 18}px`; this.pointer.hidden = false;
   }
 
-  private transform(): void { this.world.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`; }
+  private transform(): void {
+    this.world.style.transform = `translate(${this.panX}px, ${this.panY}px) scale(${this.scale})`;
+    this.scheduleCameraNotifications();
+  }
+  private scheduleCameraNotifications(): void {
+    if (this.cameraListeners.size === 0) return;
+    this.cameraNotifyUntil = Math.max(this.cameraNotifyUntil, this.hostWindow.performance.now() + 760);
+    if (this.cameraFrame !== undefined) return;
+    const notify = (timestamp: number): void => {
+      const camera = this.getCameraState();
+      for (const listener of this.cameraListeners) listener(camera);
+      if (timestamp < this.cameraNotifyUntil) this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      else this.cameraFrame = undefined;
+    };
+    this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+  }
   private resolveFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
     const rects: Rect[] = [];
     const visited = new Set<string>();
@@ -1130,6 +1205,7 @@ export class InfiniteBoardView {
     this.transform();
   }
   private onWheel(event: WheelEvent): void {
+    if (this.inputOwner !== "runtime") return;
     event.preventDefault();
     this.beginManualNavigation();
     const rect = this.viewport.getBoundingClientRect();
@@ -1149,7 +1225,7 @@ export class InfiniteBoardView {
     this.viewport.classList.remove("manual-navigation");
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
-  private onPointerDown(event: PointerEvent): void { if ((event.target as HTMLElement).closest("button")) return; this.beginManualNavigation(); this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
+  private onPointerDown(event: PointerEvent): void { if (this.inputOwner !== "runtime" || (event.target as HTMLElement).closest("button")) return; this.beginManualNavigation(); this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
   private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.beginManualNavigation(); this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }
   private onPointerUp(): void { if (this.dragging) this.beginManualNavigation(); this.dragging = undefined; this.viewport.classList.remove("dragging"); }
 }

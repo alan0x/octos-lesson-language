@@ -1,0 +1,19 @@
+@import "js-draw/Editor.css";
+
+.oll-ink-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  background: transparent;
+  touch-action: none;
+}
+
+.oll-ink-layer > .imageEditorContainer {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: transparent;
+}
+
+.oll-ink-layer .imageEditorRenderArea { background: transparent; }

@@ -310,6 +310,8 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 
 ## 10. 当前限制
 
+学生笔迹不是 Authoring Profile 的节点类型。模型可以在后续增强请求中收到宿主提供的只读 `source_id`，但不能输出“修改、规整、纠正、移动或删除原稿”的动作。所有建议和新图必须成为独立白板内容。
+
 - `image`、`diagram` 和 `table` 已在几何示例中完成第一轮表达验证，但还没有前端视觉 Runtime 证明；
 - `shape` 和复杂科学流程图仍待完整示例；
 - 当前完整示例覆盖数学、几何图片和英语文本，尚未覆盖同板追问；

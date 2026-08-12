@@ -5,11 +5,20 @@ export {
   mathSource,
   mountInfiniteBoard,
   variableAnimationFocusTargets,
+  type BoardInputOwner,
+  type CameraListener,
   type DiagramConnectionGeometry,
   type InfiniteBoardElements,
   type MountedInfiniteBoard,
 } from "./board-view.js";
-export type { CameraState, ViewportInsets, ViewportSize } from "./camera.js";
+export {
+  boardToViewportPoint,
+  viewportToBoardPoint,
+  type BoardPoint,
+  type CameraState,
+  type ViewportInsets,
+  type ViewportSize,
+} from "./camera.js";
 export {
   boundaryPoint,
   computeConnectionRoute,

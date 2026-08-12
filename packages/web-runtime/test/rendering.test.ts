@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
-import { planFocusCamera, planRevealCamera } from "../src/camera.js";
+import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
   for (let index = 1; index < points.length; index += 1) {
@@ -14,6 +14,18 @@ function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
     );
   }
 }
+
+test("public camera coordinates round-trip between board and viewport space", () => {
+  const camera = { panX: -120, panY: 48, scale: .625 };
+  const boardPoint = { x: 832, y: 416 };
+  const viewportPoint = boardToViewportPoint(boardPoint, camera);
+  assert.deepEqual(viewportPoint, { x: 400, y: 308 });
+  assert.deepEqual(viewportToBoardPoint(viewportPoint, camera), boardPoint);
+  assert.throws(
+    () => viewportToBoardPoint(viewportPoint, { ...camera, scale: 0 }),
+    /positive finite/,
+  );
+});
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");

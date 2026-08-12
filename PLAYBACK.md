@@ -73,6 +73,8 @@ Checkpoint 至少包含：
 
 学生拖动公开变量控件属于宿主输入，不新增或重放 Canonical action。Runtime 先暂停并取消当前变量自动动画，再把学生选择的值写入 Projection 和 checkpoint。之后的 Canonical 变量动作仍可显式改变它。
 
+学生笔迹不进入 Playback Projection 或 Canonical checkpoint。宿主先恢复课程播放器，再从独立 `InkDocumentStore` 验证 SHA-256 并恢复 SVG。课程重放、seek、reset 和模型动作都不能清空或改写该资源。
+
 ## 6. Conformance
 
 一个实现合格需要满足：
