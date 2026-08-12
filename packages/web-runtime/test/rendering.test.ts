@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -221,6 +221,13 @@ test("geometry arc uses the same rendered radius in both SVG dimensions", () => 
   const radius = .3 * viewport.scale;
   assert.match(path, new RegExp(`A ${radius} ${radius} 0 0 0`));
   assert.ok(path.startsWith(`M ${viewport.mapX(.3)} ${viewport.mapY(0)}`));
+});
+
+test("angle controls choose the equivalent angle nearest the current shared value", () => {
+  assert.ok(Math.abs(angleControlValue(-Math.PI / 2, 3 * Math.PI / 2, 0, 2 * Math.PI) - 3 * Math.PI / 2) < 1e-12);
+  assert.equal(angleControlValue(0, 0, 0, 2 * Math.PI), 0);
+  assert.equal(angleControlValue(0, 2 * Math.PI, 0, 2 * Math.PI), 2 * Math.PI);
+  assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, -Math.PI, Math.PI) - Math.PI / 2) < 1e-12);
 });
 
 test("focus keeps an already composed target steady", () => {

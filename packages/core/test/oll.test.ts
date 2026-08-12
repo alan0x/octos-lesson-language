@@ -333,6 +333,15 @@ test("one lesson variable deterministically drives geometry and plot bindings", 
   const currentId = `${plotId}:fragment:current-angle`;
   const cases = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2, 2 * Math.PI];
 
+  assert.deepEqual(
+    state.nodes[geometryId]!.content.points.find((item: any) => item.id === pointId).interaction,
+    {
+      kind: "angle_control",
+      variable: "theta",
+      center: `${geometryId}:fragment:origin`,
+    },
+  );
+
   for (const theta of cases) {
     state = setLessonVariable(state, "theta", theta);
     const geometry = state.nodes[geometryId]!;
@@ -362,6 +371,26 @@ test("rejects invalid lesson variables and value bindings with explicit errors",
   assert.throws(
     () => validateAuthoringLesson(outOfRange),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_VARIABLE" && error.path === "/lesson/variables/0/initial",
+  );
+
+  const unknownInteractionVariable = structuredClone(interactive.source);
+  (unknownInteractionVariable.steps[0]!.beats[0]!.actions[0] as any)
+    .content.points[1].interaction.variable = "missing";
+  assert.throws(
+    () => validateAuthoringLesson(unknownInteractionVariable),
+    (error) => error instanceof OllError
+      && error.code === "OLL_REFERENCE_NOT_FOUND"
+      && error.path.endsWith("/interaction/variable"),
+  );
+
+  const unknownInteractionCenter = structuredClone(interactive.source);
+  (unknownInteractionCenter.steps[0]!.beats[0]!.actions[0] as any)
+    .content.points[1].interaction.center = "missing-center";
+  assert.throws(
+    () => validateAuthoringLesson(unknownInteractionCenter),
+    (error) => error instanceof OllError
+      && error.code === "OLL_REFERENCE_NOT_FOUND"
+      && error.path.endsWith("/interaction/center"),
   );
 
   const unknownVariable = structuredClone(interactive.source);

@@ -374,6 +374,11 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 
 - `points` 提供几何坐标，并可通过 `visible=false` 作为隐藏构造点；
 - `circles.center`、`segments.from/to` 和 `arcs.center` 必须引用同一 geometry 中声明的 point alias；
+- `radius` 必须为正数；角度使用弧度，正方向为逆时针；
+- `segments.style` 可以是 `solid`、`dashed` 或 `projection`；
+- 所有 primitive 都通过 `as` 获得稳定 fragment ID，可以被 point/emphasize/focus 引用；
+- Authoring Profile 必须声明 `equal_scale=true`，Runtime 负责确定实际像素坐标；
+- 模型不得输出 SVG、路径字符串或像素坐标。
 
 #### 数值 binding
 
@@ -401,11 +406,25 @@ Authoring `target` 使用同一节点内的 `fragmentAlias.property`。Normalize
 | Plot | guide | `value` |
 
 Reducer 在创建节点时用当前变量值计算全部 binding。当前 Authoring Profile 不允许 `revise` 新增或替换 binding；需要不同关系时应创建新的 Geometry/Plot 节点，直到修订合同被单独定义。变量更新必须从同一份变量映射重新计算所有含 binding 的节点；不得只更新当前可见节点。视觉插值不进入 Semantic BoardState。
-- `radius` 必须为正数；角度使用弧度，正方向为逆时针；
-- `segments.style` 可以是 `solid`、`dashed` 或 `projection`；
-- 所有 primitive 都通过 `as` 获得稳定 fragment ID，可以被 point/emphasize/focus 引用；
-- Authoring Profile 必须声明 `equal_scale=true`，Runtime 负责确定实际像素坐标；
-- 模型不得输出 SVG、路径字符串或像素坐标。
+
+#### 学生直接拖动几何点
+
+需要让学生拖动的点必须明确声明 `interaction`。Runtime 不会根据 `cos`、`sin` 等表达式猜测哪些点可以拖。
+
+```json
+{
+  "as": "point-p",
+  "x": 1,
+  "y": 0,
+  "interaction": {
+    "kind": "angle_control",
+    "variable": "theta",
+    "center": "origin"
+  }
+}
+```
+
+`angle_control` 表示学生绕 `center` 拖动这个点，Runtime 将位置换算成弧度并通过与滑杆相同的变量写入入口修改 `theta`。点的位置仍由 `content.bindings` 表达；`interaction` 只说明学生操作如何反向修改变量，不保存第二份变量状态，也不允许执行模型提供的 JavaScript。
 
 ### 9.2 `board.revise`
 

@@ -75,6 +75,10 @@
 .geometry-segment-projection { stroke: #b95873; }
 .geometry-arc { fill: none; stroke: #c7832e; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
 .geometry-point { fill: #e15d45; stroke: #fffdf7; stroke-width: 1.8; }
+.geometry-control-point { cursor: grab; r: 6px; stroke-width: 2.4; }
+.geometry-control-point:hover,
+.geometry-control-point:focus-visible { filter: drop-shadow(0 0 4px rgba(16, 119, 136, .48)); outline: none; }
+.geometry-control-point:active { cursor: grabbing; }
 .geometry-label { fill: #374b47; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
 .geometry-circle.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }

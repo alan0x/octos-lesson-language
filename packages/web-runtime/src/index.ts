@@ -1,6 +1,7 @@
 export type { ImageAssetResolver, ImageRegionBounds, ResolvedImageAsset } from "./assets.js";
 export {
   InfiniteBoardView,
+  angleControlValue,
   diagramConnectionGeometry,
   mathSource,
   mountInfiniteBoard,
@@ -10,6 +11,7 @@ export {
   type DiagramConnectionGeometry,
   type InfiniteBoardElements,
   type MountedInfiniteBoard,
+  type VariableInputHandler,
 } from "./board-view.js";
 export {
   boardToViewportPoint,

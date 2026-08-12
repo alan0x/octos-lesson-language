@@ -51,7 +51,7 @@
                 },
                 "points": [
                   {"as": "origin", "x": 0, "y": 0, "label": "O"},
-                  {"as": "point-p", "x": 0.5, "y": 0.8660254, "label": "P(cos θ, sin θ)"},
+                  {"as": "point-p", "x": 0.5, "y": 0.8660254, "label": "P(cos θ, sin θ)", "interaction": {"kind": "angle_control", "variable": "theta", "center": "origin"}},
                   {"as": "foot", "x": 0.5, "y": 0, "label": "cos θ"}
                 ],
                 "circles": [

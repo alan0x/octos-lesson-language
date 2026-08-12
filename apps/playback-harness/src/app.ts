@@ -75,6 +75,7 @@ const boardView = mountedBoard.view;
 boardView.setViewportInsets({ top: 70, bottom: 190 });
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
+boardView.setVariableInputHandler((alias, value) => session.setVariable(alias, value));
 const variableControls = mountVariableControls(
   requireElement("#variable-controls"),
   (alias, value) => session.setVariable(alias, value),

@@ -572,6 +572,17 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     dot.setAttribute("r", "4.5");
     dot.classList.add("geometry-point");
     dot.dataset.id = text(point.id);
+    const interaction = point.interaction;
+    const interactionCenter = interaction?.kind === "angle_control"
+      ? points.get(text(interaction.center))
+      : undefined;
+    if (interactionCenter && typeof interaction.variable === "string") {
+      dot.classList.add("geometry-control-point");
+      dot.dataset.ollVariableControl = interaction.variable;
+      dot.dataset.angleCenterX = String(viewport.mapX(interactionCenter.x));
+      dot.dataset.angleCenterY = String(viewport.mapY(interactionCenter.y));
+      dot.setAttribute("aria-label", `${point.label || interaction.variable}：拖动改变角度`);
+    }
     applyEmphasisClass(dot, latestEmphasis(node, text(point.id)));
     svg.append(dot);
     if (point.label) appendGeometryLabel(svg, point.label, x + 7, y - 7);
@@ -627,6 +638,26 @@ export interface MountedInfiniteBoard {
 
 export type BoardInputOwner = "runtime" | "ink" | "course-object";
 export type CameraListener = (camera: CameraState) => void;
+export type VariableInputHandler = (alias: string, value: number) => void;
+
+export function angleControlValue(
+  rawAngle: number,
+  currentValue: number,
+  min: number,
+  max: number,
+): number {
+  const turn = Math.PI * 2;
+  const firstTurn = Math.ceil((min - rawAngle) / turn - 1e-10);
+  const lastTurn = Math.floor((max - rawAngle) / turn + 1e-10);
+  if (firstTurn <= lastTurn) {
+    const closestTurn = Math.min(
+      lastTurn,
+      Math.max(firstTurn, Math.round((currentValue - rawAngle) / turn)),
+    );
+    return Math.min(max, Math.max(min, rawAngle + closestTurn * turn));
+  }
+  return Math.min(max, Math.max(min, rawAngle));
+}
 
 export function diagramConnectionGeometry(content: Record<string, any>, connection: Record<string, any>): DiagramConnectionGeometry | undefined {
   const points = diagramPoints(content);
@@ -794,6 +825,15 @@ export class InfiniteBoardView {
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
   private dragging?: { x: number; y: number; panX: number; panY: number };
+  private variableDragging?: {
+    alias: string;
+    centerX: number;
+    centerY: number;
+    rect: DOMRect;
+    viewBoxWidth: number;
+    viewBoxHeight: number;
+  };
+  private variableInputHandler?: VariableInputHandler;
   private manualMotionTimer?: ReturnType<typeof setTimeout>;
   private cameraFrame?: number;
   private cameraNotifyUntil = 0;
@@ -917,11 +957,17 @@ export class InfiniteBoardView {
     this.inputOwner = owner;
     if (owner !== "runtime") {
       this.dragging = undefined;
+      this.variableDragging = undefined;
       this.viewport.classList.remove("dragging");
     }
   }
 
   getInputOwner(): BoardInputOwner { return this.inputOwner; }
+
+  setVariableInputHandler(handler: VariableInputHandler | undefined): void {
+    this.variableInputHandler = handler;
+    if (!handler) this.variableDragging = undefined;
+  }
 
   /**
    * Adds a course-owned layer to the board's world coordinate space.
@@ -1006,6 +1052,8 @@ export class InfiniteBoardView {
     if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.dragging = undefined;
+    this.variableDragging = undefined;
+    this.variableInputHandler = undefined;
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
   }
@@ -1245,9 +1293,64 @@ export class InfiniteBoardView {
     this.viewport.classList.remove("manual-navigation");
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
-  private onPointerDown(event: PointerEvent): void { if (this.inputOwner !== "runtime" || (event.target as HTMLElement).closest("button")) return; this.beginManualNavigation(); this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY }; this.viewport.classList.add("dragging"); }
-  private onPointerMove(event: PointerEvent): void { if (!this.dragging) return; this.beginManualNavigation(); this.panX = this.dragging.panX + event.clientX - this.dragging.x; this.panY = this.dragging.panY + event.clientY - this.dragging.y; this.transform(); }
-  private onPointerUp(): void { if (this.dragging) this.beginManualNavigation(); this.dragging = undefined; this.viewport.classList.remove("dragging"); }
+  private updateVariableDrag(event: PointerEvent): void {
+    const drag = this.variableDragging;
+    const variable = drag && this.board?.variables?.[drag.alias];
+    if (!drag || !variable || !this.variableInputHandler || drag.rect.width <= 0 || drag.rect.height <= 0) return;
+    const x = (event.clientX - drag.rect.left) / drag.rect.width * drag.viewBoxWidth;
+    const y = (event.clientY - drag.rect.top) / drag.rect.height * drag.viewBoxHeight;
+    const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
+    const value = angleControlValue(rawAngle, variable.value, variable.min, variable.max);
+    if (Number.isFinite(value)) this.variableInputHandler(drag.alias, value);
+  }
+  private onPointerDown(event: PointerEvent): void {
+    if (this.inputOwner !== "runtime" || (event.target as HTMLElement).closest("button")) return;
+    const control = (event.target as Element).closest<SVGElement>("[data-oll-variable-control]");
+    const svg = control?.closest<SVGSVGElement>("svg");
+    const alias = control?.dataset.ollVariableControl;
+    const centerX = Number(control?.dataset.angleCenterX);
+    const centerY = Number(control?.dataset.angleCenterY);
+    const viewBox = svg?.viewBox.baseVal;
+    if (
+      control && svg && alias
+      && Number.isFinite(centerX) && Number.isFinite(centerY)
+      && viewBox && Number.isFinite(viewBox.width) && viewBox.width > 0
+      && Number.isFinite(viewBox.height) && viewBox.height > 0
+    ) {
+      event.preventDefault();
+      this.variableDragging = {
+        alias,
+        centerX,
+        centerY,
+        rect: svg.getBoundingClientRect(),
+        viewBoxWidth: viewBox.width,
+        viewBoxHeight: viewBox.height,
+      };
+      this.updateVariableDrag(event);
+      return;
+    }
+    this.beginManualNavigation();
+    this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY };
+    this.viewport.classList.add("dragging");
+  }
+  private onPointerMove(event: PointerEvent): void {
+    if (this.variableDragging) {
+      event.preventDefault();
+      this.updateVariableDrag(event);
+      return;
+    }
+    if (!this.dragging) return;
+    this.beginManualNavigation();
+    this.panX = this.dragging.panX + event.clientX - this.dragging.x;
+    this.panY = this.dragging.panY + event.clientY - this.dragging.y;
+    this.transform();
+  }
+  private onPointerUp(): void {
+    this.variableDragging = undefined;
+    if (this.dragging) this.beginManualNavigation();
+    this.dragging = undefined;
+    this.viewport.classList.remove("dragging");
+  }
 }
 
 export function mountInfiniteBoard(

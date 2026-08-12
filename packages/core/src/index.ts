@@ -261,7 +261,11 @@ function requireFiniteNumber(value: unknown, path: string): number {
   return number;
 }
 
-function validateGeometryContent(action: WriteAction, path: string): void {
+function validateGeometryContent(
+  action: WriteAction,
+  path: string,
+  variables: Map<string, number>,
+): void {
   if (action.kind !== "geometry") return;
   const content = action.content;
   requireObject(content.axes, `${path}/content/axes`);
@@ -285,6 +289,27 @@ function validateGeometryContent(action: WriteAction, path: string): void {
     pointAliases.add(point.as);
     requireFiniteNumber(point.x, `${pointPath}/x`);
     requireFiniteNumber(point.y, `${pointPath}/y`);
+  });
+
+  content.points.forEach((point, index: number) => {
+    requireObject(point, `${path}/content/points/${index}`);
+    if (point.interaction === undefined) return;
+    const interactionPath = `${path}/content/points/${index}/interaction`;
+    requireObject(point.interaction, interactionPath);
+    if (point.interaction.kind !== "angle_control") {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${interactionPath}/kind`, "Geometry point interaction kind must be 'angle_control'");
+    }
+    requireVariableAlias(point.interaction.variable, `${interactionPath}/variable`);
+    if (!variables.has(point.interaction.variable)) {
+      fail("OLL_REFERENCE_NOT_FOUND", `${interactionPath}/variable`, `Lesson variable '${point.interaction.variable}' is not defined`);
+    }
+    requireAlias(point.interaction.center, `${interactionPath}/center`);
+    if (!pointAliases.has(point.interaction.center)) {
+      fail("OLL_REFERENCE_NOT_FOUND", `${interactionPath}/center`, `Geometry point '${point.interaction.center}' is not defined`);
+    }
+    if (point.interaction.center === point.as) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${interactionPath}/center`, "An angle control point cannot use itself as its center");
+    }
   });
 
   const requirePointReference = (value: unknown, referencePath: string) => {
@@ -509,7 +534,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
-          validateGeometryContent(action, actionPath);
+          validateGeometryContent(action, actionPath, lessonVariables);
           validateValueBindings(action, actionPath, lessonVariables);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
@@ -594,6 +619,12 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       }
       if (field === "arcs") {
         normalized.center = `${nodeId}:fragment:${item.center}`;
+      }
+      if (field === "points" && item.interaction?.kind === "angle_control") {
+        normalized.interaction = {
+          ...structuredClone(item.interaction),
+          center: `${nodeId}:fragment:${item.interaction.center}`,
+        };
       }
       if (field === "regions" && Array.isArray(item.members)) {
         normalized.members = item.members.map((member: string) => `${nodeId}:fragment:${member}`);

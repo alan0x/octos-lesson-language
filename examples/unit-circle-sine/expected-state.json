@@ -114,7 +114,12 @@
             "id": "lesson-unit-circle-sine-001:node:unit-circle:fragment:point-p",
             "x": 1,
             "y": -2.4492935982947064e-16,
-            "label": "P(cos θ, sin θ)"
+            "label": "P(cos θ, sin θ)",
+            "interaction": {
+              "kind": "angle_control",
+              "variable": "theta",
+              "center": "lesson-unit-circle-sine-001:node:unit-circle:fragment:origin"
+            }
           },
           {
             "id": "lesson-unit-circle-sine-001:node:unit-circle:fragment:foot",

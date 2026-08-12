@@ -202,7 +202,17 @@
               "x": {"type": "number"},
               "y": {"type": "number"},
               "label": {"type": "string"},
-              "visible": {"type": "boolean"}
+              "visible": {"type": "boolean"},
+              "interaction": {
+                "type": "object",
+                "required": ["kind", "variable", "center"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {"const": "angle_control"},
+                  "variable": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+                  "center": {"$ref": "#/$defs/alias"}
+                }
+              }
             }
           }
         },
