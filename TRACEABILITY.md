@@ -80,6 +80,19 @@ Phase 1, but they remain visible here.
 | OLL-ENV-004 | Partial | The language boundary is correct; the production Skill and incremental generation adapter remain Phase 4 work. |
 | OLL-ENV-005 | Blocked | `octos-web` still contains the historical assistant-to-board fallback and artifact delivery path; Phase 5 migration is incomplete. |
 
+## Interactive whiteboard development slice
+
+These requirements describe the post-RC implementation path and do not claim that animation, ink, tasks, or 3D are already released.
+
+| Requirements | Status | Evidence or gap |
+| --- | --- | --- |
+| OLL-VAR-001, OLL-VAR-002, OLL-VAR-003 | Pass | Authoring variables and Geometry/Plot numeric bindings are defined in the Schema and implemented by the Core whitelist expression evaluator. The unit-circle fixture uses one `theta` across both nodes. |
+| OLL-VAR-004, OLL-VAR-005 | Pass for headless Core | `setLessonVariable` recomputes all bound nodes and serializable Semantic BoardState retains the current value; five special-angle and JSON restore assertions run in `packages/core/test/oll.test.ts`. Browser control and animation remain the next slice. |
+| OLL-VAR-006, OLL-VAR-007, OLL-VAR-008 | Pass | Tests reject out-of-range initial values, unknown variables and unsupported targets. Bindings can only read declared Lesson variables; labels and units are inert metadata. |
+| OLL-INP-001 through OLL-INP-005 | Planned | Persistence and “Ask Octopus” behavior are fixed in `INTERACTIVE-WHITEBOARD-MVP.md`; no ink or selection implementation is claimed. |
+| OLL-MOT-001, OLL-MOT-002, OLL-TSK-001, OLL-3D-001, OLL-3D-002 | Planned | Acceptance scenarios are fixed; implementation follows variables, then 2D interaction, ink/selection, tasks, and basic 3D. |
+| OLL-ENV-006 through OLL-ENV-009 | Decision accepted | Decision 0004 fixes repository ownership, separate student-input persistence, optional ink packaging and the no-general-plugin MVP boundary. |
+
 ## Freeze conclusion
 
 OLL v0.1 Core and Player are substantially implemented and independently

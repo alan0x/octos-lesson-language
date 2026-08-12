@@ -13,6 +13,8 @@ OLL 处于 **v0.1 Release Candidate 1**。Authoring 与 Canonical 的已实现�
 
 Core、headless playback、可生成性与教学质量已有大量证据，但 Phase 0/1 尚未正式退出。当前 MUST 证据和发布阻断项见 [TRACEABILITY.md](./TRACEABILITY.md) 与 [PHASE-0-1-EXIT.md](./PHASE-0-1-EXIT.md)。RC 阶段只接受兼容性修复；新增动作或改变语义必须有 decision record 和回归证据。
 
+交互语义白板的下一阶段实施范围、仓库责任、数据保存方式和四个贯穿验收场景见 [INTERACTIVE-WHITEBOARD-MVP.md](./INTERACTIVE-WHITEBOARD-MVP.md)。该计划从课程变量开始，不表示动画、笔迹、任务或 3D 已经进入当前 RC。
+
 ## 两个 Profile
 
 ```text

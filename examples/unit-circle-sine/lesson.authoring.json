@@ -11,6 +11,16 @@
       "把圆周点的纵坐标对应到 y=sin x 的函数图像",
       "理解连续旋转为什么产生周期波动"
     ],
+    "variables": [
+      {
+        "as": "theta",
+        "initial": 0,
+        "min": 0,
+        "max": 6.283185307179586,
+        "label": "旋转角 θ",
+        "unit": "rad"
+      }
+    ],
     "adaptation": {
       "strategies": ["coordinate-geometry", "circle-to-plot-mapping", "visual-correspondence"]
     }
@@ -52,6 +62,12 @@
                 ],
                 "arcs": [
                   {"as": "theta", "center": "origin", "radius": 0.28, "start_angle": 0, "end_angle": 1.0471975512, "label": "θ"}
+                ],
+                "bindings": [
+                  {"target": "point-p.x", "expression": "cos(theta)"},
+                  {"target": "point-p.y", "expression": "sin(theta)"},
+                  {"target": "foot.x", "expression": "cos(theta)"},
+                  {"target": "theta.end_angle", "expression": "theta"}
                 ]
               },
               "place": {"relation": "new_region", "region_role": "lesson-origin"}
@@ -75,7 +91,12 @@
                   {"as": "peak", "x": 1.5707963268, "y": 1, "label": "π/2"},
                   {"as": "pi-zero", "x": 3.1415926536, "y": 0, "label": "π"},
                   {"as": "trough", "x": 4.7123889804, "y": -1, "label": "3π/2"},
-                  {"as": "period", "x": 6.2831853072, "y": 0, "label": "2π"}
+                  {"as": "period", "x": 6.2831853072, "y": 0, "label": "2π"},
+                  {"as": "current-angle", "x": 0, "y": 0, "label": "当前 θ"}
+                ],
+                "bindings": [
+                  {"target": "current-angle.x", "expression": "theta"},
+                  {"target": "current-angle.y", "expression": "sin(theta)"}
                 ]
               },
               "place": {"relation": "right_of", "anchor": "unit-circle", "align": "center", "gap": "spacious"}

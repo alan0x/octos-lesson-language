@@ -102,6 +102,15 @@ export interface AuthoringStep {
   beats: AuthoringBeat[];
 }
 
+export interface AuthoringVariable {
+  as: string;
+  initial: number;
+  min: number;
+  max: number;
+  label?: string;
+  unit?: string;
+}
+
 export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
@@ -111,6 +120,7 @@ export interface AuthoringLesson {
     language: string;
     title: string;
     goals: string[];
+    variables?: AuthoringVariable[];
     adaptation?: {
       strategies?: string[];
       context_refs?: string[];
@@ -217,6 +227,14 @@ export interface SemanticBoardState {
   applied_lessons: string[];
   applied_steps: string[];
   applied_actions: string[];
+  variables?: Record<string, {
+    value: number;
+    initial: number;
+    min: number;
+    max: number;
+    label?: string;
+    unit?: string;
+  }>;
 }
 
 export interface SchemaValidationResult {

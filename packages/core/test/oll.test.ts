@@ -7,6 +7,7 @@ import {
   OllError,
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
+  setLessonVariable,
   validateAuthoringSchema,
   validateAuthoringLesson,
   type AuthoringLesson,
@@ -317,4 +318,62 @@ test("image Schema requires the canonical asset_id field", () => {
 test("authoring schema exposes coordinate geometry as a first-class node kind", () => {
   assert.ok(authoringSchema.$defs.action.properties.kind.enum.includes("geometry"));
   assert.equal(authoringSchema.$defs.geometryContent.properties.axes.properties.equal_scale.const, true);
+});
+
+test("one lesson variable deterministically drives geometry and plot bindings", () => {
+  const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
+  const events = normalizeAuthoringLesson(interactive.source, interactive.entry);
+  let state = reduceCanonicalEvents(events);
+  const geometryId = `${interactive.entry.lessonId}:node:unit-circle`;
+  const plotId = `${interactive.entry.lessonId}:node:sine-plot`;
+  const pointId = `${geometryId}:fragment:point-p`;
+  const footId = `${geometryId}:fragment:foot`;
+  const arcId = `${geometryId}:fragment:theta`;
+  const currentId = `${plotId}:fragment:current-angle`;
+  const cases = [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2, 2 * Math.PI];
+
+  for (const theta of cases) {
+    state = setLessonVariable(state, "theta", theta);
+    const geometry = state.nodes[geometryId]!;
+    const plot = state.nodes[plotId]!;
+    const point = geometry.content.points.find((item: any) => item.id === pointId);
+    const foot = geometry.content.points.find((item: any) => item.id === footId);
+    const arc = geometry.content.arcs.find((item: any) => item.id === arcId);
+    const current = plot.content.points.find((item: any) => item.id === currentId);
+    assert.ok(Math.abs(point.x - Math.cos(theta)) < 1e-12);
+    assert.ok(Math.abs(point.y - Math.sin(theta)) < 1e-12);
+    assert.ok(Math.abs(foot.x - Math.cos(theta)) < 1e-12);
+    assert.ok(Math.abs(arc.end_angle - theta) < 1e-12);
+    assert.ok(Math.abs(current.x - theta) < 1e-12);
+    assert.ok(Math.abs(current.y - Math.sin(theta)) < 1e-12);
+  }
+
+  const restored = JSON.parse(JSON.stringify(state));
+  assert.equal(restored.variables.theta.value, 2 * Math.PI);
+  assert.deepEqual(setLessonVariable(restored, "theta", Math.PI / 2), setLessonVariable(state, "theta", Math.PI / 2));
+});
+
+test("rejects invalid lesson variables and value bindings with explicit errors", () => {
+  const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
+
+  const outOfRange = structuredClone(interactive.source);
+  outOfRange.lesson.variables![0]!.initial = 7;
+  assert.throws(
+    () => validateAuthoringLesson(outOfRange),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_VARIABLE" && error.path === "/lesson/variables/0/initial",
+  );
+
+  const unknownVariable = structuredClone(interactive.source);
+  (unknownVariable.steps[0]!.beats[0]!.actions[0] as any).content.bindings[0].expression = "cos(missing)";
+  assert.throws(
+    () => validateAuthoringLesson(unknownVariable),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_BINDING" && error.path.endsWith("/expression"),
+  );
+
+  const unknownTarget = structuredClone(interactive.source);
+  (unknownTarget.steps[0]!.beats[0]!.actions[0] as any).content.bindings[0].target = "point-p.label";
+  assert.throws(
+    () => validateAuthoringLesson(unknownTarget),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND" && error.path.endsWith("/target"),
+  );
 });

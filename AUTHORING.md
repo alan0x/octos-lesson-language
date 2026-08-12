@@ -153,6 +153,36 @@ Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是
 - Beat 必须包含至少一个动作；
 - 一轮必须完成用户请求范围，不以等待回答结束中间步骤。
 
+### 5.1 数值变量和视图联动
+
+需要让多个视图表示同一个变化量时，在 `lesson.variables` 声明一次变量：
+
+```json
+{
+  "as": "theta",
+  "initial": 0,
+  "min": 0,
+  "max": 6.283185307179586,
+  "label": "旋转角 θ",
+  "unit": "rad"
+}
+```
+
+变量别名使用 `^[a-z][a-z0-9_]{0,63}$`，且不能使用 `sin`、`pi` 等保留数学名称。`unit` 只供显示，不会让 Runtime 自动换算。
+
+Geometry 和 Plot 节点可以用 `content.bindings` 把自己的数值字段绑定到变量：
+
+```json
+"bindings": [
+  {"target": "point-p.x", "expression": "cos(theta)"},
+  {"target": "point-p.y", "expression": "sin(theta)"}
+]
+```
+
+`target` 是“同一节点中的 fragment 别名 + 数值属性”。当前 Geometry 支持 point 的 `x/y`、circle 的 `radius`、arc 的 `radius/start_angle/end_angle`；Plot 支持 point 的 `x/y` 和 guide 的 `value`。
+
+表达式只允许数字、已声明变量、`pi/e`、算术运算和白名单数学函数。它不能引用另一个 binding 的结果，也不能执行脚本。每个被绑定字段仍要提供一个合法数值，作为 Authoring 结构和不支持动态能力的静态基线；Reference Reducer 会用变量初始值确定性覆盖它。
+
 ## 6. 动作
 
 ### `write`
@@ -264,3 +294,4 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 - 已开始模型可生成性评测；first-pass 结果必须与教学质量分开报告；
 - Authoring Schema 仍可能过于冗长；
 - 任何无法由真实课程解释的字段都应删除，而不是为了完整感保留。
+- 数值变量和 binding 已进入第一个 headless 实施切片；自动动画、拖动控件和浏览器输入事件尚未进入当前合同。

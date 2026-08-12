@@ -135,6 +135,23 @@ v0.1 的 `mode` 固定为 `explain`。未来互动式、练习式和复盘式课
 
 `lesson_id`、`board_id` 和 `base_revision` 由宿主提供给生成过程，不能由模型自由选择目标。生成适配器必须核对这些值与请求上下文一致。
 
+### 5.4 `lesson.variables`
+
+Lesson 可以声明供多个白板节点共同读取的数值变量：
+
+```json
+"variables": [
+  {"as":"theta","initial":0,"min":0,"max":6.283185307179586,"label":"旋转角 θ","unit":"rad"}
+]
+```
+
+- `as` 在 Lesson 变量作用域内唯一，必须匹配 `^[a-z][a-z0-9_]{0,63}$`，且不能占用数学常量或函数名；
+- `initial`、`min`、`max` 必须是有限数值，满足 `min < max` 和 `min <= initial <= max`；
+- `label`、`unit` 是可选显示元数据，不能触发隐式单位换算；
+- `lesson.open` 初始化 Semantic BoardState 中的变量当前值；Snapshot 必须保留该值。
+
+当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
+
 ## 6. `lesson.step`
 
 一个 Step 是增量生成、验证和执行的原子单位。
@@ -337,6 +354,33 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 
 - `points` 提供几何坐标，并可通过 `visible=false` 作为隐藏构造点；
 - `circles.center`、`segments.from/to` 和 `arcs.center` 必须引用同一 geometry 中声明的 point alias；
+
+#### 数值 binding
+
+Geometry 和 Plot 的 `content.bindings` 把 fragment 的受支持数值字段连接到 Lesson 变量：
+
+```json
+"bindings": [
+  {"target":"point-p.x","expression":"cos(theta)"},
+  {"target":"point-p.y","expression":"sin(theta)"}
+]
+```
+
+Authoring `target` 使用同一节点内的 `fragmentAlias.property`。Normalizer 将 fragment alias 改成稳定 Canonical fragment ID。两个 binding 不能写同一目标。
+
+受限表达式支持有限数值、圆括号、`+ - * / ^`、常量 `pi/e`，以及 `abs/acos/asin/atan/ceil/cos/exp/floor/ln/log/round/sin/sqrt/tan`。任何未知变量、未知函数、脚本语法、非有限结果或非法半径都必须以稳定错误失败。
+
+允许目标：
+
+| 节点 | fragment | 数值属性 |
+| --- | --- | --- |
+| Geometry | point | `x`, `y` |
+| Geometry | circle | `radius` |
+| Geometry | arc | `radius`, `start_angle`, `end_angle` |
+| Plot | point | `x`, `y` |
+| Plot | guide | `value` |
+
+Reducer 在创建节点时用当前变量值计算全部 binding。当前 Authoring Profile 不允许 `revise` 新增或替换 binding；需要不同关系时应创建新的 Geometry/Plot 节点，直到修订合同被单独定义。变量更新必须从同一份变量映射重新计算所有含 binding 的节点；不得只更新当前可见节点。视觉插值不进入 Semantic BoardState。
 - `radius` 必须为正数；角度使用弧度，正方向为逆时针；
 - `segments.style` 可以是 `solid`、`dashed` 或 `projection`；
 - 所有 primitive 都通过 `as` 获得稳定 fragment ID，可以被 point/emphasize/focus 引用；
