@@ -9,11 +9,22 @@ import {
   type PlaybackProjection,
   type PlaybackVariableAnimation,
 } from "../../player-core/src/index.js";
+import {
+  emptyStudentOperationLog,
+  parseStudentOperationLog,
+  type StudentOperation,
+  type StudentOperationLog,
+  type StudentVariableOperation,
+  type StudentVariableOperationContext,
+} from "./student-operations.js";
 
 export interface PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined;
   save(key: string, checkpoint: PlaybackCheckpoint): void;
   remove(key: string): void;
+  loadStudentOperations?(key: string): unknown;
+  saveStudentOperations?(key: string, log: StudentOperationLog): void;
+  removeStudentOperations?(key: string): void;
 }
 
 export class LocalPlaybackStore implements PlaybackStore {
@@ -22,6 +33,21 @@ export class LocalPlaybackStore implements PlaybackStore {
   }
   save(key: string, checkpoint: PlaybackCheckpoint): void { try { localStorage.setItem(key, JSON.stringify(checkpoint)); } catch {} }
   remove(key: string): void { try { localStorage.removeItem(key); } catch {} }
+  loadStudentOperations(key: string): unknown {
+    try {
+      const value = localStorage.getItem(`${key}:student-operations:v1`);
+      return value ? JSON.parse(value) : undefined;
+    } catch {
+      this.removeStudentOperations(key);
+      return undefined;
+    }
+  }
+  saveStudentOperations(key: string, log: StudentOperationLog): void {
+    try { localStorage.setItem(`${key}:student-operations:v1`, JSON.stringify(log)); } catch {}
+  }
+  removeStudentOperations(key: string): void {
+    try { localStorage.removeItem(`${key}:student-operations:v1`); } catch {}
+  }
 }
 
 export function parseCanonicalJsonl(source: string): CanonicalEvent[] {
@@ -168,6 +194,15 @@ export class BrowserLessonSession {
   private variableAnimationStartedAt?: number;
   private variableAnimationStartProgress = 0;
   private readonly listeners = new Set<() => void>();
+  private studentOperationLog: StudentOperationLog;
+  private nextStudentOperationSequence = 1;
+  private readonly pendingStudentVariableOperations = new Map<string, {
+    sequence: number;
+    alias: string;
+    before: number;
+    control: StudentVariableOperationContext["control"];
+    input: StudentVariableOperationContext["input"];
+  }>();
 
   constructor(
     readonly events: CanonicalEvent[],
@@ -176,6 +211,9 @@ export class BrowserLessonSession {
     private readonly options: BrowserLessonSessionOptions = {},
   ) {
     this.player = this.restorePlayer();
+    this.studentOperationLog = this.restoreStudentOperations();
+    this.nextStudentOperationSequence =
+      (this.studentOperationLog.operations.at(-1)?.sequence ?? 0) + 1;
     if (this.player.cursor > 0) this.currentFrame = {
       operation: this.player.operations[this.player.cursor - 1]!,
       projection: this.player.snapshot,
@@ -195,6 +233,7 @@ export class BrowserLessonSession {
   get outline(): PlaybackOutlineStep[] { return this.player.outline; }
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
   get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
+  get studentOperations(): StudentOperation[] { return structuredClone(this.studentOperationLog.operations); }
   get isPlaying(): boolean { return this.playing; }
   get activeVariableAnimation(): PlaybackVariableAnimation | undefined { return this.variableAnimation ? structuredClone(this.variableAnimation) : undefined; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
@@ -376,6 +415,7 @@ export class BrowserLessonSession {
     this.startedExternalNarrationBeatId = undefined;
     this.completedExternalNarrationBeatId = undefined;
     this.discardVariableAnimation();
+    this.pendingStudentVariableOperations.clear();
     this.seekAttentionTargets = [...attentionTargets];
     const projection = this.player.seek(cursor);
     this.currentFrame = cursor > 0
@@ -446,6 +486,7 @@ export class BrowserLessonSession {
     this.completedExternalNarrationBeatId = undefined;
     this.seekAttentionTargets = [];
     this.discardVariableAnimation();
+    this.pendingStudentVariableOperations.clear();
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;
@@ -496,6 +537,119 @@ export class BrowserLessonSession {
   }
 
   setVariable(alias: string, value: number): void {
+    this.applyManualVariable(alias, value);
+  }
+
+  /**
+   * Start one learner gesture. Reusing an already committed operationId is a
+   * no-op so a host retry cannot duplicate the student's history.
+   */
+  beginStudentVariableOperation(
+    alias: string,
+    context: StudentVariableOperationContext,
+  ): string {
+    const variable = this.player.snapshot.board?.variables?.[alias];
+    if (!variable) throw new Error(`Unknown lesson variable '${alias}'`);
+    if (!Number.isFinite(variable.value)) throw new Error(`Lesson variable '${alias}' has no finite value`);
+    if (!["slider", "geometry_point", "reset"].includes(context.control)) {
+      throw new Error(`Unsupported student variable control '${String(context.control)}'`);
+    }
+    if (!["mouse", "touch", "pen", "keyboard", "unknown"].includes(context.input)) {
+      throw new Error(`Unsupported student input method '${String(context.input)}'`);
+    }
+    const requestedId = context.operationId?.trim();
+    if (context.operationId !== undefined && (!requestedId || requestedId.length > 256)) {
+      throw new Error("Student operationId must be between 1 and 256 characters");
+    }
+    const id = requestedId
+      ?? `${this.player.snapshot.lesson_id}:student-operation:${this.nextStudentOperationSequence}`;
+    const completed = this.studentOperationLog.operations.find((operation) => operation.id === id);
+    if (completed) {
+      if (
+        completed.target.alias !== alias ||
+        completed.control !== context.control ||
+        completed.input !== context.input
+      ) {
+        throw new Error(`Student operationId '${id}' was already used for a different operation`);
+      }
+      return id;
+    }
+    const pending = this.pendingStudentVariableOperations.get(id);
+    if (pending) {
+      if (pending.alias !== alias || pending.control !== context.control || pending.input !== context.input) {
+        throw new Error(`Student operationId '${id}' is already active for a different operation`);
+      }
+      return id;
+    }
+    const activeAlias = [...this.pendingStudentVariableOperations.entries()]
+      .find(([, operation]) => operation.alias === alias);
+    if (activeAlias) {
+      const [activeId, operation] = activeAlias;
+      if (operation.control === context.control && operation.input === context.input) return activeId;
+      throw new Error(`Lesson variable '${alias}' already has an active student operation`);
+    }
+    const sequence = this.nextStudentOperationSequence;
+    this.nextStudentOperationSequence += 1;
+    this.pendingStudentVariableOperations.set(id, {
+      sequence,
+      alias,
+      before: variable.value,
+      control: context.control,
+      input: context.input,
+    });
+    return id;
+  }
+
+  updateStudentVariableOperation(operationId: string, value: number): void {
+    if (this.studentOperationLog.operations.some((operation) => operation.id === operationId)) return;
+    const pending = this.pendingStudentVariableOperations.get(operationId);
+    if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
+    this.applyManualVariable(pending.alias, value);
+  }
+
+  commitStudentVariableOperation(
+    operationId: string,
+    value?: number,
+  ): StudentVariableOperation | undefined {
+    const completed = this.studentOperationLog.operations.find((operation) => operation.id === operationId);
+    if (completed) return structuredClone(completed);
+    const pending = this.pendingStudentVariableOperations.get(operationId);
+    if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
+    if (value !== undefined) this.applyManualVariable(pending.alias, value);
+    const after = this.player.snapshot.board?.variables?.[pending.alias]?.value;
+    this.pendingStudentVariableOperations.delete(operationId);
+    if (!Number.isFinite(after)) throw new Error(`Lesson variable '${pending.alias}' has no finite value`);
+    if (Math.abs((after as number) - pending.before) <= 1e-12) return undefined;
+    const operation: StudentVariableOperation = {
+      profile: "octos.student.operation",
+      version: "0.1",
+      id: operationId,
+      sequence: pending.sequence,
+      lesson_id: this.player.snapshot.lesson_id,
+      kind: "variable_change",
+      target: { kind: "lesson_variable", alias: pending.alias },
+      before: { value: pending.before },
+      after: { value: after as number },
+      control: pending.control,
+      input: pending.input,
+    };
+    this.studentOperationLog.operations.push(operation);
+    this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
+    this.persistStudentOperations();
+    this.emit();
+    return structuredClone(operation);
+  }
+
+  changeStudentVariable(
+    alias: string,
+    value: number,
+    context: StudentVariableOperationContext,
+  ): StudentVariableOperation | undefined {
+    const operationId = this.beginStudentVariableOperation(alias, context);
+    return this.commitStudentVariableOperation(operationId, value);
+  }
+
+  private applyManualVariable(alias: string, value: number): void {
     this.pause();
     this.discardVariableAnimation();
     this.player.setVariable(alias, value);
@@ -648,6 +802,25 @@ export class BrowserLessonSession {
       return player;
     }
     catch { this.store.remove(this.storageKey); return new HeadlessLessonPlayer(this.events, options); }
+  }
+
+  private restoreStudentOperations(): StudentOperationLog {
+    const lessonId = this.player.snapshot.lesson_id;
+    const raw = this.store.loadStudentOperations?.(this.storageKey);
+    if (raw === undefined) return emptyStudentOperationLog(lessonId);
+    const restored = parseStudentOperationLog(raw, lessonId);
+    if (restored) return restored;
+    this.store.removeStudentOperations?.(this.storageKey);
+    return emptyStudentOperationLog(lessonId);
+  }
+
+  private persistStudentOperations(): void {
+    try {
+      this.store.saveStudentOperations?.(
+        this.storageKey,
+        structuredClone(this.studentOperationLog),
+      );
+    } catch {}
   }
 
   private persist(): void {

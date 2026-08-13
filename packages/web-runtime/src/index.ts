@@ -48,6 +48,20 @@ export {
   type PlaybackStore,
 } from "./runtime.js";
 export {
+  emptyStudentOperationLog,
+  parseStudentOperationLog,
+  studentInputMethod,
+  type StudentInputMethod,
+  type StudentOperation,
+  type StudentOperationLog,
+  type StudentVariableControl,
+  type StudentVariableInputEvent,
+  type StudentVariableInputHandler,
+  type StudentVariableInputPhase,
+  type StudentVariableOperation,
+  type StudentVariableOperationContext,
+} from "./student-operations.js";
+export {
   VariableControlsView,
   formatVariableValue,
   mountVariableControls,

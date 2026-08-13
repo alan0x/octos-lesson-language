@@ -12,6 +12,7 @@ import {
   mountInfiniteBoard,
   mountVariableControls,
   parseCanonicalJsonl,
+  type StudentVariableInputEvent,
 } from "../../../packages/web-runtime/src/index.js";
 import {
   collectTeachingObservation,
@@ -75,10 +76,28 @@ const boardView = mountedBoard.view;
 boardView.setViewportInsets({ top: 70, bottom: 190 });
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
-boardView.setVariableInputHandler((alias, value) => session.setVariable(alias, value));
+const handleStudentVariableInput = (
+  alias: string,
+  value: number,
+  event: StudentVariableInputEvent,
+): string | void => {
+  if (event.phase === "start") {
+    return session.beginStudentVariableOperation(alias, {
+      control: event.control,
+      input: event.input,
+    });
+  }
+  if (!event.operation_id) return;
+  if (event.phase === "update") {
+    session.updateStudentVariableOperation(event.operation_id, value);
+  } else {
+    session.commitStudentVariableOperation(event.operation_id, value);
+  }
+};
+boardView.setVariableInputHandler(handleStudentVariableInput);
 const variableControls = mountVariableControls(
   requireElement("#variable-controls"),
-  (alias, value) => session.setVariable(alias, value),
+  handleStudentVariableInput,
 );
 let events: CanonicalEvent[] = [];
 let unsubscribe: (() => void) | undefined;

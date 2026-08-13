@@ -13,12 +13,19 @@ import {
   variableAnimationDuration,
   type PlaybackStore,
 } from "../src/runtime.js";
+import type { StudentOperationLog } from "../src/student-operations.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
+  studentOperations = new Map<string, StudentOperationLog>();
   load(key: string): PlaybackCheckpoint | undefined { return structuredClone(this.values.get(key)); }
   save(key: string, checkpoint: PlaybackCheckpoint): void { this.values.set(key, structuredClone(checkpoint)); }
   remove(key: string): void { this.values.delete(key); }
+  loadStudentOperations(key: string): unknown { return structuredClone(this.studentOperations.get(key)); }
+  saveStudentOperations(key: string, log: StudentOperationLog): void {
+    this.studentOperations.set(key, structuredClone(log));
+  }
+  removeStudentOperations(key: string): void { this.studentOperations.delete(key); }
 }
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
@@ -378,6 +385,93 @@ test("manual slider input cancels automatic animation and restores the chosen va
   assert.equal(session.projection.board?.variables?.theta?.value, Math.PI / 2);
 
   const restored = new BrowserLessonSession(unitCircleEvents, store, "unit-circle-manual");
+  assert.equal(restored.projection.board?.variables?.theta?.value, Math.PI / 2);
+});
+
+test("student slider and geometry gestures share one persisted variable operation log", () => {
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(unitCircleEvents, store, "student-variable-operations");
+  advanceToVariableAnimation(first);
+
+  const sliderId = first.beginStudentVariableOperation("theta", {
+    control: "slider",
+    input: "keyboard",
+  });
+  first.updateStudentVariableOperation(sliderId, Math.PI / 4);
+  first.updateStudentVariableOperation(sliderId, Math.PI / 2);
+  first.commitStudentVariableOperation(sliderId);
+
+  const geometryId = first.beginStudentVariableOperation("theta", {
+    control: "geometry_point",
+    input: "touch",
+  });
+  first.updateStudentVariableOperation(geometryId, 3 * Math.PI / 4);
+  first.commitStudentVariableOperation(geometryId, Math.PI);
+
+  assert.equal(first.studentOperations.length, 2, "many drag samples produce two completed gestures, not four samples");
+  assert.deepEqual(
+    first.studentOperations.map((operation) => ({
+      kind: operation.kind,
+      target: operation.target,
+      control: operation.control,
+      input: operation.input,
+      before: operation.before.value,
+      after: operation.after.value,
+    })),
+    [
+      {
+        kind: "variable_change",
+        target: { kind: "lesson_variable", alias: "theta" },
+        control: "slider",
+        input: "keyboard",
+        before: 0,
+        after: Math.PI / 2,
+      },
+      {
+        kind: "variable_change",
+        target: { kind: "lesson_variable", alias: "theta" },
+        control: "geometry_point",
+        input: "touch",
+        before: Math.PI / 2,
+        after: Math.PI,
+      },
+    ],
+  );
+
+  first.changeStudentVariable("theta", 0, {
+    control: "reset",
+    input: "mouse",
+    operationId: "stable-reset",
+  });
+  first.changeStudentVariable("theta", Math.PI / 2, {
+    control: "reset",
+    input: "mouse",
+    operationId: "stable-reset",
+  });
+  assert.equal(first.studentOperations.length, 3, "a retried operation id is stored once");
+  assert.equal(first.projection.board?.variables?.theta?.value, 0, "a duplicate retry cannot overwrite the committed result");
+
+  first.reset();
+  assert.equal(first.studentOperations.length, 3, "course replay preserves the student's operation history");
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "student-variable-operations");
+  assert.deepEqual(restored.studentOperations, first.studentOperations);
+});
+
+test("invalid saved student operations are discarded without touching playback", () => {
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(unitCircleEvents, store, "invalid-student-operations");
+  advanceToVariableAnimation(first);
+  first.changeStudentVariable("theta", Math.PI / 2, {
+    control: "slider",
+    input: "mouse",
+  });
+  const checkpoint = structuredClone(store.values.get("invalid-student-operations"));
+  const saved = store.studentOperations.get("invalid-student-operations")!;
+  saved.operations[0]!.after.value = Number.NaN;
+
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "invalid-student-operations");
+  assert.equal(restored.studentOperations.length, 0);
+  assert.deepEqual(store.values.get("invalid-student-operations"), checkpoint);
   assert.equal(restored.projection.board?.variables?.theta?.value, Math.PI / 2);
 });
 

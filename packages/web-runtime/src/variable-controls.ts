@@ -1,5 +1,10 @@
 import type { SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackVariableAnimation } from "../../player-core/src/index.js";
+import {
+  studentInputMethod,
+  type StudentInputMethod,
+  type StudentVariableInputHandler,
+} from "./student-operations.js";
 
 export interface VariableControlModel {
   alias: string;
@@ -60,7 +65,7 @@ export class VariableControlsView {
 
   constructor(
     private readonly container: HTMLElement,
-    private readonly onChange: (alias: string, value: number) => void,
+    private readonly onChange: StudentVariableInputHandler,
   ) {}
 
   render(
@@ -104,7 +109,53 @@ export class VariableControlsView {
     input.setAttribute("aria-label", model.label);
     const output = document.createElement("output");
     output.textContent = formatVariableValue(model.value, model.unit);
-    input.addEventListener("input", () => this.onChange(model.alias, Number(input.value)));
+    let active = false;
+    let operationId: string | undefined;
+    let method: StudentInputMethod = "unknown";
+    const start = (nextMethod: StudentInputMethod): void => {
+      if (active) return;
+      active = true;
+      method = nextMethod;
+      const result = this.onChange(model.alias, Number(input.value), {
+        phase: "start",
+        control: "slider",
+        input: method,
+      });
+      if (typeof result === "string") operationId = result;
+    };
+    const update = (): void => {
+      if (!active) start(method === "unknown" ? "keyboard" : method);
+      this.onChange(model.alias, Number(input.value), {
+        phase: "update",
+        control: "slider",
+        input: method,
+        ...(operationId ? { operation_id: operationId } : {}),
+      });
+    };
+    const commit = (): void => {
+      if (!active) return;
+      this.onChange(model.alias, Number(input.value), {
+        phase: "commit",
+        control: "slider",
+        input: method,
+        ...(operationId ? { operation_id: operationId } : {}),
+      });
+      active = false;
+      operationId = undefined;
+      method = "unknown";
+    };
+    input.addEventListener("pointerdown", (event) => start(studentInputMethod(event.pointerType)));
+    input.addEventListener("input", update);
+    input.addEventListener("change", commit);
+    input.addEventListener("pointerup", commit);
+    input.addEventListener("pointercancel", commit);
+    input.addEventListener("keydown", (event) => {
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
+        start("keyboard");
+      }
+    });
+    input.addEventListener("keyup", commit);
+    input.addEventListener("blur", commit);
     wrapper.append(title, input, output);
     return wrapper;
   }
@@ -112,7 +163,7 @@ export class VariableControlsView {
 
 export function mountVariableControls(
   container: HTMLElement,
-  onChange: (alias: string, value: number) => void,
+  onChange: StudentVariableInputHandler,
 ): VariableControlsView {
   return new VariableControlsView(container, onChange);
 }

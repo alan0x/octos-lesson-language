@@ -14,6 +14,11 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
 import { plotPathData, samplePlotExpression, type PlotRange } from "./plot.js";
+import {
+  studentInputMethod,
+  type StudentInputMethod,
+  type StudentVariableInputHandler,
+} from "./student-operations.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
@@ -638,7 +643,7 @@ export interface MountedInfiniteBoard {
 
 export type BoardInputOwner = "runtime" | "ink" | "course-object";
 export type CameraListener = (camera: CameraState) => void;
-export type VariableInputHandler = (alias: string, value: number) => void;
+export type VariableInputHandler = StudentVariableInputHandler;
 
 export function angleControlValue(
   rawAngle: number,
@@ -827,6 +832,9 @@ export class InfiniteBoardView {
   private dragging?: { x: number; y: number; panX: number; panY: number };
   private variableDragging?: {
     alias: string;
+    operationId?: string;
+    input: StudentInputMethod;
+    lastValue: number;
     centerX: number;
     centerY: number;
     rect: DOMRect;
@@ -957,7 +965,7 @@ export class InfiniteBoardView {
     this.inputOwner = owner;
     if (owner !== "runtime") {
       this.dragging = undefined;
-      this.variableDragging = undefined;
+      this.finishVariableDrag();
       this.viewport.classList.remove("dragging");
     }
   }
@@ -965,8 +973,8 @@ export class InfiniteBoardView {
   getInputOwner(): BoardInputOwner { return this.inputOwner; }
 
   setVariableInputHandler(handler: VariableInputHandler | undefined): void {
+    if (!handler) this.finishVariableDrag();
     this.variableInputHandler = handler;
-    if (!handler) this.variableDragging = undefined;
   }
 
   /**
@@ -1052,7 +1060,7 @@ export class InfiniteBoardView {
     if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.dragging = undefined;
-    this.variableDragging = undefined;
+    this.finishVariableDrag();
     this.variableInputHandler = undefined;
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
@@ -1301,7 +1309,15 @@ export class InfiniteBoardView {
     const y = (event.clientY - drag.rect.top) / drag.rect.height * drag.viewBoxHeight;
     const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
     const value = angleControlValue(rawAngle, variable.value, variable.min, variable.max);
-    if (Number.isFinite(value)) this.variableInputHandler(drag.alias, value);
+    if (Number.isFinite(value)) {
+      drag.lastValue = value;
+      this.variableInputHandler(drag.alias, value, {
+        phase: "update",
+        control: "geometry_point",
+        input: drag.input,
+        ...(drag.operationId ? { operation_id: drag.operationId } : {}),
+      });
+    }
   }
   private onPointerDown(event: PointerEvent): void {
     if (this.inputOwner !== "runtime" || (event.target as HTMLElement).closest("button")) return;
@@ -1311,15 +1327,25 @@ export class InfiniteBoardView {
     const centerX = Number(control?.dataset.angleCenterX);
     const centerY = Number(control?.dataset.angleCenterY);
     const viewBox = svg?.viewBox.baseVal;
+    const variable = alias ? this.board?.variables?.[alias] : undefined;
     if (
-      control && svg && alias
+      control && svg && alias && variable && this.variableInputHandler
       && Number.isFinite(centerX) && Number.isFinite(centerY)
       && viewBox && Number.isFinite(viewBox.width) && viewBox.width > 0
       && Number.isFinite(viewBox.height) && viewBox.height > 0
     ) {
       event.preventDefault();
+      const input = studentInputMethod(event.pointerType);
+      const operationId = this.variableInputHandler(alias, variable.value, {
+        phase: "start",
+        control: "geometry_point",
+        input,
+      });
       this.variableDragging = {
         alias,
+        ...(typeof operationId === "string" ? { operationId } : {}),
+        input,
+        lastValue: variable.value,
         centerX,
         centerY,
         rect: svg.getBoundingClientRect(),
@@ -1346,10 +1372,22 @@ export class InfiniteBoardView {
     this.transform();
   }
   private onPointerUp(): void {
-    this.variableDragging = undefined;
+    this.finishVariableDrag();
     if (this.dragging) this.beginManualNavigation();
     this.dragging = undefined;
     this.viewport.classList.remove("dragging");
+  }
+
+  private finishVariableDrag(): void {
+    const drag = this.variableDragging;
+    if (!drag) return;
+    this.variableDragging = undefined;
+    this.variableInputHandler?.(drag.alias, drag.lastValue, {
+      phase: "commit",
+      control: "geometry_point",
+      input: drag.input,
+      ...(drag.operationId ? { operation_id: drag.operationId } : {}),
+    });
   }
 }
 
