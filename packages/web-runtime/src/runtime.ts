@@ -142,7 +142,8 @@ export interface BrowserLessonSessionOptions {
   incremental?: boolean;
   /**
    * `estimated` advances from narration using the Runtime's reading budget.
-   * `external` waits for the host audio player to call completeNarration().
+   * `external` waits for the host audio player to call startNarration() before
+   * during-speech actions and completeNarration() before the narration ends.
    */
   narrationTiming?: "estimated" | "external";
   reducedMotion?: boolean;
@@ -155,6 +156,7 @@ export class BrowserLessonSession {
   private scheduledBaseDelay?: number;
   private scheduledSpeed = 1;
   private narrationRemainingBaseMs?: number;
+  private startedExternalNarrationBeatId?: string;
   private completedExternalNarrationBeatId?: string;
   private playing = false;
   private followAppends = false;
@@ -253,6 +255,7 @@ export class BrowserLessonSession {
     this.seekAttentionTargets = [];
     this.currentFrame = frame;
     if (frame?.operation.type === "narration.begin" && frame.operation.narration) {
+      this.startedExternalNarrationBeatId = undefined;
       this.completedExternalNarrationBeatId = undefined;
       this.narrationRemainingBaseMs = this.options.narrationTiming === "external"
         ? undefined
@@ -262,6 +265,7 @@ export class BrowserLessonSession {
           );
     } else if (frame?.operation.type === "narration.end") {
       this.narrationRemainingBaseMs = undefined;
+      this.startedExternalNarrationBeatId = undefined;
       this.completedExternalNarrationBeatId = undefined;
     }
     if (
@@ -305,9 +309,38 @@ export class BrowserLessonSession {
   }
 
   /**
+   * Release the externally timed start boundary for during-speech actions.
+   * Stale starts are ignored so a late audio decode from an interrupted Beat
+   * cannot release the current Beat.
+   */
+  startNarration(beatId: string): void {
+    if (this.options.narrationTiming !== "external") return;
+    if (
+      !this.player.snapshot.current_narration ||
+      this.player.snapshot.current_beat_id !== beatId
+    ) {
+      return;
+    }
+    const nextOperation = this.player.operations[this.player.cursor];
+    const wasWaitingForStart =
+      (nextOperation?.type === "phase.begin" &&
+        nextOperation.phase === "during_speech") ||
+      this.player.snapshot.current_phase === "during_speech";
+    this.startedExternalNarrationBeatId = beatId;
+    if (
+      this.playing &&
+      this.scheduledBaseDelay === undefined &&
+      wasWaitingForStart
+    ) {
+      this.tick();
+    }
+  }
+
+  /**
    * Release an externally timed narration boundary. Stale completions are
    * ignored so an interrupted clip from the previous Beat cannot advance the
-   * current lesson.
+   * current lesson. Completion also releases the start boundary so disabled
+   * or failed audio can fall back to visible narration without deadlocking.
    */
   completeNarration(beatId: string): void {
     if (this.options.narrationTiming !== "external") return;
@@ -317,12 +350,18 @@ export class BrowserLessonSession {
     ) {
       return;
     }
+    this.startedExternalNarrationBeatId = beatId;
     this.completedExternalNarrationBeatId = beatId;
     const nextOperation = this.player.operations[this.player.cursor];
+    const wasWaitingForStart =
+      (nextOperation?.type === "phase.begin" &&
+        nextOperation.phase === "during_speech") ||
+      this.player.snapshot.current_phase === "during_speech";
     if (
       this.playing &&
       this.scheduledBaseDelay === undefined &&
-      nextOperation?.type === "narration.end"
+      (nextOperation?.type === "narration.end" ||
+        wasWaitingForStart)
     ) {
       this.tick();
     }
@@ -334,6 +373,7 @@ export class BrowserLessonSession {
     this.playing = false;
     this.followAppends = false;
     this.narrationRemainingBaseMs = undefined;
+    this.startedExternalNarrationBeatId = undefined;
     this.completedExternalNarrationBeatId = undefined;
     this.discardVariableAnimation();
     this.seekAttentionTargets = [...attentionTargets];
@@ -402,6 +442,7 @@ export class BrowserLessonSession {
     this.pause();
     this.discardScheduledDelay();
     this.narrationRemainingBaseMs = undefined;
+    this.startedExternalNarrationBeatId = undefined;
     this.completedExternalNarrationBeatId = undefined;
     this.seekAttentionTargets = [];
     this.discardVariableAnimation();
@@ -415,10 +456,20 @@ export class BrowserLessonSession {
     if (!this.playing) return;
     const nextOperation = this.player.operations[this.player.cursor];
     if (
+      this.options.narrationTiming === "external" &&
+      this.player.snapshot.current_narration &&
+      ((nextOperation?.type === "phase.begin" &&
+        nextOperation.phase === "during_speech") ||
+        this.player.snapshot.current_phase === "during_speech")
+    ) {
+      if (this.startedExternalNarrationBeatId !== nextOperation.beat_id) return;
+    }
+    if (
       nextOperation?.type === "narration.end" &&
       this.options.narrationTiming === "external"
     ) {
       if (this.completedExternalNarrationBeatId !== nextOperation.beat_id) return;
+      this.startedExternalNarrationBeatId = undefined;
       this.completedExternalNarrationBeatId = undefined;
     }
     if (

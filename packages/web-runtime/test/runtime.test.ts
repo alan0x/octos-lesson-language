@@ -206,6 +206,14 @@ test("external narration timing waits for the matching audio completion", (conte
   session.play();
   tickElapsed(context, 120_000);
   assert.equal(
+    session.currentOperation?.type,
+    "narration.begin",
+    "during-speech work must wait until real audio starts",
+  );
+
+  session.startNarration(beatId);
+  tickElapsed(context, 120_000);
+  assert.equal(
     session.projection.current_narration?.text,
     text,
     "the estimated reading clock must not cut off real audio",
@@ -214,6 +222,60 @@ test("external narration timing waits for the matching audio completion", (conte
   session.completeNarration(beatId);
   tickElapsed(context, 120_000);
   assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+test("external narration ignores stale starts and completion releases both boundaries", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(
+    events,
+    new MemoryStore(),
+    "external-narration-fallback",
+    { narrationTiming: "external" },
+  );
+  const text = advanceToFirstNarration(session);
+  const beatId = session.currentOperation?.beat_id;
+  assert.ok(beatId);
+
+  session.play();
+  session.startNarration("stale-beat");
+  tickElapsed(context, 60_000);
+  assert.equal(session.currentOperation?.type, "narration.begin");
+
+  session.completeNarration(beatId);
+  tickElapsed(context, 120_000);
+  assert.notEqual(session.projection.current_narration?.text, text);
+});
+
+test("external narration start gate survives a refresh inside during_speech", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(
+    events,
+    store,
+    "external-narration-refresh",
+    { narrationTiming: "external" },
+  );
+  advanceToFirstNarration(first);
+  const beatId = first.currentOperation?.beat_id;
+  assert.ok(beatId);
+  const phase = first.advance();
+  assert.equal(phase?.operation.type, "phase.begin");
+  assert.equal(phase?.operation.phase, "during_speech");
+
+  const restored = new BrowserLessonSession(
+    events,
+    store,
+    "external-narration-refresh",
+    { narrationTiming: "external" },
+  );
+  const blockedCursor = restored.cursor;
+  restored.play();
+  tickElapsed(context, 60_000);
+  assert.equal(restored.cursor, blockedCursor);
+
+  restored.startNarration(beatId);
+  tickElapsed(context, 2_000);
+  assert.ok(restored.cursor > blockedCursor);
 });
 
 test("pause and resume preserve the remaining narration budget", (context) => {
