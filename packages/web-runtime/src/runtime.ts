@@ -232,6 +232,7 @@ export class BrowserLessonSession {
   private readonly studentTaskDefinitions: AuthoringStudentTask[];
   private studentTaskProgressLog: StudentTaskProgressLog;
   private nextStudentOperationSequence = 1;
+  private suppressStudentTaskEvaluation = false;
   private readonly pendingStudentVariableOperations = new Map<string, {
     sequence: number;
     alias: string;
@@ -831,6 +832,7 @@ export class BrowserLessonSession {
     this.studentOperationLog.operations.push(operation);
     this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
     this.persistStudentOperations();
+    this.evaluateStudentTasks(operation);
     this.emit();
     return structuredClone(operation);
   }
@@ -863,10 +865,33 @@ export class BrowserLessonSession {
     if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
       throw new Error(`Student task '${taskId}' is not currently available`);
     }
-    const variables = [...new Set(definition.allowed_operations.map((operation) => operation.variable))];
-    for (const alias of variables) {
-      const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
-      if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
+    this.suppressStudentTaskEvaluation = true;
+    try {
+      if (definition.completion.kind === "expression_target") {
+        const variables = [...new Set(definition.allowed_operations.flatMap((operation) =>
+          operation.kind === "variable_change" ? [operation.variable] : []))];
+        for (const alias of variables) {
+          const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
+          if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
+        }
+      } else {
+        const nodeId = definition.completion.node;
+        const node = this.player.snapshot.board?.nodes?.[nodeId];
+        const current = this.scene3dViews[nodeId];
+        const initial = node?.kind === "scene3d" ? node.content.camera as StudentScene3dViewState : undefined;
+        if (current && initial) {
+          const operationId = this.handleStudentScene3dInput(nodeId, current, {
+            phase: "start", control: "reset", input,
+          });
+          if (typeof operationId === "string") {
+            this.handleStudentScene3dInput(nodeId, initial, {
+              phase: "commit", control: "reset", input, operation_id: operationId,
+            });
+          }
+        }
+      }
+    } finally {
+      this.suppressStudentTaskEvaluation = false;
     }
     progress.status = "not_started";
     this.persistStudentTaskProgress();
@@ -1052,8 +1077,8 @@ export class BrowserLessonSession {
     return empty;
   }
 
-  private evaluateStudentTasks(operation: StudentVariableOperation): void {
-    if (this.player.status !== "completed") return;
+  private evaluateStudentTasks(operation: StudentOperation): void {
+    if (this.suppressStudentTaskEvaluation || this.player.status !== "completed") return;
     const board = this.player.snapshot.board;
     if (!board) return;
     const activeProgress = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");

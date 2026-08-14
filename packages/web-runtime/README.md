@@ -116,13 +116,17 @@ contains mathematical objects and an initial camera; learner orbit/zoom changes
 only the stored view and never rewrites the node. The board provides isometric,
 front, top, and reset controls. Surface expressions use the same restricted
 math evaluator as Geometry and Plot, and section values can bind to Lesson
-variables.
+variables. Declarative point, edge, and face highlights make spatial evidence
+addressable without arbitrary meshes. Every scene also carries a required
+static fallback description, which the board shows if interactive rendering
+cannot start.
 
 ## After-lesson student tasks
 
 Validated `lesson.tasks` become available only after playback reaches
 `lesson.close`. `studentTasks` exposes the current prompt, attempt count, hint,
-and completion state. A committed slider or geometry-point operation is judged
+and completion state. A committed slider, geometry-point, or allowed 3D-view
+operation is judged
 against only the first unfinished task; the gesture that completes one task is
 not reused as an answer to the next task.
 

@@ -501,12 +501,38 @@ test("ink selections enter the same persisted student operation history", () => 
   );
 });
 
-test("3D orbit gestures are one persisted student operation and restore the view", () => {
+test("3D view gestures persist and can complete a view task", () => {
   const sceneEvents = normalizeAuthoringLesson({
     dsl: "octos.lesson",
     version: "0.1",
     profile: "authoring",
-    lesson: { mode: "explain", language: "zh-CN", title: "立方体", goals: ["观察空间结构"] },
+    lesson: {
+      mode: "explain",
+      language: "zh-CN",
+      title: "立方体",
+      goals: ["观察空间结构"],
+      tasks: [{
+        as: "find-front-view",
+        prompt: "把立方体转到正视图",
+        availability: { kind: "after_lesson" },
+        allowed_operations: [{
+          kind: "scene3d_view",
+          node: "cube-scene",
+          controls: ["orbit", "preset", "reset"],
+        }],
+        completion: {
+          kind: "scene3d_view_target",
+          node: "cube-scene",
+          yaw: 0,
+          pitch: 0,
+          zoom: 1,
+          angular_tolerance: .04,
+          zoom_tolerance: .04,
+        },
+        hints: ["使用正视按钮，或拖动到正前方。"],
+        success_message: "正确，这是立方体的正视图。",
+      }],
+    },
     steps: [{
       key: "scene-step",
       purpose: "显示三维对象",
@@ -518,6 +544,7 @@ test("3D orbit gestures are one persisted student operation and restore the view
           kind: "scene3d",
           role: "diagram",
           content: {
+            fallback: "一个中心位于原点、边长为 2 的立方体。",
             axes: true,
             camera: { yaw: .7, pitch: .5, zoom: 1 },
             objects: [{
@@ -555,10 +582,21 @@ test("3D orbit gestures are one persisted student operation and restore the view
   assert.equal(first.studentOperations.length, 1);
   assert.equal(first.studentOperations[0]!.kind, "scene3d_view");
   assert.deepEqual(first.scene3dViews[nodeId], { yaw: 1.4, pitch: .1, zoom: 1 });
+  assert.equal(first.studentTasks[0]!.status, "in_progress");
+
+  const presetId = first.handleStudentScene3dInput(nodeId, first.scene3dViews[nodeId]!, {
+    phase: "start", control: "preset", input: "keyboard",
+  });
+  first.handleStudentScene3dInput(nodeId, { yaw: 0, pitch: 0, zoom: 1 }, {
+    phase: "commit", control: "preset", input: "keyboard", operation_id: presetId as string,
+  });
+  assert.equal(first.studentTasks[0]!.status, "succeeded");
+  assert.equal(first.studentTasks[0]!.attempts.length, 2);
 
   const restored = new BrowserLessonSession(sceneEvents, store, "scene-operations");
   assert.deepEqual(restored.scene3dViews, first.scene3dViews);
   assert.deepEqual(restored.studentOperations, first.studentOperations);
+  assert.equal(restored.studentTasks[0]!.status, "succeeded");
 });
 
 test("student tasks judge committed operations, reveal hints, retry, and restore progress", () => {

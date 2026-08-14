@@ -677,6 +677,7 @@ overlay
   "kind": "scene3d",
   "content": {
     "title": "立方体与抛物面截面",
+    "fallback": "立方体旁边是一张向上开口的抛物面，橙色平面表示水平截面。",
     "axes": true,
     "camera": {"yaw": 0.72, "pitch": 0.55, "zoom": 1},
     "objects": [
@@ -700,6 +701,11 @@ overlay
     "sections": [
       {"as": "horizontal-section", "axis": "z", "value": 0, "color": "orange"}
     ],
+    "highlights": [
+      {"as": "vertex-a", "kind": "point", "points": [{"x": -1, "y": -1, "z": 1}], "label": "顶点 A"},
+      {"as": "edge-ab", "kind": "edge", "points": [{"x": -1, "y": -1, "z": 1}, {"x": 1, "y": -1, "z": 1}], "label": "棱 AB"},
+      {"as": "top-face", "kind": "face", "points": [{"x": -1, "y": -1, "z": 1}, {"x": 1, "y": -1, "z": 1}, {"x": 1, "y": 1, "z": 1}, {"x": -1, "y": 1, "z": 1}], "label": "顶面"}
+    ],
     "bindings": [
       {"target": "horizontal-section.value", "expression": "height"}
     ]
@@ -712,7 +718,10 @@ overlay
 - `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
 - `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
 - `sections` 只支持垂直于 x、y 或 z 轴的平面，`value` 可以绑定 Lesson 数值变量；
+- `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
+- `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
 - Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
+- 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角，Runtime 按角度和缩放容差判断完成；
 - Runtime 必须限制俯仰角、缩放范围、对象数量和曲面采样数；不支持的三维内容必须显式失败，不能显示空白卡片。
 
 ## 12. `lesson.close`

@@ -1,10 +1,17 @@
 import {
   evaluateMathExpression,
+  type AuthoringScene3dStudentTask,
   type AuthoringStudentTask,
+  type AuthoringVariableStudentTask,
+  type StudentTaskScene3dControl,
   type StudentTaskVariableControl,
 } from "../../core/src/index.js";
 import type { SemanticBoardState } from "../../core/src/index.js";
-import type { StudentVariableOperation } from "./student-operations.js";
+import type {
+  StudentOperation,
+  StudentScene3dViewOperation,
+  StudentVariableOperation,
+} from "./student-operations.js";
 
 export type StudentTaskStatus = "not_started" | "in_progress" | "needs_hint" | "succeeded";
 
@@ -101,8 +108,14 @@ export function parseStudentTaskProgressLog(
         typeof attempt.target !== "number" ||
         !Number.isFinite(attempt.target) ||
         typeof attempt.succeeded !== "boolean" ||
-        attempt.target !== definition.completion.value ||
-        attempt.succeeded !== (Math.abs(attempt.actual - attempt.target) <= definition.completion.tolerance)
+        attempt.target !== (definition.completion.kind === "expression_target"
+          ? definition.completion.value
+          : 0) ||
+        attempt.succeeded !== (Math.abs(attempt.actual - attempt.target) <= (
+          definition.completion.kind === "expression_target"
+            ? definition.completion.tolerance
+            : 1
+        ))
       ) return undefined;
       lastSequence = attempt.sequence as number;
       operationIds.add(attempt.operation_id);
@@ -124,28 +137,69 @@ export function parseStudentTaskProgressLog(
   return { ...emptyStudentTaskProgressLog(lessonId, []), tasks };
 }
 
-function operationAllowed(task: AuthoringStudentTask, operation: StudentVariableOperation): boolean {
-  return task.allowed_operations.some((allowed) =>
-    allowed.variable === operation.target.alias
+function variableOperationAllowed(
+  task: AuthoringVariableStudentTask,
+  operation: StudentVariableOperation,
+): boolean {
+  return task.allowed_operations.some((allowed) => allowed.kind === "variable_change"
+    && allowed.variable === operation.target.alias
     && allowed.controls.includes(operation.control as StudentTaskVariableControl));
+}
+
+function scene3dOperationAllowed(
+  task: AuthoringScene3dStudentTask,
+  operation: StudentScene3dViewOperation,
+): boolean {
+  return task.allowed_operations.some((allowed) => allowed.kind === "scene3d_view"
+    && allowed.node === operation.target.node_id
+    && allowed.controls.includes(operation.control as StudentTaskScene3dControl));
+}
+
+function scene3dViewScore(
+  view: StudentScene3dViewOperation["after"],
+  completion: AuthoringScene3dStudentTask["completion"],
+): number {
+  const yawDistance = Math.abs(Math.atan2(
+    Math.sin(view.yaw - completion.yaw),
+    Math.cos(view.yaw - completion.yaw),
+  ));
+  return Math.max(
+    yawDistance / completion.angular_tolerance,
+    Math.abs(view.pitch - completion.pitch) / completion.angular_tolerance,
+    Math.abs(view.zoom - completion.zoom) / completion.zoom_tolerance,
+  );
 }
 
 export function evaluateStudentTaskOperation(
   task: AuthoringStudentTask,
   progress: StudentTaskProgress,
-  operation: StudentVariableOperation,
+  operation: StudentOperation,
   board: SemanticBoardState,
 ): boolean {
-  if (progress.status === "succeeded" || !operationAllowed(task, operation)) return false;
+  if (progress.status === "succeeded") return false;
   if (progress.attempts.some((attempt) => attempt.operation_id === operation.id)) return false;
-  const values = Object.fromEntries(Object.entries(board.variables ?? {}).map(([alias, variable]) => [alias, variable.value]));
-  const actual = evaluateMathExpression(task.completion.expression, values);
-  const succeeded = Math.abs(actual - task.completion.value) <= task.completion.tolerance;
+  let actual: number;
+  let target: number;
+  let succeeded: boolean;
+  if (task.completion.kind === "expression_target") {
+    const variableTask = task as AuthoringVariableStudentTask;
+    if (operation.kind !== "variable_change" || !variableOperationAllowed(variableTask, operation)) return false;
+    const values = Object.fromEntries(Object.entries(board.variables ?? {}).map(([alias, variable]) => [alias, variable.value]));
+    actual = evaluateMathExpression(task.completion.expression, values);
+    target = task.completion.value;
+    succeeded = Math.abs(actual - target) <= task.completion.tolerance;
+  } else {
+    const sceneTask = task as AuthoringScene3dStudentTask;
+    if (operation.kind !== "scene3d_view" || !scene3dOperationAllowed(sceneTask, operation)) return false;
+    actual = scene3dViewScore(operation.after, sceneTask.completion);
+    target = 0;
+    succeeded = actual <= 1;
+  }
   progress.attempts.push({
     sequence: progress.attempts.length + 1,
     operation_id: operation.id,
     actual,
-    target: task.completion.value,
+    target,
     succeeded,
   });
   const hintThreshold = task.hint_after_attempts ?? 2;

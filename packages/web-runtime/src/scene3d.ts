@@ -104,7 +104,7 @@ function polygon(
   color: string,
   opacity: number,
   className: string,
-): number {
+): SVGPolygonElement {
   const projected = points.map((point) => projectScene3dPoint(point, view));
   const element = svgElement("polygon", {
     points: projected.map((point) => `${point.x},${point.y}`).join(" "),
@@ -114,7 +114,7 @@ function polygon(
   });
   element.setAttribute("class", className);
   svg.append(element);
-  return projected.reduce((total, point) => total + point.depth, 0) / projected.length;
+  return element;
 }
 
 function boxFaces(object: Record<string, any>): Point3d[][] {
@@ -241,6 +241,52 @@ function renderScene(
         ? [{ x: -extent, y: value, z: -extent }, { x: extent, y: value, z: -extent }, { x: extent, y: value, z: extent }, { x: -extent, y: value, z: extent }]
         : [{ x: -extent, y: -extent, z: value }, { x: extent, y: -extent, z: value }, { x: extent, y: extent, z: value }, { x: -extent, y: extent, z: value }];
     polygon(svg, points, view, safeColor(section.color, "#d28a31"), .12, "scene3d-section");
+  }
+  for (const highlight of content.highlights ?? []) {
+    const points = highlight.points as Point3d[];
+    const color = safeColor(highlight.color, "#d04f45");
+    const id = String(highlight.id ?? highlight.as ?? "");
+    let labelPoint: ProjectedPoint | undefined;
+    if (highlight.kind === "point") {
+      labelPoint = projectScene3dPoint(points[0]!, view);
+      const point = svgElement("circle", {
+        cx: labelPoint.x,
+        cy: labelPoint.y,
+        r: 7,
+        fill: color,
+        stroke: "#fff",
+        "stroke-width": 2,
+      });
+      point.setAttribute("class", "scene3d-highlight scene3d-highlight-point");
+      point.dataset.id = id;
+      svg.append(point);
+    } else if (highlight.kind === "edge") {
+      const from = projectScene3dPoint(points[0]!, view);
+      const to = projectScene3dPoint(points[1]!, view);
+      labelPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, depth: 0 };
+      const edge = svgElement("line", {
+        x1: from.x, y1: from.y, x2: to.x, y2: to.y,
+        stroke: color, "stroke-width": 5, "stroke-linecap": "round",
+      });
+      edge.setAttribute("class", "scene3d-highlight scene3d-highlight-edge");
+      edge.dataset.id = id;
+      svg.append(edge);
+    } else {
+      const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
+      face.dataset.id = id;
+      const projected = points.map((point) => projectScene3dPoint(point, view));
+      labelPoint = {
+        x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
+        y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
+        depth: 0,
+      };
+    }
+    if (highlight.label && labelPoint) {
+      const label = svgElement("text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
+      label.textContent = String(highlight.label);
+      label.setAttribute("class", "scene3d-highlight-label");
+      svg.append(label);
+    }
   }
 }
 
@@ -375,7 +421,10 @@ export function renderScene3d(
     }, 140);
   }, { passive: false });
   renderScene(svg, content, view, variables);
-  shell.append(controls, svg);
+  const fallback = document.createElement("p");
+  fallback.className = "scene3d-fallback";
+  fallback.textContent = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
+  shell.append(controls, svg, fallback);
   parent.append(shell);
 }
 

@@ -126,12 +126,20 @@ export interface AuthoringVariable {
 
 export type StudentTaskVariableControl = "slider" | "geometry_point";
 
-export interface AuthoringStudentTask {
+export type StudentTaskScene3dControl = "orbit" | "zoom" | "preset" | "reset";
+
+interface AuthoringStudentTaskBase {
   as: Alias;
   prompt: string;
   availability: {
     kind: "after_lesson";
   };
+  hints: string[];
+  hint_after_attempts?: number;
+  success_message?: string;
+}
+
+export interface AuthoringVariableStudentTask extends AuthoringStudentTaskBase {
   allowed_operations: Array<{
     kind: "variable_change";
     variable: string;
@@ -143,10 +151,26 @@ export interface AuthoringStudentTask {
     value: number;
     tolerance: number;
   };
-  hints: string[];
-  hint_after_attempts?: number;
-  success_message?: string;
 }
+
+export interface AuthoringScene3dStudentTask extends AuthoringStudentTaskBase {
+  allowed_operations: Array<{
+    kind: "scene3d_view";
+    node: Alias;
+    controls: StudentTaskScene3dControl[];
+  }>;
+  completion: {
+    kind: "scene3d_view_target";
+    node: Alias;
+    yaw: number;
+    pitch: number;
+    zoom: number;
+    angular_tolerance: number;
+    zoom_tolerance: number;
+  };
+}
+
+export type AuthoringStudentTask = AuthoringVariableStudentTask | AuthoringScene3dStudentTask;
 
 export interface AuthoringLesson {
   dsl: "octos.lesson";

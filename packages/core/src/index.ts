@@ -9,6 +9,9 @@ import type {
   ActionPhase,
   AuthoringAction,
   AuthoringLesson,
+  AuthoringScene3dStudentTask,
+  AuthoringStudentTask,
+  AuthoringVariableStudentTask,
   CanonicalAction,
   CanonicalEvent,
   CanonicalTarget,
@@ -128,10 +131,115 @@ function validateLessonVariables(document: AuthoringLesson): Map<string, number>
   return values;
 }
 
+function scene3dTaskScore(
+  view: { yaw: number; pitch: number; zoom: number },
+  target: { yaw: number; pitch: number; zoom: number },
+  angularTolerance: number,
+  zoomTolerance: number,
+): number {
+  const yawDistance = Math.abs(Math.atan2(
+    Math.sin(view.yaw - target.yaw),
+    Math.cos(view.yaw - target.yaw),
+  ));
+  return Math.max(
+    yawDistance / angularTolerance,
+    Math.abs(view.pitch - target.pitch) / angularTolerance,
+    Math.abs(view.zoom - target.zoom) / zoomTolerance,
+  );
+}
+
+function validateScene3dStudentTask(
+  task: AuthoringScene3dStudentTask,
+  path: string,
+  scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
+): void {
+  const completion = task.completion;
+  requireAlias(completion.node, `${path}/completion/node`);
+  const initial = scene3dCameras.get(completion.node);
+  if (!initial) fail("OLL_REFERENCE_NOT_FOUND", `${path}/completion/node`, `3D scene '${completion.node}' is not declared`);
+  const target = {
+    yaw: requireFiniteNumber(completion.yaw, `${path}/completion/yaw`),
+    pitch: requireFiniteNumber(completion.pitch, `${path}/completion/pitch`),
+    zoom: requireFiniteNumber(completion.zoom, `${path}/completion/zoom`),
+  };
+  const angularTolerance = requireFiniteNumber(
+    completion.angular_tolerance,
+    `${path}/completion/angular_tolerance`,
+  );
+  const zoomTolerance = requireFiniteNumber(
+    completion.zoom_tolerance,
+    `${path}/completion/zoom_tolerance`,
+  );
+  if (target.pitch < -Math.PI / 2 || target.pitch > Math.PI / 2
+    || target.zoom < .2 || target.zoom > 5) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion`, "3D target view is outside the supported camera range");
+  }
+  if (angularTolerance <= 0 || angularTolerance > Math.PI
+    || zoomTolerance <= 0 || zoomTolerance > 4.8) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion`, "3D task tolerances must be positive and within the camera range");
+  }
+  requireArray(task.allowed_operations, `${path}/allowed_operations`);
+  const controls = new Set<string>();
+  task.allowed_operations.forEach((operation, operationIndex) => {
+    const operationPath = `${path}/allowed_operations/${operationIndex}`;
+    requireObject(operation, operationPath);
+    if (operation.kind !== "scene3d_view" || operation.node !== completion.node) {
+      fail("OLL_INVALID_STUDENT_TASK", operationPath, "3D view tasks must reference the completion scene");
+    }
+    requireArray(operation.controls, `${operationPath}/controls`);
+    operation.controls.forEach((control, controlIndex) => {
+      if (!["orbit", "zoom", "preset", "reset"].includes(String(control))) {
+        fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/controls/${controlIndex}`, `Unsupported 3D task control '${String(control)}'`);
+      }
+      if (controls.has(String(control))) {
+        fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/controls/${controlIndex}`, `3D task control '${String(control)}' is duplicated`);
+      }
+      controls.add(String(control));
+    });
+  });
+  if (scene3dTaskScore(initial!, target, angularTolerance, zoomTolerance) <= 1) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion`, "3D task is already complete at the initial camera view");
+  }
+  const presets = [
+    { yaw: .72, pitch: .55, zoom: 1 },
+    { yaw: 0, pitch: 0, zoom: 1 },
+    { yaw: 0, pitch: Math.PI / 2, zoom: 1 },
+  ];
+  const presetReachable = controls.has("preset") && presets.some(
+    (preset) => scene3dTaskScore(preset, target, angularTolerance, zoomTolerance) <= 1,
+  );
+  const orbitReachable = controls.has("orbit")
+    && (Math.abs(initial!.zoom - target.zoom) <= zoomTolerance || controls.has("zoom"));
+  const zoomOnlyReachable = controls.has("zoom")
+    && scene3dTaskScore(
+      { ...initial!, zoom: target.zoom },
+      target,
+      angularTolerance,
+      zoomTolerance,
+    ) <= 1;
+  if (!presetReachable && !orbitReachable && !zoomOnlyReachable) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "No allowed 3D control can reach the target view");
+  }
+  requireArray(task.hints, `${path}/hints`);
+  if (task.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/hints`, "Task hints must not be empty");
+  }
+  if (task.hint_after_attempts !== undefined
+    && (!Number.isInteger(task.hint_after_attempts)
+      || task.hint_after_attempts < 1 || task.hint_after_attempts > 20)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/hint_after_attempts`, "hint_after_attempts must be an integer from 1 to 20");
+  }
+  if (task.success_message !== undefined
+    && (typeof task.success_message !== "string" || !task.success_message.trim())) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/success_message`, "Task success_message must not be empty");
+  }
+}
+
 function validateStudentTasks(
   document: AuthoringLesson,
   variables: Map<string, number>,
   availableControls: Map<string, Set<string>>,
+  scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
 ): void {
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
@@ -147,9 +255,15 @@ function validateStudentTasks(
     if (task.availability.kind !== "after_lesson") {
       fail("OLL_INVALID_STUDENT_TASK", `${path}/availability/kind`, `Unsupported task availability '${String(task.availability.kind)}'`);
     }
-    requireArray(task.allowed_operations, `${path}/allowed_operations`);
+    requireObject(task.completion, `${path}/completion`);
+    if (task.completion.kind === "scene3d_view_target") {
+      validateScene3dStudentTask(task as AuthoringScene3dStudentTask, path, scene3dCameras);
+      continue;
+    }
+    const expressionTask = task as AuthoringVariableStudentTask;
+    requireArray(expressionTask.allowed_operations, `${path}/allowed_operations`);
     const allowedVariables = new Set<string>();
-    task.allowed_operations.forEach((operation, operationIndex) => {
+    expressionTask.allowed_operations.forEach((operation, operationIndex) => {
       const operationPath = `${path}/allowed_operations/${operationIndex}`;
       requireObject(operation, operationPath);
       if (operation.kind !== "variable_change") {
@@ -182,18 +296,14 @@ function validateStudentTasks(
         controls.add(control);
       });
     });
-    requireObject(task.completion, `${path}/completion`);
-    if (task.completion.kind !== "expression_target") {
-      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/kind`, `Unsupported completion kind '${String(task.completion.kind)}'`);
-    }
-    const target = requireFiniteNumber(task.completion.value, `${path}/completion/value`);
-    const tolerance = requireFiniteNumber(task.completion.tolerance, `${path}/completion/tolerance`);
+    const target = requireFiniteNumber(expressionTask.completion.value, `${path}/completion/value`);
+    const tolerance = requireFiniteNumber(expressionTask.completion.tolerance, `${path}/completion/tolerance`);
     if (tolerance <= 0) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/tolerance`, "Task tolerance must be greater than zero");
     try {
-      const evaluate = compileMathExpression(task.completion.expression, variables.keys());
+      const evaluate = compileMathExpression(expressionTask.completion.expression, variables.keys());
       const initial = evaluate(Object.fromEntries(variables));
       if (!Number.isFinite(initial) || !Number.isFinite(target)) throw new Error("Task completion result is not finite");
-      const referenced = new Set(referencedMathVariables(task.completion.expression, variables.keys()));
+      const referenced = new Set(referencedMathVariables(expressionTask.completion.expression, variables.keys()));
       if (referenced.size === 0) throw new Error("Task completion expression must read an allowed lesson variable");
       for (const variable of referenced) {
         if (!allowedVariables.has(variable)) {
@@ -220,7 +330,7 @@ function validateStudentTasks(
               reachable = true;
             }
           };
-          const allowed = task.allowed_operations.find((operation) => operation.variable === variableAlias);
+          const allowed = expressionTask.allowed_operations.find((operation) => operation.variable === variableAlias);
           const exactSliderSteps = declaration.control?.step
             ? Math.floor(
                 (declaration.max - declaration.min) / declaration.control.step
@@ -370,7 +480,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -496,6 +606,7 @@ function validateScene3dContent(
 ): void {
   if (action.kind !== "scene3d") return;
   const content = action.content;
+  requireString(content.fallback, `${path}/content/fallback`);
   requireObject(content.camera, `${path}/content/camera`);
   requireFiniteNumber(content.camera.yaw, `${path}/content/camera/yaw`);
   const pitch = requireFiniteNumber(content.camera.pitch, `${path}/content/camera/pitch`);
@@ -590,6 +701,34 @@ function validateScene3dContent(
       aliases.add(section.as);
       if (!["x", "y", "z"].includes(String(section.axis))) fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/axis`, "3D section axis must be x, y, or z");
       requireFiniteNumber(section.value, `${sectionPath}/value`);
+    });
+  }
+  if (content.highlights !== undefined) {
+    requireArray(content.highlights, `${path}/content/highlights`);
+    if (content.highlights.length > 24) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/highlights`, "A 3D scene supports at most 24 highlights");
+    }
+    content.highlights.forEach((rawHighlight: unknown, index: number) => {
+      const highlightPath = `${path}/content/highlights/${index}`;
+      requireObject(rawHighlight, highlightPath);
+      const highlight = rawHighlight;
+      requireAlias(highlight.as, `${highlightPath}/as`);
+      if (aliases.has(highlight.as)) fail("OLL_DUPLICATE_ALIAS", `${highlightPath}/as`, `3D element '${highlight.as}' is duplicated`);
+      aliases.add(highlight.as);
+      if (!["point", "edge", "face"].includes(String(highlight.kind))) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${highlightPath}/kind`, `Unknown 3D highlight kind '${String(highlight.kind)}'`);
+      }
+      requireArray(highlight.points, `${highlightPath}/points`);
+      const requiredCount = highlight.kind === "point" ? 1 : highlight.kind === "edge" ? 2 : 3;
+      if (highlight.points.length < requiredCount
+        || (highlight.kind !== "face" && highlight.points.length !== requiredCount)
+        || highlight.points.length > 12) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${highlightPath}/points`, `3D ${String(highlight.kind)} highlight has an invalid point count`);
+      }
+      highlight.points.forEach((rawPoint: unknown, pointIndex: number) => point(
+        rawPoint,
+        `${highlightPath}/points/${pointIndex}`,
+      ));
     });
   }
 }
@@ -741,6 +880,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   requireArray(document.lesson.goals, "/lesson/goals");
   const lessonVariables = validateLessonVariables(document);
   const availableStudentControls = new Map<string, Set<string>>();
+  const scene3dCameras = new Map<string, { yaw: number; pitch: number; zoom: number }>();
   for (const variable of document.lesson.variables ?? []) {
     if (variable.control?.kind === "slider") {
       availableStudentControls.set(variable.as, new Set(["slider"]));
@@ -793,6 +933,14 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateImageResource(action, actionPath, resourceContext);
           validateGeometryContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
+          if (action.kind === "scene3d") {
+            const camera = action.content.camera as UnknownRecord;
+            scene3dCameras.set(action.as, {
+              yaw: camera.yaw as number,
+              pitch: camera.pitch as number,
+              zoom: camera.zoom as number,
+            });
+          }
           if (action.kind === "geometry" && Array.isArray(action.content.points)) {
             for (const point of action.content.points) {
               const interaction = point?.interaction;
@@ -852,7 +1000,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
     });
   });
 
-  validateStudentTasks(document, lessonVariables, availableStudentControls);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras);
 
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
@@ -869,7 +1017,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1080,6 +1228,15 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
     if (host[field] === undefined || host[field] === null) fail("OLL_MISSING_HOST_FIELD", `host/${field}`, `Missing host field '${field}'`);
   }
   const registry = buildCanonicalRegistry(document, host);
+  const canonicalLesson = structuredClone(document.lesson);
+  for (const candidate of canonicalLesson.tasks ?? []) {
+    const task = candidate as AuthoringScene3dStudentTask;
+    if (task.completion.kind !== "scene3d_view_target") continue;
+    task.completion.node = requireRegistryId(registry, task.completion.node);
+    for (const operation of task.allowed_operations) {
+      operation.node = requireRegistryId(registry, operation.node);
+    }
+  }
   const events: CanonicalEvent[] = [
     {
       dsl: "octos.lesson",
@@ -1094,7 +1251,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
         region_intent: host.regionIntent ?? "new_topic",
         ...(host.regionId ? { region_id: host.regionId } : {}),
       },
-      lesson: structuredClone(document.lesson),
+      lesson: canonicalLesson,
     },
   ];
 

@@ -769,7 +769,15 @@ function renderContent(
   if (node.kind === "geometry") { renderGeometry(parent, node); return; }
   if (node.kind === "plot") { plot(parent, node); return; }
   if (node.kind === "scene3d") {
-    renderScene3d(parent, node, sceneView, variables, sceneInput);
+    try {
+      renderScene3d(parent, node, sceneView, variables, sceneInput);
+    } catch {
+      appendText(
+        parent,
+        `三维场景暂时无法交互。静态说明：${text(content.fallback || content.caption || "请结合旁白理解空间关系。")}`,
+        "scene3d-fallback-error",
+      );
+    }
     return;
   }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
