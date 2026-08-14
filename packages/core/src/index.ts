@@ -1,6 +1,10 @@
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import authoringSchema from "../../../schema/authoring/v0.1.schema.json" with { type: "json" };
-import { compileMathExpression, evaluateMathExpression } from "./math-expression.js";
+import {
+  compileMathExpression,
+  evaluateMathExpression,
+  referencedMathVariables,
+} from "./math-expression.js";
 import type {
   ActionPhase,
   AuthoringAction,
@@ -122,6 +126,146 @@ function validateLessonVariables(document: AuthoringLesson): Map<string, number>
     values.set(variable.as, initial);
   }
   return values;
+}
+
+function validateStudentTasks(
+  document: AuthoringLesson,
+  variables: Map<string, number>,
+  availableControls: Map<string, Set<string>>,
+): void {
+  const taskAliases = new Set<string>();
+  for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
+    const path = `/lesson/tasks/${index}`;
+    requireObject(task, path);
+    requireAlias(task.as, `${path}/as`);
+    if (taskAliases.has(task.as)) fail("OLL_DUPLICATE_ALIAS", `${path}/as`, `Student task '${task.as}' is duplicated`);
+    taskAliases.add(task.as);
+    if (typeof task.prompt !== "string" || !task.prompt.trim()) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/prompt`, "Student task prompt must not be empty");
+    }
+    requireObject(task.availability, `${path}/availability`);
+    if (task.availability.kind !== "after_lesson") {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/availability/kind`, `Unsupported task availability '${String(task.availability.kind)}'`);
+    }
+    requireArray(task.allowed_operations, `${path}/allowed_operations`);
+    const allowedVariables = new Set<string>();
+    task.allowed_operations.forEach((operation, operationIndex) => {
+      const operationPath = `${path}/allowed_operations/${operationIndex}`;
+      requireObject(operation, operationPath);
+      if (operation.kind !== "variable_change") {
+        fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/kind`, `Unsupported student task operation '${String(operation.kind)}'`);
+      }
+      requireVariableAlias(operation.variable, `${operationPath}/variable`);
+      if (!variables.has(operation.variable)) {
+        fail("OLL_REFERENCE_NOT_FOUND", `${operationPath}/variable`, `Variable '${operation.variable}' is not declared`);
+      }
+      if (allowedVariables.has(operation.variable)) {
+        fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/variable`, `Variable '${operation.variable}' has duplicate allowed-operation entries`);
+      }
+      allowedVariables.add(operation.variable);
+      requireArray(operation.controls, `${operationPath}/controls`);
+      const controls = new Set<string>();
+      operation.controls.forEach((control, controlIndex) => {
+        if (control !== "slider" && control !== "geometry_point") {
+          fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/controls/${controlIndex}`, `Unsupported task control '${String(control)}'`);
+        }
+        if (controls.has(control)) {
+          fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/controls/${controlIndex}`, `Task control '${control}' is duplicated`);
+        }
+        if (!availableControls.get(operation.variable)?.has(control)) {
+          fail(
+            "OLL_INVALID_STUDENT_TASK",
+            `${operationPath}/controls/${controlIndex}`,
+            `Task control '${control}' is not available for variable '${operation.variable}' in this lesson`,
+          );
+        }
+        controls.add(control);
+      });
+    });
+    requireObject(task.completion, `${path}/completion`);
+    if (task.completion.kind !== "expression_target") {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/kind`, `Unsupported completion kind '${String(task.completion.kind)}'`);
+    }
+    const target = requireFiniteNumber(task.completion.value, `${path}/completion/value`);
+    const tolerance = requireFiniteNumber(task.completion.tolerance, `${path}/completion/tolerance`);
+    if (tolerance <= 0) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/tolerance`, "Task tolerance must be greater than zero");
+    try {
+      const evaluate = compileMathExpression(task.completion.expression, variables.keys());
+      const initial = evaluate(Object.fromEntries(variables));
+      if (!Number.isFinite(initial) || !Number.isFinite(target)) throw new Error("Task completion result is not finite");
+      const referenced = new Set(referencedMathVariables(task.completion.expression, variables.keys()));
+      if (referenced.size === 0) throw new Error("Task completion expression must read an allowed lesson variable");
+      for (const variable of referenced) {
+        if (!allowedVariables.has(variable)) {
+          throw new Error(`Task completion expression reads '${variable}', but students are not allowed to change it`);
+        }
+      }
+      for (const variable of allowedVariables) {
+        if (!referenced.has(variable)) {
+          throw new Error(`Allowed variable '${variable}' does not affect the task completion expression`);
+        }
+      }
+      if (Math.abs(initial - target) <= tolerance) {
+        throw new Error("Task completion condition is already satisfied by the lesson's initial values");
+      }
+      if (allowedVariables.size === 1) {
+        const [variableAlias] = allowedVariables;
+        const declaration = document.lesson.variables?.find((variable) => variable.as === variableAlias);
+        if (declaration) {
+          let reachable = false;
+          const check = (value: number): void => {
+            if (reachable) return;
+            const actual = evaluate({ [variableAlias]: value });
+            if (Number.isFinite(actual) && Math.abs(actual - target) <= tolerance) {
+              reachable = true;
+            }
+          };
+          const allowed = task.allowed_operations.find((operation) => operation.variable === variableAlias);
+          const exactSliderSteps = declaration.control?.step
+            ? Math.floor(
+                (declaration.max - declaration.min) / declaration.control.step
+                + 1e-12,
+              )
+            : -1;
+          if (allowed?.controls.includes("slider") && exactSliderSteps > 20_000
+            && !allowed.controls.includes("geometry_point")) {
+            throw new Error("Task slider has too many discrete steps to verify reachability");
+          }
+          if (allowed?.controls.includes("slider")
+            && exactSliderSteps >= 0
+            && exactSliderSteps <= 20_000) {
+            for (let sample = 0; sample <= exactSliderSteps && !reachable; sample += 1) {
+              check(declaration.min + sample * declaration.control!.step!);
+            }
+          }
+          if (!reachable && allowed?.controls.includes("geometry_point")) {
+            const sampleCount = 20_000;
+            for (let sample = 0; sample <= sampleCount && !reachable; sample += 1) {
+              check(declaration.min
+                + (declaration.max - declaration.min) * sample / sampleCount);
+            }
+          }
+          if (!reachable) {
+            throw new Error("No reachable value in the lesson variable range satisfies the task completion condition");
+          }
+        }
+      }
+    } catch (error) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/expression`, `Invalid task completion expression: ${(error as Error).message}`);
+    }
+    requireArray(task.hints, `${path}/hints`);
+    if (task.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/hints`, "Task hints must not be empty");
+    }
+    if (task.hint_after_attempts !== undefined
+      && (!Number.isInteger(task.hint_after_attempts) || task.hint_after_attempts < 1 || task.hint_after_attempts > 20)) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/hint_after_attempts`, "hint_after_attempts must be an integer from 1 to 20");
+    }
+    if (task.success_message !== undefined
+      && (typeof task.success_message !== "string" || !task.success_message.trim())) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/success_message`, "Task success_message must not be empty");
+    }
+  }
 }
 
 function splitBindingTarget(value: unknown, path: string): { alias: string; property: string } {
@@ -489,6 +633,12 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   requireObject(document.lesson, "/lesson");
   requireArray(document.lesson.goals, "/lesson/goals");
   const lessonVariables = validateLessonVariables(document);
+  const availableStudentControls = new Map<string, Set<string>>();
+  for (const variable of document.lesson.variables ?? []) {
+    if (variable.control?.kind === "slider") {
+      availableStudentControls.set(variable.as, new Set(["slider"]));
+    }
+  }
   requireArray(document.steps, "/steps");
   requireObject(document.close, "/close");
   requireArray(document.close.focus, "/close/focus");
@@ -535,6 +685,15 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
           validateGeometryContent(action, actionPath, lessonVariables);
+          if (action.kind === "geometry" && Array.isArray(action.content.points)) {
+            for (const point of action.content.points) {
+              const interaction = point?.interaction;
+              if (interaction?.kind !== "angle_control" || typeof interaction.variable !== "string") continue;
+              const controls = availableStudentControls.get(interaction.variable) ?? new Set<string>();
+              controls.add("geometry_point");
+              availableStudentControls.set(interaction.variable, controls);
+            }
+          }
           validateValueBindings(action, actionPath, lessonVariables);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
@@ -584,6 +743,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       });
     });
   });
+
+  validateStudentTasks(document, lessonVariables, availableStudentControls);
 
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {

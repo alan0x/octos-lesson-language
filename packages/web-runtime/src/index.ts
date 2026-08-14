@@ -62,6 +62,17 @@ export {
   type StudentVariableOperationContext,
 } from "./student-operations.js";
 export {
+  emptyStudentTaskProgressLog,
+  evaluateStudentTaskOperation,
+  parseStudentTaskProgressLog,
+  taskSnapshots,
+  type StudentTaskAttempt,
+  type StudentTaskProgress,
+  type StudentTaskProgressLog,
+  type StudentTaskSnapshot,
+  type StudentTaskStatus,
+} from "./student-tasks.js";
+export {
   VariableControlsView,
   formatVariableValue,
   mountVariableControls,

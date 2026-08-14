@@ -129,7 +129,7 @@ Runtime 在打开 Lesson 时检查 Board 与 revision。冲突时不得猜测合
 
 ### 5.2 `lesson`
 
-v0.1 的 `mode` 固定为 `explain`。未来互动式、练习式和复盘式课堂必须通过版本或能力协商加入。
+v0.1 的 `mode` 固定为 `explain`。它可以在讲解结束后附带有限的学生操作任务；完整的练习课、复盘课和学科模拟仍须通过版本或能力协商加入。
 
 ### 5.3 字段所有权
 
@@ -153,7 +153,39 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 
 当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
 
-### 5.5 学生笔迹资源不属于 OLL
+### 5.5 `lesson.tasks`
+
+讲解课可以声明一组讲完后依次开放的短操作任务。任务不包含任意脚本，只能观察 Runtime 已记录的学生变量操作：
+
+```json
+"tasks": [{
+  "as": "reach-sine-maximum",
+  "prompt": "把圆周点拖到 sin θ = 1",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{
+    "kind": "variable_change",
+    "variable": "theta",
+    "controls": ["slider", "geometry_point"]
+  }],
+  "completion": {
+    "kind": "expression_target",
+    "expression": "sin(theta)",
+    "value": 1,
+    "tolerance": 0.01
+  },
+  "hints": ["观察圆周点的纵坐标。"],
+  "hint_after_attempts": 2,
+  "success_message": "正确，正弦值已经达到最大值。"
+}]
+```
+
+- `variable` 必须是本 Lesson 已声明的变量，`controls` 也必须真实存在；声明 `geometry_point` 时，课程中必须有对应的 `angle_control` 点；
+- `completion.expression` 使用同一套受限数学表达式，不允许 JavaScript。它只能读取学生获准修改的变量，初始状态不能已经满足目标，单变量任务还必须在声明范围内存在可达到的结果；
+- Runtime 只在一次学生操作提交后判定，不把拖动过程中的连续位置更新当成多次尝试；
+- 讲解播放期间的探索不计入任务。Lesson 完成后只开放第一个未完成任务，完成后才开放下一个；
+- 提示、尝试次数和完成状态独立于播放进度保存，刷新后恢复。重放课程不会伪造或删除学生任务记录。
+
+### 5.6 学生笔迹资源不属于 OLL
 
 学生原稿不放进 `lesson.open`、Canonical Event 或 Semantic BoardState。浏览器宿主把它作为独立资源保存，最低记录如下：
 

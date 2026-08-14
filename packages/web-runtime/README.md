@@ -101,6 +101,20 @@ and input method. `studentOperations` returns completed operations in sequence.
 so course replay does not erase learner history and a repeated operation ID is
 deduplicated. Pointer samples themselves are never stored.
 
+## After-lesson student tasks
+
+Validated `lesson.tasks` become available only after playback reaches
+`lesson.close`. `studentTasks` exposes the current prompt, attempt count, hint,
+and completion state. A committed slider or geometry-point operation is judged
+against only the first unfinished task; the gesture that completes one task is
+not reused as an answer to the next task.
+
+Use `requestStudentTaskHint(taskId)` to reveal the next planned hint and
+`retryStudentTask(taskId)` to restore the task variables to their initial
+values. Task progress is stored separately from playback checkpoints and
+student-operation history, so refresh restores all three without conflating
+them.
+
 ## Testing API
 
 `octos-lesson-language/web-runtime/testing` exports the real-Chrome teaching Observer and gates. It is intentionally separate from the production surface.

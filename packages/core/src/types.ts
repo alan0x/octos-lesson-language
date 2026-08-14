@@ -124,6 +124,30 @@ export interface AuthoringVariable {
   };
 }
 
+export type StudentTaskVariableControl = "slider" | "geometry_point";
+
+export interface AuthoringStudentTask {
+  as: Alias;
+  prompt: string;
+  availability: {
+    kind: "after_lesson";
+  };
+  allowed_operations: Array<{
+    kind: "variable_change";
+    variable: string;
+    controls: StudentTaskVariableControl[];
+  }>;
+  completion: {
+    kind: "expression_target";
+    expression: string;
+    value: number;
+    tolerance: number;
+  };
+  hints: string[];
+  hint_after_attempts?: number;
+  success_message?: string;
+}
+
 export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
@@ -134,6 +158,7 @@ export interface AuthoringLesson {
     title: string;
     goals: string[];
     variables?: AuthoringVariable[];
+    tasks?: AuthoringStudentTask[];
     adaptation?: {
       strategies?: string[];
       context_refs?: string[];

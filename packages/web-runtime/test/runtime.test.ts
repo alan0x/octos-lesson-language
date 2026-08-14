@@ -14,10 +14,12 @@ import {
   type PlaybackStore,
 } from "../src/runtime.js";
 import type { StudentOperationLog } from "../src/student-operations.js";
+import type { StudentTaskProgressLog } from "../src/student-tasks.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
   studentOperations = new Map<string, StudentOperationLog>();
+  studentTaskProgress = new Map<string, StudentTaskProgressLog>();
   load(key: string): PlaybackCheckpoint | undefined { return structuredClone(this.values.get(key)); }
   save(key: string, checkpoint: PlaybackCheckpoint): void { this.values.set(key, structuredClone(checkpoint)); }
   remove(key: string): void { this.values.delete(key); }
@@ -26,6 +28,11 @@ class MemoryStore implements PlaybackStore {
     this.studentOperations.set(key, structuredClone(log));
   }
   removeStudentOperations(key: string): void { this.studentOperations.delete(key); }
+  loadStudentTaskProgress(key: string): unknown { return structuredClone(this.studentTaskProgress.get(key)); }
+  saveStudentTaskProgress(key: string, log: StudentTaskProgressLog): void {
+    this.studentTaskProgress.set(key, structuredClone(log));
+  }
+  removeStudentTaskProgress(key: string): void { this.studentTaskProgress.delete(key); }
 }
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
@@ -455,6 +462,140 @@ test("student slider and geometry gestures share one persisted variable operatio
   assert.equal(first.studentOperations.length, 3, "course replay preserves the student's operation history");
   const restored = new BrowserLessonSession(unitCircleEvents, store, "student-variable-operations");
   assert.deepEqual(restored.studentOperations, first.studentOperations);
+});
+
+test("student tasks judge committed operations, reveal hints, retry, and restore progress", () => {
+  const taskEvents = structuredClone(unitCircleEvents);
+  taskEvents[0]!.lesson!.tasks = [{
+    as: "reach-sine-maximum",
+    prompt: "把圆周点拖到 sin θ = 1",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{
+      kind: "variable_change",
+      variable: "theta",
+      controls: ["slider", "geometry_point"],
+    }],
+    completion: {
+      kind: "expression_target",
+      expression: "sin(theta)",
+      value: 1,
+      tolerance: 0.01,
+    },
+    hints: ["观察纵坐标。", "把角度移到 π/2 附近。"],
+    hint_after_attempts: 2,
+    success_message: "正确，sin θ 已经达到最大值。",
+  }];
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(taskEvents, store, "student-task");
+  advanceToVariableAnimation(first);
+
+  assert.equal(first.studentTasks[0]!.available, false);
+  const exploration = first.beginStudentVariableOperation("theta", { control: "slider", input: "mouse" });
+  first.updateStudentVariableOperation(exploration, Math.PI / 4);
+  first.commitStudentVariableOperation(exploration);
+  assert.equal(first.studentTasks[0]!.attempts.length, 0, "exploration during the lesson is not a task attempt");
+  assert.throws(
+    () => first.requestStudentTaskHint("reach-sine-maximum"),
+    /not available before the lesson completes/,
+  );
+  while (first.projection.status !== "completed") first.advance();
+  assert.equal(first.studentTasks[0]!.available, true);
+
+  first.changeStudentVariable("theta", Math.PI / 3, { control: "slider", input: "mouse" });
+  assert.equal(first.studentTasks[0]!.status, "in_progress");
+  assert.equal(first.studentTasks[0]!.attempts.length, 1);
+
+  first.changeStudentVariable("theta", Math.PI / 4, { control: "geometry_point", input: "touch" });
+  assert.equal(first.studentTasks[0]!.status, "needs_hint");
+  assert.equal(first.requestStudentTaskHint("reach-sine-maximum").current_hint, "观察纵坐标。");
+
+  const retried = first.retryStudentTask("reach-sine-maximum", "mouse");
+  assert.equal(retried.status, "not_started");
+  assert.equal(first.studentOperations.at(-1)!.control, "reset");
+  assert.equal(first.studentTasks[0]!.attempts.length, 2, "retry preserves the attempt history");
+
+  first.changeStudentVariable("theta", Math.PI / 2, { control: "slider", input: "keyboard" });
+  assert.equal(first.studentTasks[0]!.status, "succeeded");
+  assert.equal(first.studentTasks[0]!.attempts.at(-1)!.succeeded, true);
+
+  const restored = new BrowserLessonSession(taskEvents, store, "student-task");
+  assert.deepEqual(restored.studentTasks, first.studentTasks);
+  const operationCount = restored.studentOperations.length;
+  restored.changeStudentVariable("theta", Math.PI, {
+    control: "slider",
+    input: "mouse",
+    operationId: "after-success",
+  });
+  assert.equal(restored.studentTasks[0]!.status, "succeeded", "a completed task remains completed");
+  assert.equal(restored.studentTasks[0]!.attempts.length, 3, "post-success exploration is not a new task attempt");
+  assert.equal(restored.studentOperations.length, operationCount + 1);
+
+  store.studentTaskProgress.get("student-task")!.tasks[0]!.attempts[0]!.operation_id = "missing-operation";
+  const invalidProgress = new BrowserLessonSession(taskEvents, store, "student-task");
+  assert.equal(invalidProgress.studentTasks[0]!.status, "not_started");
+  assert.equal(invalidProgress.studentTasks[0]!.attempts.length, 0, "task progress without its source operation is discarded");
+});
+
+test("multiple student tasks unlock in order instead of judging one gesture against every task", () => {
+  const taskEvents = structuredClone(unitCircleEvents);
+  const shared = {
+    availability: { kind: "after_lesson" as const },
+    allowed_operations: [{
+      kind: "variable_change" as const,
+      variable: "theta",
+      controls: ["slider" as const],
+    }],
+    hints: ["继续观察图像。"],
+  };
+  taskEvents[0]!.lesson!.tasks = [
+    {
+      as: "reach-sine-maximum",
+      prompt: "先让 sin θ = 1",
+      ...shared,
+      completion: {
+        kind: "expression_target",
+        expression: "sin(theta)",
+        value: 1,
+        tolerance: 0.01,
+      },
+    },
+    {
+      as: "reach-cosine-minimum",
+      prompt: "再让 cos θ = -1",
+      ...shared,
+      completion: {
+        kind: "expression_target",
+        expression: "cos(theta)",
+        value: -1,
+        tolerance: 0.01,
+      },
+    },
+  ];
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(taskEvents, store, "student-task-order");
+  while (session.projection.status !== "completed") session.advance();
+
+  assert.deepEqual(session.studentTasks.map((task) => task.available), [true, false]);
+  assert.throws(
+    () => session.requestStudentTaskHint("reach-cosine-minimum"),
+    /not currently available/,
+  );
+
+  session.changeStudentVariable("theta", Math.PI / 2, { control: "slider", input: "mouse" });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  assert.equal(session.studentTasks[1]!.attempts.length, 0, "the unlocking gesture is not reused as the next answer");
+  assert.deepEqual(session.studentTasks.map((task) => task.available), [true, true]);
+
+  session.changeStudentVariable("theta", Math.PI, { control: "slider", input: "mouse" });
+  assert.equal(session.studentTasks[1]!.status, "succeeded");
+
+  store.studentTaskProgress.get("student-task-order")!.tasks.reverse();
+  const restored = new BrowserLessonSession(taskEvents, store, "student-task-order");
+  assert.deepEqual(
+    restored.studentTasks.map((task) => task.task_id),
+    ["reach-sine-maximum", "reach-cosine-minimum"],
+    "saved array order cannot change the lesson's task order",
+  );
 });
 
 test("invalid saved student operations are discarded without touching playback", () => {

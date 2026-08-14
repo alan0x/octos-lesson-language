@@ -1,4 +1,4 @@
-import type { CanonicalEvent, Delivery } from "../../core/src/index.js";
+import type { AuthoringStudentTask, CanonicalEvent, Delivery } from "../../core/src/index.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -17,6 +17,14 @@ import {
   type StudentVariableOperation,
   type StudentVariableOperationContext,
 } from "./student-operations.js";
+import {
+  emptyStudentTaskProgressLog,
+  evaluateStudentTaskOperation,
+  parseStudentTaskProgressLog,
+  taskSnapshots,
+  type StudentTaskProgressLog,
+  type StudentTaskSnapshot,
+} from "./student-tasks.js";
 
 export interface PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined;
@@ -25,6 +33,9 @@ export interface PlaybackStore {
   loadStudentOperations?(key: string): unknown;
   saveStudentOperations?(key: string, log: StudentOperationLog): void;
   removeStudentOperations?(key: string): void;
+  loadStudentTaskProgress?(key: string): unknown;
+  saveStudentTaskProgress?(key: string, log: StudentTaskProgressLog): void;
+  removeStudentTaskProgress?(key: string): void;
 }
 
 export class LocalPlaybackStore implements PlaybackStore {
@@ -47,6 +58,21 @@ export class LocalPlaybackStore implements PlaybackStore {
   }
   removeStudentOperations(key: string): void {
     try { localStorage.removeItem(`${key}:student-operations:v1`); } catch {}
+  }
+  loadStudentTaskProgress(key: string): unknown {
+    try {
+      const value = localStorage.getItem(`${key}:student-task-progress:v1`);
+      return value ? JSON.parse(value) : undefined;
+    } catch {
+      this.removeStudentTaskProgress(key);
+      return undefined;
+    }
+  }
+  saveStudentTaskProgress(key: string, log: StudentTaskProgressLog): void {
+    try { localStorage.setItem(`${key}:student-task-progress:v1`, JSON.stringify(log)); } catch {}
+  }
+  removeStudentTaskProgress(key: string): void {
+    try { localStorage.removeItem(`${key}:student-task-progress:v1`); } catch {}
   }
 }
 
@@ -195,6 +221,8 @@ export class BrowserLessonSession {
   private variableAnimationStartProgress = 0;
   private readonly listeners = new Set<() => void>();
   private studentOperationLog: StudentOperationLog;
+  private readonly studentTaskDefinitions: AuthoringStudentTask[];
+  private studentTaskProgressLog: StudentTaskProgressLog;
   private nextStudentOperationSequence = 1;
   private readonly pendingStudentVariableOperations = new Map<string, {
     sequence: number;
@@ -212,6 +240,8 @@ export class BrowserLessonSession {
   ) {
     this.player = this.restorePlayer();
     this.studentOperationLog = this.restoreStudentOperations();
+    this.studentTaskDefinitions = structuredClone(this.events[0]?.lesson?.tasks ?? []);
+    this.studentTaskProgressLog = this.restoreStudentTaskProgress();
     this.nextStudentOperationSequence =
       (this.studentOperationLog.operations.at(-1)?.sequence ?? 0) + 1;
     if (this.player.cursor > 0) this.currentFrame = {
@@ -234,6 +264,13 @@ export class BrowserLessonSession {
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
   get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
   get studentOperations(): StudentOperation[] { return structuredClone(this.studentOperationLog.operations); }
+  get studentTasks(): StudentTaskSnapshot[] {
+    return taskSnapshots(
+      this.studentTaskDefinitions,
+      this.studentTaskProgressLog,
+      this.player.status === "completed",
+    );
+  }
   get isPlaying(): boolean { return this.playing; }
   get activeVariableAnimation(): PlaybackVariableAnimation | undefined { return this.variableAnimation ? structuredClone(this.variableAnimation) : undefined; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
@@ -636,6 +673,7 @@ export class BrowserLessonSession {
     this.studentOperationLog.operations.push(operation);
     this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
     this.persistStudentOperations();
+    this.evaluateStudentTasks(operation);
     this.emit();
     return structuredClone(operation);
   }
@@ -647,6 +685,45 @@ export class BrowserLessonSession {
   ): StudentVariableOperation | undefined {
     const operationId = this.beginStudentVariableOperation(alias, context);
     return this.commitStudentVariableOperation(operationId, value);
+  }
+
+  requestStudentTaskHint(taskId: string): StudentTaskSnapshot {
+    const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
+    const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
+    if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
+    if (this.player.status !== "completed") throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
+      throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    if (progress.status !== "succeeded") {
+      progress.hints_revealed = Math.min(definition.hints.length, progress.hints_revealed + 1);
+      progress.status = "needs_hint";
+      this.persistStudentTaskProgress();
+      this.emit();
+    }
+    return this.studentTasks.find((task) => task.task_id === taskId)!;
+  }
+
+  retryStudentTask(
+    taskId: string,
+    input: StudentVariableOperationContext["input"] = "unknown",
+  ): StudentTaskSnapshot {
+    const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
+    const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
+    if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
+    if (this.player.status !== "completed") throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
+      throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    const variables = [...new Set(definition.allowed_operations.map((operation) => operation.variable))];
+    for (const alias of variables) {
+      const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
+      if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
+    }
+    progress.status = "not_started";
+    this.persistStudentTaskProgress();
+    this.emit();
+    return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
   private applyManualVariable(alias: string, value: number): void {
@@ -814,11 +891,45 @@ export class BrowserLessonSession {
     return emptyStudentOperationLog(lessonId);
   }
 
+  private restoreStudentTaskProgress(): StudentTaskProgressLog {
+    const lessonId = this.player.snapshot.lesson_id;
+    const empty = emptyStudentTaskProgressLog(lessonId, this.studentTaskDefinitions);
+    const raw = this.store.loadStudentTaskProgress?.(this.storageKey);
+    if (raw === undefined) return empty;
+    const restored = parseStudentTaskProgressLog(raw, lessonId, this.studentTaskDefinitions);
+    const operationIds = new Set(this.studentOperationLog.operations.map((operation) => operation.id));
+    if (restored && restored.tasks.every((task) =>
+      task.attempts.every((attempt) => operationIds.has(attempt.operation_id)))) return restored;
+    this.store.removeStudentTaskProgress?.(this.storageKey);
+    return empty;
+  }
+
+  private evaluateStudentTasks(operation: StudentVariableOperation): void {
+    if (this.player.status !== "completed") return;
+    const board = this.player.snapshot.board;
+    if (!board) return;
+    const activeProgress = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
+    if (!activeProgress) return;
+    const definition = this.studentTaskDefinitions.find((task) => task.as === activeProgress.task_id);
+    if (definition && evaluateStudentTaskOperation(definition, activeProgress, operation, board)) {
+      this.persistStudentTaskProgress();
+    }
+  }
+
   private persistStudentOperations(): void {
     try {
       this.store.saveStudentOperations?.(
         this.storageKey,
         structuredClone(this.studentOperationLog),
+      );
+    } catch {}
+  }
+
+  private persistStudentTaskProgress(): void {
+    try {
+      this.store.saveStudentTaskProgress?.(
+        this.storageKey,
+        structuredClone(this.studentTaskProgressLog),
       );
     } catch {}
   }

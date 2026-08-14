@@ -183,6 +183,20 @@ export function compileMathExpression(
   return new ExpressionParser(tokenize(normalizeExpression(expression)), variables).parse();
 }
 
+/** Return the declared variables that an expression actually reads.
+ * Callers should still compile the expression to validate its full syntax. */
+export function referencedMathVariables(
+  expression: string,
+  allowedVariables: Iterable<string>,
+): string[] {
+  const allowed = new Set([...allowedVariables].map((value) => value.toLowerCase()));
+  return [...new Set(
+    tokenize(normalizeExpression(expression))
+      .filter((token) => token.kind === "identifier" && allowed.has(token.value))
+      .map((token) => token.value),
+  )];
+}
+
 export function evaluateMathExpression(
   expression: string,
   variables: MathVariableValues,

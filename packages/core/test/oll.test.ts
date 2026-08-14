@@ -363,6 +363,94 @@ test("one lesson variable deterministically drives geometry and plot bindings", 
   assert.deepEqual(setLessonVariable(restored, "theta", Math.PI / 2), setLessonVariable(state, "theta", Math.PI / 2));
 });
 
+test("student tasks use declared variables and safe expression targets", () => {
+  const interactive = structuredClone(lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.source);
+  interactive.lesson.tasks = [{
+    as: "reach-sine-maximum",
+    prompt: "把圆周点拖到 sin θ = 1",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{
+      kind: "variable_change",
+      variable: "theta",
+      controls: ["slider", "geometry_point"],
+    }],
+    completion: {
+      kind: "expression_target",
+      expression: "sin(theta)",
+      value: 1,
+      tolerance: 0.01,
+    },
+    hints: ["观察圆周点的纵坐标。"],
+    hint_after_attempts: 2,
+    success_message: "找到了正弦函数的最大值。",
+  }];
+
+  validateAuthoringLesson(interactive);
+  const events = normalizeAuthoringLesson(interactive, lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.entry);
+  assert.deepEqual(events[0]!.lesson?.tasks, interactive.lesson.tasks);
+
+  const unknownVariable = structuredClone(interactive);
+  unknownVariable.lesson.tasks![0]!.allowed_operations[0]!.variable = "missing";
+  assert.throws(
+    () => validateAuthoringLesson(unknownVariable),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
+  );
+
+  const unsafeExpression = structuredClone(interactive);
+  unsafeExpression.lesson.tasks![0]!.completion.expression = "window.alert(theta)";
+  assert.throws(
+    () => validateAuthoringLesson(unsafeExpression),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_STUDENT_TASK",
+  );
+
+  const unrelatedExpression = structuredClone(interactive);
+  unrelatedExpression.lesson.tasks![0]!.completion.expression = "1";
+  assert.throws(
+    () => validateAuthoringLesson(unrelatedExpression),
+    (error) => error instanceof OllError
+      && error.code === "OLL_INVALID_STUDENT_TASK"
+      && /must read an allowed lesson variable/.test(error.message),
+  );
+
+  const unreachableExpression = structuredClone(interactive);
+  unreachableExpression.lesson.tasks![0]!.completion.value = 2;
+  assert.throws(
+    () => validateAuthoringLesson(unreachableExpression),
+    (error) => error instanceof OllError
+      && error.code === "OLL_INVALID_STUDENT_TASK"
+      && /No reachable value/.test(error.message),
+  );
+
+  const sliderCannotReachRangeMaximum = structuredClone(interactive);
+  sliderCannotReachRangeMaximum.lesson.variables![0]!.control!.step = 2;
+  sliderCannotReachRangeMaximum.lesson.tasks![0]!.allowed_operations[0]!.controls = ["slider"];
+  sliderCannotReachRangeMaximum.lesson.tasks![0]!.completion = {
+    kind: "expression_target",
+    expression: "theta",
+    value: 2 * Math.PI,
+    tolerance: 1e-6,
+  };
+  assert.throws(
+    () => validateAuthoringLesson(sliderCannotReachRangeMaximum),
+    (error) => error instanceof OllError
+      && error.code === "OLL_INVALID_STUDENT_TASK"
+      && /No reachable value/.test(error.message),
+  );
+
+  const missingGeometryControl = structuredClone(interactive);
+  const geometry = missingGeometryControl.steps[0]!.beats[0]!.actions.find(
+    (action) => action.do === "write" && action.kind === "geometry",
+  );
+  assert.ok(geometry?.do === "write");
+  delete geometry.content.points.find((point: any) => point.as === "point-p")!.interaction;
+  assert.throws(
+    () => validateAuthoringLesson(missingGeometryControl),
+    (error) => error instanceof OllError
+      && error.code === "OLL_INVALID_STUDENT_TASK"
+      && /geometry_point.*not available/.test(error.message),
+  );
+});
+
 test("rejects invalid lesson variables and value bindings with explicit errors", () => {
   const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
 
