@@ -321,6 +321,71 @@ test("authoring schema exposes coordinate geometry as a first-class node kind", 
   assert.equal(authoringSchema.$defs.geometryContent.properties.axes.properties.equal_scale.const, true);
 });
 
+test("validates and normalizes interactive 3D solids, surfaces, and sections", () => {
+  const sceneLesson: AuthoringLesson = {
+    dsl: "octos.lesson",
+    version: "0.1",
+    profile: "authoring",
+    lesson: {
+      mode: "explain",
+      language: "zh-CN",
+      title: "三维场景",
+      goals: ["观察立方体和曲面"],
+      variables: [{ as: "section_z", initial: 0, min: -2, max: 2, control: { kind: "slider", step: .1 } }],
+    },
+    steps: [{
+      key: "show-scene",
+      purpose: "建立可旋转三维场景",
+      beats: [{
+        key: "create-scene",
+        say: "拖动场景，从不同方向观察立方体、曲面和截面。",
+        actions: [{
+          do: "write",
+          as: "scene",
+          kind: "scene3d",
+          role: "diagram",
+          content: {
+            title: "立方体与抛物面",
+            axes: true,
+            camera: { yaw: .7, pitch: .5, zoom: 1 },
+            objects: [
+              { as: "cube", kind: "box", center: { x: -1.5, y: 0, z: 0 }, size: { x: 1.5, y: 1.5, z: 1.5 }, color: "teal" },
+              { as: "paraboloid", kind: "surface", expression: "0.3*(x^2+y^2)-1", x_range: { min: -2, max: 2 }, y_range: { min: -2, max: 2 }, samples: 8, color: "blue" },
+            ],
+            sections: [{ as: "horizontal-section", axis: "z", value: 0, label: "z = 0", color: "orange" }],
+            bindings: [{ target: "horizontal-section.value", expression: "section_z" }],
+          },
+          place: { relation: "new_region" },
+        }, {
+          do: "focus",
+          when: "after_speech",
+          targets: ["scene"],
+          intent: "current_step",
+        }],
+      }],
+    }],
+    close: { summary: "已经观察三维对象与截面。", focus: ["scene"] },
+  };
+  assertAuthoringSchema(sceneLesson);
+  validateAuthoringLesson(sceneLesson);
+  const events = normalizeAuthoringLesson(sceneLesson, {
+    lessonId: "scene-lesson",
+    boardId: "scene-board",
+    baseRevision: 0,
+  });
+  const scene = Object.values(reduceCanonicalEvents(events).nodes)[0]!;
+  assert.equal(scene.kind, "scene3d");
+  assert.equal(scene.content.objects[1].expression, "0.3*(x^2+y^2)-1");
+  assert.equal(scene.content.sections[0].id, `${scene.id}:fragment:horizontal-section`);
+
+  const invalid = structuredClone(sceneLesson);
+  (invalid.steps[0]!.beats[0]!.actions[0] as any).content.objects[1].expression = "fetch(x)";
+  assert.throws(
+    () => validateAuthoringLesson(invalid),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
+  );
+});
+
 test("one lesson variable deterministically drives geometry and plot bindings", () => {
   const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
   const events = normalizeAuthoringLesson(interactive.source, interactive.entry);

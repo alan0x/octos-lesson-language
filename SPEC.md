@@ -329,6 +329,7 @@ Beat 可以没有 narration，例如只移动焦点；但 Beat 不能同时没�
 | `diagram` | 节点与边组成的受限图示数据 |
 | `geometry` | 等比例坐标系中的圆、点、线段、投影和角弧 |
 | `plot` | 坐标范围、函数表达式、点和辅助线 |
+| `scene3d` | 可旋转的基础立体、`z=f(x,y)` 曲面和轴对齐截面 |
 | `image` | 受控 `asset_id`、裁剪或标注引用 |
 | `table` | 行列和单元格文本或数学内容 |
 | `note` | 简短结论、提示或不确定性说明 |
@@ -666,6 +667,53 @@ overlay
 ```
 
 表达式解析器只能执行受限数学表达式，不得使用 `eval`。
+
+### 11.1 `scene3d` 节点最低能力
+
+`scene3d` 描述三维对象的数学语义和初始视角，不保存 WebGL、SVG 路径或模型代码：
+
+```json
+{
+  "kind": "scene3d",
+  "content": {
+    "title": "立方体与抛物面截面",
+    "axes": true,
+    "camera": {"yaw": 0.72, "pitch": 0.55, "zoom": 1},
+    "objects": [
+      {
+        "as": "cube",
+        "kind": "box",
+        "center": {"x": 0, "y": 0, "z": 0},
+        "size": {"x": 2, "y": 2, "z": 2},
+        "color": "teal"
+      },
+      {
+        "as": "surface",
+        "kind": "surface",
+        "expression": "0.3*(x^2+y^2)-1",
+        "x_range": {"min": -2, "max": 2},
+        "y_range": {"min": -2, "max": 2},
+        "samples": 12,
+        "color": "blue"
+      }
+    ],
+    "sections": [
+      {"as": "horizontal-section", "axis": "z", "value": 0, "color": "orange"}
+    ],
+    "bindings": [
+      {"target": "horizontal-section.value", "expression": "height"}
+    ]
+  }
+}
+```
+
+规则：
+
+- `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
+- `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
+- `sections` 只支持垂直于 x、y 或 z 轴的平面，`value` 可以绑定 Lesson 数值变量；
+- Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
+- Runtime 必须限制俯仰角、缩放范围、对象数量和曲面采样数；不支持的三维内容必须显式失败，不能显示空白卡片。
 
 ## 12. `lesson.close`
 

@@ -293,14 +293,16 @@ function bindableTargets(action: WriteAction): Map<string, Set<string>> {
   } else if (action.kind === "plot") {
     add("points", ["x", "y"]);
     add("guides", ["value"]);
+  } else if (action.kind === "scene3d") {
+    add("sections", ["value"]);
   }
   return targets;
 }
 
 function validateValueBindings(action: WriteAction, path: string, variables: Map<string, number>): void {
   if (action.content.bindings === undefined) return;
-  if (action.kind !== "geometry" && action.kind !== "plot") {
-    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry and plot nodes");
+  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d") {
+    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, and scene3d nodes");
   }
   requireArray(action.content.bindings, `${path}/content/bindings`);
   const targets = bindableTargets(action);
@@ -368,7 +370,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -483,6 +485,111 @@ function validateGeometryContent(
         requireFiniteNumber(item.start_angle, `${itemPath}/start_angle`);
         requireFiniteNumber(item.end_angle, `${itemPath}/end_angle`);
       }
+    });
+  }
+}
+
+function validateScene3dContent(
+  action: WriteAction,
+  path: string,
+  variables: Map<string, number>,
+): void {
+  if (action.kind !== "scene3d") return;
+  const content = action.content;
+  requireObject(content.camera, `${path}/content/camera`);
+  requireFiniteNumber(content.camera.yaw, `${path}/content/camera/yaw`);
+  const pitch = requireFiniteNumber(content.camera.pitch, `${path}/content/camera/pitch`);
+  const zoom = requireFiniteNumber(content.camera.zoom, `${path}/content/camera/zoom`);
+  if (pitch < -Math.PI / 2 || pitch > Math.PI / 2) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/camera/pitch`, "3D camera pitch must be between -pi/2 and pi/2");
+  }
+  if (zoom < .2 || zoom > 5) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/camera/zoom`, "3D camera zoom must be from 0.2 to 5");
+  }
+  requireArray(content.objects, `${path}/content/objects`);
+  if (content.objects.length === 0 || content.objects.length > 24) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/objects`, "A 3D scene requires 1 to 24 objects");
+  }
+  const aliases = new Set<string>();
+  const point = (value: unknown, pointPath: string) => {
+    requireObject(value, pointPath);
+    for (const axis of ["x", "y", "z"] as const) {
+      requireFiniteNumber(value[axis], `${pointPath}/${axis}`);
+    }
+  };
+  const size = (value: unknown, sizePath: string) => {
+    requireObject(value, sizePath);
+    for (const axis of ["x", "y", "z"] as const) {
+      if (requireFiniteNumber(value[axis], `${sizePath}/${axis}`) <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${sizePath}/${axis}`, "3D size must be greater than zero");
+    }
+  };
+  const range = (value: unknown, rangePath: string): { min: number; max: number } => {
+    requireObject(value, rangePath);
+    const min = requireFiniteNumber(value.min, `${rangePath}/min`);
+    const max = requireFiniteNumber(value.max, `${rangePath}/max`);
+    if (max <= min) fail("OLL_INVALID_OPERATION_PAYLOAD", rangePath, "3D range max must be greater than min");
+    return { min, max };
+  };
+  content.objects.forEach((rawObject: unknown, index: number) => {
+    const objectPath = `${path}/content/objects/${index}`;
+    requireObject(rawObject, objectPath);
+    const object = rawObject;
+    requireAlias(object.as, `${objectPath}/as`);
+    if (aliases.has(object.as)) fail("OLL_DUPLICATE_ALIAS", `${objectPath}/as`, `3D object '${object.as}' is duplicated`);
+    aliases.add(object.as);
+    const objectKind = String(object.kind);
+    if (!["box", "sphere", "cylinder", "cone", "surface"].includes(objectKind)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
+    }
+    if (object.color !== undefined
+      && (typeof object.color !== "string" || !/^(#[0-9a-fA-F]{6}|teal|blue|purple|orange|red|gray)$/.test(object.color))) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/color`, "3D colors must use a safe palette name or six-digit hex value");
+    }
+    if (objectKind === "box") {
+      point(object.center, `${objectPath}/center`);
+      size(object.size, `${objectPath}/size`);
+    } else if (["sphere", "cylinder", "cone"].includes(objectKind)) {
+      point(object.center, `${objectPath}/center`);
+      const radius = requireFiniteNumber(object.radius, `${objectPath}/radius`);
+      if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radius`, "3D radius must be greater than zero");
+      if (objectKind !== "sphere") {
+        const height = requireFiniteNumber(object.height, `${objectPath}/height`);
+        if (height <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/height`, "3D height must be greater than zero");
+      }
+    } else {
+      requireString(object.expression, `${objectPath}/expression`);
+      const xRange = range(object.x_range, `${objectPath}/x_range`);
+      const yRange = range(object.y_range, `${objectPath}/y_range`);
+      const sampleCount = Number(object.samples ?? 12);
+      if (!Number.isInteger(sampleCount) || sampleCount < 4 || sampleCount > 24) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/samples`, "3D surface samples must be an integer from 4 to 24");
+      }
+      try {
+        const variableNames = ["x", "y", ...variables.keys()];
+        const evaluate = compileMathExpression(object.expression, variableNames);
+        const values = Object.fromEntries(variables);
+        for (const x of [xRange.min, (xRange.min + xRange.max) / 2, xRange.max]) {
+          for (const y of [yRange.min, (yRange.min + yRange.max) / 2, yRange.max]) {
+            if (!Number.isFinite(evaluate({ ...values, x, y }))) throw new Error("surface is not finite");
+          }
+        }
+      } catch (error) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/expression`, `Invalid 3D surface expression: ${(error as Error).message}`);
+      }
+    }
+  });
+  if (content.sections !== undefined) {
+    requireArray(content.sections, `${path}/content/sections`);
+    if (content.sections.length > 8) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/sections`, "A 3D scene supports at most 8 sections");
+    content.sections.forEach((rawSection: unknown, index: number) => {
+      const sectionPath = `${path}/content/sections/${index}`;
+      requireObject(rawSection, sectionPath);
+      const section = rawSection;
+      requireAlias(section.as, `${sectionPath}/as`);
+      if (aliases.has(section.as)) fail("OLL_DUPLICATE_ALIAS", `${sectionPath}/as`, `3D element '${section.as}' is duplicated`);
+      aliases.add(section.as);
+      if (!["x", "y", "z"].includes(String(section.axis))) fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/axis`, "3D section axis must be x, y, or z");
+      requireFiniteNumber(section.value, `${sectionPath}/value`);
     });
   }
 }
@@ -685,6 +792,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
           validateGeometryContent(action, actionPath, lessonVariables);
+          validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === "geometry" && Array.isArray(action.content.points)) {
             for (const point of action.content.points) {
               const interaction = point?.interaction;
@@ -761,7 +869,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1081,6 +1189,7 @@ function bindingTarget(content: JsonObject, target: string): { record: JsonObjec
     ["guides", new Set(["value"])],
     ["circles", new Set(["radius"])],
     ["arcs", new Set(["radius", "start_angle", "end_angle"])],
+    ["sections", new Set(["value"])],
   ];
   for (const [field, properties] of fields) {
     const record = (Array.isArray(content[field]) ? content[field] : []).find((item: JsonObject) => item.id === fragmentId);

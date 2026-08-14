@@ -7,26 +7,12 @@ import {
   type AbstractComponent,
 } from "js-draw";
 import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
-
-export interface InkSelectionBounds {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export interface InkSelectionSnapshot {
-  source_id: string;
-  document_id: string;
-  document_version: number;
-  created_at: string;
-  bounds: InkSelectionBounds;
-  checksum: {
-    algorithm: "sha-256";
-    value: string;
-  };
-  svg: string;
-}
+import {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  type InkSelectionBounds,
+  type InkSelectionSnapshot,
+} from "./selection-record.js";
 
 export function selectedComponentsToSvg(components: AbstractComponent[]): {
   bounds: InkSelectionBounds;
@@ -56,6 +42,8 @@ export async function createInkSelectionSnapshot(options: {
 }): Promise<InkSelectionSnapshot> {
   const selection = selectedComponentsToSvg(options.components);
   return {
+    format: INK_SELECTION_FORMAT,
+    format_version: INK_SELECTION_FORMAT_VERSION,
     source_id: options.sourceId ?? `ink-source:${crypto.randomUUID()}`,
     document_id: options.documentId,
     document_version: options.documentVersion,

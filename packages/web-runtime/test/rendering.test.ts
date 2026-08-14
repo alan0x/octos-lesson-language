@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
+import { normalizeScene3dView, projectScene3dPoint } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -228,6 +229,17 @@ test("angle controls choose the equivalent angle nearest the current shared valu
   assert.equal(angleControlValue(0, 0, 0, 2 * Math.PI), 0);
   assert.equal(angleControlValue(0, 2 * Math.PI, 0, 2 * Math.PI), 2 * Math.PI);
   assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, -Math.PI, Math.PI) - Math.PI / 2) < 1e-12);
+});
+
+test("3D projection responds deterministically to orbit and clamps unsafe camera values", () => {
+  const front = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: 0, pitch: 0, zoom: 1 });
+  const rotated = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: Math.PI / 2, pitch: 0, zoom: 1 });
+  assert.ok(front.x > rotated.x);
+  assert.notEqual(front.depth, rotated.depth);
+  assert.deepEqual(
+    normalizeScene3dView({ yaw: Number.NaN, pitch: 20, zoom: 100 }),
+    { yaw: 0, pitch: Math.PI / 2, zoom: 5 },
+  );
 });
 
 test("focus keeps an already composed target steady", () => {

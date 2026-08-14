@@ -19,7 +19,10 @@ import {
   __js_draw__version,
   type AbstractComponent,
 } from "js-draw";
-import type { InfiniteBoardView } from "../../web-runtime/src/index.js";
+import type {
+  InfiniteBoardView,
+  StudentInputMethod,
+} from "../../web-runtime/src/index.js";
 import {
   LocalInkDocumentStore,
   InkRuntimeError,
@@ -28,7 +31,8 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
-import { createInkSelectionSnapshot, type InkSelectionSnapshot } from "./selection.js";
+import { createInkSelectionSnapshot } from "./selection.js";
+import type { InkSelectionSnapshot } from "./selection-record.js";
 import {
   lockSelectionTransform,
   type LockableSelectionTool,
@@ -47,6 +51,7 @@ export interface InkRuntimeState {
   selected_count: number;
   pen_color: string;
   selection_color: string | null;
+  selection_input: StudentInputMethod;
   document_version: number;
   saved: boolean;
 }
@@ -67,6 +72,7 @@ export class InkRuntime {
   private modeValue: InkMode = "navigate";
   private selectedComponents: AbstractComponent[] = [];
   private penColor = "#176b62";
+  private selectionInput: StudentInputMethod = "unknown";
   private documentVersion = 0;
   private savedSvg = "";
   private changeRevision = 0;
@@ -260,6 +266,15 @@ export class InkRuntime {
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
       const event = rawEvent as PointerEvent;
+      if (this.modeValue === "select") {
+        this.selectionInput = event.pointerType === "touch"
+          ? "touch"
+          : event.pointerType === "pen"
+            ? "pen"
+            : event.pointerType === "mouse"
+              ? "mouse"
+              : "unknown";
+      }
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, true);
@@ -364,6 +379,7 @@ export class InkRuntime {
       selected_count: this.selectedComponents.length,
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
+      selection_input: this.selectionInput,
       document_version: this.documentVersion,
       saved: this.changeRevision === this.savedChangeRevision,
     };

@@ -101,6 +101,23 @@ and input method. `studentOperations` returns completed operations in sequence.
 so course replay does not erase learner history and a repeated operation ID is
 deduplicated. Pointer samples themselves are never stored.
 
+The same log also stores two non-variable learner actions. `ink_selection`
+records only an immutable source reference (document/version/bounds/checksum),
+not a second copy of the ink SVG. `scene3d_view` records the camera before and
+after one orbit, zoom burst, preset, or reset gesture. Pointer-move and wheel
+samples are rendered live but collapsed into one completed operation. Restoring
+a session reapplies the most recent view for each 3D node.
+
+## Basic 3D scenes
+
+`scene3d` nodes render safe declarative boxes, spheres, cylinders, cones,
+sampled `z=f(x,y)` surfaces, axes, and axis-aligned section planes. The node
+contains mathematical objects and an initial camera; learner orbit/zoom changes
+only the stored view and never rewrites the node. The board provides isometric,
+front, top, and reset controls. Surface expressions use the same restricted
+math evaluator as Geometry and Plot, and section values can bind to Lesson
+variables.
+
 ## After-lesson student tasks
 
 Validated `lesson.tasks` become available only after playback reaches

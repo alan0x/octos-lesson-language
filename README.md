@@ -13,7 +13,7 @@ OLL 处于 **v0.1 Release Candidate 1**。Authoring 与 Canonical 的已实现�
 
 Core、headless playback、可生成性与教学质量已有大量证据，但 Phase 0/1 尚未正式退出。当前 MUST 证据和发布阻断项见 [TRACEABILITY.md](./TRACEABILITY.md) 与 [PHASE-0-1-EXIT.md](./PHASE-0-1-EXIT.md)。RC 阶段只接受兼容性修复；新增动作或改变语义必须有 decision record 和回归证据。
 
-交互语义白板的实施范围、仓库责任、数据保存方式和四个贯穿验收场景见 [INTERACTIVE-WHITEBOARD-MVP.md](./INTERACTIVE-WHITEBOARD-MVP.md)。当前开发分支已经实现共享变量动画和可选 Ink Runtime；它们仍是 RC 之后的开发切片，不表示已经发布，互动任务和 3D 也尚未实现。
+交互语义白板的实施范围、仓库责任、数据保存方式和四个贯穿验收场景见 [INTERACTIVE-WHITEBOARD-MVP.md](./INTERACTIVE-WHITEBOARD-MVP.md)。当前开发分支已经实现共享变量动画、互动任务、选区来源合同和可选 Ink Runtime，并加入可旋转、缩放和恢复视角的基础 3D 场景；它们仍是 RC 之后的开发切片，不表示已经发布。
 
 ## 两个 Profile
 

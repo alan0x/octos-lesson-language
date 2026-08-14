@@ -8,6 +8,12 @@ import {
   inkSvgChecksum,
   validateInkDocumentRecord,
 } from "../src/persistence.js";
+import {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  assertInkSelectionIntegrity,
+  validateInkSelectionSnapshot,
+} from "../src/selection-record.js";
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -85,4 +91,28 @@ test("reading a corrupted saved resource never rewrites its recoverable source",
     (error) => error instanceof InkRuntimeError && error.code === "INK_INVALID_RECORD",
   );
   assert.equal(storage.getItem(key), damagedSource);
+});
+
+test("selection sources are immutable checksummed snapshots, not editor component IDs", async () => {
+  const svg = '<svg data-oll-ink-selection="1" viewBox="0 0 40 20"><path d="M1 1L39 19"/></svg>';
+  const snapshot = {
+    format: INK_SELECTION_FORMAT,
+    format_version: INK_SELECTION_FORMAT_VERSION,
+    source_id: "ink-source:stable-1",
+    document_id: "lesson-1:student-ink",
+    document_version: 4,
+    created_at: "2026-08-14T12:00:00.000Z",
+    bounds: { x: 120, y: 80, width: 40, height: 20 },
+    checksum: { algorithm: "sha-256" as const, value: await inkSvgChecksum(svg) },
+    svg,
+  };
+  assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
+  await assertInkSelectionIntegrity(snapshot);
+
+  const damaged = structuredClone(snapshot);
+  damaged.svg = damaged.svg.replace("39 19", "20 19");
+  await assert.rejects(
+    () => assertInkSelectionIntegrity(damaged),
+    (error) => error instanceof InkRuntimeError && error.code === "INK_CHECKSUM_MISMATCH",
+  );
 });

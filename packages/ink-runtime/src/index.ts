@@ -13,9 +13,15 @@ export {
 export {
   createInkSelectionSnapshot,
   selectedComponentsToSvg,
+} from "./selection.js";
+export {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  assertInkSelectionIntegrity,
+  validateInkSelectionSnapshot,
   type InkSelectionBounds,
   type InkSelectionSnapshot,
-} from "./selection.js";
+} from "./selection-record.js";
 export {
   InkRuntime,
   mountInkRuntime,

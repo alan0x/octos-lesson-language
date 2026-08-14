@@ -85,6 +85,17 @@
 .geometry-circle.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
 .geometry-circle.emphasis-resolved, .geometry-segment.emphasis-resolved, .geometry-arc.emphasis-resolved { opacity: .68; }
 .geometry-point.emphasis-focus { fill: #e15d45; r: 6px; }
+.scene3d-runtime { display: grid; grid-template-rows: auto 1fr; height: calc(100% - 24px); min-height: 270px; margin-top: 2px; overflow: hidden; border-radius: 12px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.95), rgba(228,239,235,.78)); }
+.scene3d-runtime svg { width: 100%; height: 100%; min-height: 250px; cursor: grab; touch-action: none; user-select: none; }
+.scene3d-runtime svg:active { cursor: grabbing; }
+.scene3d-controls { position: absolute; z-index: 2; left: 18px; bottom: 14px; display: flex; gap: 5px; }
+.scene3d-controls button { padding: 5px 8px; border: 1px solid rgba(44,104,96,.2); border-radius: 8px; background: rgba(255,253,247,.92); color: #3f5e58; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
+.scene3d-controls button:hover, .scene3d-controls button:focus-visible { border-color: #2a9386; background: #eef8f5; outline: none; }
+.scene3d-axis { stroke-width: 1.7; vector-effect: non-scaling-stroke; }
+.scene3d-axis-label { fill: #5f6f6b; font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.scene3d-face, .scene3d-solid, .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scene3d-surface-cell { stroke-opacity: .42; }
+.scene3d-section { stroke-dasharray: 5 4; stroke-width: 1.8; }
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }

@@ -19,6 +19,11 @@ import {
   type StudentInputMethod,
   type StudentVariableInputHandler,
 } from "./student-operations.js";
+import {
+  renderScene3d,
+  type Scene3dViewInputHandler,
+  type Scene3dViewState,
+} from "./scene3d.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
@@ -750,12 +755,23 @@ function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsse
   parent.append(frame);
 }
 
-function renderContent(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver): void {
+function renderContent(
+  parent: HTMLElement,
+  node: Record<string, any>,
+  resolveAsset: ImageAssetResolver,
+  sceneView?: Scene3dViewState,
+  sceneInput?: Scene3dViewInputHandler,
+  variables: Record<string, number> = {},
+): void {
   const content = node.content ?? {};
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometry(parent, node); return; }
   if (node.kind === "plot") { plot(parent, node); return; }
+  if (node.kind === "scene3d") {
+    renderScene3d(parent, node, sceneView, variables, sceneInput);
+    return;
+  }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
   if (node.kind === "math") { renderMath(parent, node); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
@@ -842,6 +858,8 @@ export class InfiniteBoardView {
     viewBoxHeight: number;
   };
   private variableInputHandler?: VariableInputHandler;
+  private scene3dInputHandler?: Scene3dViewInputHandler;
+  private scene3dViews: Record<string, Scene3dViewState> = {};
   private manualMotionTimer?: ReturnType<typeof setTimeout>;
   private cameraFrame?: number;
   private cameraNotifyUntil = 0;
@@ -977,6 +995,14 @@ export class InfiniteBoardView {
     this.variableInputHandler = handler;
   }
 
+  setScene3dInputHandler(handler: Scene3dViewInputHandler | undefined): void {
+    this.scene3dInputHandler = handler;
+  }
+
+  setScene3dViews(views: Record<string, Scene3dViewState>): void {
+    this.scene3dViews = structuredClone(views);
+  }
+
   /**
    * Adds a course-owned layer to the board's world coordinate space.
    *
@@ -1062,6 +1088,7 @@ export class InfiniteBoardView {
     this.dragging = undefined;
     this.finishVariableDrag();
     this.variableInputHandler = undefined;
+    this.scene3dInputHandler = undefined;
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
   }
@@ -1082,7 +1109,7 @@ export class InfiniteBoardView {
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
-      const fixedVisualSize = kind === "plot" || kind === "geometry"
+      const fixedVisualSize = kind === "plot" || kind === "geometry" || kind === "scene3d"
         || (kind === "diagram" && Array.isArray(node.content?.elements));
       let element = this.nodeElements.get(node.id);
       const created = !element;
@@ -1099,10 +1126,20 @@ export class InfiniteBoardView {
       if (board.focus.includes(node.id)) element.classList.add("focused");
       if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");
       applyEmphasisClass(element, latestEmphasis(node));
-      const signature = nodeContentSignature(node);
+      const signature = nodeContentSignature(node)
+        + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null);
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         element.replaceChildren();
-        renderContent(element, node, this.resolveAsset);
+        renderContent(
+          element,
+          node,
+          this.resolveAsset,
+          this.scene3dViews[node.id],
+          this.scene3dInputHandler,
+          Object.fromEntries(Object.entries(board.variables ?? {}).map(
+            ([alias, variable]) => [alias, variable.value],
+          )),
+        );
         this.nodeContentSignatures.set(node.id, signature);
       }
       this.syncNodeFragmentEmphasis(element, node);

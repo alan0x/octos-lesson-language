@@ -14,6 +14,16 @@ export {
   type VariableInputHandler,
 } from "./board-view.js";
 export {
+  normalizeScene3dView,
+  projectScene3dPoint,
+  renderScene3d,
+  type Scene3dViewControl,
+  type Scene3dViewInputEvent,
+  type Scene3dViewInputHandler,
+  type Scene3dViewPhase,
+  type Scene3dViewState,
+} from "./scene3d.js";
+export {
   boardToViewportPoint,
   viewportToBoardPoint,
   type BoardPoint,
@@ -39,6 +49,12 @@ export {
   type Rect,
 } from "./layout.js";
 export {
+  plotPathData,
+  samplePlotExpression,
+  type PlotRange,
+  type PlotSample,
+} from "./plot.js";
+export {
   BrowserLessonSession,
   LocalPlaybackStore,
   narrationDuration,
@@ -48,12 +64,19 @@ export {
   type PlaybackStore,
 } from "./runtime.js";
 export {
+  createStudentInkSelectionOperation,
+  createStudentScene3dViewOperation,
   emptyStudentOperationLog,
   parseStudentOperationLog,
   studentInputMethod,
   type StudentInputMethod,
+  type StudentInkSelectionOperation,
+  type StudentInkSelectionSource,
   type StudentOperation,
   type StudentOperationLog,
+  type StudentScene3dControl,
+  type StudentScene3dViewOperation,
+  type StudentScene3dViewState,
   type StudentVariableControl,
   type StudentVariableInputEvent,
   type StudentVariableInputHandler,

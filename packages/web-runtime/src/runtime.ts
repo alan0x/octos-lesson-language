@@ -10,10 +10,18 @@ import {
   type PlaybackVariableAnimation,
 } from "../../player-core/src/index.js";
 import {
+  createStudentScene3dViewOperation,
+  createStudentInkSelectionOperation,
   emptyStudentOperationLog,
   parseStudentOperationLog,
+  type StudentInkSelectionOperation,
+  type StudentInkSelectionSource,
+  type StudentInputMethod,
   type StudentOperation,
   type StudentOperationLog,
+  type StudentScene3dControl,
+  type StudentScene3dViewOperation,
+  type StudentScene3dViewState,
   type StudentVariableOperation,
   type StudentVariableOperationContext,
 } from "./student-operations.js";
@@ -231,6 +239,14 @@ export class BrowserLessonSession {
     control: StudentVariableOperationContext["control"];
     input: StudentVariableOperationContext["input"];
   }>();
+  private readonly pendingStudentScene3dOperations = new Map<string, {
+    sequence: number;
+    nodeId: string;
+    before: StudentScene3dViewState;
+    after: StudentScene3dViewState;
+    control: StudentScene3dControl;
+    input: StudentInputMethod;
+  }>();
 
   constructor(
     readonly events: CanonicalEvent[],
@@ -264,6 +280,18 @@ export class BrowserLessonSession {
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
   get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
   get studentOperations(): StudentOperation[] { return structuredClone(this.studentOperationLog.operations); }
+  get scene3dViews(): Record<string, StudentScene3dViewState> {
+    const views: Record<string, StudentScene3dViewState> = {};
+    for (const node of Object.values(this.player.snapshot.board?.nodes ?? {})) {
+      if (node.kind === "scene3d") views[node.id] = structuredClone(node.content.camera);
+    }
+    for (const operation of this.studentOperationLog.operations) {
+      if (operation.kind === "scene3d_view") {
+        views[operation.target.node_id] = structuredClone(operation.after);
+      }
+    }
+    return views;
+  }
   get studentTasks(): StudentTaskSnapshot[] {
     return taskSnapshots(
       this.studentTaskDefinitions,
@@ -603,6 +631,7 @@ export class BrowserLessonSession {
     const completed = this.studentOperationLog.operations.find((operation) => operation.id === id);
     if (completed) {
       if (
+        completed.kind !== "variable_change" ||
         completed.target.alias !== alias ||
         completed.control !== context.control ||
         completed.input !== context.input
@@ -649,7 +678,12 @@ export class BrowserLessonSession {
     value?: number,
   ): StudentVariableOperation | undefined {
     const completed = this.studentOperationLog.operations.find((operation) => operation.id === operationId);
-    if (completed) return structuredClone(completed);
+    if (completed) {
+      if (completed.kind !== "variable_change") {
+        throw new Error("Student operation ID is not a variable operation");
+      }
+      return structuredClone(completed);
+    }
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
     if (value !== undefined) this.applyManualVariable(pending.alias, value);
@@ -685,6 +719,120 @@ export class BrowserLessonSession {
   ): StudentVariableOperation | undefined {
     const operationId = this.beginStudentVariableOperation(alias, context);
     return this.commitStudentVariableOperation(operationId, value);
+  }
+
+  recordStudentInkSelection(
+    source: StudentInkSelectionSource,
+    input: StudentInputMethod,
+  ): StudentInkSelectionOperation {
+    const id = [
+      this.player.snapshot.lesson_id,
+      "ink-selection",
+      source.source_id,
+    ].join(":");
+    const existing = this.studentOperationLog.operations.find(
+      (operation) => operation.id === id,
+    );
+    if (existing) {
+      if (
+        existing.kind !== "ink_selection"
+        || JSON.stringify(existing.target) !== JSON.stringify({
+          kind: "ink_selection_source",
+          ...source,
+        })
+        || existing.input !== input
+      ) {
+        throw new Error("Student selection source was already recorded differently");
+      }
+      return structuredClone(existing);
+    }
+    const operation = createStudentInkSelectionOperation({
+      lessonId: this.player.snapshot.lesson_id,
+      sequence: this.nextStudentOperationSequence,
+      source,
+      input,
+    });
+    this.nextStudentOperationSequence += 1;
+    this.studentOperationLog.operations.push(operation);
+    this.persistStudentOperations();
+    this.emit();
+    return structuredClone(operation);
+  }
+
+  handleStudentScene3dInput(
+    nodeId: string,
+    view: StudentScene3dViewState,
+    event: {
+      phase: "start" | "update" | "commit";
+      control: StudentScene3dControl;
+      input: StudentInputMethod;
+      operation_id?: string;
+    },
+  ): string | StudentScene3dViewOperation | undefined {
+    const node = this.player.snapshot.board?.nodes?.[nodeId];
+    if (node?.kind !== "scene3d") throw new Error(`Unknown 3D scene '${nodeId}'`);
+    if (![view.yaw, view.pitch, view.zoom].every(Number.isFinite)
+      || view.pitch < -Math.PI / 2 || view.pitch > Math.PI / 2
+      || view.zoom < .2 || view.zoom > 5) {
+      throw new Error("Invalid 3D view state");
+    }
+    if (event.phase === "start") {
+      const id = event.operation_id?.trim()
+        || `${this.player.snapshot.lesson_id}:student-operation:${this.nextStudentOperationSequence}`;
+      if (!id || id.length > 256) throw new Error("Student operationId must be between 1 and 256 characters");
+      const completed = this.studentOperationLog.operations.find((operation) => operation.id === id);
+      if (completed) {
+        if (completed.kind !== "scene3d_view" || completed.target.node_id !== nodeId) {
+          throw new Error(`Student operationId '${id}' was already used differently`);
+        }
+        return id;
+      }
+      if (!this.pendingStudentScene3dOperations.has(id)) {
+        const sequence = this.nextStudentOperationSequence;
+        this.nextStudentOperationSequence += 1;
+        this.pendingStudentScene3dOperations.set(id, {
+          sequence,
+          nodeId,
+          before: structuredClone(view),
+          after: structuredClone(view),
+          control: event.control,
+          input: event.input,
+        });
+      }
+      return id;
+    }
+    const id = event.operation_id?.trim();
+    if (!id) throw new Error("3D view update requires operation_id");
+    if (this.studentOperationLog.operations.some((operation) => operation.id === id)) {
+      return this.studentOperationLog.operations.find(
+        (operation): operation is StudentScene3dViewOperation =>
+          operation.id === id && operation.kind === "scene3d_view",
+      );
+    }
+    const pending = this.pendingStudentScene3dOperations.get(id);
+    if (!pending || pending.nodeId !== nodeId) throw new Error(`3D operation '${id}' has not started`);
+    pending.after = structuredClone(view);
+    if (event.phase === "update") return id;
+    this.pendingStudentScene3dOperations.delete(id);
+    const unchanged = Math.abs(pending.before.yaw - view.yaw) <= 1e-12
+      && Math.abs(pending.before.pitch - view.pitch) <= 1e-12
+      && Math.abs(pending.before.zoom - view.zoom) <= 1e-12;
+    if (unchanged) return undefined;
+    const operation = createStudentScene3dViewOperation({
+      lessonId: this.player.snapshot.lesson_id,
+      sequence: pending.sequence,
+      nodeId,
+      before: pending.before,
+      after: view,
+      control: pending.control,
+      input: pending.input,
+      operationId: id,
+    });
+    this.studentOperationLog.operations.push(operation);
+    this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
+    this.persistStudentOperations();
+    this.emit();
+    return structuredClone(operation);
   }
 
   requestStudentTaskHint(taskId: string): StudentTaskSnapshot {

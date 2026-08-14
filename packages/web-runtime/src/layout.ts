@@ -29,6 +29,7 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   const length = visibleContentLength(content);
   const kind = String(node.kind ?? "text");
   if (kind === "geometry") return { width: 380, height: 300 };
+  if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot" || kind === "image") return { width: 340, height: 230 };
   if (kind === "table") {
     const columns = Array.isArray(content.columns) ? content.columns.length : 3;

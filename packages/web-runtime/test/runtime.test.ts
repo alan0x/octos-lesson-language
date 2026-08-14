@@ -2,7 +2,7 @@ import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { reduceCanonicalEvents } from "../../core/src/index.js";
+import { normalizeAuthoringLesson, reduceCanonicalEvents } from "../../core/src/index.js";
 import type { PlaybackCheckpoint } from "../../player-core/src/index.js";
 import { computeBoardLayout } from "../src/layout.js";
 import {
@@ -13,7 +13,10 @@ import {
   variableAnimationDuration,
   type PlaybackStore,
 } from "../src/runtime.js";
-import type { StudentOperationLog } from "../src/student-operations.js";
+import type {
+  StudentOperationLog,
+  StudentVariableOperation,
+} from "../src/student-operations.js";
 import type { StudentTaskProgressLog } from "../src/student-tasks.js";
 
 class MemoryStore implements PlaybackStore {
@@ -416,8 +419,12 @@ test("student slider and geometry gestures share one persisted variable operatio
   first.commitStudentVariableOperation(geometryId, Math.PI);
 
   assert.equal(first.studentOperations.length, 2, "many drag samples produce two completed gestures, not four samples");
+  const variableOperations = first.studentOperations.filter(
+    (operation): operation is StudentVariableOperation =>
+      operation.kind === "variable_change",
+  );
   assert.deepEqual(
-    first.studentOperations.map((operation) => ({
+    variableOperations.map((operation) => ({
       kind: operation.kind,
       target: operation.target,
       control: operation.control,
@@ -461,6 +468,96 @@ test("student slider and geometry gestures share one persisted variable operatio
   first.reset();
   assert.equal(first.studentOperations.length, 3, "course replay preserves the student's operation history");
   const restored = new BrowserLessonSession(unitCircleEvents, store, "student-variable-operations");
+  assert.deepEqual(restored.studentOperations, first.studentOperations);
+});
+
+test("ink selections enter the same persisted student operation history", () => {
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(unitCircleEvents, store, "student-ink-selection");
+  const source = {
+    source_id: "source-1",
+    document_id: "student-ink-1",
+    document_version: 3,
+    bounds: { x: 80, y: 120, width: 240, height: 90 },
+    checksum: { algorithm: "sha-256" as const, value: "a".repeat(64) },
+  };
+
+  const recorded = first.recordStudentInkSelection(source, "pen");
+  assert.equal(recorded.kind, "ink_selection");
+  assert.deepEqual(recorded.target.bounds, source.bounds);
+  assert.equal(first.studentOperations.length, 1);
+  assert.deepEqual(
+    first.recordStudentInkSelection(source, "pen"),
+    recorded,
+    "replaying the same source is idempotent",
+  );
+  assert.equal(first.studentOperations.length, 1);
+
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "student-ink-selection");
+  assert.deepEqual(restored.studentOperations, first.studentOperations);
+  assert.throws(
+    () => restored.recordStudentInkSelection({ ...source, document_version: 4 }, "pen"),
+    /already recorded differently/,
+  );
+});
+
+test("3D orbit gestures are one persisted student operation and restore the view", () => {
+  const sceneEvents = normalizeAuthoringLesson({
+    dsl: "octos.lesson",
+    version: "0.1",
+    profile: "authoring",
+    lesson: { mode: "explain", language: "zh-CN", title: "立方体", goals: ["观察空间结构"] },
+    steps: [{
+      key: "scene-step",
+      purpose: "显示三维对象",
+      beats: [{
+        key: "scene-beat",
+        actions: [{
+          do: "write",
+          as: "cube-scene",
+          kind: "scene3d",
+          role: "diagram",
+          content: {
+            axes: true,
+            camera: { yaw: .7, pitch: .5, zoom: 1 },
+            objects: [{
+              as: "cube",
+              kind: "box",
+              center: { x: 0, y: 0, z: 0 },
+              size: { x: 2, y: 2, z: 2 },
+            }],
+          },
+          place: { relation: "new_region" },
+        }, {
+          do: "focus",
+          targets: ["cube-scene"],
+          intent: "current_step",
+        }],
+      }],
+    }],
+    close: { summary: "观察完成。", focus: ["cube-scene"] },
+  }, { lessonId: "scene", boardId: "scene-board", baseRevision: 0 });
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(sceneEvents, store, "scene-operations");
+  while (first.projection.status !== "completed") first.advance();
+  const nodeId = Object.values(first.projection.board!.nodes)[0]!.id;
+  const before = first.scene3dViews[nodeId]!;
+  const operationId = first.handleStudentScene3dInput(nodeId, before, {
+    phase: "start", control: "orbit", input: "touch",
+  });
+  assert.equal(typeof operationId, "string");
+  first.handleStudentScene3dInput(nodeId, { yaw: 1.2, pitch: .2, zoom: 1 }, {
+    phase: "update", control: "orbit", input: "touch", operation_id: operationId as string,
+  });
+  first.handleStudentScene3dInput(nodeId, { yaw: 1.4, pitch: .1, zoom: 1 }, {
+    phase: "commit", control: "orbit", input: "touch", operation_id: operationId as string,
+  });
+  assert.equal(first.studentOperations.length, 1);
+  assert.equal(first.studentOperations[0]!.kind, "scene3d_view");
+  assert.deepEqual(first.scene3dViews[nodeId], { yaw: 1.4, pitch: .1, zoom: 1 });
+
+  const restored = new BrowserLessonSession(sceneEvents, store, "scene-operations");
+  assert.deepEqual(restored.scene3dViews, first.scene3dViews);
   assert.deepEqual(restored.studentOperations, first.studentOperations);
 });
 
@@ -511,7 +608,12 @@ test("student tasks judge committed operations, reveal hints, retry, and restore
 
   const retried = first.retryStudentTask("reach-sine-maximum", "mouse");
   assert.equal(retried.status, "not_started");
-  assert.equal(first.studentOperations.at(-1)!.control, "reset");
+  const resetOperation = first.studentOperations.at(-1);
+  assert.equal(resetOperation?.kind, "variable_change");
+  assert.equal(
+    resetOperation?.kind === "variable_change" ? resetOperation.control : undefined,
+    "reset",
+  );
   assert.equal(first.studentTasks[0]!.attempts.length, 2, "retry preserves the attempt history");
 
   first.changeStudentVariable("theta", Math.PI / 2, { control: "slider", input: "keyboard" });
@@ -608,7 +710,9 @@ test("invalid saved student operations are discarded without touching playback",
   });
   const checkpoint = structuredClone(store.values.get("invalid-student-operations"));
   const saved = store.studentOperations.get("invalid-student-operations")!;
-  saved.operations[0]!.after.value = Number.NaN;
+  if (saved.operations[0]?.kind === "variable_change") {
+    saved.operations[0].after.value = Number.NaN;
+  }
 
   const restored = new BrowserLessonSession(unitCircleEvents, store, "invalid-student-operations");
   assert.equal(restored.studentOperations.length, 0);
