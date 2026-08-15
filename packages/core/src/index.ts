@@ -915,7 +915,51 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   requireObject(document.close, "/close");
   requireArray(document.close.focus, "/close/focus");
 
-  const registry = new Map();
+  const registry: Registry = new Map();
+  if (document.board_context) {
+    requireString(document.board_context.board_id, "/board_context/board_id");
+    if (!Number.isSafeInteger(document.board_context.revision)
+      || document.board_context.revision < 0) {
+      fail("OLL_INVALID_REFERENCE", "/board_context/revision", "Board revision must be a non-negative integer");
+    }
+    if (!Array.isArray(document.board_context.references)) {
+      fail("OLL_INVALID_REFERENCE", "/board_context/references", "Board references must be an array");
+    }
+    document.board_context.references.forEach((reference, index) => {
+      const path = `/board_context/references/${index}`;
+      requireAlias(reference.as, `${path}/as`);
+      if (registry.has(reference.as)) {
+        fail("OLL_DUPLICATE_ALIAS", `${path}/as`, `Alias '${reference.as}' is already defined`);
+      }
+      if (!["node", "group", "connection"].includes(reference.type)) {
+        fail("OLL_INVALID_REFERENCE", `${path}/type`, `Unknown reference type '${reference.type}'`);
+      }
+      requireString(reference.target_id, `${path}/target_id`);
+      if (!Array.isArray(reference.fragments)) {
+        fail("OLL_INVALID_REFERENCE", `${path}/fragments`, "Reference fragments must be an array");
+      }
+      const fragmentIds = new Map<string, string>();
+      reference.fragments.forEach((fragment, fragmentIndex) => {
+        const fragmentPath = `${path}/fragments/${fragmentIndex}`;
+        requireAlias(fragment.as, `${fragmentPath}/as`);
+        requireString(fragment.target_id, `${fragmentPath}/target_id`);
+        if (fragmentIds.has(fragment.as)) {
+          fail("OLL_DUPLICATE_ALIAS", `${fragmentPath}/as`, `Fragment '${fragment.as}' is duplicated`);
+        }
+        fragmentIds.set(fragment.as, fragment.target_id);
+      });
+      if (reference.type !== "node" && fragmentIds.size > 0) {
+        fail("OLL_INVALID_REFERENCE", `${path}/fragments`, "Only node references can expose fragments");
+      }
+      registry.set(reference.as, {
+        type: reference.type,
+        id: reference.target_id,
+        fragments: new Set(fragmentIds.keys()),
+        fragmentIds,
+        external: true,
+      });
+    });
+  }
   const stepKeys = new Set();
 
   document.steps.forEach((step, stepIndex) => {
@@ -995,7 +1039,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         }
 
         if (action.do === "revise") {
-          resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          const resolved = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          if (registry.get(resolved.alias)?.external) {
+            fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "External board references are read-only");
+          }
           return;
         }
 
@@ -1091,6 +1138,18 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
 
 function buildCanonicalRegistry(document: AuthoringLesson, host: NormalizationHost): Registry {
   const registry: Registry = new Map();
+  for (const reference of document.board_context?.references ?? []) {
+    registry.set(reference.as, {
+      type: reference.type,
+      id: reference.target_id,
+      fragments: new Set(reference.fragments.map((fragment) => fragment.as)),
+      fragmentIds: new Map(reference.fragments.map((fragment) => [
+        fragment.as,
+        fragment.target_id,
+      ])),
+      external: true,
+    });
+  }
   for (const step of document.steps) {
     for (const beat of step.beats) {
       for (const action of beat.actions) {
@@ -1119,7 +1178,9 @@ function canonicalTarget(registry: Registry, value: string): CanonicalTarget {
   if (entry.type === "connection") return { connection_id: entry.id };
   return {
     node_id: entry.id,
-    ...(fragment ? { fragment_id: `${entry.id}:fragment:${fragment}` } : {}),
+    ...(fragment ? {
+      fragment_id: entry.fragmentIds?.get(fragment) ?? `${entry.id}:fragment:${fragment}`,
+    } : {}),
   };
 }
 
@@ -1254,6 +1315,14 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   requireObject(host, "host");
   for (const field of ["lessonId", "boardId", "baseRevision"]) {
     if (host[field] === undefined || host[field] === null) fail("OLL_MISSING_HOST_FIELD", `host/${field}`, `Missing host field '${field}'`);
+  }
+  if (document.board_context) {
+    if (document.board_context.board_id !== host.boardId) {
+      fail("OLL_INVALID_REFERENCE", "/board_context/board_id", "Board context does not match the host board");
+    }
+    if (document.board_context.revision !== host.baseRevision) {
+      fail("OLL_INVALID_REFERENCE", "/board_context/revision", "Board context revision does not match the host revision");
+    }
   }
   const registry = buildCanonicalRegistry(document, host);
   const canonicalLesson = structuredClone(document.lesson);

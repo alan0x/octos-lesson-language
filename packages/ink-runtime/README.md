@@ -28,6 +28,6 @@ Ink Runtime 和课程节点是同一个 `world` 的子元素，因此只经过�
 
 `InkDocumentRecord` 保存完整 SVG、格式版本、精确编辑器版本、文档版本、SHA-256 和更新时间。它必须使用独立于 `BrowserLessonSession` checkpoint 的存储键。中文、英文、公式和手绘图形使用同一种 SVG 保存方式。
 
-`captureSelectionSnapshot()` 冻结学生明确选中的 SVG、白板范围和当时的文档版本，并生成 Octos 自己的 `source_id`。快照使用 `oll.student-ink.selection` 格式，包含格式版本和 SVG 的 SHA-256；读取方必须同时验证元数据和校验和。它不暴露或持久化 `js-draw` 内部组件编号。识别和 AI 增强只能引用该快照，不能调用 Ink Runtime 修改原稿。
+`captureSelectionSnapshot()` 冻结学生明确选中的 SVG、白板范围、选择区域和当时的文档版本，并生成 Octos 自己的 `source_id`。版本 2 把选择区域与 SVG 一起纳入 SHA-256，避免目标区域与原稿分离后被静默替换；读取方仍兼容没有区域信息的版本 1 快照。它不暴露或持久化 `js-draw` 内部组件编号。识别和 AI 增强只能引用该快照，不能调用 Ink Runtime 修改原稿。
 
 本包复用 `js-draw` 的笔刷、压感、橡皮、选择和撤销栈；Octos 不实现第二套笔画采样或套索算法。硬件触控笔的掌触抑制、延迟和长时间书写仍需在目标设备上验收。

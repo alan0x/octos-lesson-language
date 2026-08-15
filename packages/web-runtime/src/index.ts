@@ -1,5 +1,17 @@
 export type { ImageAssetResolver, ImageRegionBounds, ResolvedImageAsset } from "./assets.js";
 export {
+  describeBoardTarget,
+  pointInPolygon,
+  rankBoardTargets,
+  rectIntersection,
+  targetQueryScore,
+  type BoardTargetCandidate,
+  type BoardTargetDescription,
+  type BoardTargetKind,
+  type BoardTargetPoint,
+  type BoardTargetQuery,
+} from "./board-targets.js";
+export {
   InfiniteBoardView,
   angleControlValue,
   diagramConnectionGeometry,

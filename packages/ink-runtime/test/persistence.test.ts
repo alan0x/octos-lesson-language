@@ -11,6 +11,7 @@ import {
 import {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
+  LEGACY_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
   validateInkSelectionSnapshot,
 } from "../src/selection-record.js";
@@ -103,9 +104,15 @@ test("selection sources are immutable checksummed snapshots, not editor componen
     document_version: 4,
     created_at: "2026-08-14T12:00:00.000Z",
     bounds: { x: 120, y: 80, width: 40, height: 20 },
-    checksum: { algorithm: "sha-256" as const, value: await inkSvgChecksum(svg) },
+    region: {
+      kind: "rectangle" as const,
+      closed: true,
+      points: [{ x: 120, y: 80 }, { x: 160, y: 80 }, { x: 160, y: 100 }, { x: 120, y: 100 }],
+    },
+    checksum: { algorithm: "sha-256" as const, value: "" },
     svg,
   };
+  snapshot.checksum.value = await inkSvgChecksum(JSON.stringify({ svg, region: snapshot.region }));
   assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
   await assertInkSelectionIntegrity(snapshot);
 
@@ -115,4 +122,21 @@ test("selection sources are immutable checksummed snapshots, not editor componen
     () => assertInkSelectionIntegrity(damaged),
     (error) => error instanceof InkRuntimeError && error.code === "INK_CHECKSUM_MISMATCH",
   );
+});
+
+test("legacy selection snapshots remain readable after region paths are added", async () => {
+  const svg = '<svg data-oll-ink-selection="1" viewBox="0 0 20 20"><path d="M0 0L20 20"/></svg>';
+  const legacy = {
+    format: INK_SELECTION_FORMAT,
+    format_version: LEGACY_INK_SELECTION_FORMAT_VERSION,
+    source_id: "ink-source:legacy",
+    document_id: "lesson-1:student-ink",
+    document_version: 2,
+    created_at: "2026-08-14T12:00:00.000Z",
+    bounds: { x: 10, y: 10, width: 20, height: 20 },
+    checksum: { algorithm: "sha-256" as const, value: await inkSvgChecksum(svg) },
+    svg,
+  };
+  assert.deepEqual(validateInkSelectionSnapshot(legacy), legacy);
+  await assertInkSelectionIntegrity(legacy);
 });

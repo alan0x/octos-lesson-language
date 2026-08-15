@@ -494,6 +494,7 @@ function renderSectionIntersection(
   });
   path.setAttribute("class", `scene3d-intersection scene3d-intersection-${intersection.solid ? "solid" : "surface"}`);
   path.dataset.sectionId = String(section.id ?? section.as ?? "");
+  path.dataset.id = String(section.id ?? section.as ?? "");
   path.dataset.targetId = intersection.target;
   svg.append(path);
 }
@@ -524,7 +525,10 @@ function renderSurface(
     }
   }
   faces.sort((left, right) => left.depth - right.depth);
-  for (const face of faces) polygon(svg, face.points, view, color, .22, "scene3d-surface-cell");
+  for (const face of faces) {
+    const element = polygon(svg, face.points, view, color, .22, "scene3d-surface-cell");
+    element.dataset.id = String(object.id ?? object.as ?? "");
+  }
 }
 
 function renderScene(
@@ -549,7 +553,7 @@ function renderScene(
       svg.append(label);
     }
   }
-  const faces: Array<{ points: Point3d[]; color: string; depth: number }> = [];
+  const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
   for (const object of content.objects ?? []) {
     const color = safeColor(object.color);
     if (object.kind === "surface") {
@@ -560,7 +564,7 @@ function renderScene(
       for (const points of boxFaces(object)) {
         const depth = points.reduce((sum, point) =>
           sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-        faces.push({ points, color, depth });
+        faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
       }
       continue;
     }
@@ -573,6 +577,7 @@ function renderScene(
         fill: color, "fill-opacity": .28, stroke: color,
       });
       sphere.setAttribute("class", "scene3d-solid");
+      sphere.dataset.id = String(object.id ?? object.as ?? "");
       svg.append(sphere);
     } else {
       const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
@@ -584,6 +589,7 @@ function renderScene(
           fill: color, "fill-opacity": .28, stroke: color,
         });
         cone.setAttribute("class", "scene3d-solid");
+        cone.dataset.id = String(object.id ?? object.as ?? "");
         svg.append(cone);
       } else {
         const cylinder = svgElement("path", {
@@ -591,12 +597,16 @@ function renderScene(
           fill: color, "fill-opacity": .25, stroke: color,
         });
         cylinder.setAttribute("class", "scene3d-solid");
+        cylinder.dataset.id = String(object.id ?? object.as ?? "");
         svg.append(cylinder);
       }
     }
   }
   faces.sort((left, right) => left.depth - right.depth);
-  for (const face of faces) polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+  for (const face of faces) {
+    const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+    element.dataset.id = face.objectId;
+  }
   for (const section of content.sections ?? []) {
     const display = (section.display ?? "plane") as SectionDisplay;
     if (display !== "intersection") {
@@ -609,6 +619,7 @@ function renderScene(
         "scene3d-section",
       );
       plane.dataset.sectionId = String(section.id ?? section.as ?? "");
+      plane.dataset.id = String(section.id ?? section.as ?? "");
     }
     for (const intersection of scene3dSectionIntersections(content, section, variables)) {
       renderSectionIntersection(svg, section, intersection, view);

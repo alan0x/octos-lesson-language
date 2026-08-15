@@ -11,6 +11,7 @@ import {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
   type InkSelectionBounds,
+  type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
 
@@ -39,8 +40,19 @@ export async function createInkSelectionSnapshot(options: {
   documentVersion: number;
   sourceId?: string;
   createdAt?: string;
+  region?: InkSelectionRegion;
 }): Promise<InkSelectionSnapshot> {
   const selection = selectedComponentsToSvg(options.components);
+  const region: InkSelectionRegion = options.region ?? {
+    kind: "rectangle",
+    closed: true,
+    points: [
+      { x: selection.bounds.x, y: selection.bounds.y },
+      { x: selection.bounds.x + selection.bounds.width, y: selection.bounds.y },
+      { x: selection.bounds.x + selection.bounds.width, y: selection.bounds.y + selection.bounds.height },
+      { x: selection.bounds.x, y: selection.bounds.y + selection.bounds.height },
+    ],
+  };
   return {
     format: INK_SELECTION_FORMAT,
     format_version: INK_SELECTION_FORMAT_VERSION,
@@ -49,7 +61,11 @@ export async function createInkSelectionSnapshot(options: {
     document_version: options.documentVersion,
     created_at: options.createdAt ?? new Date().toISOString(),
     bounds: selection.bounds,
-    checksum: { algorithm: "sha-256", value: await inkSvgChecksum(selection.svg) },
+    region,
+    checksum: {
+      algorithm: "sha-256",
+      value: await inkSvgChecksum(JSON.stringify({ svg: selection.svg, region })),
+    },
     svg: selection.svg,
   };
 }

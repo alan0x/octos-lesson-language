@@ -80,6 +80,76 @@ test("normalization is deterministic", () => {
   );
 });
 
+test("normalizes a host-provided external board reference without rewriting it", () => {
+  const lesson = structuredClone(source);
+  lesson.board_context = {
+    board_id: host.boardId,
+    revision: 12,
+    references: [{
+      as: "selected-formula",
+      type: "node",
+      target_id: "prior-lesson:node:formula",
+      label: "上一节课的函数",
+      fragments: [{
+        as: "selected-part",
+        target_id: "prior-lesson:node:formula:fragment:quadratic",
+      }],
+    }],
+  };
+  (lesson.steps[0]!.beats[0]!.actions[0]! as any).place = {
+    relation: "near",
+    anchor: "selected-formula",
+  };
+  lesson.steps[0]!.beats[0]!.actions.push({
+    do: "point",
+    target: "selected-formula#selected-part",
+  });
+  assert.deepEqual(validateAuthoringSchema(lesson), { valid: true, errors: [] });
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, {
+    ...host,
+    baseRevision: 12,
+  });
+  const actions = events[1]!.step!.beats[0]!.stage;
+  assert.equal(
+    actions.during_speech[0]!.node?.placement?.anchor,
+    "prior-lesson:node:formula",
+  );
+  assert.deepEqual(actions.during_speech.at(-1)!.target, {
+    node_id: "prior-lesson:node:formula",
+    fragment_id: "prior-lesson:node:formula:fragment:quadratic",
+  });
+});
+
+test("keeps external board references read-only and revision-bound", () => {
+  const lesson = structuredClone(source);
+  lesson.board_context = {
+    board_id: host.boardId,
+    revision: 3,
+    references: [{
+      as: "old-node",
+      type: "node",
+      target_id: "old:node",
+      fragments: [],
+    }],
+  };
+  lesson.steps[0]!.beats[0]!.actions.push({
+    do: "revise",
+    target: "old-node",
+    content: { text: "changed" },
+    reason: "must stay immutable",
+  });
+  assert.throws(
+    () => validateAuthoringLesson(lesson),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_REFERENCE",
+  );
+  lesson.steps[0]!.beats[0]!.actions.pop();
+  assert.throws(
+    () => normalizeAuthoringLesson(lesson, { ...host, baseRevision: 4 }),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_REFERENCE",
+  );
+});
+
 test("normalization carries the host region onto the board and created nodes", () => {
   const events = normalizeAuthoringLesson(source, {
     ...host,

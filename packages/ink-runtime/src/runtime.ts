@@ -32,7 +32,12 @@ import {
   type InkDocumentStore,
 } from "./persistence.js";
 import { createInkSelectionSnapshot } from "./selection.js";
-import type { InkSelectionSnapshot } from "./selection-record.js";
+import {
+  inkSelectionPathRegion,
+  type InkSelectionPoint,
+  type InkSelectionRegion,
+  type InkSelectionSnapshot,
+} from "./selection-record.js";
 import {
   lockSelectionTransform,
   type LockableSelectionTool,
@@ -85,6 +90,7 @@ export class InkRuntime {
   private layerBounds: InkWorldLayerBounds;
   private expectedViewportTransform = Mat33.identity;
   private readonly activePointers = new Map<number, Pointer>();
+  private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
   private readonly unmountWorldLayer: () => void;
   private readonly removeInputListeners: () => void;
@@ -243,11 +249,17 @@ export class InkRuntime {
       if (event.pointerType === "mouse") return PointerDevice.PrimaryButtonMouse;
       return PointerDevice.Other;
     };
-    const mappedPointer = (event: PointerEvent, down: boolean): Pointer => {
+    const pointerBoardPoint = (event: PointerEvent): InkSelectionPoint => {
       const viewportRect = this.options.viewport.getBoundingClientRect();
       const camera = this.options.board.getCameraState();
+      const point = { x: event.clientX - viewportRect.left, y: event.clientY - viewportRect.top };
+      return this.options.board.viewportToBoard(point);
+    };
+    const mappedPointer = (event: PointerEvent, down: boolean): Pointer => {
+      const camera = this.options.board.getCameraState();
+      const boardPoint = pointerBoardPoint(event);
       const surfacePoint = viewportPointToInkSurface(
-        { x: event.clientX - viewportRect.left, y: event.clientY - viewportRect.top },
+        this.options.board.boardToViewport(boardPoint),
         camera,
         this.layerBounds,
       );
@@ -274,10 +286,18 @@ export class InkRuntime {
             : event.pointerType === "mouse"
               ? "mouse"
               : "unknown";
+        this.selectionGesture = [pointerBoardPoint(event)];
       }
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, true);
+      if (this.modeValue === "select") {
+        const next = pointerBoardPoint(event);
+        const previousPoint = this.selectionGesture.at(-1);
+        if (!previousPoint || Math.hypot(next.x - previousPoint.x, next.y - previousPoint.y) >= 2) {
+          this.selectionGesture.push(next);
+        }
+      }
       this.activePointers.set(pointer.id, pointer);
       try { inputTarget.setPointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
       this.editor.display.onPointerEvent(event);
@@ -294,6 +314,13 @@ export class InkRuntime {
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, true);
+      if (this.modeValue === "select") {
+        const next = pointerBoardPoint(event);
+        const previousPoint = this.selectionGesture.at(-1);
+        if (!previousPoint || Math.hypot(next.x - previousPoint.x, next.y - previousPoint.y) >= 2) {
+          this.selectionGesture.push(next);
+        }
+      }
       this.activePointers.set(pointer.id, pointer);
       this.editor.display.onPointerEvent(event);
       this.editor.toolController.dispatchInputEvent({
@@ -308,6 +335,7 @@ export class InkRuntime {
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, false);
+      if (this.modeValue === "select") this.selectionGesture.push(pointerBoardPoint(event));
       this.activePointers.set(pointer.id, pointer);
       this.editor.display.onPointerEvent(event);
       this.editor.toolController.dispatchInputEvent({
@@ -397,12 +425,15 @@ export class InkRuntime {
     for (const pen of this.editor.toolController.getMatchingTools(PenTool)) pen.setEnabled(false);
     for (const eraser of this.editor.toolController.getMatchingTools(EraserTool)) eraser.setEnabled(false);
     for (const selection of this.editor.toolController.getMatchingTools(SelectionTool)) selection.setEnabled(false);
-    if (mode !== "select") this.selectedComponents = [];
+    if (mode !== "select") {
+      this.selectedComponents = [];
+      this.selectionGesture = [];
+    }
     if (mode === "draw") this.getTool(PenTool).setEnabled(true);
     if (mode === "erase") this.getTool(EraserTool).setEnabled(true);
     if (mode === "select") {
       const selection = this.getTool(SelectionTool);
-      selection.modeValue.set(SelectionMode.Rectangle);
+      selection.modeValue.set(SelectionMode.Lasso);
       selection.setEnabled(true);
       lockSelectionTransform(selection as unknown as LockableSelectionTool);
     }
@@ -416,6 +447,7 @@ export class InkRuntime {
     if (this.modeValue !== "select") this.setMode("select");
     const selection = this.getTool(SelectionTool);
     selection.setEnabled(true);
+    this.selectionGesture = [];
     selection.setSelection(this.editor.image.getAllComponents());
   }
 
@@ -467,10 +499,14 @@ export class InkRuntime {
 
   async captureSelectionSnapshot(): Promise<InkSelectionSnapshot> {
     await this.saveNow();
+    const region: InkSelectionRegion | undefined = inkSelectionPathRegion(
+      this.selectionGesture,
+    );
     return createInkSelectionSnapshot({
       components: this.selectedComponents,
       documentId: this.options.documentId,
       documentVersion: this.documentVersion,
+      ...(region ? { region } : {}),
     });
   }
 

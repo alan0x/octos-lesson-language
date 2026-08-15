@@ -3,6 +3,13 @@ import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
 import {
+  describeBoardTarget,
+  rankBoardTargets,
+  targetQueryScore,
+  type BoardTargetCandidate,
+  type BoardTargetQuery,
+} from "./board-targets.js";
+import {
   boardToViewportPoint,
   planFocusCamera,
   viewportToBoardPoint,
@@ -789,12 +796,30 @@ function renderContent(
     const table = document.createElement("table"); table.className = "content-table";
     if (Array.isArray(content.columns)) {
       const row = document.createElement("tr");
-      for (const column of content.columns) { const cell = document.createElement("th"); renderInlineText(cell, text(column)); row.append(cell); }
+      content.columns.forEach((column: unknown, columnIndex: number) => {
+        const cell = document.createElement("th");
+        const value = text(column);
+        cell.dataset.ollTargetId = `${node.id}:table:header:${columnIndex}`;
+        cell.dataset.ollTargetKind = "table-cell";
+        cell.dataset.ollTargetLabel = value;
+        cell.dataset.ollTargetValue = value;
+        renderInlineText(cell, value);
+        row.append(cell);
+      });
       table.append(row);
     }
-    for (const values of Array.isArray(content.rows) ? content.rows : []) {
+    for (const [rowIndex, values] of (Array.isArray(content.rows) ? content.rows : []).entries()) {
       const row = document.createElement("tr");
-      for (const value of values) { const cell = document.createElement("td"); renderInlineText(cell, text(value)); row.append(cell); }
+      for (const [columnIndex, value] of values.entries()) {
+        const cell = document.createElement("td");
+        const rendered = text(value);
+        cell.dataset.ollTargetId = `${node.id}:table:row:${rowIndex}:column:${columnIndex}`;
+        cell.dataset.ollTargetKind = "table-cell";
+        cell.dataset.ollTargetLabel = rendered;
+        cell.dataset.ollTargetValue = rendered;
+        renderInlineText(cell, rendered);
+        row.append(cell);
+      }
       table.append(row);
     }
     parent.append(table); return;
@@ -984,6 +1009,103 @@ export class InfiniteBoardView {
 
   viewportToBoard(point: BoardPoint): BoardPoint {
     return viewportToBoardPoint(point, this.getCameraState());
+  }
+
+  /**
+   * Resolves lesson-owned objects under a student selection. This is a
+   * read-only, on-demand query: normal lesson rendering never builds or walks
+   * this index, so adding selection assistance cannot delay first playback.
+   */
+  queryBoardTargets(query: BoardTargetQuery): BoardTargetCandidate[] {
+    if (!this.board || !this.layout
+      || !Number.isFinite(query.bounds.x) || !Number.isFinite(query.bounds.y)
+      || !Number.isFinite(query.bounds.width) || query.bounds.width <= 0
+      || !Number.isFinite(query.bounds.height) || query.bounds.height <= 0) {
+      return [];
+    }
+    const candidates: BoardTargetCandidate[] = [];
+    const viewportRect = this.viewport.getBoundingClientRect();
+    const domWorldRect = (element: Element): Rect | undefined => {
+      const rect = element.getBoundingClientRect();
+      if (![rect.left, rect.top, rect.width, rect.height].every(Number.isFinite)
+        || rect.width <= 0 || rect.height <= 0) return undefined;
+      const topLeft = this.viewportToBoard({
+        x: rect.left - viewportRect.left,
+        y: rect.top - viewportRect.top,
+      });
+      const bottomRight = this.viewportToBoard({
+        x: rect.right - viewportRect.left,
+        y: rect.bottom - viewportRect.top,
+      });
+      return {
+        x: Math.min(topLeft.x, bottomRight.x),
+        y: Math.min(topLeft.y, bottomRight.y),
+        width: Math.abs(bottomRight.x - topLeft.x),
+        height: Math.abs(bottomRight.y - topLeft.y),
+      };
+    };
+    const push = (
+      targetId: string,
+      nodeId: string,
+      bounds: Rect,
+      zIndex: number,
+      elementId?: string,
+      description = describeBoardTarget(this.board!.nodes[nodeId] as Record<string, unknown>, elementId),
+    ) => {
+      const score = targetQueryScore(bounds, query);
+      if (!score) return;
+      candidates.push({
+        target_id: targetId,
+        node_id: nodeId,
+        ...(elementId ? { element_id: elementId } : {}),
+        ...description,
+        world_bounds: bounds,
+        ...score,
+        z_index: zIndex,
+      });
+    };
+    const nodes = Object.values(this.board.nodes);
+    nodes.forEach((node, nodeIndex) => {
+      const nodeBounds = this.layout!.nodes[node.id];
+      if (!nodeBounds) return;
+      push(node.id, node.id, nodeBounds, nodeIndex);
+      const nodeElement = this.nodeElements.get(node.id);
+      if (!nodeElement) return;
+      for (const element of nodeElement.querySelectorAll<HTMLElement | SVGElement>(
+        "[data-id], [data-oll-target-id]",
+      )) {
+        const elementId = element.dataset.ollTargetId ?? element.dataset.id;
+        if (!elementId) continue;
+        const bounds = domWorldRect(element);
+        if (!bounds) continue;
+        if (element.dataset.ollTargetKind === "table-cell") {
+          push(
+            elementId,
+            node.id,
+            bounds,
+            nodeIndex + 1,
+            elementId,
+            {
+              kind: "table-cell",
+              label: element.dataset.ollTargetLabel,
+              value: element.dataset.ollTargetValue,
+            },
+          );
+        } else {
+          push(elementId, node.id, bounds, nodeIndex + 1, elementId,
+            describeBoardTarget(node as Record<string, unknown>, elementId, element.textContent ?? undefined));
+        }
+      }
+    });
+    const bestByTarget = new Map<string, BoardTargetCandidate>();
+    for (const candidate of candidates) {
+      const current = bestByTarget.get(candidate.target_id);
+      if (!current || candidate.overlap > current.overlap
+        || (candidate.overlap === current.overlap && candidate.distance < current.distance)) {
+        bestByTarget.set(candidate.target_id, candidate);
+      }
+    }
+    return rankBoardTargets([...bestByTarget.values()], query.limit);
   }
 
   setInputOwner(owner: BoardInputOwner): void {

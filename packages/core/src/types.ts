@@ -176,6 +176,7 @@ export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
   profile: "authoring";
+  board_context?: AuthoringBoardContext;
   lesson: {
     mode: "explain";
     language: string;
@@ -193,6 +194,20 @@ export interface AuthoringLesson {
     summary: string;
     focus: LocalReference[];
   };
+}
+
+export interface AuthoringExternalBoardReference {
+  as: Alias;
+  type: RegistryEntryType;
+  target_id: string;
+  label?: string;
+  fragments: Array<{ as: Alias; target_id: string }>;
+}
+
+export interface AuthoringBoardContext {
+  board_id: string;
+  revision: number;
+  references: AuthoringExternalBoardReference[];
 }
 
 export interface SessionRegion {
@@ -227,6 +242,8 @@ export interface RegistryEntry {
   type: RegistryEntryType;
   fragments: Set<string>;
   id?: string;
+  external?: boolean;
+  fragmentIds?: Map<string, string>;
 }
 
 export interface CanonicalTarget {

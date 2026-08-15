@@ -17,9 +17,12 @@ export {
 export {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
+  LEGACY_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
   validateInkSelectionSnapshot,
   type InkSelectionBounds,
+  type InkSelectionPoint,
+  type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
 export {
