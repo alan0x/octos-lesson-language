@@ -96,6 +96,8 @@
 .scene3d-face, .scene3d-solid, .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .scene3d-surface-cell { stroke-opacity: .42; }
 .scene3d-section { stroke-dasharray: 5 4; stroke-width: 1.8; }
+.scene3d-intersection { stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.scene3d-intersection-surface { stroke-width: 3.6; }
 .scene3d-highlight { pointer-events: none; vector-effect: non-scaling-stroke; }
 .scene3d-highlight-label { fill: #8d302a; paint-order: stroke; stroke: rgba(255,255,255,.94); stroke-width: 3px; font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; }
 .scene3d-fallback { margin: 0; padding: 4px 12px 7px; color: #66736f; background: rgba(255,255,255,.6); font: 500 10px/1.35 ui-sans-serif, system-ui, sans-serif; }

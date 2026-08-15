@@ -280,6 +280,20 @@ export class BrowserLessonSession {
   get outline(): PlaybackOutlineStep[] { return this.player.outline; }
   get currentOperation(): PlaybackOperation | undefined { return this.currentFrame?.operation; }
   get attentionTargets(): string[] { return [...this.seekAttentionTargets]; }
+  /**
+   * The composition already declared by the current Beat's focus action.
+   * Hosts may use this as a zero-delay camera hint while board content is
+   * arriving; it does not apply another OLL action or change playback timing.
+   */
+  get compositionTargets(): string[] {
+    const beatId = this.currentOperation?.beat_id ?? this.player.snapshot.current_beat_id;
+    if (!beatId) return [];
+    for (const step of this.player.outline) {
+      const beat = step.beats.find((candidate) => candidate.id === beatId);
+      if (beat) return [...beat.focus_targets];
+    }
+    return [];
+  }
   get studentOperations(): StudentOperation[] { return structuredClone(this.studentOperationLog.operations); }
   get scene3dViews(): Record<string, StudentScene3dViewState> {
     const views: Record<string, StudentScene3dViewState> = {};

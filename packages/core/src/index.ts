@@ -622,6 +622,7 @@ function validateScene3dContent(
     fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/objects`, "A 3D scene requires 1 to 24 objects");
   }
   const aliases = new Set<string>();
+  const objectAliases = new Set<string>();
   const point = (value: unknown, pointPath: string) => {
     requireObject(value, pointPath);
     for (const axis of ["x", "y", "z"] as const) {
@@ -648,6 +649,7 @@ function validateScene3dContent(
     requireAlias(object.as, `${objectPath}/as`);
     if (aliases.has(object.as)) fail("OLL_DUPLICATE_ALIAS", `${objectPath}/as`, `3D object '${object.as}' is duplicated`);
     aliases.add(object.as);
+    objectAliases.add(object.as);
     const objectKind = String(object.kind);
     if (!["box", "sphere", "cylinder", "cone", "surface"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
@@ -701,6 +703,29 @@ function validateScene3dContent(
       aliases.add(section.as);
       if (!["x", "y", "z"].includes(String(section.axis))) fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/axis`, "3D section axis must be x, y, or z");
       requireFiniteNumber(section.value, `${sectionPath}/value`);
+      const display = String(section.display ?? "plane");
+      if (!["plane", "intersection", "plane_and_intersection"].includes(display)) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/display`, `Unknown 3D section display '${display}'`);
+      }
+      if (section.targets !== undefined) {
+        requireArray(section.targets, `${sectionPath}/targets`);
+        if (section.targets.length === 0 || section.targets.length > 24) {
+          fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/targets`, "3D section targets must contain 1 to 24 objects");
+        }
+        const seenTargets = new Set<string>();
+        section.targets.forEach((target: unknown, targetIndex: number) => {
+          requireAlias(target, `${sectionPath}/targets/${targetIndex}`);
+          if (!objectAliases.has(target as string)) {
+            fail("OLL_REFERENCE_NOT_FOUND", `${sectionPath}/targets/${targetIndex}`, `3D section target '${String(target)}' does not exist`);
+          }
+          if (seenTargets.has(target as string)) {
+            fail("OLL_INVALID_OPERATION_PAYLOAD", `${sectionPath}/targets/${targetIndex}`, `3D section target '${String(target)}' is duplicated`);
+          }
+          seenTargets.add(target as string);
+        });
+      } else if (display !== "plane") {
+        fail("OLL_REFERENCE_NOT_FOUND", `${sectionPath}/targets`, `3D section display '${display}' requires at least one target object`);
+      }
     });
   }
   if (content.highlights !== undefined) {
@@ -1045,6 +1070,9 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       }
       if (field === "regions" && Array.isArray(item.members)) {
         normalized.members = item.members.map((member: string) => `${nodeId}:fragment:${member}`);
+      }
+      if (field === "sections" && Array.isArray(item.targets)) {
+        normalized.targets = item.targets.map((target: string) => `${nodeId}:fragment:${target}`);
       }
       return normalized;
     });

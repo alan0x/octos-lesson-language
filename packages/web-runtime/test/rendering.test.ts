@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
-import { normalizeScene3dView, projectScene3dPoint } from "../src/scene3d.js";
+import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
@@ -240,6 +240,65 @@ test("3D projection responds deterministically to orbit and clamps unsafe camera
     normalizeScene3dView({ yaw: Number.NaN, pitch: 20, zoom: 100 }),
     { yaw: 0, pitch: Math.PI / 2, zoom: 5 },
   );
+});
+
+test("3D box sections render the bounded solid intersection instead of only a reference plane", () => {
+  const content = {
+    objects: [{
+      as: "cube",
+      kind: "box",
+      center: { x: 0, y: 0, z: 0 },
+      size: { x: 2, y: 2, z: 2 },
+    }],
+  };
+  const intersections = scene3dSectionIntersections(content, {
+    as: "slice",
+    axis: "z",
+    value: .25,
+    targets: ["cube"],
+    display: "plane_and_intersection",
+  });
+  assert.equal(intersections.length, 1);
+  assert.equal(intersections[0]!.solid, true);
+  assert.equal(intersections[0]!.closed, true);
+  assert.ok(intersections[0]!.points.every((point) => Math.abs(point.z - .25) < 1e-9));
+  assert.equal(Math.min(...intersections[0]!.points.map((point) => point.x)), -1);
+  assert.equal(Math.max(...intersections[0]!.points.map((point) => point.x)), 1);
+  assert.deepEqual(scene3dSectionIntersections(content, {
+    axis: "z",
+    value: 1.5,
+    targets: ["cube"],
+    display: "intersection",
+  }), []);
+});
+
+test("3D function-surface sections change their contour when the shared height changes", () => {
+  const content = {
+    objects: [{
+      as: "paraboloid",
+      kind: "surface",
+      expression: "x^2+y^2",
+      x_range: { min: -2, max: 2 },
+      y_range: { min: -2, max: 2 },
+      samples: 24,
+    }],
+  };
+  const contour = (value: number) => scene3dSectionIntersections(content, {
+    axis: "z",
+    value,
+    targets: ["paraboloid"],
+    display: "plane_and_intersection",
+  }, { k: value });
+  const low = contour(.25);
+  const high = contour(1);
+  assert.equal(low.length, 1);
+  assert.equal(high.length, 1);
+  assert.equal(high[0]!.solid, false);
+  assert.equal(high[0]!.closed, true);
+  const maxRadius = (points: Array<{ x: number; y: number }>) =>
+    Math.max(...points.map((point) => Math.hypot(point.x, point.y)));
+  assert.ok(maxRadius(low[0]!.points) < maxRadius(high[0]!.points));
+  assert.ok(Math.abs(maxRadius(high[0]!.points) - 1) < .05);
 });
 
 test("focus keeps an already composed target steady", () => {

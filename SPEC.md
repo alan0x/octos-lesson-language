@@ -699,7 +699,14 @@ overlay
       }
     ],
     "sections": [
-      {"as": "horizontal-section", "axis": "z", "value": 0, "color": "orange"}
+      {
+        "as": "horizontal-section",
+        "axis": "z",
+        "value": 0,
+        "targets": ["cube", "surface"],
+        "display": "plane_and_intersection",
+        "color": "orange"
+      }
     ],
     "highlights": [
       {"as": "vertex-a", "kind": "point", "points": [{"x": -1, "y": -1, "z": 1}], "label": "顶点 A"},
@@ -718,6 +725,8 @@ overlay
 - `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
 - `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
 - `sections` 只支持垂直于 x、y 或 z 轴的平面，`value` 可以绑定 Lesson 数值变量；
+- `display` 省略或为 `plane` 时只显示参考平面，保持旧课件行为；`intersection` 显示平面与目标对象的真实交集，`plane_and_intersection` 同时显示二者；
+- 使用真实交集时必须用 `targets` 指出被截的 `objects[].as`。实体显示截面轮廓与填充，函数曲面显示截线；
 - `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
 - `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
 - Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；

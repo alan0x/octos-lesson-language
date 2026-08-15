@@ -111,7 +111,9 @@ a session reapplies the most recent view for each 3D node.
 ## Basic 3D scenes
 
 `scene3d` nodes render safe declarative boxes, spheres, cylinders, cones,
-sampled `z=f(x,y)` surfaces, axes, and axis-aligned section planes. The node
+sampled `z=f(x,y)` surfaces, axes, and axis-aligned section planes. A section
+can explicitly target scene objects and render their geometric intersection;
+solid intersections are filled loops and surface intersections are curves. The node
 contains mathematical objects and an initial camera; learner orbit/zoom changes
 only the stored view and never rewrites the node. The board provides isometric,
 front, top, and reset controls. Surface expressions use the same restricted

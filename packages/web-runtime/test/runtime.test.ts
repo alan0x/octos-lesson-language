@@ -121,6 +121,11 @@ test("browser session seeks to Step and Beat boundaries and persists the result"
   assert.equal(restored.cursor, beat.start_cursor);
   assert.equal(restored.advance()?.operation.type, "beat.begin");
   assert.deepEqual(restored.attentionTargets, []);
+  assert.deepEqual(
+    restored.compositionTargets,
+    beat.focus_targets,
+    "normal playback should expose the Beat's existing focus without applying another action",
+  );
 });
 
 test("incremental browser session preserves the board while Canonical Steps arrive", () => {

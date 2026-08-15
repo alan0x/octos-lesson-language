@@ -353,7 +353,15 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
               { as: "cube", kind: "box", center: { x: -1.5, y: 0, z: 0 }, size: { x: 1.5, y: 1.5, z: 1.5 }, color: "teal" },
               { as: "paraboloid", kind: "surface", expression: "0.3*(x^2+y^2)-1", x_range: { min: -2, max: 2 }, y_range: { min: -2, max: 2 }, samples: 8, color: "blue" },
             ],
-            sections: [{ as: "horizontal-section", axis: "z", value: 0, label: "z = 0", color: "orange" }],
+            sections: [{
+              as: "horizontal-section",
+              axis: "z",
+              value: 0,
+              targets: ["cube", "paraboloid"],
+              display: "plane_and_intersection",
+              label: "z = 0",
+              color: "orange",
+            }],
             highlights: [
               { as: "vertex-a", kind: "point", points: [{ x: -2.25, y: -.75, z: .75 }], label: "顶点 A", color: "red" },
               { as: "edge-ab", kind: "edge", points: [{ x: -2.25, y: -.75, z: .75 }, { x: -.75, y: -.75, z: .75 }], label: "棱 AB", color: "orange" },
@@ -383,6 +391,10 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
   assert.equal(scene.kind, "scene3d");
   assert.equal(scene.content.objects[1].expression, "0.3*(x^2+y^2)-1");
   assert.equal(scene.content.sections[0].id, `${scene.id}:fragment:horizontal-section`);
+  assert.deepEqual(scene.content.sections[0].targets, [
+    `${scene.id}:fragment:cube`,
+    `${scene.id}:fragment:paraboloid`,
+  ]);
   assert.equal(scene.content.highlights[2].id, `${scene.id}:fragment:top-face`);
 
   const invalid = structuredClone(sceneLesson);
@@ -390,6 +402,22 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
   assert.throws(
     () => validateAuthoringLesson(invalid),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
+  );
+
+  const missingSectionTarget = structuredClone(sceneLesson);
+  (missingSectionTarget.steps[0]!.beats[0]!.actions[0] as any)
+    .content.sections[0].targets = ["missing-object"];
+  assert.throws(
+    () => validateAuthoringLesson(missingSectionTarget),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
+  );
+
+  const missingIntersectionTargets = structuredClone(sceneLesson);
+  delete (missingIntersectionTargets.steps[0]!.beats[0]!.actions[0] as any)
+    .content.sections[0].targets;
+  assert.throws(
+    () => validateAuthoringLesson(missingIntersectionTargets),
+    (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
   );
 });
 
