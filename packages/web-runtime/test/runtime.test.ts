@@ -623,13 +623,13 @@ test("3D view gestures persist and distinguish viewing direction from an exact c
   const topViewId = first.handleStudentScene3dInput(nodeId, first.scene3dViews[nodeId]!, {
     phase: "start", control: "orbit", input: "touch",
   });
-  first.handleStudentScene3dInput(nodeId, { yaw: 1.4, pitch: Math.PI / 2, zoom: 1 }, {
+  first.handleStudentScene3dInput(nodeId, { yaw: 1.4, pitch: Math.PI / 2, zoom: 1.8 }, {
     phase: "commit", control: "orbit", input: "touch", operation_id: topViewId as string,
   });
   assert.equal(
     first.studentTasks[1]!.status,
     "succeeded",
-    "a top-view direction task must not require an invisible yaw value",
+    "a top-view direction task must not require hidden yaw or zoom values",
   );
 
   const restored = new BrowserLessonSession(sceneEvents, store, "scene-operations");

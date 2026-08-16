@@ -144,9 +144,10 @@ function scene3dViewDirection(
 
 /**
  * Score a visible 3D camera result against a lesson task. A score at or below
- * one completes the task. `view_direction` compares the camera's sight line,
- * so yaw naturally stops mattering at a top or bottom view. The omitted legacy
- * mode remains `camera_pose` for backwards compatibility with existing OLL.
+ * one completes the task. `view_direction` only compares the camera's sight
+ * line, so yaw naturally stops mattering at a top or bottom view and zoom never
+ * becomes a hidden requirement. The omitted legacy mode remains `camera_pose`
+ * for backwards compatibility with existing OLL.
  */
 export function scene3dViewTargetScore(
   view: { yaw: number; pitch: number; zoom: number },
@@ -158,14 +159,13 @@ export function scene3dViewTargetScore(
     const expected = scene3dViewDirection(target);
     const dot = Math.max(-1, Math.min(1,
       actual.x * expected.x + actual.y * expected.y + actual.z * expected.z));
-    angularDistance = Math.acos(dot);
-  } else {
-    const yawDistance = Math.abs(Math.atan2(
-      Math.sin(view.yaw - target.yaw),
-      Math.cos(view.yaw - target.yaw),
-    ));
-    angularDistance = Math.max(yawDistance, Math.abs(view.pitch - target.pitch));
+    return Math.acos(dot) / target.angular_tolerance;
   }
+  const yawDistance = Math.abs(Math.atan2(
+    Math.sin(view.yaw - target.yaw),
+    Math.cos(view.yaw - target.yaw),
+  ));
+  angularDistance = Math.max(yawDistance, Math.abs(view.pitch - target.pitch));
   return Math.max(
     angularDistance / target.angular_tolerance,
     Math.abs(view.zoom - target.zoom) / target.zoom_tolerance,
@@ -243,7 +243,9 @@ function validateScene3dStudentTask(
     (preset) => scene3dViewTargetScore(preset, target) <= 1,
   );
   const orbitReachable = controls.has("orbit")
-    && (Math.abs(initial!.zoom - target.zoom) <= zoomTolerance || controls.has("zoom"));
+    && (target.match === "view_direction"
+      || Math.abs(initial!.zoom - target.zoom) <= zoomTolerance
+      || controls.has("zoom"));
   const zoomOnlyReachable = controls.has("zoom")
     && scene3dViewTargetScore(
       { ...initial!, zoom: target.zoom },
