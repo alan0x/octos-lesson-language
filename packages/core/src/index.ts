@@ -131,20 +131,44 @@ function validateLessonVariables(document: AuthoringLesson): Map<string, number>
   return values;
 }
 
-function scene3dTaskScore(
+function scene3dViewDirection(
+  view: { yaw: number; pitch: number },
+): { x: number; y: number; z: number } {
+  const cosPitch = Math.cos(view.pitch);
+  return {
+    x: cosPitch * Math.sin(view.yaw),
+    y: cosPitch * Math.cos(view.yaw),
+    z: Math.sin(view.pitch),
+  };
+}
+
+/**
+ * Score a visible 3D camera result against a lesson task. A score at or below
+ * one completes the task. `view_direction` compares the camera's sight line,
+ * so yaw naturally stops mattering at a top or bottom view. The omitted legacy
+ * mode remains `camera_pose` for backwards compatibility with existing OLL.
+ */
+export function scene3dViewTargetScore(
   view: { yaw: number; pitch: number; zoom: number },
-  target: { yaw: number; pitch: number; zoom: number },
-  angularTolerance: number,
-  zoomTolerance: number,
+  target: AuthoringScene3dStudentTask["completion"],
 ): number {
-  const yawDistance = Math.abs(Math.atan2(
-    Math.sin(view.yaw - target.yaw),
-    Math.cos(view.yaw - target.yaw),
-  ));
+  let angularDistance: number;
+  if (target.match === "view_direction") {
+    const actual = scene3dViewDirection(view);
+    const expected = scene3dViewDirection(target);
+    const dot = Math.max(-1, Math.min(1,
+      actual.x * expected.x + actual.y * expected.y + actual.z * expected.z));
+    angularDistance = Math.acos(dot);
+  } else {
+    const yawDistance = Math.abs(Math.atan2(
+      Math.sin(view.yaw - target.yaw),
+      Math.cos(view.yaw - target.yaw),
+    ));
+    angularDistance = Math.max(yawDistance, Math.abs(view.pitch - target.pitch));
+  }
   return Math.max(
-    yawDistance / angularTolerance,
-    Math.abs(view.pitch - target.pitch) / angularTolerance,
-    Math.abs(view.zoom - target.zoom) / zoomTolerance,
+    angularDistance / target.angular_tolerance,
+    Math.abs(view.zoom - target.zoom) / target.zoom_tolerance,
   );
 }
 
@@ -158,18 +182,28 @@ function validateScene3dStudentTask(
   const initial = scene3dCameras.get(completion.node);
   if (!initial) fail("OLL_REFERENCE_NOT_FOUND", `${path}/completion/node`, `3D scene '${completion.node}' is not declared`);
   const target = {
+    kind: "scene3d_view_target" as const,
+    node: completion.node,
+    ...(completion.match ? { match: completion.match } : {}),
     yaw: requireFiniteNumber(completion.yaw, `${path}/completion/yaw`),
     pitch: requireFiniteNumber(completion.pitch, `${path}/completion/pitch`),
     zoom: requireFiniteNumber(completion.zoom, `${path}/completion/zoom`),
+    angular_tolerance: requireFiniteNumber(
+      completion.angular_tolerance,
+      `${path}/completion/angular_tolerance`,
+    ),
+    zoom_tolerance: requireFiniteNumber(
+      completion.zoom_tolerance,
+      `${path}/completion/zoom_tolerance`,
+    ),
   };
-  const angularTolerance = requireFiniteNumber(
-    completion.angular_tolerance,
-    `${path}/completion/angular_tolerance`,
-  );
-  const zoomTolerance = requireFiniteNumber(
-    completion.zoom_tolerance,
-    `${path}/completion/zoom_tolerance`,
-  );
+  const angularTolerance = target.angular_tolerance;
+  const zoomTolerance = target.zoom_tolerance;
+  if (completion.match !== undefined
+    && completion.match !== "view_direction"
+    && completion.match !== "camera_pose") {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/match`, `Unsupported 3D view match '${String(completion.match)}'`);
+  }
   if (target.pitch < -Math.PI / 2 || target.pitch > Math.PI / 2
     || target.zoom < .2 || target.zoom > 5) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/completion`, "3D target view is outside the supported camera range");
@@ -197,7 +231,7 @@ function validateScene3dStudentTask(
       controls.add(String(control));
     });
   });
-  if (scene3dTaskScore(initial!, target, angularTolerance, zoomTolerance) <= 1) {
+  if (scene3dViewTargetScore(initial!, target) <= 1) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/completion`, "3D task is already complete at the initial camera view");
   }
   const presets = [
@@ -206,16 +240,14 @@ function validateScene3dStudentTask(
     { yaw: 0, pitch: Math.PI / 2, zoom: 1 },
   ];
   const presetReachable = controls.has("preset") && presets.some(
-    (preset) => scene3dTaskScore(preset, target, angularTolerance, zoomTolerance) <= 1,
+    (preset) => scene3dViewTargetScore(preset, target) <= 1,
   );
   const orbitReachable = controls.has("orbit")
     && (Math.abs(initial!.zoom - target.zoom) <= zoomTolerance || controls.has("zoom"));
   const zoomOnlyReachable = controls.has("zoom")
-    && scene3dTaskScore(
+    && scene3dViewTargetScore(
       { ...initial!, zoom: target.zoom },
       target,
-      angularTolerance,
-      zoomTolerance,
     ) <= 1;
   if (!presetReachable && !orbitReachable && !zoomOnlyReachable) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "No allowed 3D control can reach the target view");

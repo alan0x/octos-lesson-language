@@ -506,7 +506,7 @@ test("ink selections enter the same persisted student operation history", () => 
   );
 });
 
-test("3D view gestures persist and can complete a view task", () => {
+test("3D view gestures persist and distinguish viewing direction from an exact camera pose", () => {
   const sceneEvents = normalizeAuthoringLesson({
     dsl: "octos.lesson",
     version: "0.1",
@@ -536,6 +536,27 @@ test("3D view gestures persist and can complete a view task", () => {
         },
         hints: ["使用正视按钮，或拖动到正前方。"],
         success_message: "正确，这是立方体的正视图。",
+      }, {
+        as: "find-top-view",
+        prompt: "从正上方观察立方体",
+        availability: { kind: "after_lesson" },
+        allowed_operations: [{
+          kind: "scene3d_view",
+          node: "cube-scene",
+          controls: ["orbit"],
+        }],
+        completion: {
+          kind: "scene3d_view_target",
+          node: "cube-scene",
+          match: "view_direction",
+          yaw: 0,
+          pitch: Math.PI / 2,
+          zoom: 1,
+          angular_tolerance: .04,
+          zoom_tolerance: .04,
+        },
+        hints: ["向上拖动到只能看到顶面。"],
+        success_message: "正确，这是立方体的俯视方向。",
       }],
     },
     steps: [{
@@ -588,6 +609,7 @@ test("3D view gestures persist and can complete a view task", () => {
   assert.equal(first.studentOperations[0]!.kind, "scene3d_view");
   assert.deepEqual(first.scene3dViews[nodeId], { yaw: 1.4, pitch: .1, zoom: 1 });
   assert.equal(first.studentTasks[0]!.status, "in_progress");
+  assert.equal(first.studentTasks[1]!.status, "not_started");
 
   const presetId = first.handleStudentScene3dInput(nodeId, first.scene3dViews[nodeId]!, {
     phase: "start", control: "preset", input: "keyboard",
@@ -598,10 +620,22 @@ test("3D view gestures persist and can complete a view task", () => {
   assert.equal(first.studentTasks[0]!.status, "succeeded");
   assert.equal(first.studentTasks[0]!.attempts.length, 2);
 
+  const topViewId = first.handleStudentScene3dInput(nodeId, first.scene3dViews[nodeId]!, {
+    phase: "start", control: "orbit", input: "touch",
+  });
+  first.handleStudentScene3dInput(nodeId, { yaw: 1.4, pitch: Math.PI / 2, zoom: 1 }, {
+    phase: "commit", control: "orbit", input: "touch", operation_id: topViewId as string,
+  });
+  assert.equal(
+    first.studentTasks[1]!.status,
+    "succeeded",
+    "a top-view direction task must not require an invisible yaw value",
+  );
+
   const restored = new BrowserLessonSession(sceneEvents, store, "scene-operations");
   assert.deepEqual(restored.scene3dViews, first.scene3dViews);
   assert.deepEqual(restored.studentOperations, first.studentOperations);
-  assert.equal(restored.studentTasks[0]!.status, "succeeded");
+  assert.deepEqual(restored.studentTasks.map((task) => task.status), ["succeeded", "succeeded"]);
 });
 
 test("student tasks judge committed operations, reveal hints, retry, and restore progress", () => {

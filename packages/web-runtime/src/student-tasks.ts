@@ -1,5 +1,6 @@
 import {
   evaluateMathExpression,
+  scene3dViewTargetScore,
   type AuthoringScene3dStudentTask,
   type AuthoringStudentTask,
   type AuthoringVariableStudentTask,
@@ -159,15 +160,7 @@ function scene3dViewScore(
   view: StudentScene3dViewOperation["after"],
   completion: AuthoringScene3dStudentTask["completion"],
 ): number {
-  const yawDistance = Math.abs(Math.atan2(
-    Math.sin(view.yaw - completion.yaw),
-    Math.cos(view.yaw - completion.yaw),
-  ));
-  return Math.max(
-    yawDistance / completion.angular_tolerance,
-    Math.abs(view.pitch - completion.pitch) / completion.angular_tolerance,
-    Math.abs(view.zoom - completion.zoom) / completion.zoom_tolerance,
-  );
+  return scene3dViewTargetScore(view, completion);
 }
 
 export function evaluateStudentTaskOperation(

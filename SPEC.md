@@ -730,7 +730,7 @@ overlay
 - `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
 - `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
 - Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
-- 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角，Runtime 按角度和缩放容差判断完成；
+- 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角。`match: "view_direction"` 判断学生是否从目标方向观察，俯视和仰视时不会附加不可见的水平转角条件；`match: "camera_pose"` 判断精确的水平转角、俯仰角和缩放。旧课件省略 `match` 时保持 `camera_pose` 行为；
 - Runtime 必须限制俯仰角、缩放范围、对象数量和曲面采样数；不支持的三维内容必须显式失败，不能显示空白卡片。
 
 ## 12. `lesson.close`

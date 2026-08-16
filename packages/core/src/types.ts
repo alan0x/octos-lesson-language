@@ -128,6 +128,8 @@ export type StudentTaskVariableControl = "slider" | "geometry_point";
 
 export type StudentTaskScene3dControl = "orbit" | "zoom" | "preset" | "reset";
 
+export type StudentTaskScene3dViewMatch = "view_direction" | "camera_pose";
+
 interface AuthoringStudentTaskBase {
   as: Alias;
   prompt: string;
@@ -162,6 +164,7 @@ export interface AuthoringScene3dStudentTask extends AuthoringStudentTaskBase {
   completion: {
     kind: "scene3d_view_target";
     node: Alias;
+    match?: StudentTaskScene3dViewMatch;
     yaw: number;
     pitch: number;
     zoom: number;
