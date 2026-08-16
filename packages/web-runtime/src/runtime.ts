@@ -231,6 +231,7 @@ export class BrowserLessonSession {
   private studentOperationLog: StudentOperationLog;
   private readonly studentTaskDefinitions: AuthoringStudentTask[];
   private studentTaskProgressLog: StudentTaskProgressLog;
+  private deliverySettled = false;
   private nextStudentOperationSequence = 1;
   private suppressStudentTaskEvaluation = false;
   private readonly pendingStudentVariableOperations = new Map<string, {
@@ -255,9 +256,14 @@ export class BrowserLessonSession {
     private readonly storageKey: string,
     private readonly options: BrowserLessonSessionOptions = {},
   ) {
+    // Incremental hosts can replace an early playable prefix with the final
+    // artifact while restoring playback from the prefix checkpoint. Keep the
+    // newest lesson-level task definitions before restorePlayer() replaces
+    // this.events with the checkpoint's Canonical events.
+    const deliveredStudentTasks = structuredClone(this.events[0]?.lesson?.tasks ?? []);
     this.player = this.restorePlayer();
     this.studentOperationLog = this.restoreStudentOperations();
-    this.studentTaskDefinitions = structuredClone(this.events[0]?.lesson?.tasks ?? []);
+    this.studentTaskDefinitions = deliveredStudentTasks;
     this.studentTaskProgressLog = this.restoreStudentTaskProgress();
     this.nextStudentOperationSequence =
       (this.studentOperationLog.operations.at(-1)?.sequence ?? 0) + 1;
@@ -311,7 +317,7 @@ export class BrowserLessonSession {
     return taskSnapshots(
       this.studentTaskDefinitions,
       this.studentTaskProgressLog,
-      this.player.status === "completed",
+      this.studentTaskWindowOpen,
     );
   }
   get isPlaying(): boolean { return this.playing; }
@@ -319,6 +325,16 @@ export class BrowserLessonSession {
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
 
   subscribe(listener: () => void): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }
+  /**
+   * Tell an incremental Runtime that every event currently promised by the
+   * host has arrived. The classroom may remain open for a future turn, but
+   * after-lesson tasks for the current delivery can now be attempted.
+   */
+  setDeliverySettled(settled: boolean): void {
+    if (!this.options.incremental || this.deliverySettled === settled) return;
+    this.deliverySettled = settled;
+    this.emit();
+  }
   setSpeed(speed: number): void {
     const nextSpeed = normalizedSpeed(speed);
     if (nextSpeed === this.speed) return;
@@ -855,7 +871,7 @@ export class BrowserLessonSession {
     const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
     const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
     if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
-    if (this.player.status !== "completed") throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
     if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
       throw new Error(`Student task '${taskId}' is not currently available`);
     }
@@ -875,7 +891,7 @@ export class BrowserLessonSession {
     const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
     const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
     if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
-    if (this.player.status !== "completed") throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
     if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
       throw new Error(`Student task '${taskId}' is not currently available`);
     }
@@ -1092,7 +1108,7 @@ export class BrowserLessonSession {
   }
 
   private evaluateStudentTasks(operation: StudentOperation): void {
-    if (this.suppressStudentTaskEvaluation || this.player.status !== "completed") return;
+    if (this.suppressStudentTaskEvaluation || !this.studentTaskWindowOpen) return;
     const board = this.player.snapshot.board;
     if (!board) return;
     const activeProgress = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
@@ -1101,6 +1117,15 @@ export class BrowserLessonSession {
     if (definition && evaluateStudentTaskOperation(definition, activeProgress, operation, board)) {
       this.persistStudentTaskProgress();
     }
+  }
+
+  private get studentTaskWindowOpen(): boolean {
+    return this.player.status === "completed"
+      || (
+        Boolean(this.options.incremental)
+        && this.deliverySettled
+        && this.player.cursor === this.player.operations.length
+      );
   }
 
   private persistStudentOperations(): void {

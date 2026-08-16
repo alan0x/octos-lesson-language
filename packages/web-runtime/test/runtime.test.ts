@@ -681,6 +681,61 @@ test("student tasks judge committed operations, reveal hints, retry, and restore
   assert.equal(invalidProgress.studentTasks[0]!.attempts.length, 0, "task progress without its source operation is discarded");
 });
 
+test("an incremental final artifact restores playback and opens its deferred task when delivery settles", () => {
+  const finalEvents = structuredClone(unitCircleEvents.slice(0, -1));
+  finalEvents[0]!.lesson!.tasks = [{
+    as: "reach-sine-maximum",
+    prompt: "把圆周点拖到 sin θ = 1",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{
+      kind: "variable_change",
+      variable: "theta",
+      controls: ["slider", "geometry_point"],
+    }],
+    completion: {
+      kind: "expression_target",
+      expression: "sin(theta)",
+      value: 1,
+      tolerance: 0.01,
+    },
+    hints: ["把角度移到 π/2 附近。"],
+    success_message: "正确，sin θ 已经达到最大值。",
+  }];
+  const prefixEvents = structuredClone(finalEvents);
+  delete prefixEvents[0]!.lesson!.tasks;
+  const store = new MemoryStore();
+
+  const prefix = new BrowserLessonSession(
+    prefixEvents,
+    store,
+    "incremental-final-task",
+    { incremental: true },
+  );
+  while (prefix.status !== "waiting") prefix.advance();
+  assert.equal(prefix.studentTasks.length, 0);
+
+  const final = new BrowserLessonSession(
+    finalEvents,
+    store,
+    "incremental-final-task",
+    { incremental: true },
+  );
+  assert.equal(final.status, "waiting", "the final artifact restores the prefix checkpoint");
+  assert.equal(final.studentTasks.length, 1, "the final artifact supplies its task definitions");
+  assert.equal(final.studentTasks[0]!.available, false, "waiting alone does not claim delivery is finished");
+
+  final.setDeliverySettled(true);
+  assert.equal(final.studentTasks[0]!.available, true);
+  final.setDeliverySettled(false);
+  assert.equal(final.studentTasks[0]!.available, false, "a new delivery closes the task window again");
+  final.setDeliverySettled(true);
+  final.changeStudentVariable("theta", Math.PI / 2, {
+    control: "slider",
+    input: "mouse",
+  });
+  assert.equal(final.studentTasks[0]!.status, "succeeded");
+});
+
 test("multiple student tasks unlock in order instead of judging one gesture against every task", () => {
   const taskEvents = structuredClone(unitCircleEvents);
   const shared = {
