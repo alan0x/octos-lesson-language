@@ -320,6 +320,7 @@ export class BrowserLessonSession {
       this.studentTaskWindowOpen,
     );
   }
+  get isDeliverySettled(): boolean { return this.studentTaskWindowOpen; }
   get isPlaying(): boolean { return this.playing; }
   get activeVariableAnimation(): PlaybackVariableAnimation | undefined { return this.variableAnimation ? structuredClone(this.variableAnimation) : undefined; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }

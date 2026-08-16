@@ -726,14 +726,18 @@ test("an incremental final artifact restores playback and opens its deferred tas
 
   final.setDeliverySettled(true);
   assert.equal(final.studentTasks[0]!.available, true);
+  assert.equal(final.isDeliverySettled, true);
   final.setDeliverySettled(false);
   assert.equal(final.studentTasks[0]!.available, false, "a new delivery closes the task window again");
+  assert.equal(final.isDeliverySettled, false);
   final.setDeliverySettled(true);
   final.changeStudentVariable("theta", Math.PI / 2, {
     control: "slider",
     input: "mouse",
   });
   assert.equal(final.studentTasks[0]!.status, "succeeded");
+  assert.equal(final.status, "paused", "manual input pauses playback without reopening delivery");
+  assert.equal(final.isDeliverySettled, true, "manual input cannot undo a settled delivery");
 });
 
 test("multiple student tasks unlock in order instead of judging one gesture against every task", () => {
