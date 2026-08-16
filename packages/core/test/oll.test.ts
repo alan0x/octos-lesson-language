@@ -4,6 +4,10 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   assertAuthoringSchema,
+  OLL_ACTION_NAMES,
+  OLL_BINDING_CAPABILITIES,
+  OLL_EXECUTION_CAPABILITIES,
+  OLL_NODE_KINDS,
   OllError,
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
@@ -391,6 +395,24 @@ test("authoring schema exposes coordinate geometry as a first-class node kind", 
   assert.equal(authoringSchema.$defs.geometryContent.properties.axes.properties.equal_scale.const, true);
 });
 
+test("publishes only the executable node, action, binding, control, and task capabilities", () => {
+  assert.deepEqual(OLL_EXECUTION_CAPABILITIES, {
+    version: "0.1",
+    node_kinds: OLL_NODE_KINDS,
+    action_names: OLL_ACTION_NAMES,
+    value_bindings: OLL_BINDING_CAPABILITIES,
+    student_controls: {
+      variable: ["slider", "geometry_point"],
+      scene3d: ["orbit", "zoom", "preset", "reset"],
+    },
+    student_tasks: {
+      completion: ["expression_target", "scene3d_view_target"],
+      scene3d_view_match: ["view_direction", "camera_pose"],
+    },
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(OLL_EXECUTION_CAPABILITIES)), OLL_EXECUTION_CAPABILITIES);
+});
+
 test("validates and normalizes interactive 3D solids, surfaces, and sections", () => {
   const sceneLesson: AuthoringLesson = {
     dsl: "octos.lesson",
@@ -466,6 +488,12 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
     `${scene.id}:fragment:paraboloid`,
   ]);
   assert.equal(scene.content.highlights[2].id, `${scene.id}:fragment:top-face`);
+  const movedScene = Object.values(setLessonVariable(
+    reduceCanonicalEvents(events),
+    "section_z",
+    1.25,
+  ).nodes)[0]!;
+  assert.equal(movedScene.content.sections[0].value, 1.25);
 
   const invalid = structuredClone(sceneLesson);
   (invalid.steps[0]!.beats[0]!.actions[0] as any).content.objects[1].expression = "fetch(x)";
@@ -531,6 +559,49 @@ test("one lesson variable deterministically drives geometry and plot bindings", 
   const restored = JSON.parse(JSON.stringify(state));
   assert.equal(restored.variables.theta.value, 2 * Math.PI);
   assert.deepEqual(setLessonVariable(restored, "theta", Math.PI / 2), setLessonVariable(state, "theta", Math.PI / 2));
+});
+
+test("every declared geometry and plot binding capability validates and executes", () => {
+  const interactive = structuredClone(lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.source);
+  const actions = interactive.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions));
+  const geometry = actions.find((action) => action.do === "write" && action.kind === "geometry") as any;
+  const plot = actions.find((action) => action.do === "write" && action.kind === "plot") as any;
+
+  geometry.content.bindings = [
+    { target: "point-p.x", expression: "theta" },
+    { target: "point-p.y", expression: "theta" },
+    { target: "circle.radius", expression: "1 + theta * 0.1" },
+    { target: "theta.radius", expression: "0.2 + theta * 0.05" },
+    { target: "theta.start_angle", expression: "theta * 0.1" },
+    { target: "theta.end_angle", expression: "theta" },
+  ];
+  plot.content.guides = [{ as: "current-guide", axis: "x", value: 0, label: "当前角度" }];
+  plot.content.bindings = [
+    { target: "current-angle.x", expression: "theta" },
+    { target: "current-angle.y", expression: "theta" },
+    { target: "current-guide.value", expression: "theta" },
+  ];
+
+  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "arcs"]);
+  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.plot), ["points", "guides"]);
+  validateAuthoringLesson(interactive);
+
+  const host = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.entry;
+  const state = setLessonVariable(reduceCanonicalEvents(normalizeAuthoringLesson(interactive, host)), "theta", 1);
+  const geometryNode = state.nodes[`${host.lessonId}:node:unit-circle`]!;
+  const plotNode = state.nodes[`${host.lessonId}:node:sine-plot`]!;
+  const byId = (content: any, collection: string, alias: string) => content[collection]
+    .find((item: any) => item.id === `${content === geometryNode.content ? geometryNode.id : plotNode.id}:fragment:${alias}`);
+
+  assert.equal(byId(geometryNode.content, "points", "point-p").x, 1);
+  assert.equal(byId(geometryNode.content, "points", "point-p").y, 1);
+  assert.equal(byId(geometryNode.content, "circles", "circle").radius, 1.1);
+  assert.equal(byId(geometryNode.content, "arcs", "theta").radius, 0.25);
+  assert.equal(byId(geometryNode.content, "arcs", "theta").start_angle, 0.1);
+  assert.equal(byId(geometryNode.content, "arcs", "theta").end_angle, 1);
+  assert.equal(byId(plotNode.content, "points", "current-angle").x, 1);
+  assert.equal(byId(plotNode.content, "points", "current-angle").y, 1);
+  assert.equal(byId(plotNode.content, "guides", "current-guide").value, 1);
 });
 
 test("student tasks use declared variables and safe expression targets", () => {

@@ -5,6 +5,11 @@ import {
   evaluateMathExpression,
   referencedMathVariables,
 } from "./math-expression.js";
+import {
+  bindingCapabilitiesForNodeKind,
+  OLL_ACTION_NAMES,
+  OLL_CANONICAL_BINDING_CAPABILITIES,
+} from "./capabilities.js";
 import type {
   ActionPhase,
   AuthoringAction,
@@ -28,6 +33,7 @@ import type {
 
 export type * from "./types.js";
 export * from "./math-expression.js";
+export * from "./capabilities.js";
 
 type UnknownRecord = Record<string, unknown>;
 type Registry = Map<string, RegistryEntry>;
@@ -41,17 +47,7 @@ const RESERVED_MATH_NAMES = new Set([
   "abs", "acos", "asin", "atan", "ceil", "cos", "e", "exp", "floor",
   "ln", "log", "pi", "round", "sin", "sqrt", "tan",
 ]);
-const ACTIONS = new Set<AuthoringAction["do"]>([
-  "write",
-  "revise",
-  "emphasize",
-  "connect",
-  "group",
-  "focus",
-  "point",
-  "expression",
-  "animate",
-]);
+const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
@@ -425,20 +421,13 @@ function splitBindingTarget(value: unknown, path: string): { alias: string; prop
 
 function bindableTargets(action: WriteAction): Map<string, Set<string>> {
   const targets = new Map<string, Set<string>>();
-  const add = (field: string, properties: string[]) => {
+  const add = (field: string, properties: readonly string[]) => {
     for (const item of Array.isArray(action.content[field]) ? action.content[field] : []) {
       if (typeof item?.as === "string") targets.set(item.as, new Set(properties));
     }
   };
-  if (action.kind === "geometry") {
-    add("points", ["x", "y"]);
-    add("circles", ["radius"]);
-    add("arcs", ["radius", "start_angle", "end_angle"]);
-  } else if (action.kind === "plot") {
-    add("points", ["x", "y"]);
-    add("guides", ["value"]);
-  } else if (action.kind === "scene3d") {
-    add("sections", ["value"]);
+  for (const [field, properties] of Object.entries(bindingCapabilitiesForNodeKind(action.kind))) {
+    add(field, properties);
   }
   return targets;
 }
@@ -1472,16 +1461,9 @@ function bindingTarget(content: JsonObject, target: string): { record: JsonObjec
   if (separator <= 0) fail("OLL_INVALID_BINDING", "content.bindings.target", `Invalid canonical binding target '${target}'`);
   const fragmentId = target.slice(0, separator);
   const property = target.slice(separator + 1);
-  const fields: Array<[string, Set<string>]> = [
-    ["points", new Set(["x", "y"])],
-    ["guides", new Set(["value"])],
-    ["circles", new Set(["radius"])],
-    ["arcs", new Set(["radius", "start_angle", "end_angle"])],
-    ["sections", new Set(["value"])],
-  ];
-  for (const [field, properties] of fields) {
+  for (const [field, properties] of Object.entries(OLL_CANONICAL_BINDING_CAPABILITIES)) {
     const record = (Array.isArray(content[field]) ? content[field] : []).find((item: JsonObject) => item.id === fragmentId);
-    if (record && properties.has(property)) return { record, property };
+    if (record && properties.includes(property)) return { record, property };
     if (record) fail("OLL_INVALID_BINDING", "content.bindings.target", `Property '${property}' cannot be bound on '${field}'`);
   }
   fail("OLL_REFERENCE_NOT_FOUND", "content.bindings.target", `Canonical binding target '${target}' was not found`);

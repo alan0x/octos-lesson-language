@@ -1,3 +1,5 @@
+import type { OllNodeKind } from "./capabilities.js";
+
 export type Alias = string;
 export type LocalReference = string;
 export type JsonPrimitive = string | number | boolean | null;
@@ -8,7 +10,7 @@ export type JsonObject = { [key: string]: any };
 
 export type Delivery = "neutral" | "patient" | "encouraging" | "careful" | "emphatic";
 export type ActionPhase = "before_speech" | "during_speech" | "after_speech";
-export type NodeKind = "text" | "math" | "shape" | "diagram" | "geometry" | "plot" | "scene3d" | "image" | "table" | "note";
+export type NodeKind = OllNodeKind;
 export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay";
 export type RegistryEntryType = "node" | "connection" | "group";
 
