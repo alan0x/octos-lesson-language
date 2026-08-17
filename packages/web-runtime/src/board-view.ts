@@ -164,6 +164,73 @@ export function variableAnimationFocusTargets(
     .map((node) => node.id);
 }
 
+const PRIMARY_TEACHING_VISUAL_KINDS = new Set([
+  "geometry",
+  "plot",
+  "scene3d",
+  "diagram",
+  "image",
+  "table",
+]);
+
+function connectionPeerId(
+  connection: Record<string, any>,
+  nodeId: string,
+): string | undefined {
+  const endpointId = (endpoint: Record<string, any> | undefined) =>
+    endpoint?.node_id ?? endpoint?.group_id ?? endpoint?.connection_id;
+  const from = endpointId(connection.from);
+  const to = endpointId(connection.to);
+  return from === nodeId ? to : to === nodeId ? from : undefined;
+}
+
+/**
+ * Keep the visual being explained in the camera composition even when a Beat
+ * focuses only a supporting formula or note. This uses existing region,
+ * connection, and layout data; it does not infer meaning from lesson prose.
+ */
+export function supportingVisualFocusTargets(
+  targetIds: string[],
+  board: SemanticBoardState,
+  layout: BoardLayout,
+): string[] {
+  const result = new Set<string>();
+  for (const targetId of targetIds) {
+    const node = board.nodes[targetId];
+    if (!node || typeof node.region_id !== "string" || !node.region_id) continue;
+    const nodeKind = String(node.kind ?? "");
+    if (PRIMARY_TEACHING_VISUAL_KINDS.has(nodeKind)) {
+      for (const connection of Object.values(board.connections)) {
+        const peerId = connectionPeerId(connection, targetId);
+        const peer = peerId ? board.nodes[peerId] : undefined;
+        if (peer && peer.region_id === node.region_id
+          && PRIMARY_TEACHING_VISUAL_KINDS.has(String(peer.kind ?? ""))) {
+          result.add(peer.id);
+        }
+      }
+      continue;
+    }
+
+    const targetRect = layout.nodes[targetId];
+    if (!targetRect) continue;
+    const candidates = Object.values(board.nodes).filter((candidate) =>
+      candidate.id !== targetId
+      && candidate.region_id === node.region_id
+      && PRIMARY_TEACHING_VISUAL_KINDS.has(String(candidate.kind ?? ""))
+      && Boolean(layout.nodes[candidate.id]));
+    const centerDistance = (candidate: typeof candidates[number]) => {
+      const rect = layout.nodes[candidate.id]!;
+      return Math.hypot(
+        rect.x + rect.width / 2 - (targetRect.x + targetRect.width / 2),
+        rect.y + rect.height / 2 - (targetRect.y + targetRect.height / 2),
+      );
+    };
+    candidates.sort((left, right) => centerDistance(left) - centerDistance(right));
+    if (candidates[0]) result.add(candidates[0].id);
+  }
+  return [...result];
+}
+
 function applyEmphasisClass(element: Element, emphasis: string | undefined): void {
   const className = emphasisClassName(emphasis);
   if (className) element.classList.add(className);
@@ -1425,12 +1492,13 @@ export class InfiniteBoardView {
       }
     };
     for (const id of targetIds) visit(id);
+    for (const id of supportingVisualFocusTargets(targetIds, board, layout)) visit(id);
     return rects;
   }
   private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
     const viewport = this.viewport.getBoundingClientRect();
-    const mode: AttentionMode = targetIds.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
+    const mode: AttentionMode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
       ? "relationship"
       : targetIds.some((id) => Boolean(board.groups[id]))
         ? "overview"

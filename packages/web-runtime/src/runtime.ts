@@ -240,6 +240,7 @@ export class BrowserLessonSession {
     before: number;
     control: StudentVariableOperationContext["control"];
     input: StudentVariableOperationContext["input"];
+    accepted: boolean;
   }>();
   private readonly pendingStudentScene3dOperations = new Map<string, {
     sequence: number;
@@ -694,6 +695,7 @@ export class BrowserLessonSession {
       before: variable.value,
       control: context.control,
       input: context.input,
+      accepted: false,
     });
     return id;
   }
@@ -702,7 +704,7 @@ export class BrowserLessonSession {
     if (this.studentOperationLog.operations.some((operation) => operation.id === operationId)) return;
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
-    this.applyManualVariable(pending.alias, value);
+    pending.accepted = this.applyManualVariable(pending.alias, value) || pending.accepted;
   }
 
   commitStudentVariableOperation(
@@ -718,9 +720,10 @@ export class BrowserLessonSession {
     }
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
-    if (value !== undefined) this.applyManualVariable(pending.alias, value);
+    if (value !== undefined) pending.accepted = this.applyManualVariable(pending.alias, value) || pending.accepted;
     const after = this.player.snapshot.board?.variables?.[pending.alias]?.value;
     this.pendingStudentVariableOperations.delete(operationId);
+    if (!pending.accepted) return undefined;
     if (!Number.isFinite(after)) throw new Error(`Lesson variable '${pending.alias}' has no finite value`);
     if (Math.abs((after as number) - pending.before) <= 1e-12) return undefined;
     const operation: StudentVariableOperation = {
@@ -930,12 +933,13 @@ export class BrowserLessonSession {
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
-  private applyManualVariable(alias: string, value: number): void {
-    this.pause();
-    this.discardVariableAnimation();
+  private applyManualVariable(alias: string, value: number): boolean {
+    if (this.playing && this.variableAnimation?.variable === alias) return false;
+    if (!this.playing && this.variableAnimation?.variable === alias) this.discardVariableAnimation();
     this.player.setVariable(alias, value);
     this.persist();
     this.emit();
+    return true;
   }
 
   private easedVariableProgress(animation: PlaybackVariableAnimation): number {

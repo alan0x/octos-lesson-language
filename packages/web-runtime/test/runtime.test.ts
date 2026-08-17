@@ -390,7 +390,7 @@ test("variable animation advances one shared value and survives pause and refres
   assert.equal(restored.projection.board?.variables?.theta?.value, 2 * Math.PI);
 });
 
-test("manual slider input cancels automatic animation and restores the chosen value", () => {
+test("paused animation can be replaced by learner input and the value is restored", () => {
   const store = new MemoryStore();
   const session = new BrowserLessonSession(unitCircleEvents, store, "unit-circle-manual");
   advanceToVariableAnimation(session);
@@ -401,6 +401,23 @@ test("manual slider input cancels automatic animation and restores the chosen va
 
   const restored = new BrowserLessonSession(unitCircleEvents, store, "unit-circle-manual");
   assert.equal(restored.projection.board?.variables?.theta?.value, Math.PI / 2);
+});
+
+test("teacher animation temporarily owns its variable without pausing narration", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(unitCircleEvents, new MemoryStore(), "unit-circle-teacher-control");
+  advanceToVariableAnimation(session);
+  session.play();
+  const before = session.projection.board?.variables?.theta?.value;
+  const operation = session.changeStudentVariable("theta", Math.PI / 2, {
+    control: "slider",
+    input: "mouse",
+  });
+  assert.equal(operation, undefined);
+  assert.equal(session.status, "playing");
+  assert.equal(session.projection.board?.variables?.theta?.value, before);
+  assert.ok(session.activeVariableAnimation);
+  assert.equal(session.studentOperations.length, 0);
 });
 
 test("student slider and geometry gestures share one persisted variable operation log", () => {
@@ -770,7 +787,7 @@ test("an incremental final artifact restores playback and opens its deferred tas
     input: "mouse",
   });
   assert.equal(final.studentTasks[0]!.status, "succeeded");
-  assert.equal(final.status, "paused", "manual input pauses playback without reopening delivery");
+  assert.equal(final.status, "waiting", "manual input preserves the settled playback state");
   assert.equal(final.isDeliverySettled, true, "manual input cannot undo a settled delivery");
 });
 

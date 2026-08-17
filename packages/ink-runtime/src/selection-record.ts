@@ -22,6 +22,32 @@ export interface InkSelectionRegion {
   closed: boolean;
 }
 
+/** Convert the first and last pointer positions of a rectangle gesture into
+ * the exact board-space rectangle that was shown by the selection tool. */
+export function inkSelectionRectangleRegion(
+  points: InkSelectionPoint[],
+): InkSelectionRegion | undefined {
+  const finite = points.filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  if (finite.length < 2) return undefined;
+  const first = finite[0]!;
+  const last = finite.at(-1)!;
+  const left = Math.min(first.x, last.x);
+  const right = Math.max(first.x, last.x);
+  const top = Math.min(first.y, last.y);
+  const bottom = Math.max(first.y, last.y);
+  if (right <= left || bottom <= top) return undefined;
+  return {
+    kind: "rectangle",
+    closed: true,
+    points: [
+      { x: left, y: top },
+      { x: right, y: top },
+      { x: right, y: bottom },
+      { x: left, y: bottom },
+    ],
+  };
+}
+
 export interface InkSelectionSnapshot {
   format: typeof INK_SELECTION_FORMAT;
   format_version: typeof LEGACY_INK_SELECTION_FORMAT_VERSION | typeof INK_SELECTION_FORMAT_VERSION;

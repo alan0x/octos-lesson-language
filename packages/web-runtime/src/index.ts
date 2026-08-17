@@ -44,6 +44,7 @@ export {
   type BoardPoint,
   type CameraState,
   type ViewportInsets,
+  type ViewportOcclusion,
   type ViewportSize,
 } from "./camera.js";
 export {

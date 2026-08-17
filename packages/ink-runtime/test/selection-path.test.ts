@@ -1,6 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inkSelectionPathRegion } from "../src/selection-record.js";
+import { inkSelectionPathRegion, inkSelectionRectangleRegion } from "../src/selection-record.js";
+
+test("rectangle selections persist the rectangle shown by the selection tool", () => {
+  assert.deepEqual(inkSelectionRectangleRegion([
+    { x: 80, y: 70 },
+    { x: 20, y: 10 },
+  ]), {
+    kind: "rectangle",
+    closed: true,
+    points: [
+      { x: 20, y: 10 },
+      { x: 80, y: 10 },
+      { x: 80, y: 70 },
+      { x: 20, y: 70 },
+    ],
+  });
+});
 
 test("selection snapshots preserve the learner's lasso instead of replacing it with a rectangle", () => {
   const points = [

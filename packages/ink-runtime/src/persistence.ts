@@ -24,6 +24,24 @@ export interface InkDocumentStore {
   remove?(key: string): void | Promise<void>;
 }
 
+export async function readInkDocumentForMerge(
+  store: InkDocumentStore,
+  key: string,
+  expectedDocumentId: string,
+): Promise<InkDocumentRecord | null> {
+  const loaded = await store.load(key);
+  if (!loaded) return null;
+  const record = validateInkDocumentRecord(loaded);
+  await assertInkDocumentIntegrity(record);
+  if (record.document_id !== expectedDocumentId) {
+    throw new InkRuntimeError(
+      "INK_INVALID_RECORD",
+      "Saved ink merge source belongs to a different session",
+    );
+  }
+  return record;
+}
+
 export class InkRuntimeError extends Error {
   constructor(
     readonly code: "INK_INVALID_RECORD" | "INK_CHECKSUM_MISMATCH" | "INK_NO_SELECTION",

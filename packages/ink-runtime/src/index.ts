@@ -6,6 +6,7 @@ export {
   assertInkDocumentIntegrity,
   createInkDocumentRecord,
   inkSvgChecksum,
+  readInkDocumentForMerge,
   validateInkDocumentRecord,
   type InkDocumentRecord,
   type InkDocumentStore,
@@ -19,6 +20,7 @@ export {
   INK_SELECTION_FORMAT_VERSION,
   LEGACY_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
+  inkSelectionRectangleRegion,
   validateInkSelectionSnapshot,
   type InkSelectionBounds,
   type InkSelectionPoint,
@@ -29,6 +31,7 @@ export {
   InkRuntime,
   mountInkRuntime,
   type InkMode,
+  type InkSelectionMode,
   type InkRuntimeState,
   type MountInkRuntimeOptions,
 } from "./runtime.js";

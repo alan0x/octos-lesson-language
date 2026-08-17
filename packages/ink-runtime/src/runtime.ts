@@ -28,12 +28,14 @@ import {
   InkRuntimeError,
   assertInkDocumentIntegrity,
   createInkDocumentRecord,
+  readInkDocumentForMerge,
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
   inkSelectionPathRegion,
+  inkSelectionRectangleRegion,
   type InkSelectionPoint,
   type InkSelectionRegion,
   type InkSelectionSnapshot,
@@ -49,6 +51,7 @@ import {
 } from "./world-layer.js";
 
 export type InkMode = "navigate" | "draw" | "erase" | "select";
+export type InkSelectionMode = "rectangle" | "lasso";
 
 export interface InkRuntimeState {
   mode: InkMode;
@@ -57,6 +60,7 @@ export interface InkRuntimeState {
   pen_color: string;
   selection_color: string | null;
   selection_input: StudentInputMethod;
+  selection_mode: InkSelectionMode;
   document_version: number;
   saved: boolean;
 }
@@ -78,6 +82,7 @@ export class InkRuntime {
   private selectedComponents: AbstractComponent[] = [];
   private penColor = "#176b62";
   private selectionInput: StudentInputMethod = "unknown";
+  private selectionMode: InkSelectionMode = "rectangle";
   private documentVersion = 0;
   private savedSvg = "";
   private changeRevision = 0;
@@ -408,6 +413,7 @@ export class InkRuntime {
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,
+      selection_mode: this.selectionMode,
       document_version: this.documentVersion,
       saved: this.changeRevision === this.savedChangeRevision,
     };
@@ -433,7 +439,7 @@ export class InkRuntime {
     if (mode === "erase") this.getTool(EraserTool).setEnabled(true);
     if (mode === "select") {
       const selection = this.getTool(SelectionTool);
-      selection.modeValue.set(SelectionMode.Lasso);
+      selection.modeValue.set(this.selectionMode === "rectangle" ? SelectionMode.Rectangle : SelectionMode.Lasso);
       selection.setEnabled(true);
       lockSelectionTransform(selection as unknown as LockableSelectionTool);
     }
@@ -452,6 +458,12 @@ export class InkRuntime {
   }
 
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
+
+  setSelectionMode(mode: InkSelectionMode): void {
+    this.selectionMode = mode;
+    if (this.modeValue === "select") this.setMode("select");
+    else this.emit();
+  }
 
   setPenColor(color: string): void {
     const parsed = Color4.fromHex(color);
@@ -497,11 +509,43 @@ export class InkRuntime {
     return this.saveQueue;
   }
 
+  /**
+   * Append a previously saved, immutable ink document to this document.
+   *
+   * Replaying a lesson uses a fresh document so old annotations do not cover
+   * the lesson. Once playback finishes, the host calls this method to restore
+   * the earlier annotations alongside anything written during the replay. The
+   * source record is only read; the merged result is saved under this
+   * runtime's own storage key.
+   */
+  async mergeSavedDocument(storageKey: string, documentId: string): Promise<InkDocumentRecord | null> {
+    await this.ready;
+    await this.saveNow();
+    const source = await readInkDocumentForMerge(
+      this.store,
+      storageKey,
+      documentId,
+    );
+    if (!source) return null;
+    if (source.document_id === this.options.documentId) return null;
+    this.suppressSave = true;
+    try {
+      await this.editor.loadFromSVG(source.svg, true);
+      this.enableInfiniteCanvas();
+      this.resetEditorViewport();
+    } finally {
+      this.suppressSave = false;
+    }
+    this.changeRevision += 1;
+    this.emit();
+    return this.saveNow();
+  }
+
   async captureSelectionSnapshot(): Promise<InkSelectionSnapshot> {
     await this.saveNow();
-    const region: InkSelectionRegion | undefined = inkSelectionPathRegion(
-      this.selectionGesture,
-    );
+    const region: InkSelectionRegion | undefined = this.selectionMode === "rectangle"
+      ? inkSelectionRectangleRegion(this.selectionGesture)
+      : inkSelectionPathRegion(this.selectionGesture);
     return createInkSelectionSnapshot({
       components: this.selectedComponents,
       documentId: this.options.documentId,

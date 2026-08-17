@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, variableAnimationFocusTargets } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
@@ -108,6 +108,56 @@ test("variable animation focuses every node driven by the shared variable", () =
     },
   } as any;
   assert.deepEqual(variableAnimationFocusTargets(board, "theta"), ["circle", "plot"]);
+});
+
+test("supporting formula focus keeps the nearest visual in the same lesson region", () => {
+  const board = {
+    nodes: {
+      scene: { id: "scene", kind: "scene3d", region_id: "topic" },
+      section: { id: "section", kind: "geometry", region_id: "topic" },
+      formula: { id: "formula", kind: "math", region_id: "topic" },
+      prior: { id: "prior", kind: "plot", region_id: "prior-topic" },
+    },
+    connections: {},
+  } as any;
+  const layout = {
+    nodes: {
+      scene: { x: 100, y: 100, width: 460, height: 360 },
+      section: { x: 620, y: 100, width: 380, height: 300 },
+      formula: { x: 120, y: 510, width: 280, height: 96 },
+      prior: { x: 120, y: 650, width: 340, height: 230 },
+    },
+    groups: {},
+    bounds: { x: 0, y: 0, width: 1200, height: 900 },
+  };
+  assert.deepEqual(supportingVisualFocusTargets(["formula"], board, layout), ["scene"]);
+});
+
+test("focused visual keeps directly connected visual context", () => {
+  const board = {
+    nodes: {
+      circle: { id: "circle", kind: "geometry", region_id: "topic" },
+      sine: { id: "sine", kind: "plot", region_id: "topic" },
+      oldPlot: { id: "oldPlot", kind: "plot", region_id: "old-topic" },
+    },
+    connections: {
+      mapping: {
+        id: "mapping",
+        from: { node_id: "circle" },
+        to: { node_id: "sine" },
+      },
+    },
+  } as any;
+  const layout = {
+    nodes: {
+      circle: { x: 100, y: 100, width: 380, height: 300 },
+      sine: { x: 534, y: 135, width: 340, height: 230 },
+      oldPlot: { x: 100, y: 500, width: 340, height: 230 },
+    },
+    groups: {},
+    bounds: { x: 0, y: 0, width: 1000, height: 800 },
+  };
+  assert.deepEqual(supportingVisualFocusTargets(["circle"], board, layout), ["sine"]);
 });
 
 test("connections attach to card boundaries instead of running through card centers", () => {
@@ -393,6 +443,22 @@ test("focus centers teaching content inside the host's unobstructed viewport", (
   const safeCenterY = (90 + 70 + 800 - 180 - 70) / 2;
   assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
   assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - safeCenterY) < .001);
+});
+
+test("focus avoids the actual floating UI rectangle instead of reserving an entire edge", () => {
+  const focused = planFocusCamera(
+    [{ x: 1000, y: 800, width: 420, height: 160 }],
+    { panX: 0, panY: 0, scale: .78 },
+    { width: 1200, height: 800 },
+    "detail",
+    { occlusions: [{ x: 900, y: 120, width: 260, height: 400 }] },
+  );
+  const targetCenterX = 1_210;
+  const targetCenterY = 880;
+  const clearRight = 900 - 70;
+  const safeCenterX = (70 + clearRight) / 2;
+  assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
+  assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - 400) < .001);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

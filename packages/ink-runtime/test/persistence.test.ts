@@ -6,6 +6,7 @@ import {
   assertInkDocumentIntegrity,
   createInkDocumentRecord,
   inkSvgChecksum,
+  readInkDocumentForMerge,
   validateInkDocumentRecord,
 } from "../src/persistence.js";
 import {
@@ -92,6 +93,37 @@ test("reading a corrupted saved resource never rewrites its recoverable source",
     (error) => error instanceof InkRuntimeError && error.code === "INK_INVALID_RECORD",
   );
   assert.equal(storage.getItem(key), damagedSource);
+});
+
+test("a replay can read earlier ink without changing its source document", async () => {
+  const storage = new MemoryStorage();
+  const store = new LocalInkDocumentStore(storage);
+  const source = await createInkDocumentRecord({
+    documentId: "lesson-1:original-ink",
+    documentVersion: 4,
+    editorVersion: "1.33.0",
+    svg: '<svg viewBox="0 0 20 20"><path d="M1 1L19 19"/></svg>',
+  });
+  store.save("oll-ink:lesson-1:original", source);
+  const before = storage.getItem("oll-ink:lesson-1:original");
+
+  assert.deepEqual(
+    await readInkDocumentForMerge(
+      store,
+      "oll-ink:lesson-1:original",
+      "lesson-1:original-ink",
+    ),
+    source,
+  );
+  assert.equal(storage.getItem("oll-ink:lesson-1:original"), before);
+  await assert.rejects(
+    () => readInkDocumentForMerge(
+      store,
+      "oll-ink:lesson-1:original",
+      "another-lesson:student-ink",
+    ),
+    (error) => error instanceof InkRuntimeError && error.code === "INK_INVALID_RECORD",
+  );
 });
 
 test("selection sources are immutable checksummed snapshots, not editor component IDs", async () => {
