@@ -20,7 +20,7 @@ import {
 } from "./camera.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
-import { plotPathData, samplePlotExpression, type PlotRange } from "./plot.js";
+import { plotPathData, sampleImplicitPlotExpression, samplePlotExpression, type PlotRange } from "./plot.js";
 import {
   studentInputMethod,
   type StudentInputMethod,
@@ -447,7 +447,16 @@ function plot(parent: HTMLElement, node: Record<string, any>): void {
     const expression = text(curve.expression);
     if (!expression) return;
     try {
-      const pathData = plotPathData(samplePlotExpression(expression, xRange, yRange), mapX, mapY);
+      const pathData = plotPathData(
+        curve.kind === "implicit"
+          ? sampleImplicitPlotExpression(expression, xRange, yRange, {
+              level: Number(curve.level ?? 0),
+              samples: Number(curve.samples ?? 80),
+            })
+          : samplePlotExpression(expression, xRange, yRange),
+        mapX,
+        mapY,
+      );
       if (!pathData) return;
       const path = document.createElementNS(SVG_NS, "path");
       const series = index % 6;

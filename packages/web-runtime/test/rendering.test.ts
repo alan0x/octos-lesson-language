@@ -351,6 +351,35 @@ test("3D function-surface sections change their contour when the shared height c
   assert.ok(Math.abs(maxRadius(high[0]!.points) - 1) < .05);
 });
 
+test("3D implicit surfaces render three-variable equations and support sections", () => {
+  const content = {
+    objects: [{
+      as: "superellipsoid",
+      kind: "implicit_surface",
+      expression: "x^4+y^4+z^4-1",
+      level: 0,
+      x_range: { min: -1.2, max: 1.2 },
+      y_range: { min: -1.2, max: 1.2 },
+      z_range: { min: -1.2, max: 1.2 },
+      samples: 12,
+    }],
+  };
+  const intersections = scene3dSectionIntersections(content, {
+    axis: "z",
+    value: 0,
+    targets: ["superellipsoid"],
+    display: "plane_and_intersection",
+  });
+  assert.ok(intersections.length >= 1);
+  assert.ok(intersections.every((path) => path.solid));
+  assert.ok(intersections.some((path) => path.closed));
+  const points = intersections.flatMap((path) => path.points);
+  assert.ok(Math.min(...points.map((point) => point.x)) < -.95);
+  assert.ok(Math.max(...points.map((point) => point.x)) > .95);
+  assert.ok(Math.min(...points.map((point) => point.y)) < -.95);
+  assert.ok(Math.max(...points.map((point) => point.y)) > .95);
+});
+
 test("focus keeps an already composed target steady", () => {
   const current = { panX: 141.08235294117645, panY: 200.47058823529412, scale: .9976470588235294 };
   assert.strictEqual(

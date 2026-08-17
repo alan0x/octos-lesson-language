@@ -37,6 +37,8 @@ interface SceneMesh {
   triangles: Triangle3d[];
 }
 
+const MAX_IMPLICIT_SURFACE_TRIANGLES = 20_000;
+
 export interface Scene3dSectionPath {
   target: string;
   solid: boolean;
@@ -194,6 +196,125 @@ function surfaceMesh(
   return { target: objectTarget(object), solid: false, triangles };
 }
 
+function interpolateLevel(
+  from: Point3d,
+  to: Point3d,
+  fromValue: number,
+  toValue: number,
+): Point3d {
+  const denominator = fromValue - toValue;
+  const amount = Math.abs(denominator) < 1e-12 ? .5 : fromValue / denominator;
+  return {
+    x: from.x + (to.x - from.x) * amount,
+    y: from.y + (to.y - from.y) * amount,
+    z: from.z + (to.z - from.z) * amount,
+  };
+}
+
+function tetrahedronTriangles(
+  points: [Point3d, Point3d, Point3d, Point3d],
+  values: [number, number, number, number],
+): Triangle3d[] {
+  if (values.some((value) => !Number.isFinite(value))) return [];
+  const inside = [0, 1, 2, 3].filter((index) => values[index]! <= 0);
+  const outside = [0, 1, 2, 3].filter((index) => values[index]! > 0);
+  const crossing = (from: number, to: number) => interpolateLevel(
+    points[from]!,
+    points[to]!,
+    values[from]!,
+    values[to]!,
+  );
+  if (inside.length === 0 || inside.length === 4) return [];
+  if (inside.length === 1) {
+    const origin = inside[0]!;
+    return [{ points: [
+      crossing(origin, outside[0]!),
+      crossing(origin, outside[1]!),
+      crossing(origin, outside[2]!),
+    ] }];
+  }
+  if (inside.length === 3) {
+    const origin = outside[0]!;
+    return [{ points: [
+      crossing(origin, inside[2]!),
+      crossing(origin, inside[1]!),
+      crossing(origin, inside[0]!),
+    ] }];
+  }
+  const [insideA, insideB] = inside as [number, number];
+  const [outsideA, outsideB] = outside as [number, number];
+  const a = crossing(insideA, outsideA);
+  const b = crossing(insideA, outsideB);
+  const c = crossing(insideB, outsideA);
+  const d = crossing(insideB, outsideB);
+  return [
+    { points: [a, b, c] },
+    { points: [b, d, c] },
+  ];
+}
+
+function implicitSurfaceMesh(
+  object: Record<string, any>,
+  variables: Record<string, number>,
+): SceneMesh {
+  const samples = Math.max(4, Math.min(18, Number(object.samples) || 12));
+  const level = Number(object.level ?? 0);
+  const evaluate = compileMathExpression(
+    object.expression,
+    ["x", "y", "z", ...Object.keys(variables)],
+  );
+  const grid: Array<Array<Array<{ point: Point3d; value: number }>>> = [];
+  for (let xIndex = 0; xIndex <= samples; xIndex += 1) {
+    const xColumn: Array<Array<{ point: Point3d; value: number }>> = [];
+    const x = object.x_range.min
+      + (object.x_range.max - object.x_range.min) * xIndex / samples;
+    for (let yIndex = 0; yIndex <= samples; yIndex += 1) {
+      const yColumn: Array<{ point: Point3d; value: number }> = [];
+      const y = object.y_range.min
+        + (object.y_range.max - object.y_range.min) * yIndex / samples;
+      for (let zIndex = 0; zIndex <= samples; zIndex += 1) {
+        const z = object.z_range.min
+          + (object.z_range.max - object.z_range.min) * zIndex / samples;
+        const point = { x, y, z };
+        yColumn.push({
+          point,
+          value: evaluate({ ...variables, x, y, z }) - level,
+        });
+      }
+      xColumn.push(yColumn);
+    }
+    grid.push(xColumn);
+  }
+  const cubeTetrahedra = [
+    [0, 1, 2, 6], [0, 2, 3, 6], [0, 3, 7, 6],
+    [0, 7, 4, 6], [0, 4, 5, 6], [0, 5, 1, 6],
+  ] as const;
+  const triangles: Triangle3d[] = [];
+  for (let x = 0; x < samples; x += 1) {
+    for (let y = 0; y < samples; y += 1) {
+      for (let z = 0; z < samples; z += 1) {
+        const vertices = [
+          grid[x]![y]![z]!, grid[x + 1]![y]![z]!,
+          grid[x + 1]![y + 1]![z]!, grid[x]![y + 1]![z]!,
+          grid[x]![y]![z + 1]!, grid[x + 1]![y]![z + 1]!,
+          grid[x + 1]![y + 1]![z + 1]!, grid[x]![y + 1]![z + 1]!,
+        ];
+        for (const tetrahedron of cubeTetrahedra) {
+          const tetrahedronSamples = tetrahedron.map((index) => vertices[index]!);
+          triangles.push(...tetrahedronTriangles(
+            tetrahedronSamples.map((sample) => sample.point) as [Point3d, Point3d, Point3d, Point3d],
+            tetrahedronSamples.map((sample) => sample.value) as [number, number, number, number],
+          ));
+          if (triangles.length > MAX_IMPLICIT_SURFACE_TRIANGLES) {
+            throw new Error("Implicit 3D surface is too complex for interactive rendering");
+          }
+        }
+      }
+    }
+  }
+  return { target: objectTarget(object), solid: true, triangles };
+}
+
 function radialPoint(
   center: Point3d,
   radius: number,
@@ -279,7 +400,10 @@ function expressionVariables(
   variables: Record<string, number>,
 ): Record<string, number> {
   const expressions = objects
-    .filter((object) => object.kind === "surface" && typeof object.expression === "string")
+    .filter((object) =>
+      ["surface", "implicit_surface"].includes(object.kind)
+      && typeof object.expression === "string"
+    )
     .map((object) => object.expression as string);
   return Object.fromEntries(Object.entries(variables)
     .filter(([name]) => expressions.some((expression) => new RegExp(
@@ -301,9 +425,13 @@ function sceneMeshes(
     sceneMeshCache.set(cacheKey, cached);
     return cached;
   }
-  const meshes = objects.map((object) => object.kind === "surface"
-    ? surfaceMesh(object, variables)
-    : primitiveMesh(object));
+  const meshes = objects.map((object) => {
+    if (object.kind === "surface") return surfaceMesh(object, variables);
+    if (object.kind === "implicit_surface") {
+      return implicitSurfaceMesh(object, variables);
+    }
+    return primitiveMesh(object);
+  });
   sceneMeshCache.set(cacheKey, meshes);
   if (sceneMeshCache.size > SCENE_MESH_CACHE_LIMIT) {
     sceneMeshCache.delete(sceneMeshCache.keys().next().value as string);
@@ -531,6 +659,31 @@ function renderSurface(
   }
 }
 
+function renderImplicitSurface(
+  svg: SVGSVGElement,
+  object: Record<string, any>,
+  mesh: SceneMesh,
+  view: Scene3dViewState,
+): void {
+  const color = safeColor(object.color, "#3479a8");
+  const faces = mesh.triangles.map((triangle) => ({
+    points: triangle.points,
+    depth: triangle.points.reduce((sum, point) =>
+      sum + projectScene3dPoint(point, view).depth, 0) / 3,
+  })).sort((left, right) => left.depth - right.depth);
+  for (const face of faces) {
+    const element = polygon(
+      svg,
+      face.points,
+      view,
+      color,
+      .24,
+      "scene3d-implicit-surface-cell",
+    );
+    element.dataset.id = String(object.id ?? object.as ?? "");
+  }
+}
+
 function renderScene(
   svg: SVGSVGElement,
   content: Record<string, any>,
@@ -558,6 +711,12 @@ function renderScene(
     const color = safeColor(object.color);
     if (object.kind === "surface") {
       renderSurface(svg, object, view, variables);
+      continue;
+    }
+    if (object.kind === "implicit_surface") {
+      const mesh = meshes.find((candidate) =>
+        candidate.target === objectTarget(object));
+      if (mesh) renderImplicitSurface(svg, object, mesh, view);
       continue;
     }
     if (object.kind === "box") {

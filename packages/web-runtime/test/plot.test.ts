@@ -4,6 +4,7 @@ import {
   compilePlotExpression,
   evaluatePlotExpression,
   plotPathData,
+  sampleImplicitPlotExpression,
   samplePlotExpression,
 } from "../src/plot.js";
 
@@ -46,4 +47,19 @@ test("sampled curves produce SVG path data in plot coordinates", () => {
     plotPathData(segments, (value) => value * 10, (value) => 100 - value * 10),
     "M -10.00 110.00 L 0.00 100.00 L 10.00 90.00",
   );
+});
+
+test("implicit plot sampling draws equations that cannot be written as one y=f(x)", () => {
+  const segments = sampleImplicitPlotExpression(
+    "x^2+y^2-1",
+    { min: -1.5, max: 1.5 },
+    { min: -1.5, max: 1.5 },
+    { samples: 80 },
+  );
+  assert.ok(segments.length > 100);
+  const points = segments.flat();
+  assert.ok(Math.min(...points.map((point) => point.x)) < -.99);
+  assert.ok(Math.max(...points.map((point) => point.x)) > .99);
+  assert.ok(Math.min(...points.map((point) => point.y)) < -.99);
+  assert.ok(Math.max(...points.map((point) => point.y)) > .99);
 });

@@ -674,7 +674,7 @@ function validateScene3dContent(
     aliases.add(object.as);
     objectAliases.add(object.as);
     const objectKind = String(object.kind);
-    if (!["box", "sphere", "cylinder", "cone", "surface"].includes(objectKind)) {
+    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
     }
     if (object.color !== undefined
@@ -691,6 +691,42 @@ function validateScene3dContent(
       if (objectKind !== "sphere") {
         const height = requireFiniteNumber(object.height, `${objectPath}/height`);
         if (height <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/height`, "3D height must be greater than zero");
+      }
+    } else if (objectKind === "implicit_surface") {
+      requireString(object.expression, `${objectPath}/expression`);
+      const xRange = range(object.x_range, `${objectPath}/x_range`);
+      const yRange = range(object.y_range, `${objectPath}/y_range`);
+      const zRange = range(object.z_range, `${objectPath}/z_range`);
+      const level = object.level === undefined
+        ? 0
+        : requireFiniteNumber(object.level, `${objectPath}/level`);
+      const sampleCount = Number(object.samples ?? 12);
+      if (!Number.isInteger(sampleCount) || sampleCount < 4 || sampleCount > 18) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/samples`, "3D implicit surface samples must be an integer from 4 to 18");
+      }
+      try {
+        const variableNames = ["x", "y", "z", ...variables.keys()];
+        const evaluate = compileMathExpression(object.expression, variableNames);
+        const values = Object.fromEntries(variables);
+        const sampled: number[] = [];
+        for (let xIndex = 0; xIndex <= sampleCount; xIndex += 1) {
+          const x = xRange.min + (xRange.max - xRange.min) * xIndex / sampleCount;
+          for (let yIndex = 0; yIndex <= sampleCount; yIndex += 1) {
+            const y = yRange.min + (yRange.max - yRange.min) * yIndex / sampleCount;
+            for (let zIndex = 0; zIndex <= sampleCount; zIndex += 1) {
+              const z = zRange.min + (zRange.max - zRange.min) * zIndex / sampleCount;
+              const value = evaluate({ ...values, x, y, z });
+              if (Number.isFinite(value)) sampled.push(value);
+            }
+          }
+        }
+        if (sampled.length === 0
+          || Math.min(...sampled) > level
+          || Math.max(...sampled) < level) {
+          throw new Error("the requested level is outside the sampled value range");
+        }
+      } catch (error) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/expression`, `Invalid 3D implicit surface expression: ${(error as Error).message}`);
       }
     } else {
       requireString(object.expression, `${objectPath}/expression`);
@@ -779,6 +815,69 @@ function validateScene3dContent(
       ));
     });
   }
+}
+
+function validateImplicitPlotContent(
+  action: WriteAction,
+  path: string,
+  variables: Map<string, number>,
+): void {
+  if (action.kind !== "plot" || !Array.isArray(action.content.curves)) return;
+  const axes = action.content.axes ?? {};
+  const plotRange = (
+    value: unknown,
+    rangePath: string,
+    fallback: { min: number; max: number },
+  ): { min: number; max: number } => {
+    if (value === undefined) return fallback;
+    requireObject(value, rangePath);
+    const min = requireFiniteNumber(value.min, `${rangePath}/min`);
+    const max = requireFiniteNumber(value.max, `${rangePath}/max`);
+    if (max <= min) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", rangePath, "Plot range max must be greater than min");
+    }
+    return { min, max };
+  };
+  const xRange = plotRange(axes.x, `${path}/content/axes/x`, { min: -5, max: 5 });
+  const yRange = plotRange(axes.y, `${path}/content/axes/y`, { min: -5, max: 5 });
+  action.content.curves.forEach((rawCurve: unknown, index: number) => {
+    const curvePath = `${path}/content/curves/${index}`;
+    requireObject(rawCurve, curvePath);
+    const curve = rawCurve;
+    if (curve.kind !== "implicit") return;
+    requireString(curve.expression, `${curvePath}/expression`);
+    const level = curve.level === undefined
+      ? 0
+      : requireFiniteNumber(curve.level, `${curvePath}/level`);
+    const sampleCount = Number(curve.samples ?? 80);
+    if (!Number.isInteger(sampleCount) || sampleCount < 16 || sampleCount > 200) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${curvePath}/samples`, "Implicit plot samples must be an integer from 16 to 200");
+    }
+    try {
+      const evaluate = compileMathExpression(
+        curve.expression,
+        ["x", "y", ...variables.keys()],
+      );
+      const values = Object.fromEntries(variables);
+      let minimum = Infinity;
+      let maximum = -Infinity;
+      for (let xIndex = 0; xIndex <= sampleCount; xIndex += 1) {
+        const x = xRange.min + (xRange.max - xRange.min) * xIndex / sampleCount;
+        for (let yIndex = 0; yIndex <= sampleCount; yIndex += 1) {
+          const y = yRange.min + (yRange.max - yRange.min) * yIndex / sampleCount;
+          const result = evaluate({ ...values, x, y });
+          if (!Number.isFinite(result)) continue;
+          minimum = Math.min(minimum, result);
+          maximum = Math.max(maximum, result);
+        }
+      }
+      if (!Number.isFinite(minimum) || minimum > level || maximum < level) {
+        throw new Error("the requested level has no visible contour in the plot range");
+      }
+    } catch (error) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${curvePath}/expression`, `Invalid implicit plot expression: ${(error as Error).message}`);
+    }
+  });
 }
 
 function validateImageResource(action: WriteAction, path: string, resourceContext: ResourceContext | null): void {
@@ -1024,6 +1123,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
           validateGeometryContent(action, actionPath, lessonVariables);
+          validateImplicitPlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === "scene3d") {
             const camera = action.content.camera as UnknownRecord;

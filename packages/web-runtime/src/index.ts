@@ -66,7 +66,9 @@ export {
 } from "./layout.js";
 export {
   plotPathData,
+  sampleImplicitPlotExpression,
   samplePlotExpression,
+  type ImplicitPlotOptions,
   type PlotRange,
   type PlotSample,
 } from "./plot.js";

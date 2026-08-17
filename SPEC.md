@@ -668,6 +668,12 @@ overlay
 
 表达式解析器只能执行受限数学表达式，不得使用 `eval`。
 
+当一条二维曲线不能写成单值的 `y=f(x)` 时，`curves[]` 可以声明
+`"kind": "implicit"`，并用 `expression` 表示 `F(x,y)`、用 `level`
+表示等值线 `F(x,y)=level`。例如圆可以写成
+`{"kind":"implicit","expression":"x^2+y^2","level":1}`。
+Runtime 在 `axes` 给出的有限范围内本地采样；表达式无效或没有可见等值线时必须明确失败，不能留下空白图块。
+
 ### 11.1 `scene3d` 节点最低能力
 
 `scene3d` 描述三维对象的数学语义和初始视角，不保存 WebGL、SVG 路径或模型代码：
@@ -724,6 +730,8 @@ overlay
 
 - `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
 - `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
+- `implicit_surface` 表示 `F(x,y,z)=level`，必须同时提供有限的 `x_range`、`y_range`、`z_range`；Runtime 用本地等值面采样生成可旋转曲面，不执行模型代码或任意脚本；
+- 隐式曲面采样数限制为 4 到 18。提高采样数会增加本地网格三角形数量，因此不能由模型无限放大；
 - `sections` 只支持垂直于 x、y 或 z 轴的平面，`value` 可以绑定 Lesson 数值变量；
 - `display` 省略或为 `plane` 时只显示参考平面，保持旧课件行为；`intersection` 显示平面与目标对象的真实交集，`plane_and_intersection` 同时显示二者；
 - 使用真实交集时必须用 `targets` 指出被截的 `objects[].as`。实体显示截面轮廓与填充，函数曲面显示截线；

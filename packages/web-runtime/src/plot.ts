@@ -10,6 +10,11 @@ export interface PlotSample {
   y: number;
 }
 
+export interface ImplicitPlotOptions {
+  level?: number;
+  samples?: number;
+}
+
 type PlotExpression = (x: number) => number;
 
 function normalizedExpression(expression: string): string {
@@ -79,6 +84,81 @@ export function samplePlotExpression(
     segment.push({ x, y });
   }
   flush();
+  return segments;
+}
+
+export function sampleImplicitPlotExpression(
+  expression: string,
+  xRange: PlotRange,
+  yRange: PlotRange,
+  options: ImplicitPlotOptions = {},
+): PlotSample[][] {
+  if (!Number.isFinite(xRange.min) || !Number.isFinite(xRange.max) || xRange.max <= xRange.min) {
+    throw new Error("Implicit plot x axis requires finite min < max");
+  }
+  if (!Number.isFinite(yRange.min) || !Number.isFinite(yRange.max) || yRange.max <= yRange.min) {
+    throw new Error("Implicit plot y axis requires finite min < max");
+  }
+  const level = Number(options.level ?? 0);
+  if (!Number.isFinite(level)) throw new Error("Implicit plot level must be finite");
+  const samples = Math.max(16, Math.min(200, Math.floor(options.samples ?? 80)));
+  const evaluate = compileMathExpression(normalizedExpression(expression), ["x", "y"]);
+  const grid: number[][] = [];
+  for (let xIndex = 0; xIndex <= samples; xIndex += 1) {
+    const column: number[] = [];
+    const x = xRange.min + (xRange.max - xRange.min) * xIndex / samples;
+    for (let yIndex = 0; yIndex <= samples; yIndex += 1) {
+      const y = yRange.min + (yRange.max - yRange.min) * yIndex / samples;
+      column.push(evaluate({ x, y }) - level);
+    }
+    grid.push(column);
+  }
+  const interpolate = (
+    from: PlotSample,
+    to: PlotSample,
+    fromValue: number,
+    toValue: number,
+  ): PlotSample => {
+    const denominator = fromValue - toValue;
+    const amount = Math.abs(denominator) < 1e-12 ? .5 : fromValue / denominator;
+    return {
+      x: from.x + (to.x - from.x) * amount,
+      y: from.y + (to.y - from.y) * amount,
+    };
+  };
+  const segments: PlotSample[][] = [];
+  for (let xIndex = 0; xIndex < samples; xIndex += 1) {
+    const x0 = xRange.min + (xRange.max - xRange.min) * xIndex / samples;
+    const x1 = xRange.min + (xRange.max - xRange.min) * (xIndex + 1) / samples;
+    for (let yIndex = 0; yIndex < samples; yIndex += 1) {
+      const y0 = yRange.min + (yRange.max - yRange.min) * yIndex / samples;
+      const y1 = yRange.min + (yRange.max - yRange.min) * (yIndex + 1) / samples;
+      const points = [
+        { x: x0, y: y0 }, { x: x1, y: y0 },
+        { x: x1, y: y1 }, { x: x0, y: y1 },
+      ];
+      const values = [
+        grid[xIndex]![yIndex]!, grid[xIndex + 1]![yIndex]!,
+        grid[xIndex + 1]![yIndex + 1]!, grid[xIndex]![yIndex + 1]!,
+      ];
+      if (values.some((value) => !Number.isFinite(value))) continue;
+      const crossings: PlotSample[] = [];
+      for (const [from, to] of [[0, 1], [1, 2], [2, 3], [3, 0]] as const) {
+        const fromValue = values[from]!;
+        const toValue = values[to]!;
+        if ((fromValue <= 0 && toValue > 0) || (fromValue > 0 && toValue <= 0)) {
+          crossings.push(interpolate(points[from]!, points[to]!, fromValue, toValue));
+        }
+      }
+      if (crossings.length === 2) {
+        segments.push([crossings[0]!, crossings[1]!]);
+      } else if (crossings.length === 4) {
+        const centerValue = evaluate({ x: (x0 + x1) / 2, y: (y0 + y1) / 2 }) - level;
+        const pairs = centerValue <= 0 ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+        for (const [from, to] of pairs) segments.push([crossings[from]!, crossings[to]!]);
+      }
+    }
+  }
   return segments;
 }
 

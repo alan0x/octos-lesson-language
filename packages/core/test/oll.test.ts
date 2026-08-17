@@ -444,6 +444,7 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
             objects: [
               { as: "cube", kind: "box", center: { x: -1.5, y: 0, z: 0 }, size: { x: 1.5, y: 1.5, z: 1.5 }, color: "teal" },
               { as: "paraboloid", kind: "surface", expression: "0.3*(x^2+y^2)-1", x_range: { min: -2, max: 2 }, y_range: { min: -2, max: 2 }, samples: 8, color: "blue" },
+              { as: "superellipsoid", kind: "implicit_surface", expression: "x^4+y^4+z^4-1", level: 0, x_range: { min: -1.2, max: 1.2 }, y_range: { min: -1.2, max: 1.2 }, z_range: { min: -1.2, max: 1.2 }, samples: 10, color: "purple" },
             ],
             sections: [{
               as: "horizontal-section",
@@ -516,6 +517,63 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
   assert.throws(
     () => validateAuthoringLesson(missingIntersectionTargets),
     (error) => error instanceof OllError && error.code === "OLL_REFERENCE_NOT_FOUND",
+  );
+});
+
+test("validates a two-variable implicit plot and rejects an invisible level", () => {
+  const lesson: AuthoringLesson = {
+    dsl: "octos.lesson",
+    version: "0.1",
+    profile: "authoring",
+    lesson: {
+      mode: "explain",
+      language: "zh-CN",
+      title: "隐式曲线",
+      goals: ["观察不能写成单值 y=f(x) 的曲线"],
+    },
+    steps: [{
+      key: "show-implicit-curve",
+      purpose: "显示圆的隐式方程",
+      beats: [{
+        key: "draw-circle",
+        say: "这是方程 x²+y²=1 的图像。",
+        actions: [{
+          do: "write",
+          as: "implicit-circle",
+          kind: "plot",
+          role: "diagram",
+          content: {
+            axes: {
+              x: { min: -1.5, max: 1.5 },
+              y: { min: -1.5, max: 1.5 },
+            },
+            curves: [{
+              as: "circle",
+              kind: "implicit",
+              expression: "x^2+y^2",
+              level: 1,
+              samples: 80,
+            }],
+          },
+          place: { relation: "new_region" },
+        }, {
+          do: "focus",
+          when: "after_speech",
+          targets: ["implicit-circle"],
+          intent: "current_step",
+        }],
+      }],
+    }],
+    close: { summary: "已经看到隐式圆。", focus: ["implicit-circle"] },
+  };
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+
+  const invisible = structuredClone(lesson);
+  (invisible.steps[0]!.beats[0]!.actions[0] as any).content.curves[0].level = 100;
+  assert.throws(
+    () => validateAuthoringLesson(invisible),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
   );
 });
 
