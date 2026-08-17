@@ -57,6 +57,8 @@ export interface InkRuntimeState {
   mode: InkMode;
   component_count: number;
   selected_count: number;
+  /** Changes whenever the selected components change, even when the count is unchanged. */
+  selection_revision: number;
   pen_color: string;
   selection_color: string | null;
   selection_input: StudentInputMethod;
@@ -80,6 +82,7 @@ export class InkRuntime {
   private editor: Editor;
   private modeValue: InkMode = "navigate";
   private selectedComponents: AbstractComponent[] = [];
+  private selectionRevision = 0;
   private penColor = "#176b62";
   private selectionInput: StudentInputMethod = "unknown";
   private selectionMode: InkSelectionMode = "rectangle";
@@ -187,6 +190,7 @@ export class InkRuntime {
     this.editor.notifier.on(EditorEventType.SelectionUpdated, (event) => {
       if (event.kind !== EditorEventType.SelectionUpdated) return;
       this.selectedComponents = [...event.selectedComponents];
+      this.selectionRevision += 1;
       lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool);
       this.emit();
     });
@@ -410,6 +414,7 @@ export class InkRuntime {
       mode: this.modeValue,
       component_count: this.editor.image.getAllComponents().filter((component) => component.isSelectable()).length,
       selected_count: this.selectedComponents.length,
+      selection_revision: this.selectionRevision,
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,
