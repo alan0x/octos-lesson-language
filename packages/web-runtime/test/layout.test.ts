@@ -33,6 +33,7 @@ test("layout resolves node, group and connection targets", () => {
 
 test("node measurement expands visual-heavy kinds", () => {
   assert.ok(measureSemanticNode({ kind: "plot", content: {} }).height > measureSemanticNode({ kind: "text", content: { text: "短句" } }).height);
+  assert.ok(measureSemanticNode({ kind: "geometry", content: {} }).height > measureSemanticNode({ kind: "plot", content: {} }).height);
   assert.ok(measureSemanticNode({ kind: "table", content: { columns: [1, 2, 3, 4], rows: [[1, 2, 3, 4]] } }).width >= 400);
 });
 
@@ -106,4 +107,82 @@ test("a new topic starts beyond prior group bounds without moving existing conte
   const oldGroup = layout.groups["old-group"]!;
   assert.ok(layout.nodes["new-a"]!.x > oldGroup.x + oldGroup.width);
   assert.equal(layout.nodes["new-b"]!.x, layout.nodes["new-a"]!.x);
+});
+
+test("connected visual nodes in one region are laid out as one nearby teaching scene", () => {
+  const related: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      geometry: {
+        id: "geometry",
+        kind: "geometry",
+        region_id: "topic",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "topic",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+    },
+    groups: {},
+    connections: {
+      mapping: {
+        id: "mapping",
+        from: { node_id: "geometry" },
+        to: { node_id: "plot" },
+        relation: "maps_to",
+      },
+    },
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const layout = computeBoardLayout(related);
+  const geometry = layout.nodes.geometry!;
+  const plot = layout.nodes.plot!;
+  assert.equal(plot.x - (geometry.x + geometry.width), 54);
+  assert.ok(Math.abs((plot.y + plot.height / 2) - (geometry.y + geometry.height / 2)) < .001);
+});
+
+test("a later connection cannot reuse an occupied teaching-scene column", () => {
+  const related: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: Object.fromEntries(["geometry", "plot", "formula"].map((id) => [id, {
+      id,
+      kind: id === "geometry" ? "geometry" : id === "plot" ? "plot" : "math",
+      region_id: "topic",
+      content: {},
+      placement: { relation: "new_region" },
+    }])),
+    groups: {},
+    connections: {
+      mapping: {
+        id: "mapping",
+        from: { node_id: "geometry" },
+        to: { node_id: "plot" },
+        relation: "maps_to",
+      },
+      explanation: {
+        id: "explanation",
+        from: { node_id: "geometry" },
+        to: { node_id: "formula" },
+        relation: "explains",
+      },
+    },
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const layout = computeBoardLayout(related);
+  const plot = layout.nodes.plot!;
+  const formula = layout.nodes.formula!;
+  assert.ok(formula.y >= plot.y + plot.height, "the third node starts a new row");
 });

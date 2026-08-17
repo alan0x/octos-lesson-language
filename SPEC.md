@@ -129,11 +129,80 @@ Runtime 在打开 Lesson 时检查 Board 与 revision。冲突时不得猜测合
 
 ### 5.2 `lesson`
 
-v0.1 的 `mode` 固定为 `explain`。未来互动式、练习式和复盘式课堂必须通过版本或能力协商加入。
+v0.1 的 `mode` 固定为 `explain`。它可以在讲解结束后附带有限的学生操作任务；完整的练习课、复盘课和学科模拟仍须通过版本或能力协商加入。
 
 ### 5.3 字段所有权
 
 `lesson_id`、`board_id` 和 `base_revision` 由宿主提供给生成过程，不能由模型自由选择目标。生成适配器必须核对这些值与请求上下文一致。
+
+### 5.4 `lesson.variables`
+
+Lesson 可以声明供多个白板节点共同读取的数值变量：
+
+```json
+"variables": [
+  {"as":"theta","initial":0,"min":0,"max":6.283185307179586,"label":"旋转角 θ","unit":"rad"}
+]
+```
+
+- `as` 在 Lesson 变量作用域内唯一，必须匹配 `^[a-z][a-z0-9_]{0,63}$`，且不能占用数学常量或函数名；
+- `initial`、`min`、`max` 必须是有限数值，满足 `min < max` 和 `min <= initial <= max`；
+- `label`、`unit` 是可选显示元数据，不能触发隐式单位换算；
+- `lesson.open` 初始化 Semantic BoardState 中的变量当前值；Snapshot 必须保留该值。
+- 可选 `control: {"kind":"slider","step":0.01}` 允许 Web Runtime 显示学生可拖动滑杆；`step` 必须为正数且不大于变量范围。
+
+当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
+
+### 5.5 `lesson.tasks`
+
+讲解课可以声明一组讲完后依次开放的短操作任务。任务不包含任意脚本，只能观察 Runtime 已记录的学生变量操作：
+
+```json
+"tasks": [{
+  "as": "reach-sine-maximum",
+  "prompt": "把圆周点拖到 sin θ = 1",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{
+    "kind": "variable_change",
+    "variable": "theta",
+    "controls": ["slider", "geometry_point"]
+  }],
+  "completion": {
+    "kind": "expression_target",
+    "expression": "sin(theta)",
+    "value": 1,
+    "tolerance": 0.01
+  },
+  "hints": ["观察圆周点的纵坐标。"],
+  "hint_after_attempts": 2,
+  "success_message": "正确，正弦值已经达到最大值。"
+}]
+```
+
+- `variable` 必须是本 Lesson 已声明的变量，`controls` 也必须真实存在；声明 `geometry_point` 时，课程中必须有对应的 `angle_control` 点；
+- `completion.expression` 使用同一套受限数学表达式，不允许 JavaScript。它只能读取学生获准修改的变量，初始状态不能已经满足目标，单变量任务还必须在声明范围内存在可达到的结果；
+- Runtime 只在一次学生操作提交后判定，不把拖动过程中的连续位置更新当成多次尝试；
+- 讲解播放期间的探索不计入任务。Lesson 完成后只开放第一个未完成任务，完成后才开放下一个；
+- 提示、尝试次数和完成状态独立于播放进度保存，刷新后恢复。重放课程不会伪造或删除学生任务记录。
+
+### 5.6 学生笔迹资源不属于 OLL
+
+学生原稿不放进 `lesson.open`、Canonical Event 或 Semantic BoardState。浏览器宿主把它作为独立资源保存，最低记录如下：
+
+```json
+{
+  "format": "oll.student-ink.svg",
+  "format_version": 1,
+  "editor": {"name": "js-draw", "version": "1.33.0"},
+  "document_id": "session-123:student-ink",
+  "document_version": 4,
+  "checksum": {"algorithm": "sha-256", "value": "..."},
+  "updated_at": "2026-08-12T12:00:00.000Z",
+  "svg": "<svg>...</svg>"
+}
+```
+
+手写中文、英文、公式和草图使用同一种 SVG 文档。识别结果不是这个资源的一部分。选区快照另存 `source_id`、选区 SVG、白板范围和当时的 `document_version`；不得保存 `js-draw` 内部组件编号。OLL 动作没有修改或删除学生笔迹的权限。
 
 ## 6. `lesson.step`
 
@@ -258,7 +327,9 @@ Beat 可以没有 narration，例如只移动焦点；但 Beat 不能同时没�
 | `math` | LaTeX fragment 序列 |
 | `shape` | 受限几何图元与标签 |
 | `diagram` | 节点与边组成的受限图示数据 |
+| `geometry` | 等比例坐标系中的圆、点、线段、投影和角弧 |
 | `plot` | 坐标范围、函数表达式、点和辅助线 |
+| `scene3d` | 可旋转的基础立体、`z=f(x,y)` 曲面和轴对齐截面 |
 | `image` | 受控 `asset_id`、裁剪或标注引用 |
 | `table` | 行列和单元格文本或数学内容 |
 | `note` | 简短结论、提示或不确定性说明 |
@@ -298,6 +369,95 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 `diagram` 可以包含 `elements`、`edges` 和 `regions`，每一项都具有稳定 fragment ID。Canonical edge 的 `from`/`to` 和 region 的 `members` 必须是同一 diagram 内 fragment ID。
 
 当 `board.connect` 的两个端点属于同一 diagram 且 relation 为 `geometry_segment` 时，Runtime 将其解释为 diagram 内几何线段，而不是两个白板卡片之间的外部连接线。
+
+#### Geometry content
+
+`geometry` 与 `diagram` 的职责不同：`diagram` 表示语义节点关系，`geometry`
+表示必须保持度量关系的坐标几何。Runtime 必须对 x/y 使用相同像素比例，不能把圆拉伸为椭圆。
+
+```json
+{
+  "kind": "geometry",
+  "content": {
+    "axes": {
+      "x": {"min": -1.25, "max": 1.25, "label": "x"},
+      "y": {"min": -1.25, "max": 1.25, "label": "y"},
+      "equal_scale": true
+    },
+    "points": [
+      {"as": "origin", "x": 0, "y": 0, "label": "O"},
+      {"as": "point-p", "x": 0.5, "y": 0.8660254, "label": "P(cos θ, sin θ)"},
+      {"as": "foot", "x": 0.5, "y": 0}
+    ],
+    "circles": [
+      {"as": "unit-circle", "center": "origin", "radius": 1, "label": "r = 1"}
+    ],
+    "segments": [
+      {"as": "radius", "from": "origin", "to": "point-p", "style": "solid"},
+      {"as": "projection", "from": "point-p", "to": "foot", "label": "sin θ", "style": "projection"}
+    ],
+    "arcs": [
+      {"as": "theta", "center": "origin", "radius": 0.28, "start_angle": 0, "end_angle": 1.0471975512, "label": "θ"}
+    ]
+  }
+}
+```
+
+规则：
+
+- `points` 提供几何坐标，并可通过 `visible=false` 作为隐藏构造点；
+- `circles.center`、`segments.from/to` 和 `arcs.center` 必须引用同一 geometry 中声明的 point alias；
+- `radius` 必须为正数；角度使用弧度，正方向为逆时针；
+- `segments.style` 可以是 `solid`、`dashed` 或 `projection`；
+- 所有 primitive 都通过 `as` 获得稳定 fragment ID，可以被 point/emphasize/focus 引用；
+- Authoring Profile 必须声明 `equal_scale=true`，Runtime 负责确定实际像素坐标；
+- 模型不得输出 SVG、路径字符串或像素坐标。
+
+#### 数值 binding
+
+Geometry 和 Plot 的 `content.bindings` 把 fragment 的受支持数值字段连接到 Lesson 变量：
+
+```json
+"bindings": [
+  {"target":"point-p.x","expression":"cos(theta)"},
+  {"target":"point-p.y","expression":"sin(theta)"}
+]
+```
+
+Authoring `target` 使用同一节点内的 `fragmentAlias.property`。Normalizer 将 fragment alias 改成稳定 Canonical fragment ID。两个 binding 不能写同一目标。
+
+受限表达式支持有限数值、圆括号、`+ - * / ^`、常量 `pi/e`，以及 `abs/acos/asin/atan/ceil/cos/exp/floor/ln/log/round/sin/sqrt/tan`。任何未知变量、未知函数、脚本语法、非有限结果或非法半径都必须以稳定错误失败。
+
+允许目标：
+
+| 节点 | fragment | 数值属性 |
+| --- | --- | --- |
+| Geometry | point | `x`, `y` |
+| Geometry | circle | `radius` |
+| Geometry | arc | `radius`, `start_angle`, `end_angle` |
+| Plot | point | `x`, `y` |
+| Plot | guide | `value` |
+
+Reducer 在创建节点时用当前变量值计算全部 binding。当前 Authoring Profile 不允许 `revise` 新增或替换 binding；需要不同关系时应创建新的 Geometry/Plot 节点，直到修订合同被单独定义。变量更新必须从同一份变量映射重新计算所有含 binding 的节点；不得只更新当前可见节点。视觉插值不进入 Semantic BoardState。
+
+#### 学生直接拖动几何点
+
+需要让学生拖动的点必须明确声明 `interaction`。Runtime 不会根据 `cos`、`sin` 等表达式猜测哪些点可以拖。
+
+```json
+{
+  "as": "point-p",
+  "x": 1,
+  "y": 0,
+  "interaction": {
+    "kind": "angle_control",
+    "variable": "theta",
+    "center": "origin"
+  }
+}
+```
+
+`angle_control` 表示学生绕 `center` 拖动这个点，Runtime 将位置换算成弧度并通过与滑杆相同的变量写入入口修改 `theta`。点的位置仍由 `content.bindings` 表达；`interaction` 只说明学生操作如何反向修改变量，不保存第二份变量状态，也不允许执行模型提供的 JavaScript。
 
 ### 9.2 `board.revise`
 
@@ -419,6 +579,25 @@ OLL 不保存本地路径和图片二进制。模型引用已知 region，不输
 
 v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表情是辅助信息，不得承载唯一教学含义。
 
+### 9.9 `lesson.variable.animate`
+
+```json
+{
+  "action_id": "action-rotate-one-cycle",
+  "op": "lesson.variable.animate",
+  "animation": {
+    "variable": "theta",
+    "to": 6.283185307179586,
+    "easing": "linear",
+    "duration_intent": "extended"
+  }
+}
+```
+
+动作把变量从执行前的当前值变到 `to`。`to` 必须在变量范围内。Headless Reducer 直接应用终值；Web Runtime 才生成中间帧。`duration_intent` 只表达 `brief`、`normal`、`extended` 三档教学节奏，不能换成毫秒。用户在动画中拖动变量控件时，Runtime 终止该自动动画并保存用户值。
+
+暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
+
 ## 10. 相对布局
 
 `placement` 的规范关系：
@@ -488,6 +667,71 @@ overlay
 ```
 
 表达式解析器只能执行受限数学表达式，不得使用 `eval`。
+
+### 11.1 `scene3d` 节点最低能力
+
+`scene3d` 描述三维对象的数学语义和初始视角，不保存 WebGL、SVG 路径或模型代码：
+
+```json
+{
+  "kind": "scene3d",
+  "content": {
+    "title": "立方体与抛物面截面",
+    "fallback": "立方体旁边是一张向上开口的抛物面，橙色平面表示水平截面。",
+    "axes": true,
+    "camera": {"yaw": 0.72, "pitch": 0.55, "zoom": 1},
+    "objects": [
+      {
+        "as": "cube",
+        "kind": "box",
+        "center": {"x": 0, "y": 0, "z": 0},
+        "size": {"x": 2, "y": 2, "z": 2},
+        "color": "teal"
+      },
+      {
+        "as": "surface",
+        "kind": "surface",
+        "expression": "0.3*(x^2+y^2)-1",
+        "x_range": {"min": -2, "max": 2},
+        "y_range": {"min": -2, "max": 2},
+        "samples": 12,
+        "color": "blue"
+      }
+    ],
+    "sections": [
+      {
+        "as": "horizontal-section",
+        "axis": "z",
+        "value": 0,
+        "targets": ["cube", "surface"],
+        "display": "plane_and_intersection",
+        "color": "orange"
+      }
+    ],
+    "highlights": [
+      {"as": "vertex-a", "kind": "point", "points": [{"x": -1, "y": -1, "z": 1}], "label": "顶点 A"},
+      {"as": "edge-ab", "kind": "edge", "points": [{"x": -1, "y": -1, "z": 1}, {"x": 1, "y": -1, "z": 1}], "label": "棱 AB"},
+      {"as": "top-face", "kind": "face", "points": [{"x": -1, "y": -1, "z": 1}, {"x": 1, "y": -1, "z": 1}, {"x": 1, "y": 1, "z": 1}, {"x": -1, "y": 1, "z": 1}], "label": "顶面"}
+    ],
+    "bindings": [
+      {"target": "horizontal-section.value", "expression": "height"}
+    ]
+  }
+}
+```
+
+规则：
+
+- `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
+- `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
+- `sections` 只支持垂直于 x、y 或 z 轴的平面，`value` 可以绑定 Lesson 数值变量；
+- `display` 省略或为 `plane` 时只显示参考平面，保持旧课件行为；`intersection` 显示平面与目标对象的真实交集，`plane_and_intersection` 同时显示二者；
+- 使用真实交集时必须用 `targets` 指出被截的 `objects[].as`。实体显示截面轮廓与填充，函数曲面显示截线；
+- `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
+- `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
+- Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
+- 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角。`match: "view_direction"` 只判断学生是否从目标方向观察，不附加水平转角或缩放条件，俯视和仰视时也不会要求不可见的偏航角；`match: "camera_pose"` 判断精确的水平转角、俯仰角和缩放。旧课件省略 `match` 时保持 `camera_pose` 行为；
+- Runtime 必须限制俯仰角、缩放范围、对象数量和曲面采样数；不支持的三维内容必须显式失败，不能显示空白卡片。
 
 ## 12. `lesson.close`
 

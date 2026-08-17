@@ -4,6 +4,8 @@
 
 Harness 是 `octos-lesson-language/web-runtime` 的测试宿主，不再拥有自己的白板 Runtime。课程选择、调试时间线和 fixture catalog 留在这里；播放 session、布局、DOM/SVG 白板、样式与 Observer 来自 `packages/web-runtime`，确保未来 `/learn` 与实验室不会分叉成两套渲染实现。
 
+学生点击“启用书写”后，Harness 才加载独立的 `ink-entry.js`、`ink-entry.css` 和 `packages/ink-runtime`。普通课程主包不得包含 `js-draw`。`?ink-demo=1` 只提供浏览器验收用的可选择 SVG，不属于课程 fixture 或产品默认内容。
+
 ## 运行
 
 ```bash

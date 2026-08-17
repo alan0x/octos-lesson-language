@@ -153,6 +153,42 @@ Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是
 - Beat 必须包含至少一个动作；
 - 一轮必须完成用户请求范围，不以等待回答结束中间步骤。
 
+### 5.1 数值变量和视图联动
+
+需要让多个视图表示同一个变化量时，在 `lesson.variables` 声明一次变量：
+
+```json
+{
+  "as": "theta",
+  "initial": 0,
+  "min": 0,
+  "max": 6.283185307179586,
+  "label": "旋转角 θ",
+  "unit": "rad"
+}
+```
+
+变量别名使用 `^[a-z][a-z0-9_]{0,63}$`，且不能使用 `sin`、`pi` 等保留数学名称。`unit` 只供显示，不会让 Runtime 自动换算。
+
+需要让学生直接调整变量时，变量可以声明滑杆：
+
+```json
+"control": {"kind":"slider","step":0.01}
+```
+
+Geometry 和 Plot 节点可以用 `content.bindings` 把自己的数值字段绑定到变量：
+
+```json
+"bindings": [
+  {"target": "point-p.x", "expression": "cos(theta)"},
+  {"target": "point-p.y", "expression": "sin(theta)"}
+]
+```
+
+`target` 是“同一节点中的 fragment 别名 + 数值属性”。当前 Geometry 支持 point 的 `x/y`、circle 的 `radius`、arc 的 `radius/start_angle/end_angle`；Plot 支持 point 的 `x/y` 和 guide 的 `value`。
+
+表达式只允许数字、已声明变量、`pi/e`、算术运算和白名单数学函数。它不能引用另一个 binding 的结果，也不能执行脚本。每个被绑定字段仍要提供一个合法数值，作为 Authoring 结构和不支持动态能力的静态基线；Reference Reducer 会用变量初始值确定性覆盖它。
+
 ## 6. 动作
 
 ### `write`
@@ -227,6 +263,22 @@ Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是
 
 分别控制老师指向已存在内容和有限表情 token。它们不能承载唯一教学信息。
 
+### `animate`
+
+把一个已声明变量从当前值连续变化到目标值：
+
+```json
+{
+  "do": "animate",
+  "variable": "theta",
+  "value": 6.283185307179586,
+  "easing": "linear",
+  "duration_intent": "extended"
+}
+```
+
+`easing` 可选 `linear` 或 `ease_in_out`；`duration_intent` 可选 `brief`、`normal` 或 `extended`。两者缺省为 `linear` 和 `normal`。模型不能写动画毫秒、帧率或 CSS。Headless Reducer 直接得到动作终值，Web Runtime 负责中间帧、暂停恢复和降低动态效果。
+
 ## 7. 动作阶段
 
 动作可以声明 `before_speech`、`during_speech` 或 `after_speech`；缺省为 `during_speech`。模型不能输出毫秒时间。
@@ -258,9 +310,12 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 
 ## 10. 当前限制
 
+学生笔迹不是 Authoring Profile 的节点类型。模型可以在后续增强请求中收到宿主提供的只读 `source_id`，但不能输出“修改、规整、纠正、移动或删除原稿”的动作。所有建议和新图必须成为独立白板内容。
+
 - `image`、`diagram` 和 `table` 已在几何示例中完成第一轮表达验证，但还没有前端视觉 Runtime 证明；
 - `shape` 和复杂科学流程图仍待完整示例；
 - 当前完整示例覆盖数学、几何图片和英语文本，尚未覆盖同板追问；
 - 已开始模型可生成性评测；first-pass 结果必须与教学质量分开报告；
 - Authoring Schema 仍可能过于冗长；
 - 任何无法由真实课程解释的字段都应删除，而不是为了完整感保留。
+- 数值变量、binding、变量动画和滑杆控制已经进入实现；直接拖动 Geometry 图元、循环动画和多变量时间线尚未进入当前合同。

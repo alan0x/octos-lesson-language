@@ -49,6 +49,17 @@ export interface PlaybackCheckpoint {
   cursor: number;
   projection: PlaybackProjection;
   canonical_events?: CanonicalEvent[];
+  variable_animation?: PlaybackVariableAnimation;
+}
+
+export interface PlaybackVariableAnimation {
+  action_id: string;
+  variable: string;
+  from: number;
+  to: number;
+  progress: number;
+  easing: "linear" | "ease_in_out";
+  duration_intent: "brief" | "normal" | "extended";
 }
 
 export interface PlaybackAppendResult {

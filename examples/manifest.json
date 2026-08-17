@@ -7,6 +7,13 @@
     "regionIntent": "new_topic"
   },
   {
+    "name": "unit-circle-sine",
+    "lessonId": "lesson-unit-circle-sine-001",
+    "boardId": "board-session-unit-circle-sine-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
     "name": "quadratic-v2",
     "lessonId": "lesson-quadratic-v2-001",
     "boardId": "board-session-quadratic-v2-001",

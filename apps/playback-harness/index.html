@@ -34,6 +34,23 @@
           </div>
           <div id="viewport" class="viewport" aria-label="无限白板">
             <div id="narration" class="narration" hidden></div>
+            <div id="variable-controls" class="oll-variable-controls" hidden></div>
+            <div id="ink-controls" class="ink-controls">
+              <button id="ink-enable" type="button">启用书写</button>
+              <div id="ink-tools" class="ink-tools" hidden>
+                <button type="button" data-ink-mode="navigate">浏览</button>
+                <button type="button" data-ink-mode="draw">书写</button>
+                <button type="button" data-ink-mode="erase">橡皮</button>
+                <button type="button" data-ink-mode="select">框选</button>
+                <label class="ink-color-control">笔色 <input id="ink-pen-color" type="color" value="#176b62" aria-label="笔迹颜色"></label>
+                <label class="ink-color-control" id="ink-selection-color-control" hidden>选区 <input id="ink-selection-color" type="color" value="#176b62" aria-label="选区颜色"></label>
+                <button type="button" data-ink-action="select-all">全选</button>
+                <button type="button" data-ink-action="undo">撤销</button>
+                <button type="button" data-ink-action="redo">重做</button>
+                <button type="button" data-ink-action="snapshot">冻结选区</button>
+                <span id="ink-status" role="status">尚未加载笔迹功能</span>
+              </div>
+            </div>
             <div class="camera-controls">
               <button id="zoom-out">−</button><button id="fit-button">适应全课</button><button id="zoom-in">＋</button>
             </div>

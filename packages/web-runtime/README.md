@@ -52,6 +52,15 @@ The host owns the page, lesson acquisition, learner/session identity, errors, TT
 
 `mountInfiniteBoard()` creates only the internal board layers inside the supplied viewport. Host overlays such as narration, controls and the Octos avatar remain untouched. Call `mounted.destroy()` when unmounting the page.
 
+The board exposes the integration boundary used by optional input layers:
+
+- `getCameraState()` reads the camera actually visible during a transition;
+- `subscribeCamera()` reports target and intermediate camera frames;
+- `boardToViewport()` / `viewportToBoard()` convert stable board coordinates;
+- `setInputOwner()` explicitly hands pointer/wheel input to the Runtime, ink, or a future course-object interaction.
+
+The optional `octos-lesson-language/ink-runtime` uses only this public boundary. Do not statically import it on an ordinary lesson route; load its JavaScript and stylesheet when the learner enables writing.
+
 Hosts with persistent overlays should call
 `mounted.view.setViewportInsets({ top, right, bottom, left })`. Automatic
 teaching focus is then composed inside the unobstructed rectangle instead of
@@ -66,13 +75,68 @@ for each narration from its CJK characters, Latin words, mathematical tokens,
 punctuation and `delivery`. Visible board actions receive delays based on their
 operation and content, and Beat/Step boundaries add short classroom pauses.
 Board work performed during speech consumes the same narration budget, so the
-two proceed in parallel instead of being timed twice.
+two proceed in parallel instead of being timed twice. A host using generated
+audio can select `narrationTiming: "external"`, call `startNarration(beatId)`
+when playback really begins, and call `completeNarration(beatId)` when it ends.
+This keeps `during_speech` animation behind the real audio-start boundary.
 
 `pause()` preserves the remaining wait, `setSpeed()` rescales it, and manual
 `step()` / `advanceBeat()` deliberately skip it. A host restoring a completed
 lesson for review should advance the session to the available end without
-calling `play()`. TTS may run alongside this clock, but the Runtime does not
-attempt millisecond-level audio synchronization.
+calling `play()`. The Runtime aligns the start and end boundaries but does not
+attempt word-level audio synchronization.
+
+## Student variable operations
+
+`setVariable()` remains a host/programmatic update and does not pretend to be
+a learner action. For a real slider or geometry gesture, use one shared flow:
+
+1. `beginStudentVariableOperation()` captures the value before the gesture;
+2. `updateStudentVariableOperation()` updates the board as often as needed;
+3. `commitStudentVariableOperation()` stores one semantic `variable_change`.
+
+The stored operation records the variable, before/after values, control source
+and input method. `studentOperations` returns completed operations in sequence.
+`LocalPlaybackStore` persists this log separately from the playback checkpoint,
+so course replay does not erase learner history and a repeated operation ID is
+deduplicated. Pointer samples themselves are never stored.
+
+The same log also stores two non-variable learner actions. `ink_selection`
+records only an immutable source reference (document/version/bounds/checksum),
+not a second copy of the ink SVG. `scene3d_view` records the camera before and
+after one orbit, zoom burst, preset, or reset gesture. Pointer-move and wheel
+samples are rendered live but collapsed into one completed operation. Restoring
+a session reapplies the most recent view for each 3D node.
+
+## Basic 3D scenes
+
+`scene3d` nodes render safe declarative boxes, spheres, cylinders, cones,
+sampled `z=f(x,y)` surfaces, axes, and axis-aligned section planes. A section
+can explicitly target scene objects and render their geometric intersection;
+solid intersections are filled loops and surface intersections are curves. The node
+contains mathematical objects and an initial camera; learner orbit/zoom changes
+only the stored view and never rewrites the node. The board provides isometric,
+front, top, and reset controls. Surface expressions use the same restricted
+math evaluator as Geometry and Plot, and section values can bind to Lesson
+variables. Declarative point, edge, and face highlights make spatial evidence
+addressable without arbitrary meshes. Every scene also carries a required
+static fallback description, which the board shows if interactive rendering
+cannot start.
+
+## After-lesson student tasks
+
+Validated `lesson.tasks` become available only after playback reaches
+`lesson.close`. `studentTasks` exposes the current prompt, attempt count, hint,
+and completion state. A committed slider, geometry-point, or allowed 3D-view
+operation is judged
+against only the first unfinished task; the gesture that completes one task is
+not reused as an answer to the next task.
+
+Use `requestStudentTaskHint(taskId)` to reveal the next planned hint and
+`retryStudentTask(taskId)` to restore the task variables to their initial
+values. Task progress is stored separately from playback checkpoints and
+student-operation history, so refresh restores all three without conflating
+them.
 
 ## Testing API
 

@@ -6,6 +6,30 @@ export interface CameraState {
   scale: number;
 }
 
+export interface BoardPoint {
+  x: number;
+  y: number;
+}
+
+/** Convert a point in persistent whiteboard coordinates to viewport-local pixels. */
+export function boardToViewportPoint(point: BoardPoint, camera: CameraState): BoardPoint {
+  return {
+    x: camera.panX + point.x * camera.scale,
+    y: camera.panY + point.y * camera.scale,
+  };
+}
+
+/** Convert viewport-local pixels back to persistent whiteboard coordinates. */
+export function viewportToBoardPoint(point: BoardPoint, camera: CameraState): BoardPoint {
+  if (!Number.isFinite(camera.scale) || camera.scale <= 0) {
+    throw new Error("Camera scale must be a positive finite number");
+  }
+  return {
+    x: (point.x - camera.panX) / camera.scale,
+    y: (point.y - camera.panY) / camera.scale,
+  };
+}
+
 export interface ViewportSize {
   width: number;
   height: number;
@@ -16,6 +40,15 @@ export interface ViewportInsets {
   right?: number;
   bottom?: number;
   left?: number;
+  /** Viewport-local rectangles occupied by floating host UI. */
+  occlusions?: ViewportOcclusion[];
+}
+
+export interface ViewportOcclusion {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 export type AttentionMode = "detail" | "relationship" | "overview";
@@ -67,11 +100,42 @@ function safeViewport(
   insets: ViewportInsets,
   margin: number,
 ): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
-  const left = inset(insets.left) + margin;
-  const top = inset(insets.top) + margin;
-  const right = Math.max(left + 1, viewport.width - inset(insets.right) - margin);
-  const bottom = Math.max(top + 1, viewport.height - inset(insets.bottom) - margin);
-  return { left, top, right, bottom, width: right - left, height: bottom - top };
+  const base = {
+    left: inset(insets.left) + margin,
+    top: inset(insets.top) + margin,
+    right: viewport.width - inset(insets.right) - margin,
+    bottom: viewport.height - inset(insets.bottom) - margin,
+  };
+  base.right = Math.max(base.left + 1, base.right);
+  base.bottom = Math.max(base.top + 1, base.bottom);
+  const occlusions = (insets.occlusions ?? []).flatMap((occlusion) => {
+    if (![occlusion.x, occlusion.y, occlusion.width, occlusion.height].every(Number.isFinite)
+      || occlusion.width <= 0 || occlusion.height <= 0) return [];
+    const left = Math.max(base.left, occlusion.x - margin);
+    const top = Math.max(base.top, occlusion.y - margin);
+    const right = Math.min(base.right, occlusion.x + occlusion.width + margin);
+    const bottom = Math.min(base.bottom, occlusion.y + occlusion.height + margin);
+    return right > left && bottom > top ? [{ left, top, right, bottom }] : [];
+  });
+  if (occlusions.length === 0) {
+    return { ...base, width: base.right - base.left, height: base.bottom - base.top };
+  }
+  const xs = [...new Set([base.left, base.right, ...occlusions.flatMap((item) => [item.left, item.right])])];
+  const ys = [...new Set([base.top, base.bottom, ...occlusions.flatMap((item) => [item.top, item.bottom])])];
+  let best = { ...base, width: base.right - base.left, height: base.bottom - base.top };
+  let bestArea = -1;
+  for (const left of xs) for (const right of xs) for (const top of ys) for (const bottom of ys) {
+    if (right <= left || bottom <= top) continue;
+    const overlaps = occlusions.some((item) => left < item.right && right > item.left
+      && top < item.bottom && bottom > item.top);
+    if (overlaps) continue;
+    const area = (right - left) * (bottom - top);
+    if (area > bestArea) {
+      bestArea = area;
+      best = { left, top, right, bottom, width: right - left, height: bottom - top };
+    }
+  }
+  return best;
 }
 
 function centeredCamera(

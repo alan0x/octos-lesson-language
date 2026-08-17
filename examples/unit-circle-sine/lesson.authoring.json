@@ -1,0 +1,143 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "单位圆旋转如何变成正弦波",
+    "goals": [
+      "在真实单位圆上识别角度、半径和纵坐标",
+      "把圆周点的纵坐标对应到 y=sin x 的函数图像",
+      "理解连续旋转为什么产生周期波动"
+    ],
+    "variables": [
+      {
+        "as": "theta",
+        "initial": 0,
+        "min": 0,
+        "max": 6.283185307179586,
+        "label": "旋转角 θ",
+        "unit": "rad",
+        "control": {"kind": "slider", "step": 0.01}
+      }
+    ],
+    "tasks": [
+      {
+        "as": "reach-sine-maximum",
+        "prompt": "把圆周点拖到 sin θ = 1",
+        "availability": {"kind": "after_lesson"},
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "theta",
+            "controls": ["slider", "geometry_point"]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "sin(theta)",
+          "value": 1,
+          "tolerance": 0.01
+        },
+        "hints": [
+          "观察圆周点的纵坐标怎样随 θ 变化。",
+          "尝试把圆周点拖到单位圆的最高点。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "正确，圆周点在最高点时 sin θ = 1。"
+      }
+    ],
+    "adaptation": {
+      "strategies": ["coordinate-geometry", "circle-to-plot-mapping", "visual-correspondence"]
+    }
+  },
+  "steps": [
+    {
+      "key": "map-rotation-to-wave",
+      "purpose": "把单位圆上的纵坐标变化与正弦曲线逐点对应",
+      "beats": [
+        {
+          "key": "show-circle-and-sine",
+          "say": "半径转到角度 θ 时，圆周点 P 的纵坐标就是 sin θ。让横轴记录旋转角度，让纵轴记录这个纵坐标，点就落在正弦曲线上；转满一圈后同样的高度变化再次重复，所以形成周期波动。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "unit-circle",
+              "kind": "geometry",
+              "role": "diagram",
+              "content": {
+                "title": "单位圆：纵坐标就是 sin θ",
+                "caption": "P 随 θ 逆时针转动；虚线投影读出纵坐标",
+                "axes": {
+                  "x": {"min": -1.25, "max": 1.25, "label": "x"},
+                  "y": {"min": -1.25, "max": 1.25, "label": "y"},
+                  "equal_scale": true
+                },
+                "points": [
+                  {"as": "origin", "x": 0, "y": 0, "label": "O"},
+                  {"as": "point-p", "x": 0.5, "y": 0.8660254, "label": "P(cos θ, sin θ)", "interaction": {"kind": "angle_control", "variable": "theta", "center": "origin"}},
+                  {"as": "foot", "x": 0.5, "y": 0, "label": "cos θ"}
+                ],
+                "circles": [
+                  {"as": "circle", "center": "origin", "radius": 1, "label": "r = 1"}
+                ],
+                "segments": [
+                  {"as": "radius", "from": "origin", "to": "point-p", "label": "半径", "style": "solid"},
+                  {"as": "projection", "from": "point-p", "to": "foot", "label": "sin θ", "style": "projection"}
+                ],
+                "arcs": [
+                  {"as": "theta", "center": "origin", "radius": 0.28, "start_angle": 0, "end_angle": 1.0471975512, "label": "θ"}
+                ],
+                "bindings": [
+                  {"target": "point-p.x", "expression": "cos(theta)"},
+                  {"target": "point-p.y", "expression": "sin(theta)"},
+                  {"target": "foot.x", "expression": "cos(theta)"},
+                  {"target": "theta.end_angle", "expression": "theta"}
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {
+              "do": "write",
+              "as": "sine-plot",
+              "kind": "plot",
+              "role": "diagram",
+              "content": {
+                "title": "y = sin x：把旋转角展开",
+                "axes": {
+                  "x": {"min": 0, "max": 6.2831853072, "label": "角度 x"},
+                  "y": {"min": -1.2, "max": 1.2, "label": "sin x"}
+                },
+                "curves": [
+                  {"as": "sine-curve", "expression": "sin(x)", "label": "y = sin x"}
+                ],
+                "points": [
+                  {"as": "zero", "x": 0, "y": 0, "label": "0"},
+                  {"as": "peak", "x": 1.5707963268, "y": 1, "label": "π/2"},
+                  {"as": "pi-zero", "x": 3.1415926536, "y": 0, "label": "π"},
+                  {"as": "trough", "x": 4.7123889804, "y": -1, "label": "3π/2"},
+                  {"as": "period", "x": 6.2831853072, "y": 0, "label": "2π"},
+                  {"as": "current-angle", "x": 0, "y": 0, "label": "当前 θ"}
+                ],
+                "bindings": [
+                  {"target": "current-angle.x", "expression": "theta"},
+                  {"target": "current-angle.y", "expression": "sin(theta)"}
+                ]
+              },
+              "place": {"relation": "right_of", "anchor": "unit-circle", "align": "center", "gap": "spacious"}
+            },
+            {"do": "connect", "as": "height-to-wave", "from": "unit-circle#point-p", "to": "sine-plot#sine-curve", "relation": "maps_to", "label": "纵坐标随角度展开"},
+            {"do": "animate", "variable": "theta", "value": 6.283185307179586, "easing": "linear", "duration_intent": "extended"},
+            {"do": "focus", "when": "after_speech", "targets": ["unit-circle", "sine-plot"], "intent": "compare_circle_height_with_sine_wave"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "单位圆转一圈，圆周点的纵坐标按 0、1、0、-1、0 变化；把角度展开到横轴，就得到周期为 2π 的正弦波。",
+    "focus": ["unit-circle", "sine-plot"]
+  }
+}

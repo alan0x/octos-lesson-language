@@ -80,6 +80,21 @@ Phase 1, but they remain visible here.
 | OLL-ENV-004 | Partial | The language boundary is correct; the production Skill and incremental generation adapter remain Phase 4 work. |
 | OLL-ENV-005 | Blocked | `octos-web` still contains the historical assistant-to-board fallback and artifact delivery path; Phase 5 migration is incomplete. |
 
+## Interactive whiteboard development slice
+
+These requirements describe the post-RC implementation path and do not claim that animation, ink, tasks, or 3D are already released.
+
+| Requirements | Status | Evidence or gap |
+| --- | --- | --- |
+| OLL-VAR-001, OLL-VAR-002, OLL-VAR-003 | Pass | Authoring variables and Geometry/Plot numeric bindings are defined in the Schema and implemented by the Core whitelist expression evaluator. The unit-circle fixture uses one `theta` across both nodes. |
+| OLL-VAR-004, OLL-VAR-005 | Pass | `setLessonVariable` recomputes all bound nodes and serializable Semantic BoardState retains the current value; five special-angle assertions run in Core. Web Runtime tests cover animation, manual control and refresh restoration. |
+| OLL-VAR-006, OLL-VAR-007, OLL-VAR-008 | Pass | Tests reject out-of-range initial values, unknown variables and unsupported targets. Bindings can only read declared Lesson variables; labels and units are inert metadata. |
+| OLL-INP-001, OLL-INP-006 through OLL-INP-008 | Pass for OLL Runtime slice | Optional `packages/ink-runtime` integrates exact `js-draw` 1.33.0, saves versioned/checksummed SVG separately from Canonical playback, restores it, freezes stable selection snapshots and is split from the Harness entry bundle. |
+| OLL-INP-002 through OLL-INP-005 | Planned | Recognition, correction suggestions, the selection action toolbar and “Ask Octopus” are Stage 4. They must use the immutable source snapshot already provided by Ink Runtime. |
+| OLL-MOT-001 through OLL-MOT-005 | Pass for 2D variable animation | `lesson.variable.animate` carries semantic pacing rather than milliseconds. Browser tests prove shared-value interpolation, mid-animation checkpoint restoration, slider takeover and reduced-motion end-state behavior. Direct Geometry handles and multi-variable timelines are deliberately outside this slice. |
+| OLL-TSK-001, OLL-3D-001, OLL-3D-002 | Planned | Acceptance scenarios are fixed; implementation follows ink/selection, tasks, and basic 3D. |
+| OLL-ENV-006 through OLL-ENV-009 | Decision accepted | Decision 0004 fixes repository ownership, separate student-input persistence, optional ink packaging and the no-general-plugin MVP boundary. |
+
 ## Freeze conclusion
 
 OLL v0.1 Core and Player are substantially implemented and independently

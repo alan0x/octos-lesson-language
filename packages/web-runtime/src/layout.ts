@@ -10,9 +10,16 @@ export interface BoardLayout {
 export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
-const REGION_COLUMN_GAP = 720;
-const REGION_ROW_GAP = 560;
 const TOPIC_GUTTER = 180;
+
+interface RegionCursor {
+  x: number;
+  y: number;
+  itemIndex: number;
+  rowY: number;
+  rowHeight: number;
+  firstColumnWidth: number;
+}
 
 function visibleContentLength(value: unknown): number {
   if (value === null || value === undefined) return 0;
@@ -28,6 +35,8 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   const content = node.content ?? {};
   const length = visibleContentLength(content);
   const kind = String(node.kind ?? "text");
+  if (kind === "geometry") return { width: 380, height: 300 };
+  if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot" || kind === "image") return { width: 340, height: 230 };
   if (kind === "table") {
     const columns = Array.isArray(content.columns) ? content.columns.length : 3;
@@ -77,7 +86,27 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
 export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes: MeasuredNodeSizes = {}): BoardLayout {
   const nodes: Record<string, Rect> = {};
   const groups: Record<string, Rect> = {};
-  const regions = new Map<string, { x: number; y: number; itemIndex: number }>();
+  const regions = new Map<string, RegionCursor>();
+
+  const endpointId = (endpoint: unknown): string | undefined => {
+    if (typeof endpoint === "string") return endpoint;
+    if (!endpoint || typeof endpoint !== "object") return undefined;
+    const value = endpoint as Record<string, unknown>;
+    return [value.node_id, value.group_id, value.connection_id]
+      .find((candidate): candidate is string => typeof candidate === "string" && candidate.length > 0);
+  };
+
+  const connectedLaidOutNode = (nodeId: string, regionId: string): Rect | undefined => {
+    for (const connection of Object.values(state.connections)) {
+      const from = endpointId(connection.from);
+      const to = endpointId(connection.to);
+      const peerId = from === nodeId ? to : to === nodeId ? from : undefined;
+      if (!peerId || !nodes[peerId]) continue;
+      const peer = state.nodes[peerId];
+      if (peer && (peer.region_id ?? "__legacy__") === regionId) return nodes[peerId];
+    }
+    return undefined;
+  };
 
   const groupRect = (id: string, seen = new Set<string>()): Rect | undefined => {
     if (groups[id]) return groups[id];
@@ -131,12 +160,36 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
           x: regions.size === 0 ? 100 : right + TOPIC_GUTTER,
           y: 90,
           itemIndex: 0,
+          rowY: 90,
+          rowHeight: 0,
+          firstColumnWidth: 0,
         };
         regions.set(regionId, region);
       }
-      x = region.x + (region.itemIndex % 2) * REGION_COLUMN_GAP;
-      y = region.y + Math.floor(region.itemIndex / 2) * REGION_ROW_GAP;
-      region.itemIndex += 1;
+      const connected = connectedLaidOutNode(node.id, regionId);
+      if (connected && region.itemIndex % 2 === 1) {
+        x = connected.x + connected.width + GAP.normal;
+        y = connected.y + (connected.height - size.height) / 2;
+        region.rowHeight = Math.max(
+          region.rowHeight,
+          size.height + Math.max(0, y - region.rowY),
+        );
+        region.itemIndex += 1;
+      } else {
+        const column = region.itemIndex % 2;
+        if (column === 0 && region.itemIndex > 0) {
+          region.rowY += region.rowHeight + GAP.spacious;
+          region.rowHeight = 0;
+          region.firstColumnWidth = 0;
+        }
+        x = column === 0
+          ? region.x
+          : region.x + region.firstColumnWidth + GAP.normal;
+        y = region.rowY;
+        if (column === 0) region.firstColumnWidth = size.width;
+        region.rowHeight = Math.max(region.rowHeight, size.height);
+        region.itemIndex += 1;
+      }
     } else if (placement.relation === "below") {
       x = anchor.x;
       y = anchor.y + anchor.height + gap;

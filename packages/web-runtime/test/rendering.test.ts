@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource } from "../src/board-view.js";
-import { planFocusCamera, planRevealCamera } from "../src/camera.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets } from "../src/board-view.js";
+import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
+import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
   for (let index = 1; index < points.length; index += 1) {
@@ -14,6 +15,18 @@ function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
     );
   }
 }
+
+test("public camera coordinates round-trip between board and viewport space", () => {
+  const camera = { panX: -120, panY: 48, scale: .625 };
+  const boardPoint = { x: 832, y: 416 };
+  const viewportPoint = boardToViewportPoint(boardPoint, camera);
+  assert.deepEqual(viewportPoint, { x: 400, y: 308 });
+  assert.deepEqual(viewportToBoardPoint(viewportPoint, camera), boardPoint);
+  assert.throws(
+    () => viewportToBoardPoint(viewportPoint, { ...camera, scale: 0 }),
+    /positive finite/,
+  );
+});
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
@@ -84,6 +97,67 @@ test("beat boundaries preserve the latest visible teaching target", () => {
     "current-problem",
   ]);
   assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
+});
+
+test("variable animation focuses every node driven by the shared variable", () => {
+  const board = {
+    nodes: {
+      circle: { id: "circle", content: { bindings: [{ expression: "cos(theta)" }] } },
+      plot: { id: "plot", content: { bindings: [{ expression: "sin(theta)" }] } },
+      note: { id: "note", content: { text: "theta is mentioned but not bound" } },
+    },
+  } as any;
+  assert.deepEqual(variableAnimationFocusTargets(board, "theta"), ["circle", "plot"]);
+});
+
+test("supporting formula focus keeps the nearest visual in the same lesson region", () => {
+  const board = {
+    nodes: {
+      scene: { id: "scene", kind: "scene3d", region_id: "topic" },
+      section: { id: "section", kind: "geometry", region_id: "topic" },
+      formula: { id: "formula", kind: "math", region_id: "topic" },
+      prior: { id: "prior", kind: "plot", region_id: "prior-topic" },
+    },
+    connections: {},
+  } as any;
+  const layout = {
+    nodes: {
+      scene: { x: 100, y: 100, width: 460, height: 360 },
+      section: { x: 620, y: 100, width: 380, height: 300 },
+      formula: { x: 120, y: 510, width: 280, height: 96 },
+      prior: { x: 120, y: 650, width: 340, height: 230 },
+    },
+    groups: {},
+    bounds: { x: 0, y: 0, width: 1200, height: 900 },
+  };
+  assert.deepEqual(supportingVisualFocusTargets(["formula"], board, layout), ["scene"]);
+});
+
+test("focused visual keeps directly connected visual context", () => {
+  const board = {
+    nodes: {
+      circle: { id: "circle", kind: "geometry", region_id: "topic" },
+      sine: { id: "sine", kind: "plot", region_id: "topic" },
+      oldPlot: { id: "oldPlot", kind: "plot", region_id: "old-topic" },
+    },
+    connections: {
+      mapping: {
+        id: "mapping",
+        from: { node_id: "circle" },
+        to: { node_id: "sine" },
+      },
+    },
+  } as any;
+  const layout = {
+    nodes: {
+      circle: { x: 100, y: 100, width: 380, height: 300 },
+      sine: { x: 534, y: 135, width: 340, height: 230 },
+      oldPlot: { x: 100, y: 500, width: 340, height: 230 },
+    },
+    groups: {},
+    bounds: { x: 0, y: 0, width: 1000, height: 800 },
+  };
+  assert.deepEqual(supportingVisualFocusTargets(["circle"], board, layout), ["sine"]);
 });
 
 test("connections attach to card boundaries instead of running through card centers", () => {
@@ -178,6 +252,105 @@ test("diagram-internal connections resolve exact fragment coordinates", () => {
   assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
 });
 
+test("geometry viewport preserves equal coordinate scale for circles", () => {
+  const viewport = geometryViewport({
+    x: { min: -1.25, max: 1.25 },
+    y: { min: -1.25, max: 1.25 },
+    equal_scale: true,
+  });
+  assert.ok(viewport.scale > 0);
+  assert.equal(viewport.mapX(1) - viewport.mapX(0), viewport.mapY(0) - viewport.mapY(1));
+});
+
+test("geometry arc uses the same rendered radius in both SVG dimensions", () => {
+  const viewport = geometryViewport({
+    x: { min: -1.25, max: 1.25 },
+    y: { min: -1.25, max: 1.25 },
+    equal_scale: true,
+  });
+  const path = geometryArcPath(viewport, { x: 0, y: 0 }, .3, 0, Math.PI / 3);
+  const radius = .3 * viewport.scale;
+  assert.match(path, new RegExp(`A ${radius} ${radius} 0 0 0`));
+  assert.ok(path.startsWith(`M ${viewport.mapX(.3)} ${viewport.mapY(0)}`));
+});
+
+test("angle controls choose the equivalent angle nearest the current shared value", () => {
+  assert.ok(Math.abs(angleControlValue(-Math.PI / 2, 3 * Math.PI / 2, 0, 2 * Math.PI) - 3 * Math.PI / 2) < 1e-12);
+  assert.equal(angleControlValue(0, 0, 0, 2 * Math.PI), 0);
+  assert.equal(angleControlValue(0, 2 * Math.PI, 0, 2 * Math.PI), 2 * Math.PI);
+  assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, -Math.PI, Math.PI) - Math.PI / 2) < 1e-12);
+});
+
+test("3D projection responds deterministically to orbit and clamps unsafe camera values", () => {
+  const front = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: 0, pitch: 0, zoom: 1 });
+  const rotated = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: Math.PI / 2, pitch: 0, zoom: 1 });
+  assert.ok(front.x > rotated.x);
+  assert.notEqual(front.depth, rotated.depth);
+  assert.deepEqual(
+    normalizeScene3dView({ yaw: Number.NaN, pitch: 20, zoom: 100 }),
+    { yaw: 0, pitch: Math.PI / 2, zoom: 5 },
+  );
+});
+
+test("3D box sections render the bounded solid intersection instead of only a reference plane", () => {
+  const content = {
+    objects: [{
+      as: "cube",
+      kind: "box",
+      center: { x: 0, y: 0, z: 0 },
+      size: { x: 2, y: 2, z: 2 },
+    }],
+  };
+  const intersections = scene3dSectionIntersections(content, {
+    as: "slice",
+    axis: "z",
+    value: .25,
+    targets: ["cube"],
+    display: "plane_and_intersection",
+  });
+  assert.equal(intersections.length, 1);
+  assert.equal(intersections[0]!.solid, true);
+  assert.equal(intersections[0]!.closed, true);
+  assert.ok(intersections[0]!.points.every((point) => Math.abs(point.z - .25) < 1e-9));
+  assert.equal(Math.min(...intersections[0]!.points.map((point) => point.x)), -1);
+  assert.equal(Math.max(...intersections[0]!.points.map((point) => point.x)), 1);
+  assert.deepEqual(scene3dSectionIntersections(content, {
+    axis: "z",
+    value: 1.5,
+    targets: ["cube"],
+    display: "intersection",
+  }), []);
+});
+
+test("3D function-surface sections change their contour when the shared height changes", () => {
+  const content = {
+    objects: [{
+      as: "paraboloid",
+      kind: "surface",
+      expression: "x^2+y^2",
+      x_range: { min: -2, max: 2 },
+      y_range: { min: -2, max: 2 },
+      samples: 24,
+    }],
+  };
+  const contour = (value: number) => scene3dSectionIntersections(content, {
+    axis: "z",
+    value,
+    targets: ["paraboloid"],
+    display: "plane_and_intersection",
+  }, { k: value });
+  const low = contour(.25);
+  const high = contour(1);
+  assert.equal(low.length, 1);
+  assert.equal(high.length, 1);
+  assert.equal(high[0]!.solid, false);
+  assert.equal(high[0]!.closed, true);
+  const maxRadius = (points: Array<{ x: number; y: number }>) =>
+    Math.max(...points.map((point) => Math.hypot(point.x, point.y)));
+  assert.ok(maxRadius(low[0]!.points) < maxRadius(high[0]!.points));
+  assert.ok(Math.abs(maxRadius(high[0]!.points) - 1) < .05);
+});
+
 test("focus keeps an already composed target steady", () => {
   const current = { panX: 141.08235294117645, panY: 200.47058823529412, scale: .9976470588235294 };
   assert.strictEqual(
@@ -270,6 +443,22 @@ test("focus centers teaching content inside the host's unobstructed viewport", (
   const safeCenterY = (90 + 70 + 800 - 180 - 70) / 2;
   assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
   assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - safeCenterY) < .001);
+});
+
+test("focus avoids the actual floating UI rectangle instead of reserving an entire edge", () => {
+  const focused = planFocusCamera(
+    [{ x: 1000, y: 800, width: 420, height: 160 }],
+    { panX: 0, panY: 0, scale: .78 },
+    { width: 1200, height: 800 },
+    "detail",
+    { occlusions: [{ x: 900, y: 120, width: 260, height: 400 }] },
+  );
+  const targetCenterX = 1_210;
+  const targetCenterY = 880;
+  const clearRight = 900 - 70;
+  const safeCenterX = (70 + clearRight) / 2;
+  assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
+  assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - 400) < .001);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {
