@@ -85,10 +85,10 @@
 .geometry-circle.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
 .geometry-circle.emphasis-resolved, .geometry-segment.emphasis-resolved, .geometry-arc.emphasis-resolved { opacity: .68; }
 .geometry-point.emphasis-focus { fill: #e15d45; r: 6px; }
-.scene3d-runtime { display: grid; grid-template-rows: auto 1fr auto; height: calc(100% - 24px); min-height: 270px; margin-top: 2px; overflow: hidden; border-radius: 12px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.95), rgba(228,239,235,.78)); }
-.scene3d-runtime svg { width: 100%; height: 100%; min-height: 250px; cursor: grab; touch-action: none; user-select: none; }
+.scene3d-runtime { display: grid; grid-template-areas: "visual" "controls" "fallback"; grid-template-rows: minmax(0, 1fr) auto auto; height: calc(100% - 24px); min-height: 270px; margin-top: 2px; overflow: hidden; border-radius: 12px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.95), rgba(228,239,235,.78)); }
+.scene3d-runtime svg { grid-area: visual; width: 100%; height: 100%; min-height: 0; cursor: grab; touch-action: none; user-select: none; }
 .scene3d-runtime svg:active { cursor: grabbing; }
-.scene3d-controls { position: absolute; z-index: 2; left: 18px; bottom: 14px; display: flex; gap: 5px; }
+.scene3d-controls { z-index: 2; grid-area: controls; display: flex; flex-wrap: wrap; gap: 5px; padding: 5px 10px 2px; background: rgba(255,255,255,.46); }
 .scene3d-controls button { padding: 5px 8px; border: 1px solid rgba(44,104,96,.2); border-radius: 8px; background: rgba(255,253,247,.92); color: #3f5e58; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; cursor: pointer; }
 .scene3d-controls button:hover, .scene3d-controls button:focus-visible { border-color: #2a9386; background: #eef8f5; outline: none; }
 .scene3d-axis { stroke-width: 1.7; vector-effect: non-scaling-stroke; }
@@ -100,7 +100,7 @@
 .scene3d-intersection-surface { stroke-width: 3.6; }
 .scene3d-highlight { pointer-events: none; vector-effect: non-scaling-stroke; }
 .scene3d-highlight-label { fill: #8d302a; paint-order: stroke; stroke: rgba(255,255,255,.94); stroke-width: 3px; font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; }
-.scene3d-fallback { margin: 0; padding: 4px 12px 7px; color: #66736f; background: rgba(255,255,255,.6); font: 500 10px/1.35 ui-sans-serif, system-ui, sans-serif; }
+.scene3d-fallback { grid-area: fallback; margin: 0; padding: 4px 12px 7px; color: #66736f; background: rgba(255,255,255,.6); font: 500 10px/1.35 ui-sans-serif, system-ui, sans-serif; }
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }
