@@ -199,6 +199,56 @@ test("incremental restore rejects a saved program whose lesson variables changed
   assert.equal(store.studentOperations.has("changed-incremental-program"), false);
 });
 
+test("incremental restore rejects a saved program whose existing task changed", () => {
+  const store = new MemoryStore();
+  const oldPrefix = structuredClone(unitCircleEvents.slice(0, 2));
+  oldPrefix[0]!.lesson!.tasks = [{
+    as: "reach-sine-maximum",
+    prompt: "把圆周点拖到 sin θ = 1",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{
+      kind: "variable_change",
+      variable: "theta",
+      controls: ["slider", "geometry_point"],
+    }],
+    completion: {
+      kind: "expression_target",
+      expression: "sin(theta)",
+      value: 1,
+      tolerance: 0.01,
+    },
+    hints: ["把角度移到 π/2 附近。"],
+    success_message: "正确，sin θ 已经达到最大值。",
+  }];
+  const first = new BrowserLessonSession(
+    oldPrefix,
+    store,
+    "changed-incremental-task",
+    { incremental: true },
+  );
+  while (first.status !== "waiting") first.advance();
+  assert.ok(store.values.has("changed-incremental-task"));
+
+  const delivered = structuredClone(oldPrefix);
+  delivered[0]!.lesson!.tasks![0]!.completion = {
+    kind: "expression_target",
+    expression: "sin(theta)",
+    value: 0,
+    tolerance: 0.01,
+  };
+  delivered[0]!.lesson!.tasks![0]!.success_message = "正确，sin θ 已经回到零。";
+  const restored = new BrowserLessonSession(
+    [structuredClone(delivered[0]!)],
+    store,
+    "changed-incremental-task",
+    { incremental: true, deliveredProgram: delivered },
+  );
+
+  assert.equal(restored.cursor, 0, "changed task semantics must invalidate stale playback progress");
+  assert.deepEqual(restored.events, [delivered[0]]);
+  assert.equal(store.values.has("changed-incremental-task"), false);
+});
+
 test("incremental restore checks saved Steps against the host's complete delivered prefix", () => {
   const store = new MemoryStore();
   const oldOpen = structuredClone(unitCircleEvents[0]!);

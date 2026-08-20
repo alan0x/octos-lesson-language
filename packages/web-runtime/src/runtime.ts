@@ -57,6 +57,8 @@ function lessonOpenCanExtend(
   const savedCopy = structuredClone(saved);
   const deliveredVariables = deliveredCopy.lesson?.variables ?? [];
   const savedVariables = savedCopy.lesson?.variables ?? [];
+  const deliveredTasks = deliveredCopy.lesson?.tasks ?? [];
+  const savedTasks = savedCopy.lesson?.tasks ?? [];
   if (deliveredCopy.lesson) {
     delete deliveredCopy.lesson.tasks;
     delete deliveredCopy.lesson.variables;
@@ -69,8 +71,13 @@ function lessonOpenCanExtend(
   const deliveredByAlias = new Map(
     deliveredVariables.map((variable) => [variable.as, variable]),
   );
+  const deliveredTasksByAlias = new Map(
+    deliveredTasks.map((task) => [task.as, task]),
+  );
   return savedVariables.every((variable) =>
-    JSON.stringify(deliveredByAlias.get(variable.as)) === JSON.stringify(variable));
+    JSON.stringify(deliveredByAlias.get(variable.as)) === JSON.stringify(variable))
+    && savedTasks.every((task) =>
+      JSON.stringify(deliveredTasksByAlias.get(task.as)) === JSON.stringify(task));
 }
 
 function checkpointPrefixMatchesDeliveredProgram(
