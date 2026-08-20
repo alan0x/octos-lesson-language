@@ -7,6 +7,7 @@ import {
   OLL_ACTION_NAMES,
   OLL_BINDING_CAPABILITIES,
   OLL_EXECUTION_CAPABILITIES,
+  OLL_EXPRESSION_CAPABILITIES,
   OLL_NODE_KINDS,
   OllError,
   normalizeAuthoringLesson,
@@ -401,6 +402,7 @@ test("publishes only the executable node, action, binding, control, and task cap
     node_kinds: OLL_NODE_KINDS,
     action_names: OLL_ACTION_NAMES,
     value_bindings: OLL_BINDING_CAPABILITIES,
+    variable_expressions: OLL_EXPRESSION_CAPABILITIES,
     student_controls: {
       variable: ["slider", "geometry_point"],
       scene3d: ["orbit", "zoom", "preset", "reset"],
@@ -444,6 +446,7 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
             objects: [
               { as: "cube", kind: "box", center: { x: -1.5, y: 0, z: 0 }, size: { x: 1.5, y: 1.5, z: 1.5 }, color: "teal" },
               { as: "paraboloid", kind: "surface", expression: "0.3*(x^2+y^2)-1", x_range: { min: -2, max: 2 }, y_range: { min: -2, max: 2 }, samples: 8, color: "blue" },
+              { as: "superellipsoid", kind: "implicit_surface", expression: "x^4+y^4+z^4-1", level: 0, x_range: { min: -1.2, max: 1.2 }, y_range: { min: -1.2, max: 1.2 }, z_range: { min: -1.2, max: 1.2 }, samples: 10, color: "purple" },
             ],
             sections: [{
               as: "horizontal-section",
@@ -519,6 +522,119 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
   );
 });
 
+test("validates a two-variable implicit plot and rejects an invisible level", () => {
+  const lesson: AuthoringLesson = {
+    dsl: "octos.lesson",
+    version: "0.1",
+    profile: "authoring",
+    lesson: {
+      mode: "explain",
+      language: "zh-CN",
+      title: "隐式曲线",
+      goals: ["观察不能写成单值 y=f(x) 的曲线"],
+    },
+    steps: [{
+      key: "show-implicit-curve",
+      purpose: "显示圆的隐式方程",
+      beats: [{
+        key: "draw-circle",
+        say: "这是方程 x²+y²=1 的图像。",
+        actions: [{
+          do: "write",
+          as: "implicit-circle",
+          kind: "plot",
+          role: "diagram",
+          content: {
+            axes: {
+              x: { min: -1.5, max: 1.5 },
+              y: { min: -1.5, max: 1.5 },
+            },
+            curves: [{
+              as: "circle",
+              kind: "implicit",
+              expression: "x^2+y^2",
+              level: 1,
+              samples: 80,
+            }],
+          },
+          place: { relation: "new_region" },
+        }, {
+          do: "focus",
+          when: "after_speech",
+          targets: ["implicit-circle"],
+          intent: "current_step",
+        }],
+      }],
+    }],
+    close: { summary: "已经看到隐式圆。", focus: ["implicit-circle"] },
+  };
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+
+  const invisible = structuredClone(lesson);
+  (invisible.steps[0]!.beats[0]!.actions[0] as any).content.curves[0].level = 100;
+  assert.throws(
+    () => validateAuthoringLesson(invisible),
+    (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD",
+  );
+});
+
+test("validates explicit plot curves that read declared lesson variables", () => {
+  const lesson: AuthoringLesson = {
+    dsl: "octos.lesson",
+    version: "0.1",
+    profile: "authoring",
+    lesson: {
+      mode: "explain",
+      language: "zh-CN",
+      title: "参数改变抛物线",
+      goals: ["观察顶点随 h 和 k 移动"],
+      variables: [
+        { as: "number_01", initial: 0, min: -5, max: 5, control: { kind: "slider", step: 1 } },
+        { as: "number_02", initial: 0, min: -5, max: 5, control: { kind: "slider", step: 1 } },
+      ],
+    },
+    steps: [{
+      key: "shift-parabola",
+      purpose: "用两个数值移动整条曲线",
+      beats: [{
+        key: "show-shift",
+        say: "拖动两个滑杆，整条曲线会重新绘制。",
+        actions: [{
+          do: "write",
+          as: "shifted-parabola",
+          kind: "plot",
+          role: "diagram",
+          content: {
+            axes: { x: { min: -6, max: 6 }, y: { min: -6, max: 12 } },
+            curves: [{
+              as: "primary-curve",
+              expression: "(x-number_01)^2+number_02",
+              label: "y=(x-h)²+k",
+            }],
+          },
+          place: { relation: "new_region" },
+        }],
+      }],
+    }],
+    close: { summary: "顶点是 (h,k)。", focus: ["shifted-parabola"] },
+  };
+
+  assert.deepEqual(OLL_EXPRESSION_CAPABILITIES.plot.curves, ["expression"]);
+  assert.deepEqual(OLL_EXECUTION_CAPABILITIES.variable_expressions, OLL_EXPRESSION_CAPABILITIES);
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+
+  const unknown = structuredClone(lesson);
+  (unknown.steps[0]!.beats[0]!.actions[0] as any).content.curves[0].expression = "(x-h)^2+k";
+  assert.throws(
+    () => validateAuthoringLesson(unknown),
+    (error) => error instanceof OllError
+      && error.code === "OLL_INVALID_OPERATION_PAYLOAD"
+      && /Unknown variable or function 'h'/u.test(error.message),
+  );
+});
+
 test("one lesson variable deterministically drives geometry and plot bindings", () => {
   const interactive = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!;
   const events = normalizeAuthoringLesson(interactive.source, interactive.entry);
@@ -559,6 +675,50 @@ test("one lesson variable deterministically drives geometry and plot bindings", 
   const restored = JSON.parse(JSON.stringify(state));
   assert.equal(restored.variables.theta.value, 2 * Math.PI);
   assert.deepEqual(setLessonVariable(restored, "theta", Math.PI / 2), setLessonVariable(state, "theta", Math.PI / 2));
+});
+
+test("geometry polygons reference normalized points and follow point bindings", () => {
+  const interactive = structuredClone(lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.source);
+  const host = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.entry;
+  const actions = interactive.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions));
+  const geometry = actions.find((action) => action.do === "write" && action.kind === "geometry") as any;
+  geometry.content.polygons = [{
+    as: "moving-triangle",
+    points: ["origin", "point-p", "foot"],
+    label: "随点移动的三角形",
+    tone: "accent",
+  }];
+
+  assertAuthoringSchema(interactive);
+  validateAuthoringLesson(interactive);
+  const state = setLessonVariable(
+    reduceCanonicalEvents(normalizeAuthoringLesson(interactive, host)),
+    "theta",
+    Math.PI / 2,
+  );
+  const node = state.nodes[`${host.lessonId}:node:unit-circle`]!;
+  assert.deepEqual(node.content.polygons[0], {
+    id: `${node.id}:fragment:moving-triangle`,
+    points: [
+      `${node.id}:fragment:origin`,
+      `${node.id}:fragment:point-p`,
+      `${node.id}:fragment:foot`,
+    ],
+    label: "随点移动的三角形",
+    tone: "accent",
+  });
+  assert.equal(node.content.points.find((point: any) => point.id.endsWith(":point-p")).y, 1);
+
+  const missingPoint = structuredClone(interactive);
+  const missingGeometry = missingPoint.steps.flatMap((step) => step.beats.flatMap((beat) => beat.actions))
+    .find((action) => action.do === "write" && action.kind === "geometry") as any;
+  missingGeometry.content.polygons[0].points[2] = "not-defined";
+  assert.throws(
+    () => validateAuthoringLesson(missingPoint),
+    (error) => error instanceof OllError
+      && error.code === "OLL_REFERENCE_NOT_FOUND"
+      && error.path.endsWith("/polygons/0/points/2"),
+  );
 });
 
 test("every declared geometry and plot binding capability validates and executes", () => {

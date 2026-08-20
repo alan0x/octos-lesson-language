@@ -111,7 +111,10 @@ a session reapplies the most recent view for each 3D node.
 ## Basic 3D scenes
 
 `scene3d` nodes render safe declarative boxes, spheres, cylinders, cones,
-sampled `z=f(x,y)` surfaces, axes, and axis-aligned section planes. A section
+sampled `z=f(x,y)` surfaces, sampled implicit `F(x,y,z)=level` surfaces, axes,
+and axis-aligned section planes. Plot curves also support locally sampled
+implicit `F(x,y)=level` contours when a relation is not a single-valued
+`y=f(x)`. A section
 can explicitly target scene objects and render their geometric intersection;
 solid intersections are filled loops and surface intersections are curves. The node
 contains mathematical objects and an initial camera; learner orbit/zoom changes

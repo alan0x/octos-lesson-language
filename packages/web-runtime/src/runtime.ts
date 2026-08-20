@@ -46,6 +46,61 @@ export interface PlaybackStore {
   removeStudentTaskProgress?(key: string): void;
 }
 
+function lessonOpenCanExtend(
+  delivered: CanonicalEvent,
+  saved: CanonicalEvent,
+): boolean {
+  if (delivered.event !== "lesson.open" || saved.event !== "lesson.open") {
+    return false;
+  }
+  const deliveredCopy = structuredClone(delivered);
+  const savedCopy = structuredClone(saved);
+  const deliveredVariables = deliveredCopy.lesson?.variables ?? [];
+  const savedVariables = savedCopy.lesson?.variables ?? [];
+  const deliveredTasks = deliveredCopy.lesson?.tasks ?? [];
+  const savedTasks = savedCopy.lesson?.tasks ?? [];
+  if (deliveredCopy.lesson) {
+    delete deliveredCopy.lesson.tasks;
+    delete deliveredCopy.lesson.variables;
+  }
+  if (savedCopy.lesson) {
+    delete savedCopy.lesson.tasks;
+    delete savedCopy.lesson.variables;
+  }
+  if (JSON.stringify(deliveredCopy) !== JSON.stringify(savedCopy)) return false;
+  const deliveredByAlias = new Map(
+    deliveredVariables.map((variable) => [variable.as, variable]),
+  );
+  const deliveredTasksByAlias = new Map(
+    deliveredTasks.map((task) => [task.as, task]),
+  );
+  return savedVariables.every((variable) =>
+    JSON.stringify(deliveredByAlias.get(variable.as)) === JSON.stringify(variable))
+    && savedTasks.every((task) =>
+      JSON.stringify(deliveredTasksByAlias.get(task.as)) === JSON.stringify(task));
+}
+
+function checkpointPrefixMatchesDeliveredProgram(
+  delivered: CanonicalEvent[],
+  checkpointEvents: CanonicalEvent[],
+  requireCompleteCheckpointCoverage: boolean,
+): boolean {
+  if (requireCompleteCheckpointCoverage && checkpointEvents.length > delivered.length) {
+    return false;
+  }
+  const overlap = Math.min(delivered.length, checkpointEvents.length);
+  if (overlap === 0) return false;
+  for (let index = 0; index < overlap; index += 1) {
+    const current = delivered[index]!;
+    const saved = checkpointEvents[index]!;
+    if (index === 0 && lessonOpenCanExtend(current, saved)) continue;
+    if (JSON.stringify(current) !== JSON.stringify(saved)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export class LocalPlaybackStore implements PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined {
     try { const value = localStorage.getItem(key); return value ? JSON.parse(value) as PlaybackCheckpoint : undefined; } catch { return undefined; }
@@ -201,6 +256,12 @@ export function variableAnimationDuration(
 export interface BrowserLessonSessionOptions {
   incremental?: boolean;
   /**
+   * Latest complete prefix currently delivered by the host. It is used only
+   * to reject a stale incremental checkpoint before that checkpoint can
+   * replace the host's newer lesson structure.
+   */
+  deliveredProgram?: CanonicalEvent[];
+  /**
    * `estimated` advances from narration using the Runtime's reading budget.
    * `external` waits for the host audio player to call startNarration() before
    * during-speech actions and completeNarration() before the narration ends.
@@ -250,6 +311,7 @@ export class BrowserLessonSession {
     control: StudentScene3dControl;
     input: StudentInputMethod;
   }>();
+  private discardedIncompatibleCheckpoint = false;
 
   constructor(
     readonly events: CanonicalEvent[],
@@ -1078,19 +1140,71 @@ export class BrowserLessonSession {
     const options = { allowIncomplete: this.options.incremental };
     if (!checkpoint) return new HeadlessLessonPlayer(this.events, options);
     try {
-      const events = this.options.incremental && checkpoint.canonical_events?.length
+      const checkpointEvents = this.options.incremental
+        && checkpoint.canonical_events?.length
         ? checkpoint.canonical_events
-        : this.events;
-      const player = HeadlessLessonPlayer.fromCheckpoint(events, checkpoint, options);
+        : undefined;
+      const deliveredProgram = this.options.deliveredProgram ?? this.events;
+      if (checkpointEvents
+        && !checkpointPrefixMatchesDeliveredProgram(
+          deliveredProgram,
+          checkpointEvents,
+          Boolean(this.options.deliveredProgram),
+        )) {
+        throw new Error("Saved incremental program does not match the delivered lesson");
+      }
+      const events = checkpointEvents ? structuredClone(checkpointEvents) : this.events;
+      const restoredCheckpoint = structuredClone(checkpoint);
+      if (checkpointEvents && lessonOpenCanExtend(deliveredProgram[0]!, events[0]!)) {
+        const deliveredOpen = structuredClone(deliveredProgram[0]!);
+        const savedAliases = new Set(
+          events[0]?.lesson?.variables?.map((variable) => variable.as) ?? [],
+        );
+        const addedVariables = (deliveredOpen.lesson?.variables ?? []).filter(
+          (variable) => !savedAliases.has(variable.as),
+        );
+        events[0] = deliveredOpen;
+        if (restoredCheckpoint.projection.board && addedVariables.length > 0) {
+          restoredCheckpoint.projection.board.variables ??= {};
+          for (const variable of addedVariables) {
+            restoredCheckpoint.projection.board.variables[variable.as] ??= {
+              value: variable.initial,
+              initial: variable.initial,
+              min: variable.min,
+              max: variable.max,
+              ...(variable.label ? { label: variable.label } : {}),
+              ...(variable.unit ? { unit: variable.unit } : {}),
+              ...(variable.control ? { control: structuredClone(variable.control) } : {}),
+            };
+          }
+        }
+        restoredCheckpoint.program_fingerprint = new HeadlessLessonPlayer(
+          events,
+          options,
+        ).program_fingerprint;
+      }
+      const player = HeadlessLessonPlayer.fromCheckpoint(
+        events,
+        restoredCheckpoint,
+        options,
+      );
       this.variableAnimation = checkpoint.variable_animation ? structuredClone(checkpoint.variable_animation) : undefined;
       this.events.splice(0, this.events.length, ...player.canonicalEvents);
       return player;
     }
-    catch { this.store.remove(this.storageKey); return new HeadlessLessonPlayer(this.events, options); }
+    catch {
+      this.discardedIncompatibleCheckpoint = true;
+      this.store.remove(this.storageKey);
+      return new HeadlessLessonPlayer(this.events, options);
+    }
   }
 
   private restoreStudentOperations(): StudentOperationLog {
     const lessonId = this.player.snapshot.lesson_id;
+    if (this.discardedIncompatibleCheckpoint) {
+      this.store.removeStudentOperations?.(this.storageKey);
+      return emptyStudentOperationLog(lessonId);
+    }
     const raw = this.store.loadStudentOperations?.(this.storageKey);
     if (raw === undefined) return emptyStudentOperationLog(lessonId);
     const restored = parseStudentOperationLog(raw, lessonId);
@@ -1102,6 +1216,10 @@ export class BrowserLessonSession {
   private restoreStudentTaskProgress(): StudentTaskProgressLog {
     const lessonId = this.player.snapshot.lesson_id;
     const empty = emptyStudentTaskProgressLog(lessonId, this.studentTaskDefinitions);
+    if (this.discardedIncompatibleCheckpoint) {
+      this.store.removeStudentTaskProgress?.(this.storageKey);
+      return empty;
+    }
     const raw = this.store.loadStudentTaskProgress?.(this.storageKey);
     if (raw === undefined) return empty;
     const restored = parseStudentTaskProgressLog(raw, lessonId, this.studentTaskDefinitions);

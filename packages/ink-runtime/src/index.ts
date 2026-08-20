@@ -35,3 +35,4 @@ export {
   type InkRuntimeState,
   type MountInkRuntimeOptions,
 } from "./runtime.js";
+export { coalesceInkOccupiedBounds } from "./occupied-bounds.js";

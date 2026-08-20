@@ -3,7 +3,26 @@ import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
-import { boardToViewportPoint, planFocusCamera, planRevealCamera, viewportToBoardPoint } from "../src/camera.js";
+import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
+import { boardInputTargetsInteractiveUi } from "../src/input-routing.js";
+import { describeBoardTarget } from "../src/board-targets.js";
+
+test("geometry polygons are addressable teaching targets", () => {
+  assert.deepEqual(describeBoardTarget({
+    kind: "geometry",
+    content: {
+      polygons: [{
+        id: "geometry-1:fragment:piece-1",
+        points: ["point-1", "point-2", "point-3"],
+        label: "三角形 1",
+      }],
+    },
+  }, "geometry-1:fragment:piece-1"), {
+    kind: "geometry-polygon",
+    label: "三角形 1",
+    value: { points: ["point-1", "point-2", "point-3"] },
+  });
+});
 
 function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
   for (let index = 1; index < points.length; index += 1) {
@@ -16,6 +35,25 @@ function assertOrthogonal(points: Array<{ x: number; y: number }>): void {
   }
 }
 
+test("world-coordinate controls keep pointer and wheel input away from board navigation", () => {
+  const markedCard = {
+    tagName: "DIV",
+    getAttribute: (name: string) => name === "data-oll-ink-input" ? "ignore" : null,
+  };
+  const slider = {
+    tagName: "INPUT",
+    getAttribute: () => null,
+  };
+  const boardSpace = {
+    tagName: "DIV",
+    getAttribute: () => null,
+  };
+
+  assert.equal(boardInputTargetsInteractiveUi([slider, markedCard]), true);
+  assert.equal(boardInputTargetsInteractiveUi([markedCard]), true);
+  assert.equal(boardInputTargetsInteractiveUi([boardSpace]), false);
+});
+
 test("public camera coordinates round-trip between board and viewport space", () => {
   const camera = { panX: -120, panY: 48, scale: .625 };
   const boardPoint = { x: 832, y: 416 };
@@ -25,6 +63,54 @@ test("public camera coordinates round-trip between board and viewport space", ()
   assert.throws(
     () => viewportToBoardPoint(viewportPoint, { ...camera, scale: 0 }),
     /positive finite/,
+  );
+});
+
+test("learner camera control persists until a new teaching camera request is applied", () => {
+  const authority = new TeachingCameraAuthority();
+
+  assert.equal(authority.observeRender("board-1", "operation-1"), true);
+  assert.equal(authority.layoutReframeAllowed, true);
+
+  authority.beginManualNavigation();
+  assert.equal(authority.layoutReframeAllowed, false);
+  assert.equal(
+    authority.observeRender("board-1", "operation-1"),
+    false,
+    "re-rendering the same operation must not become a new teaching camera request",
+  );
+  assert.equal(
+    authority.layoutReframeAllowed,
+    false,
+    "elapsed time and layout observation must not revoke learner camera control",
+  );
+
+  assert.equal(authority.observeRender("board-1", "operation-2"), true);
+  assert.equal(authority.layoutReframeAllowed, false);
+  authority.resumeTeachingCamera();
+  assert.equal(authority.layoutReframeAllowed, true);
+});
+
+test("host camera focus survives layout refresh until a new teaching request", () => {
+  const authority = new TeachingCameraAuthority();
+
+  assert.equal(authority.observeRender("board-1", "operation-1"), true);
+  authority.holdHostCamera();
+  assert.equal(
+    authority.layoutReframeAllowed,
+    false,
+    "host focus must not be overwritten by viewport inset or layout refreshes",
+  );
+
+  assert.equal(authority.observeRender("board-1", "operation-1"), false);
+  assert.equal(authority.layoutReframeAllowed, false);
+
+  assert.equal(authority.observeRender("board-1", "operation-2"), true);
+  authority.resumeTeachingCamera();
+  assert.equal(
+    authority.layoutReframeAllowed,
+    true,
+    "a new teaching operation may deliberately take camera control",
   );
 });
 
@@ -281,6 +367,13 @@ test("angle controls choose the equivalent angle nearest the current shared valu
   assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, -Math.PI, Math.PI) - Math.PI / 2) < 1e-12);
 });
 
+test("angle controls write values using the declared angle unit", () => {
+  assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, 0, 360, "度") - 90) < 1e-12);
+  assert.ok(Math.abs(angleControlValue(-Math.PI / 2, 270, 0, 360, "degree") - 270) < 1e-12);
+  assert.equal(angleControlValue(0, 360, 0, 360, "°"), 360);
+  assert.ok(Math.abs(angleControlValue(Math.PI / 2, 0, 0, 2 * Math.PI, "弧度") - Math.PI / 2) < 1e-12);
+});
+
 test("3D projection responds deterministically to orbit and clamps unsafe camera values", () => {
   const front = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: 0, pitch: 0, zoom: 1 });
   const rotated = projectScene3dPoint({ x: 1, y: 0, z: 0 }, { yaw: Math.PI / 2, pitch: 0, zoom: 1 });
@@ -349,6 +442,35 @@ test("3D function-surface sections change their contour when the shared height c
     Math.max(...points.map((point) => Math.hypot(point.x, point.y)));
   assert.ok(maxRadius(low[0]!.points) < maxRadius(high[0]!.points));
   assert.ok(Math.abs(maxRadius(high[0]!.points) - 1) < .05);
+});
+
+test("3D implicit surfaces render three-variable equations and support sections", () => {
+  const content = {
+    objects: [{
+      as: "superellipsoid",
+      kind: "implicit_surface",
+      expression: "x^4+y^4+z^4-1",
+      level: 0,
+      x_range: { min: -1.2, max: 1.2 },
+      y_range: { min: -1.2, max: 1.2 },
+      z_range: { min: -1.2, max: 1.2 },
+      samples: 12,
+    }],
+  };
+  const intersections = scene3dSectionIntersections(content, {
+    axis: "z",
+    value: 0,
+    targets: ["superellipsoid"],
+    display: "plane_and_intersection",
+  });
+  assert.ok(intersections.length >= 1);
+  assert.ok(intersections.every((path) => path.solid));
+  assert.ok(intersections.some((path) => path.closed));
+  const points = intersections.flatMap((path) => path.points);
+  assert.ok(Math.min(...points.map((point) => point.x)) < -.95);
+  assert.ok(Math.max(...points.map((point) => point.x)) > .95);
+  assert.ok(Math.min(...points.map((point) => point.y)) < -.95);
+  assert.ok(Math.max(...points.map((point) => point.y)) > .95);
 });
 
 test("focus keeps an already composed target steady", () => {
