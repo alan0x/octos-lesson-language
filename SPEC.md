@@ -457,7 +457,7 @@ Reducer 在创建节点时用当前变量值计算全部 binding。当前 Author
 }
 ```
 
-`angle_control` 表示学生绕 `center` 拖动这个点，Runtime 将位置换算成弧度并通过与滑杆相同的变量写入入口修改 `theta`。点的位置仍由 `content.bindings` 表达；`interaction` 只说明学生操作如何反向修改变量，不保存第二份变量状态，也不允许执行模型提供的 JavaScript。
+`angle_control` 表示学生绕 `center` 拖动这个点。Runtime 根据目标变量的 `unit` 写回角度：`度`、`角度`、`°`、`degree`、`deg` 使用度数；`弧度`、`radian`、`rad` 以及未声明单位时使用弧度。写回仍通过与滑杆相同的变量入口完成。点的位置由 `content.bindings` 表达；`interaction` 只说明学生操作如何反向修改变量，不保存第二份变量状态，也不允许执行模型提供的 JavaScript。
 
 ### 9.2 `board.revise`
 
@@ -667,6 +667,14 @@ overlay
 ```
 
 表达式解析器只能执行受限数学表达式，不得使用 `eval`。
+
+显式曲线的 `expression` 除了自变量 `x`，还可以读取本课已经声明的
+Lesson 数值变量。例如两个滑杆分别声明为 `number_01` 和 `number_02`
+时，`(x-number_01)^2+number_02` 表示一条顶点随两个数值变化的抛物线。
+Core 必须拒绝未声明的名称；Web Runtime 必须用当前变量值重新采样整条
+曲线。变量变化只更新同一份课程状态，不允许为曲线另存一份参数状态。
+这类表达式关系不使用 `content.bindings`，因为它驱动的是整条函数曲线，
+而不是某个 fragment 的单一数值字段。
 
 当一条二维曲线不能写成单值的 `y=f(x)` 时，`curves[]` 可以声明
 `"kind": "implicit"`，并用 `expression` 表示 `F(x,y)`、用 `level`

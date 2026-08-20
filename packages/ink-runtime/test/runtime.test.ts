@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { inkInputTargetsInteractiveUi } from "../src/input-routing.js";
+import { coalesceInkOccupiedBounds } from "../src/occupied-bounds.js";
 import { lockSelectionTransform } from "../src/selection-lock.js";
 import {
   planInkWorldLayerBounds,
@@ -28,6 +30,62 @@ test("rectangle selection cannot move or resize student ink", () => {
 
 test("locking an empty selection is a no-op", () => {
   assert.doesNotThrow(() => lockSelectionTransform({ getSelection: () => null }));
+});
+
+function inputElement(
+  tagName: string,
+  attributes: Record<string, string> = {},
+): { tagName: string; getAttribute: (name: string) => string | null } {
+  return {
+    tagName,
+    getAttribute: (name) => attributes[name] ?? null,
+  };
+}
+
+test("ink leaves native controls usable while a drawing tool owns the board", () => {
+  for (const tagName of ["button", "input", "select", "textarea", "a"]) {
+    assert.equal(
+      inkInputTargetsInteractiveUi([inputElement(tagName), {}]),
+      true,
+      `${tagName} input must not become an ink stroke`,
+    );
+  }
+});
+
+test("a host can exclude an entire interactive board overlay from ink input", () => {
+  assert.equal(
+    inkInputTargetsInteractiveUi([
+      inputElement("canvas"),
+      inputElement("article", { "data-oll-ink-input": "ignore" }),
+      {},
+    ]),
+    true,
+  );
+  assert.equal(
+    inkInputTargetsInteractiveUi([
+      inputElement("div", { contenteditable: "true" }),
+      {},
+    ]),
+    true,
+  );
+});
+
+test("ordinary board space remains owned by the active ink tool", () => {
+  assert.equal(
+    inkInputTargetsInteractiveUi([inputElement("svg"), inputElement("div"), {}]),
+    false,
+  );
+});
+
+test("distant handwriting remains separate occupied space without splitting the SVG", () => {
+  assert.deepEqual(coalesceInkOccupiedBounds([
+    { x: 10, y: 20, width: 30, height: 20 },
+    { x: 48, y: 18, width: 25, height: 24 },
+    { x: 600, y: 80, width: 40, height: 50 },
+  ]), [
+    { x: 10, y: 18, width: 63, height: 24 },
+    { x: 600, y: 80, width: 40, height: 50 },
+  ]);
 });
 
 test("ink surface covers visible board space beyond the original world boundary", () => {

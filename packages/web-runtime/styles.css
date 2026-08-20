@@ -70,6 +70,11 @@
 .geometry-grid { stroke: #e7e1d6; stroke-width: .75; }
 .geometry-axis { stroke: #777168; stroke-width: 1.5; }
 .geometry-circle { fill: rgba(35,135,124,.035); stroke: #23877c; stroke-width: 2.6; vector-effect: non-scaling-stroke; }
+.geometry-polygon { stroke: #23877c; stroke-width: 2.2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.geometry-polygon-primary { fill: rgba(35,135,124,.18); }
+.geometry-polygon-secondary { fill: rgba(79,132,181,.18); stroke: #4f84b5; }
+.geometry-polygon-accent { fill: rgba(215,154,41,.22); stroke: #c7832e; }
+.geometry-polygon-neutral { fill: rgba(82,107,103,.12); stroke: #526b67; }
 .geometry-segment { stroke: #526b67; stroke-width: 2.2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .geometry-segment-dashed, .geometry-segment-projection { stroke-dasharray: 6 4; }
 .geometry-segment-projection { stroke: #b95873; }
@@ -80,10 +85,10 @@
 .geometry-control-point:focus-visible { filter: drop-shadow(0 0 4px rgba(16, 119, 136, .48)); outline: none; }
 .geometry-control-point:active { cursor: grabbing; }
 .geometry-label { fill: #374b47; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
-.geometry-circle.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
-.geometry-circle.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
-.geometry-circle.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
-.geometry-circle.emphasis-resolved, .geometry-segment.emphasis-resolved, .geometry-arc.emphasis-resolved { opacity: .68; }
+.geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
+.geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
+.geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
+.geometry-circle.emphasis-resolved, .geometry-polygon.emphasis-resolved, .geometry-segment.emphasis-resolved, .geometry-arc.emphasis-resolved { opacity: .68; }
 .geometry-point.emphasis-focus { fill: #e15d45; r: 6px; }
 .scene3d-runtime { display: grid; grid-template-areas: "visual" "controls" "fallback"; grid-template-rows: minmax(0, 1fr) auto auto; height: calc(100% - 24px); min-height: 270px; margin-top: 2px; overflow: hidden; border-radius: 12px; background: radial-gradient(circle at 50% 42%, rgba(255,255,255,.95), rgba(228,239,235,.78)); }
 .scene3d-runtime svg { grid-area: visual; width: 100%; height: 100%; min-height: 0; cursor: grab; touch-action: none; user-select: none; }

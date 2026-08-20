@@ -503,7 +503,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -597,6 +597,24 @@ function validateGeometryContent(
       fail("OLL_REFERENCE_NOT_FOUND", referencePath, `Geometry point '${value}' is not defined`);
     }
   };
+  if (content.polygons !== undefined) {
+    if (!Array.isArray(content.polygons)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/polygons`, "Expected an array");
+    }
+    content.polygons.forEach((polygon: JsonObject, index: number) => {
+      const polygonPath = `${path}/content/polygons/${index}`;
+      requireObject(polygon, polygonPath);
+      if (!Array.isArray(polygon.points) || polygon.points.length < 3) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${polygonPath}/points`, "A geometry polygon requires at least three points");
+      }
+      polygon.points.forEach((point: unknown, pointIndex: number) => {
+        requirePointReference(point, `${polygonPath}/points/${pointIndex}`);
+      });
+      if (new Set(polygon.points).size < 3) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${polygonPath}/points`, "A geometry polygon requires at least three distinct points");
+      }
+    });
+  }
   for (const [field, references] of [
     ["circles", ["center"]],
     ["segments", ["from", "to"]],
@@ -817,7 +835,7 @@ function validateScene3dContent(
   }
 }
 
-function validateImplicitPlotContent(
+function validatePlotContent(
   action: WriteAction,
   path: string,
   variables: Map<string, number>,
@@ -844,8 +862,20 @@ function validateImplicitPlotContent(
     const curvePath = `${path}/content/curves/${index}`;
     requireObject(rawCurve, curvePath);
     const curve = rawCurve;
-    if (curve.kind !== "implicit") return;
     requireString(curve.expression, `${curvePath}/expression`);
+    if (curve.kind !== "implicit") {
+      const expression = curve.expression.trim().replace(/^y\s*=/iu, "").trim();
+      try {
+        compileMathExpression(expression, ["x", ...variables.keys()]);
+      } catch (error) {
+        fail(
+          "OLL_INVALID_OPERATION_PAYLOAD",
+          `${curvePath}/expression`,
+          `Invalid plot expression: ${(error as Error).message}`,
+        );
+      }
+      return;
+    }
     const level = curve.level === undefined
       ? 0
       : requireFiniteNumber(curve.level, `${curvePath}/level`);
@@ -1123,7 +1153,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateStructuredContent(action.content, `${actionPath}/content`, uniqueFragments);
           validateImageResource(action, actionPath, resourceContext);
           validateGeometryContent(action, actionPath, lessonVariables);
-          validateImplicitPlotContent(action, actionPath, lessonVariables);
+          validatePlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === "scene3d") {
             const camera = action.content.camera as UnknownRecord;
@@ -1212,7 +1242,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1231,6 +1261,9 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       }
       if (field === "arcs") {
         normalized.center = `${nodeId}:fragment:${item.center}`;
+      }
+      if (field === "polygons" && Array.isArray(item.points)) {
+        normalized.points = item.points.map((point: string) => `${nodeId}:fragment:${point}`);
       }
       if (field === "points" && item.interaction?.kind === "angle_control") {
         normalized.interaction = {

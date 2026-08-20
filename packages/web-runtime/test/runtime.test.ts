@@ -166,6 +166,110 @@ test("incremental browser session persists the expanded program checkpoint", () 
   assert.deepEqual(restored.events, first.events);
 });
 
+test("incremental restore rejects a saved program whose lesson variables changed", () => {
+  const store = new MemoryStore();
+  const oldPrefix = structuredClone(unitCircleEvents.slice(0, 2));
+  const first = new BrowserLessonSession(
+    oldPrefix,
+    store,
+    "changed-incremental-program",
+    { incremental: true },
+  );
+  while (first.status !== "waiting") first.advance();
+  first.changeStudentVariable("theta", Math.PI / 2, {
+    control: "slider",
+    input: "mouse",
+  });
+  assert.ok(store.values.has("changed-incremental-program"));
+  assert.equal(store.studentOperations.get("changed-incremental-program")?.operations.length, 1);
+
+  const deliveredOpen = structuredClone(unitCircleEvents[0]!);
+  deliveredOpen.lesson!.variables![0]!.as = "v_turn_theta";
+  const restored = new BrowserLessonSession(
+    [deliveredOpen],
+    store,
+    "changed-incremental-program",
+    { incremental: true },
+  );
+
+  assert.equal(restored.cursor, 0, "stale playback progress must not override the new lesson.open");
+  assert.deepEqual(restored.events, [deliveredOpen]);
+  assert.equal(restored.studentOperations.length, 0);
+  assert.equal(store.values.has("changed-incremental-program"), false);
+  assert.equal(store.studentOperations.has("changed-incremental-program"), false);
+});
+
+test("incremental restore checks saved Steps against the host's complete delivered prefix", () => {
+  const store = new MemoryStore();
+  const oldOpen = structuredClone(unitCircleEvents[0]!);
+  const oldStep = structuredClone(unitCircleEvents[1]!);
+  const first = new BrowserLessonSession(
+    [oldOpen],
+    store,
+    "stale-expanded-program",
+    { incremental: true },
+  );
+  while (first.status !== "waiting") first.advance();
+  first.appendEvents([oldStep]);
+
+  const deliveredOpen = structuredClone(oldOpen);
+  deliveredOpen.lesson!.variables!.push({
+    ...structuredClone(deliveredOpen.lesson!.variables![0]!),
+    as: "v_later_theta",
+    label: "下一轮课程的角度",
+  });
+  const deliveredStep = structuredClone(oldStep);
+  deliveredStep.step!.purpose = "当前版本已经重新整理的教学步骤";
+  const restored = new BrowserLessonSession(
+    [deliveredOpen],
+    store,
+    "stale-expanded-program",
+    {
+      incremental: true,
+      deliveredProgram: [deliveredOpen, deliveredStep],
+    },
+  );
+
+  assert.equal(restored.cursor, 0);
+  assert.deepEqual(restored.events, [deliveredOpen]);
+  assert.equal(store.values.has("stale-expanded-program"), false);
+});
+
+test("incremental restore adds newly delivered variables without replaying prior Steps", () => {
+  const store = new MemoryStore();
+  const oldPrefix = structuredClone(unitCircleEvents.slice(0, 2));
+  const first = new BrowserLessonSession(
+    oldPrefix,
+    store,
+    "extended-open-program",
+    { incremental: true },
+  );
+  while (first.status !== "waiting") first.advance();
+  const savedCursor = first.cursor;
+
+  const delivered = structuredClone(oldPrefix);
+  delivered[0]!.lesson!.variables!.push({
+    ...structuredClone(delivered[0]!.lesson!.variables![0]!),
+    as: "v_later_theta",
+    label: "下一轮课程的角度",
+  });
+  const restored = new BrowserLessonSession(
+    [structuredClone(delivered[0]!)],
+    store,
+    "extended-open-program",
+    { incremental: true, deliveredProgram: delivered },
+  );
+
+  assert.equal(restored.cursor, savedCursor);
+  const initial = delivered[0]!.lesson!.variables![0]!.initial;
+  assert.equal(
+    restored.projection.board?.variables?.theta?.value,
+    first.projection.board?.variables?.theta?.value,
+  );
+  assert.equal(restored.projection.board?.variables?.v_later_theta?.value, initial);
+  assert.deepEqual(restored.events[0], delivered[0]);
+});
+
 test("narration pacing accounts for reading load, delivery, and speed", () => {
   const short = narrationDuration("先看这里。", "neutral");
   const long = narrationDuration(

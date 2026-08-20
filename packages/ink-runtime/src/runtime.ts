@@ -11,6 +11,7 @@ import {
   PenTool,
   Pointer,
   PointerDevice,
+  Rect2,
   InputEvtType,
   SelectionMode,
   SelectionTool,
@@ -32,10 +33,13 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
+import { inkInputTargetsInteractiveUi } from "./input-routing.js";
+import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
   inkSelectionPathRegion,
   inkSelectionRectangleRegion,
+  type InkSelectionBounds,
   type InkSelectionPoint,
   type InkSelectionRegion,
   type InkSelectionSnapshot,
@@ -59,6 +63,13 @@ export interface InkRuntimeState {
   selected_count: number;
   /** Changes whenever the selected components change, even when the count is unchanged. */
   selection_revision: number;
+  /** Board-coordinate bounds occupied by all student ink. */
+  content_bounds?: InkSelectionBounds | null;
+  /**
+   * Nearby strokes coalesced into independent occupied areas. This is layout
+   * metadata only: the saved ink document remains one global SVG.
+   */
+  content_bounds_list?: InkSelectionBounds[];
   pen_color: string;
   selection_color: string | null;
   selection_input: StudentInputMethod;
@@ -286,6 +297,7 @@ export class InkRuntime {
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
+      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
         this.selectionInput = event.pointerType === "touch"
@@ -410,11 +422,27 @@ export class InkRuntime {
   }
 
   get state(): InkRuntimeState {
+    const components = this.editor.image.getAllComponents()
+      .filter((component) => component.isSelectable());
+    const componentBounds = components.map((component) => component.getExactBBox())
+      .map((bounds) => ({
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      }));
+    const bounds = components.length > 0
+      ? Rect2.union(...components.map((component) => component.getExactBBox()))
+      : null;
     return {
       mode: this.modeValue,
-      component_count: this.editor.image.getAllComponents().filter((component) => component.isSelectable()).length,
+      component_count: components.length,
       selected_count: this.selectedComponents.length,
       selection_revision: this.selectionRevision,
+      content_bounds: bounds
+        ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
+        : null,
+      content_bounds_list: coalesceInkOccupiedBounds(componentBounds),
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,

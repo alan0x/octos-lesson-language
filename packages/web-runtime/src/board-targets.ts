@@ -20,6 +20,7 @@ export type BoardTargetKind =
   | "plot-guide"
   | "geometry-point"
   | "geometry-segment"
+  | "geometry-polygon"
   | "geometry-circle"
   | "geometry-arc"
   | "diagram-element"
@@ -71,7 +72,7 @@ function addressableItem(
 ): { field: string; item: Record<string, unknown> } | undefined {
   for (const field of [
     "fragments", "curves", "points", "guides", "regions", "elements", "edges",
-    "circles", "segments", "arcs", "objects", "sections", "highlights",
+    "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights",
   ]) {
     const values = content[field];
     if (!Array.isArray(values)) continue;
@@ -123,12 +124,13 @@ export function describeBoardTarget(
   if (nodeKind === "geometry") {
     const suffix = field === "points" ? "point"
       : field === "segments" ? "segment"
+        : field === "polygons" ? "polygon"
         : field === "circles" ? "circle"
           : "arc";
     return {
       kind: `geometry-${suffix}` as BoardTargetKind,
       label,
-      value: compactValue(item, ["x", "y", "from", "to", "center", "radius", "start_angle", "end_angle"]),
+      value: compactValue(item, ["x", "y", "points", "from", "to", "center", "radius", "start_angle", "end_angle"]),
     };
   }
   if (nodeKind === "diagram") {

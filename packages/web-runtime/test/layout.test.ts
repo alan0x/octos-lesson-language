@@ -109,6 +109,53 @@ test("a new topic starts beyond prior group bounds without moving existing conte
   assert.equal(layout.nodes["new-b"]!.x, layout.nodes["new-a"]!.x);
 });
 
+test("host course origins keep independent regions stable as content arrives", () => {
+  const board: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      first: {
+        id: "first",
+        region_id: "course-a",
+        content: { text: "第一课" },
+        placement: { relation: "new_region" },
+      },
+      second: {
+        id: "second",
+        region_id: "course-b",
+        content: { text: "第二课" },
+        placement: { relation: "new_region" },
+      },
+    },
+    groups: {},
+    connections: {},
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const constraints = {
+    "course-a": { x: 420, y: 160, reservedWidth: 1_100 },
+    "course-b": { x: 1_800, y: 160, reservedWidth: 1_100 },
+  };
+  const initial = computeBoardLayout(board, {}, { regions: constraints });
+  assert.equal(initial.nodes.first?.x, 420);
+  assert.equal(initial.nodes.second?.x, 1_800);
+  assert.deepEqual(initial.regions?.["course-a"], initial.nodes.first);
+  assert.deepEqual(initial.regions?.["course-b"], initial.nodes.second);
+
+  board.nodes["first-detail"] = {
+    id: "first-detail",
+    region_id: "course-a",
+    content: { text: "第一课后续分段内容" },
+    placement: { relation: "below", anchor: "first" },
+  };
+  const expanded = computeBoardLayout(board, {}, { regions: constraints });
+  assert.equal(expanded.nodes.first?.x, initial.nodes.first?.x);
+  assert.equal(expanded.nodes.second?.x, initial.nodes.second?.x);
+  assert.ok(expanded.regions!["course-a"]!.height > initial.regions!["course-a"]!.height);
+});
+
 test("connected visual nodes in one region are laid out as one nearby teaching scene", () => {
   const related: SemanticBoardState = {
     board_id: "board",

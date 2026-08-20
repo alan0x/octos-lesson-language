@@ -51,6 +51,13 @@ export const OLL_BINDING_CAPABILITIES = {
   },
 } as const;
 
+/** Formula fields that may read declared lesson variables directly. */
+export const OLL_EXPRESSION_CAPABILITIES = {
+  plot: {
+    curves: ["expression"],
+  },
+} as const;
+
 export type OllBindableNodeKind = keyof typeof OLL_BINDING_CAPABILITIES;
 export type OllBindingCollections = Readonly<Record<string, readonly string[]>>;
 
@@ -99,6 +106,7 @@ export const OLL_EXECUTION_CAPABILITIES = {
   node_kinds: OLL_NODE_KINDS,
   action_names: OLL_ACTION_NAMES,
   value_bindings: OLL_BINDING_CAPABILITIES,
+  variable_expressions: OLL_EXPRESSION_CAPABILITIES,
   student_controls: {
     variable: OLL_VARIABLE_CONTROL_KINDS,
     scene3d: OLL_SCENE3D_CONTROL_KINDS,

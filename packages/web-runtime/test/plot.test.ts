@@ -4,9 +4,20 @@ import {
   compilePlotExpression,
   evaluatePlotExpression,
   plotPathData,
+  referencedPlotVariables,
   sampleImplicitPlotExpression,
   samplePlotExpression,
 } from "../src/plot.js";
+
+test("plot invalidation tracks only variables actually used by a curve", () => {
+  assert.deepEqual(
+    referencedPlotVariables(
+      ["(x-number_01)^2+number_02", "sin(x)"],
+      { number_01: 2, number_02: -1, unrelated: 99 },
+    ),
+    { number_01: 2, number_02: -1 },
+  );
+});
 
 test("restricted plot expressions evaluate trigonometric and polynomial functions", () => {
   assert.ok(Math.abs(evaluatePlotExpression("sin(x)", Math.PI / 2) - 1) < 1e-12);
@@ -14,6 +25,25 @@ test("restricted plot expressions evaluate trigonometric and polynomial function
   assert.equal(evaluatePlotExpression("(x+3)^2-4", -3), -4);
   assert.equal(evaluatePlotExpression("-x^2", 3), -9);
   assert.equal(evaluatePlotExpression("sin(π/2)", 0), 1);
+});
+
+test("plot expressions read lesson variables when sampling a changing curve", () => {
+  assert.equal(
+    evaluatePlotExpression("(x-number_01)^2+number_02", 2, {
+      number_01: 2,
+      number_02: -1,
+    }),
+    -1,
+  );
+  const shifted = samplePlotExpression(
+    "(x-number_01)^2+number_02",
+    { min: -4, max: 4 },
+    { min: -2, max: 10 },
+    9,
+    { number_01: 2, number_02: -1 },
+  );
+  const vertex = shifted.flat().find((point) => point.x === 2);
+  assert.deepEqual(vertex, { x: 2, y: -1 });
 });
 
 test("plot expression parser rejects executable or unknown syntax", () => {
@@ -62,4 +92,16 @@ test("implicit plot sampling draws equations that cannot be written as one y=f(x
   assert.ok(Math.max(...points.map((point) => point.x)) > .99);
   assert.ok(Math.min(...points.map((point) => point.y)) < -.99);
   assert.ok(Math.max(...points.map((point) => point.y)) > .99);
+});
+
+test("implicit plot expressions can also read lesson variables", () => {
+  const segments = sampleImplicitPlotExpression(
+    "x^2+y^2-radius^2",
+    { min: -3, max: 3 },
+    { min: -3, max: 3 },
+    { samples: 80, variables: { radius: 2 } },
+  );
+  assert.ok(segments.length > 100);
+  assert.ok(Math.min(...segments.flat().map((point) => point.x)) < -1.95);
+  assert.ok(Math.max(...segments.flat().map((point) => point.x)) > 1.95);
 });

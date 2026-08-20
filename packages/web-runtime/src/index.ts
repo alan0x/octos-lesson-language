@@ -61,9 +61,12 @@ export {
   measureSemanticNode,
   targetRect,
   type BoardLayout,
+  type BoardLayoutOptions,
   type MeasuredNodeSizes,
   type Rect,
+  type RegionLayoutConstraint,
 } from "./layout.js";
+export { boardInputTargetsInteractiveUi } from "./input-routing.js";
 export {
   plotPathData,
   sampleImplicitPlotExpression,

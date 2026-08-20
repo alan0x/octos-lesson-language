@@ -1,5 +1,50 @@
 import type { Rect } from "./layout.js";
 
+/**
+ * Keeps learner camera movement authoritative until a genuinely new teaching
+ * camera request is applied. Re-rendering the same playback operation and
+ * recomputing host insets are not teaching requests.
+ */
+export class TeachingCameraAuthority {
+  private manual = false;
+  private boardId?: string;
+  private operationId?: string;
+
+  observeRender(boardId: string | undefined, operationId: string | undefined): boolean {
+    const changed = boardId !== this.boardId || operationId !== this.operationId;
+    this.boardId = boardId;
+    this.operationId = operationId;
+    return changed;
+  }
+
+  beginManualNavigation(): void {
+    this.manual = true;
+  }
+
+  /**
+   * Keep a host-requested camera position stable across ordinary layout and
+   * viewport-inset refreshes. A genuinely new teaching operation may still
+   * call resumeTeachingCamera before applying its own focus request.
+   */
+  holdHostCamera(): void {
+    this.manual = true;
+  }
+
+  resumeTeachingCamera(): void {
+    this.manual = false;
+  }
+
+  get layoutReframeAllowed(): boolean {
+    return !this.manual;
+  }
+
+  reset(): void {
+    this.manual = false;
+    this.boardId = undefined;
+    this.operationId = undefined;
+  }
+}
+
 export interface CameraState {
   panX: number;
   panY: number;

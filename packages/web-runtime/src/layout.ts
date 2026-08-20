@@ -4,10 +4,23 @@ export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
   nodes: Record<string, Rect>;
   groups: Record<string, Rect>;
+  /** Actual rendered bounds for each logical course region. */
+  regions?: Record<string, Rect>;
   bounds: Rect;
 }
 
 export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
+
+export interface RegionLayoutConstraint {
+  x: number;
+  y: number;
+  /** Space reserved for a progressively delivered course before every node exists. */
+  reservedWidth?: number;
+}
+
+export interface BoardLayoutOptions {
+  regions?: Record<string, RegionLayoutConstraint>;
+}
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -15,6 +28,7 @@ const TOPIC_GUTTER = 180;
 interface RegionCursor {
   x: number;
   y: number;
+  reservedWidth: number;
   itemIndex: number;
   rowY: number;
   rowHeight: number;
@@ -83,10 +97,14 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
   return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
 }
 
-export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes: MeasuredNodeSizes = {}): BoardLayout {
+export function computeBoardLayout(
+  state: SemanticBoardState,
+  measuredNodeSizes: MeasuredNodeSizes = {},
+  options: BoardLayoutOptions = {},
+): BoardLayout {
   const nodes: Record<string, Rect> = {};
   const groups: Record<string, Rect> = {};
-  const regions = new Map<string, RegionCursor>();
+  const regionCursors = new Map<string, RegionCursor>();
 
   const endpointId = (endpoint: unknown): string | undefined => {
     if (typeof endpoint === "string") return endpoint;
@@ -150,21 +168,28 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
       const regionId = typeof node.region_id === "string" && node.region_id
         ? node.region_id
         : "__legacy__";
-      let region = regions.get(regionId);
+      let region = regionCursors.get(regionId);
       if (!region) {
+        const constraint = options.regions?.[regionId];
         const occupied = collisionRects(node.id);
-        const right = occupied.length
-          ? Math.max(...occupied.map((rect) => rect.x + rect.width))
+        const reservedRightEdges = [...regionCursors.values()].map((cursor) =>
+          cursor.x + cursor.reservedWidth);
+        const right = occupied.length || reservedRightEdges.length
+          ? Math.max(
+              ...occupied.map((rect) => rect.x + rect.width),
+              ...reservedRightEdges,
+            )
           : 100 - TOPIC_GUTTER;
         region = {
-          x: regions.size === 0 ? 100 : right + TOPIC_GUTTER,
-          y: 90,
+          x: constraint?.x ?? (regionCursors.size === 0 ? 100 : right + TOPIC_GUTTER),
+          y: constraint?.y ?? 90,
+          reservedWidth: Math.max(0, constraint?.reservedWidth ?? 0),
           itemIndex: 0,
-          rowY: 90,
+          rowY: constraint?.y ?? 90,
           rowHeight: 0,
           firstColumnWidth: 0,
         };
-        regions.set(regionId, region);
+        regionCursors.set(regionId, region);
       }
       const connected = connectedLaidOutNode(node.id, regionId);
       if (connected && region.itemIndex % 2 === 1) {
@@ -230,8 +255,49 @@ export function computeBoardLayout(state: SemanticBoardState, measuredNodeSizes:
   if (shiftX || shiftY) {
     for (const rect of [...Object.values(nodes), ...Object.values(groups)]) { rect.x += shiftX; rect.y += shiftY; }
   }
+  const regionRects = new Map<string, Rect[]>();
+  for (const node of Object.values(state.nodes)) {
+    const rect = nodes[node.id];
+    if (!rect) continue;
+    const regionId = typeof node.region_id === "string" && node.region_id
+      ? node.region_id
+      : "__legacy__";
+    const rects = regionRects.get(regionId) ?? [];
+    rects.push(rect);
+    regionRects.set(regionId, rects);
+  }
+  const groupRegionIds = (groupId: string, seen = new Set<string>()): Set<string> => {
+    if (seen.has(groupId)) return new Set();
+    seen.add(groupId);
+    const ids = new Set<string>();
+    for (const member of state.groups[groupId]?.members ?? []) {
+      const node = state.nodes[member];
+      if (node) {
+        ids.add(typeof node.region_id === "string" && node.region_id
+          ? node.region_id
+          : "__legacy__");
+      } else if (state.groups[member]) {
+        for (const id of groupRegionIds(member, new Set(seen))) ids.add(id);
+      }
+    }
+    return ids;
+  };
+  for (const [groupId, rect] of Object.entries(groups)) {
+    const ids = groupRegionIds(groupId);
+    if (ids.size !== 1) continue;
+    const regionId = [...ids][0]!;
+    const rects = regionRects.get(regionId) ?? [];
+    rects.push(rect);
+    regionRects.set(regionId, rects);
+  }
+  const regionBounds = Object.fromEntries(
+    [...regionRects.entries()].flatMap(([regionId, rects]) => {
+      const bounds = union(rects);
+      return bounds ? [[regionId, bounds]] : [];
+    }),
+  );
   const bounds = union([...Object.values(nodes), ...Object.values(groups)], 100) ?? rawBounds;
-  return { nodes, groups, bounds };
+  return { nodes, groups, regions: regionBounds, bounds };
 }
 
 export function targetRect(state: SemanticBoardState, layout: BoardLayout, target: Record<string, any> | string | undefined): Rect | undefined {

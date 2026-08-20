@@ -14,13 +14,28 @@ import {
   planFocusCamera,
   viewportToBoardPoint,
   type AttentionMode,
+  TeachingCameraAuthority,
   type BoardPoint,
   type CameraState,
   type ViewportInsets,
 } from "./camera.js";
+import { boardInputTargetsInteractiveUi } from "./input-routing.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
-import { computeBoardLayout, targetRect, type BoardLayout, type MeasuredNodeSizes, type Rect } from "./layout.js";
-import { plotPathData, sampleImplicitPlotExpression, samplePlotExpression, type PlotRange } from "./plot.js";
+import {
+  computeBoardLayout,
+  targetRect,
+  type BoardLayout,
+  type MeasuredNodeSizes,
+  type Rect,
+  type RegionLayoutConstraint,
+} from "./layout.js";
+import {
+  plotPathData,
+  referencedPlotVariables,
+  sampleImplicitPlotExpression,
+  samplePlotExpression,
+  type PlotRange,
+} from "./plot.js";
 import {
   studentInputMethod,
   type StudentInputMethod,
@@ -159,8 +174,12 @@ export function variableAnimationFocusTargets(
 ): string[] {
   const token = new RegExp(`(^|[^a-z0-9_])${variable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9_]|$)`, "i");
   return Object.values(board.nodes)
-    .filter((node) => (Array.isArray(node.content?.bindings) ? node.content.bindings : [])
-      .some((binding: Record<string, unknown>) => typeof binding.expression === "string" && token.test(binding.expression)))
+    .filter((node) => (
+      (Array.isArray(node.content?.bindings) ? node.content.bindings : [])
+        .some((binding: Record<string, unknown>) => typeof binding.expression === "string" && token.test(binding.expression))
+      || (node.kind === "plot" && (Array.isArray(node.content?.curves) ? node.content.curves : [])
+        .some((curve: Record<string, unknown>) => typeof curve.expression === "string" && token.test(curve.expression)))
+    ))
     .map((node) => node.id);
 }
 
@@ -243,6 +262,13 @@ function syncEmphasisClass(element: Element, emphasis: string | undefined): void
 
 function nodeContentSignature(node: Record<string, any>): string {
   return JSON.stringify({ kind: node.kind, role: node.role, content: node.content });
+}
+
+function plotVariableSignature(node: Record<string, any>, variables: Record<string, number>): string {
+  const expressions = Array.isArray(node.content?.curves)
+    ? node.content.curves.map((curve: Record<string, any>) => text(curve.expression)).filter(Boolean)
+    : [];
+  return JSON.stringify(referencedPlotVariables(expressions, variables));
 }
 
 export function mathSource(content: Record<string, any>): string {
@@ -395,7 +421,11 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
   svg.append(label);
 }
 
-function plot(parent: HTMLElement, node: Record<string, any>): void {
+function plot(
+  parent: HTMLElement,
+  node: Record<string, any>,
+  variables: Record<string, number>,
+): void {
   const content = node.content ?? {};
   const axes = content.axes ?? {};
   const xRange = plotRange(axes.x, { min: -5, max: 5 });
@@ -452,8 +482,9 @@ function plot(parent: HTMLElement, node: Record<string, any>): void {
           ? sampleImplicitPlotExpression(expression, xRange, yRange, {
               level: Number(curve.level ?? 0),
               samples: Number(curve.samples ?? 80),
+              variables,
             })
-          : samplePlotExpression(expression, xRange, yRange),
+          : samplePlotExpression(expression, xRange, yRange, 241, variables),
         mapX,
         mapY,
       );
@@ -611,6 +642,28 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     if (point.id && Number.isFinite(x) && Number.isFinite(y)) points.set(text(point.id), { ...point, x, y });
   }
 
+  for (const polygon of Array.isArray(content.polygons) ? content.polygons : []) {
+    const vertices = Array.isArray(polygon.points)
+      ? polygon.points.map((point: unknown) => points.get(text(point))).filter(Boolean)
+      : [];
+    if (vertices.length < 3 || vertices.length !== polygon.points.length) continue;
+    const element = document.createElementNS(SVG_NS, "polygon");
+    element.setAttribute("points", vertices.map((point: any) => (
+      `${viewport.mapX(point.x)},${viewport.mapY(point.y)}`
+    )).join(" "));
+    element.classList.add("geometry-polygon", `geometry-polygon-${text(polygon.tone || "primary")}`);
+    element.dataset.id = text(polygon.id);
+    applyEmphasisClass(element, latestEmphasis(node, text(polygon.id)));
+    svg.append(element);
+    if (polygon.label) {
+      const centroid = vertices.reduce((sum: { x: number; y: number }, point: any) => ({
+        x: sum.x + point.x / vertices.length,
+        y: sum.y + point.y / vertices.length,
+      }), { x: 0, y: 0 });
+      appendGeometryLabel(svg, polygon.label, viewport.mapX(centroid.x), viewport.mapY(centroid.y), "middle");
+    }
+  }
+
   for (const circle of Array.isArray(content.circles) ? content.circles : []) {
     const center = points.get(text(circle.center));
     const radius = Number(circle.radius);
@@ -738,18 +791,23 @@ export function angleControlValue(
   currentValue: number,
   min: number,
   max: number,
+  unit?: string,
 ): number {
-  const turn = Math.PI * 2;
-  const firstTurn = Math.ceil((min - rawAngle) / turn - 1e-10);
-  const lastTurn = Math.floor((max - rawAngle) / turn + 1e-10);
+  const normalizedUnit = unit?.trim().toLowerCase() ?? "";
+  const usesDegrees = !/弧度|radian|rad/u.test(normalizedUnit)
+    && /角度|度|°|degree|deg/u.test(normalizedUnit);
+  const valueAtPointer = usesDegrees ? rawAngle * 180 / Math.PI : rawAngle;
+  const turn = usesDegrees ? 360 : Math.PI * 2;
+  const firstTurn = Math.ceil((min - valueAtPointer) / turn - 1e-10);
+  const lastTurn = Math.floor((max - valueAtPointer) / turn + 1e-10);
   if (firstTurn <= lastTurn) {
     const closestTurn = Math.min(
       lastTurn,
-      Math.max(firstTurn, Math.round((currentValue - rawAngle) / turn)),
+      Math.max(firstTurn, Math.round((currentValue - valueAtPointer) / turn)),
     );
-    return Math.min(max, Math.max(min, rawAngle + closestTurn * turn));
+    return Math.min(max, Math.max(min, valueAtPointer + closestTurn * turn));
   }
-  return Math.min(max, Math.max(min, rawAngle));
+  return Math.min(max, Math.max(min, valueAtPointer));
 }
 
 export function diagramConnectionGeometry(content: Record<string, any>, connection: Record<string, any>): DiagramConnectionGeometry | undefined {
@@ -850,7 +908,7 @@ function renderContent(
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometry(parent, node); return; }
-  if (node.kind === "plot") { plot(parent, node); return; }
+  if (node.kind === "plot") { plot(parent, node, variables); return; }
   if (node.kind === "scene3d") {
     try {
       renderScene3d(parent, node, sceneView, variables, sceneInput);
@@ -969,7 +1027,8 @@ export class InfiniteBoardView {
   private variableInputHandler?: VariableInputHandler;
   private scene3dInputHandler?: Scene3dViewInputHandler;
   private scene3dViews: Record<string, Scene3dViewState> = {};
-  private manualMotionTimer?: ReturnType<typeof setTimeout>;
+  private regionLayouts: Record<string, RegionLayoutConstraint> = {};
+  private readonly cameraAuthority = new TeachingCameraAuthority();
   private cameraFrame?: number;
   private cameraNotifyUntil = 0;
   private inputOwner: BoardInputOwner = "runtime";
@@ -1006,14 +1065,19 @@ export class InfiniteBoardView {
   }
 
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
+    const teachingCameraChanged = this.cameraAuthority.observeRender(
+      board?.board_id,
+      operation?.operation_id,
+    );
     if (this.board?.board_id !== board?.board_id) this.lastAttentionTargets = [];
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
     if (!board) { this.clearBoard(); return; }
-    const provisionalLayout = computeBoardLayout(board);
+    const layoutOptions = { regions: this.regionLayouts };
+    const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
     const measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
-    const layout = this.layout = computeBoardLayout(board, measuredNodeSizes);
+    const layout = this.layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
@@ -1027,11 +1091,11 @@ export class InfiniteBoardView {
       ? animatedTargets
       : cameraFocusTargets(operation, board.focus, this.lastAttentionTargets);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
-    if (focusRects.length) {
+    if (teachingCameraChanged && focusRects.length) {
       this.resumeAutomaticCamera();
       this.focusRects(focusTargets, focusRects, board);
     }
-    else if (["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
+    else if (teachingCameraChanged && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeRect = targetRect(board, layout, activeTarget);
       if (activeRect) {
@@ -1210,6 +1274,26 @@ export class InfiniteBoardView {
   }
 
   /**
+   * Pins logical course regions to host-selected board coordinates. Updating
+   * these constraints reflows the board without creating a teaching-camera
+   * request, so ordinary layout bookkeeping cannot steal the learner's view.
+   */
+  setRegionLayouts(layouts: Record<string, RegionLayoutConstraint>): void {
+    if (JSON.stringify(layouts) === JSON.stringify(this.regionLayouts)) return;
+    this.regionLayouts = structuredClone(layouts);
+    if (this.board) this.render(this.board, this.operation);
+  }
+
+  getRegionBounds(regionId: string): Rect | undefined {
+    const bounds = this.layout?.regions?.[regionId];
+    return bounds ? { ...bounds } : undefined;
+  }
+
+  getRegionBoundsMap(): Record<string, Rect> {
+    return structuredClone(this.layout?.regions ?? {});
+  }
+
+  /**
    * Adds a course-owned layer to the board's world coordinate space.
    *
    * The layer inherits the exact same pan/zoom transform as lesson nodes,
@@ -1237,8 +1321,32 @@ export class InfiniteBoardView {
     this.focusRects(targetIds, rects, this.board);
   }
 
+  /**
+   * Moves the teaching camera to host-owned content mounted in board/world
+   * coordinates, such as a pending learner question and its loading card.
+   * This is an explicit one-shot request from the host; ordinary renders and
+   * elapsed time never call it automatically.
+   */
+  focusWorldRect(rect: Rect): void {
+    if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
+      || rect.width <= 0 || rect.height <= 0) return;
+    const viewport = this.viewport.getBoundingClientRect();
+    const camera = planFocusCamera(
+      [rect],
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      "detail",
+      this.viewportInsets,
+    );
+    this.cameraAuthority.holdHostCamera();
+    this.panX = camera.panX;
+    this.panY = camera.panY;
+    this.scale = camera.scale;
+    this.transform();
+  }
+
   resize(): void {
-    if (!this.layout || !this.board || this.viewport.classList.contains("manual-navigation")) return;
+    if (!this.layout || !this.board || !this.cameraAuthority.layoutReframeAllowed) return;
     const operationFocus = this.operation?.action?.focus?.targets ?? [];
     const operationFocusRects = this.resolveFocusRects(operationFocus, this.board, this.layout);
     if (operationFocusRects.length) {
@@ -1289,12 +1397,13 @@ export class InfiniteBoardView {
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
     this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
-    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
+    this.cameraAuthority.reset();
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.dragging = undefined;
     this.finishVariableDrag();
     this.variableInputHandler = undefined;
     this.scene3dInputHandler = undefined;
+    this.regionLayouts = {};
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
   }
@@ -1308,6 +1417,9 @@ export class InfiniteBoardView {
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
     const activeCreateId = action?.op === "board.create" ? action.node?.id : undefined;
     const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
+    const variableValues = Object.fromEntries(Object.entries(board.variables ?? {}).map(
+      ([alias, variable]) => [alias, variable.value],
+    ));
     const measured: MeasuredNodeSizes = {};
     for (const [id, element] of this.nodeElements) {
       if (board.nodes[id]) continue;
@@ -1333,7 +1445,8 @@ export class InfiniteBoardView {
       if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");
       applyEmphasisClass(element, latestEmphasis(node));
       const signature = nodeContentSignature(node)
-        + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null);
+        + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
+        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         element.replaceChildren();
         renderContent(
@@ -1342,9 +1455,7 @@ export class InfiniteBoardView {
           this.resolveAsset,
           this.scene3dViews[node.id],
           this.scene3dInputHandler,
-          Object.fromEntries(Object.entries(board.variables ?? {}).map(
-            ([alias, variable]) => [alias, variable.value],
-          )),
+          variableValues,
         );
         this.nodeContentSignatures.set(node.id, signature);
       }
@@ -1525,23 +1636,21 @@ export class InfiniteBoardView {
     this.transform();
   }
   private onWheel(event: WheelEvent): void {
-    if (this.inputOwner !== "runtime") return;
+    if (
+      this.inputOwner !== "runtime"
+      || boardInputTargetsInteractiveUi(event.composedPath())
+    ) return;
     event.preventDefault();
     this.beginManualNavigation();
     const rect = this.viewport.getBoundingClientRect();
     this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top);
   }
   private beginManualNavigation(): void {
+    this.cameraAuthority.beginManualNavigation();
     this.viewport.classList.add("manual-navigation");
-    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
-    this.manualMotionTimer = setTimeout(() => {
-      this.manualMotionTimer = undefined;
-      this.viewport.classList.remove("manual-navigation");
-    }, 2_200);
   }
   private resumeAutomaticCamera(): void {
-    if (this.manualMotionTimer) clearTimeout(this.manualMotionTimer);
-    this.manualMotionTimer = undefined;
+    this.cameraAuthority.resumeTeachingCamera();
     this.viewport.classList.remove("manual-navigation");
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
@@ -1552,7 +1661,7 @@ export class InfiniteBoardView {
     const x = (event.clientX - drag.rect.left) / drag.rect.width * drag.viewBoxWidth;
     const y = (event.clientY - drag.rect.top) / drag.rect.height * drag.viewBoxHeight;
     const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
-    const value = angleControlValue(rawAngle, variable.value, variable.min, variable.max);
+    const value = angleControlValue(rawAngle, variable.value, variable.min, variable.max, variable.unit);
     if (Number.isFinite(value)) {
       drag.lastValue = value;
       this.variableInputHandler(drag.alias, value, {
@@ -1564,7 +1673,10 @@ export class InfiniteBoardView {
     }
   }
   private onPointerDown(event: PointerEvent): void {
-    if (this.inputOwner !== "runtime" || (event.target as HTMLElement).closest("button")) return;
+    if (
+      this.inputOwner !== "runtime"
+      || boardInputTargetsInteractiveUi(event.composedPath())
+    ) return;
     const control = (event.target as Element).closest<SVGElement>("[data-oll-variable-control]");
     const svg = control?.closest<SVGSVGElement>("svg");
     const alias = control?.dataset.ollVariableControl;
