@@ -114,6 +114,63 @@ test("host camera focus survives layout refresh until a new teaching request", (
   );
 });
 
+test("exclusive host camera survives later operations until explicitly released", () => {
+  const authority = new TeachingCameraAuthority();
+
+  assert.equal(authority.observeRender("board-1", "operation-1"), true);
+  authority.holdHostCamera(true);
+  assert.equal(authority.layoutReframeAllowed, false);
+
+  assert.equal(authority.observeRender("board-1", "operation-2"), true);
+  assert.equal(
+    authority.resumeTeachingCamera(),
+    false,
+    "a later operation must not steal an exclusive host camera",
+  );
+  assert.equal(authority.layoutReframeAllowed, false);
+
+  authority.releaseHostCamera();
+  assert.equal(authority.layoutReframeAllowed, true);
+  assert.equal(
+    authority.resumeTeachingCamera(),
+    true,
+    "teaching focus may resume after the host explicitly releases the camera",
+  );
+});
+
+test("course framing fills the safe viewport instead of reserving teaching context", () => {
+  const current = { panX: 0, panY: 0, scale: 1 };
+  const viewport = { width: 1710, height: 927 };
+  const insets = { top: 92, right: 28, bottom: 190, left: 28 };
+  const course = { x: 1174.2, y: 120, width: 1219.2, height: 1222 };
+
+  const teaching = planFocusCamera([course], current, viewport, "detail", insets);
+  const completedCourse = planFocusCamera([course], current, viewport, "course", insets);
+
+  assert.ok(completedCourse.scale > teaching.scale * 1.5);
+  assert.ok(viewport.width / completedCourse.scale < 4_200);
+  assert.ok(viewport.height / completedCourse.scale < 2_300);
+});
+
+test("course framing no longer exposes an entire three-course row", () => {
+  const viewport = { width: 1710, height: 927 };
+  const currentCourse = { x: 3234.8, y: 90, width: 1219.2, height: 1222 };
+  const oldestCourse = { x: 100, y: 90, width: 1500, height: 1115 };
+  const camera = planFocusCamera(
+    [currentCourse],
+    { panX: 0, panY: 0, scale: 1 },
+    viewport,
+    "course",
+    { top: 92, right: 28, bottom: 190, left: 28 },
+  );
+  const visibleLeft = -camera.panX / camera.scale;
+  const visibleRight = visibleLeft + viewport.width / camera.scale;
+
+  assert.ok(visibleLeft > oldestCourse.x + oldestCourse.width);
+  assert.ok(visibleLeft < currentCourse.x);
+  assert.ok(visibleRight > currentCourse.x + currentCourse.width);
+});
+
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {
   assert.equal(mathSource({ expression: "$$x^2+6x+5$$" }), "x^2+6x+5");
   assert.equal(mathSource({ statement: "\\[\\triangle ABD\\cong\\triangle ACD\\]" }), "\\triangle ABD\\cong\\triangle ACD");

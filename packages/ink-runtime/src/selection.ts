@@ -43,6 +43,9 @@ export async function createInkSelectionSnapshot(options: {
   region?: InkSelectionRegion;
 }): Promise<InkSelectionSnapshot> {
   const selection = selectedComponentsToSvg(options.components);
+  const componentIds = [...options.components]
+    .sort((left, right) => left.getZIndex() - right.getZIndex())
+    .map((component) => component.getId());
   const region: InkSelectionRegion = options.region ?? {
     kind: "rectangle",
     closed: true,
@@ -62,9 +65,14 @@ export async function createInkSelectionSnapshot(options: {
     created_at: options.createdAt ?? new Date().toISOString(),
     bounds: selection.bounds,
     region,
+    component_ids: componentIds,
     checksum: {
       algorithm: "sha-256",
-      value: await inkSvgChecksum(JSON.stringify({ svg: selection.svg, region })),
+      value: await inkSvgChecksum(JSON.stringify({
+        svg: selection.svg,
+        region,
+        component_ids: componentIds,
+      })),
     },
     svg: selection.svg,
   };

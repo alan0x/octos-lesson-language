@@ -9,6 +9,7 @@ export class TeachingCameraAuthority {
   private manual = false;
   private boardId?: string;
   private operationId?: string;
+  private exclusiveHost = false;
 
   observeRender(boardId: string | undefined, operationId: string | undefined): boolean {
     const changed = boardId !== this.boardId || operationId !== this.operationId;
@@ -26,11 +27,19 @@ export class TeachingCameraAuthority {
    * viewport-inset refreshes. A genuinely new teaching operation may still
    * call resumeTeachingCamera before applying its own focus request.
    */
-  holdHostCamera(): void {
+  holdHostCamera(exclusive = false): void {
     this.manual = true;
+    this.exclusiveHost = exclusive;
   }
 
-  resumeTeachingCamera(): void {
+  resumeTeachingCamera(): boolean {
+    if (this.exclusiveHost) return false;
+    this.manual = false;
+    return true;
+  }
+
+  releaseHostCamera(): void {
+    this.exclusiveHost = false;
     this.manual = false;
   }
 
@@ -40,6 +49,7 @@ export class TeachingCameraAuthority {
 
   reset(): void {
     this.manual = false;
+    this.exclusiveHost = false;
     this.boardId = undefined;
     this.operationId = undefined;
   }
@@ -96,7 +106,7 @@ export interface ViewportOcclusion {
   height: number;
 }
 
-export type AttentionMode = "detail" | "relationship" | "overview";
+export type AttentionMode = "detail" | "relationship" | "overview" | "course";
 
 const FOCUS_MARGIN = 70;
 const REVEAL_MARGIN = FOCUS_MARGIN;
@@ -108,6 +118,10 @@ const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   detail: .64,
   relationship: .72,
   overview: .78,
+  // Course framing is a navigation boundary, not a teaching close-up. Keep
+  // the complete course visible, but do not reserve the broad surrounding
+  // context used while a teacher is explaining one diagram.
+  course: 1,
 };
 
 function unionRects(rects: Rect[]): Rect {

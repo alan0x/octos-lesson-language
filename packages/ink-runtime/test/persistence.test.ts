@@ -13,7 +13,9 @@ import {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
   LEGACY_INK_SELECTION_FORMAT_VERSION,
+  REGION_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
+  inkSelectionSourceExists,
   validateInkSelectionSnapshot,
 } from "../src/selection-record.js";
 
@@ -126,12 +128,52 @@ test("a replay can read earlier ink without changing its source document", async
   );
 });
 
-test("selection sources are immutable checksummed snapshots, not editor component IDs", async () => {
+test("selection sources preserve immutable content and track their source strokes", async () => {
   const svg = '<svg data-oll-ink-selection="1" viewBox="0 0 40 20"><path d="M1 1L39 19"/></svg>';
   const snapshot = {
     format: INK_SELECTION_FORMAT,
     format_version: INK_SELECTION_FORMAT_VERSION,
     source_id: "ink-source:stable-1",
+    document_id: "lesson-1:student-ink",
+    document_version: 4,
+    created_at: "2026-08-14T12:00:00.000Z",
+    bounds: { x: 120, y: 80, width: 40, height: 20 },
+    region: {
+      kind: "rectangle" as const,
+      closed: true,
+      points: [{ x: 120, y: 80 }, { x: 160, y: 80 }, { x: 160, y: 100 }, { x: 120, y: 100 }],
+    },
+    component_ids: ["stroke:1", "stroke:2"],
+    checksum: { algorithm: "sha-256" as const, value: "" },
+    svg,
+  };
+  snapshot.checksum.value = await inkSvgChecksum(JSON.stringify({
+    svg,
+    region: snapshot.region,
+    component_ids: snapshot.component_ids,
+  }));
+  assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
+  await assertInkSelectionIntegrity(snapshot);
+
+  const damaged = structuredClone(snapshot);
+  damaged.svg = damaged.svg.replace("39 19", "20 19");
+  await assert.rejects(
+    () => assertInkSelectionIntegrity(damaged),
+    (error) => error instanceof InkRuntimeError && error.code === "INK_CHECKSUM_MISMATCH",
+  );
+
+  const present = new Set(["stroke:1", "stroke:2"]);
+  assert.equal(inkSelectionSourceExists(snapshot, (id) => present.has(id)), true);
+  present.delete("stroke:2");
+  assert.equal(inkSelectionSourceExists(snapshot, (id) => present.has(id)), false);
+});
+
+test("version 2 selection snapshots remain readable but cannot prove source presence", async () => {
+  const svg = '<svg data-oll-ink-selection="1" viewBox="0 0 40 20"><path d="M1 1L39 19"/></svg>';
+  const snapshot = {
+    format: INK_SELECTION_FORMAT,
+    format_version: REGION_INK_SELECTION_FORMAT_VERSION,
+    source_id: "ink-source:region-v2",
     document_id: "lesson-1:student-ink",
     document_version: 4,
     created_at: "2026-08-14T12:00:00.000Z",
@@ -147,13 +189,7 @@ test("selection sources are immutable checksummed snapshots, not editor componen
   snapshot.checksum.value = await inkSvgChecksum(JSON.stringify({ svg, region: snapshot.region }));
   assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
   await assertInkSelectionIntegrity(snapshot);
-
-  const damaged = structuredClone(snapshot);
-  damaged.svg = damaged.svg.replace("39 19", "20 19");
-  await assert.rejects(
-    () => assertInkSelectionIntegrity(damaged),
-    (error) => error instanceof InkRuntimeError && error.code === "INK_CHECKSUM_MISMATCH",
-  );
+  assert.equal(inkSelectionSourceExists(snapshot, () => true), null);
 });
 
 test("legacy selection snapshots remain readable after region paths are added", async () => {

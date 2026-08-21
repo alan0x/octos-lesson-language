@@ -1091,15 +1091,13 @@ export class InfiniteBoardView {
       ? animatedTargets
       : cameraFocusTargets(operation, board.focus, this.lastAttentionTargets);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
-    if (teachingCameraChanged && focusRects.length) {
-      this.resumeAutomaticCamera();
+    if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
       this.focusRects(focusTargets, focusRects, board);
     }
     else if (teachingCameraChanged && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeRect = targetRect(board, layout, activeTarget);
-      if (activeRect) {
-        this.resumeAutomaticCamera();
+      if (activeRect && this.resumeAutomaticCamera()) {
         const activeId = operation?.action?.op === "board.create"
           ? operation.action.node?.id
           : operation?.action?.target?.node_id
@@ -1317,7 +1315,7 @@ export class InfiniteBoardView {
     if (!this.layout || !this.board || targetIds.length === 0) return;
     const rects = this.resolveFocusRects(targetIds, this.board, this.layout);
     if (rects.length === 0) return;
-    this.resumeAutomaticCamera();
+    if (!this.resumeAutomaticCamera()) return;
     this.focusRects(targetIds, rects, this.board);
   }
 
@@ -1327,22 +1325,36 @@ export class InfiniteBoardView {
    * This is an explicit one-shot request from the host; ordinary renders and
    * elapsed time never call it automatically.
    */
-  focusWorldRect(rect: Rect): void {
+  focusWorldRect(
+    rect: Rect,
+    options: { exclusive?: boolean; framing?: "content" | "course" } = {},
+  ): Rect | undefined {
     if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
-      || rect.width <= 0 || rect.height <= 0) return;
+      || rect.width <= 0 || rect.height <= 0) return undefined;
     const viewport = this.viewport.getBoundingClientRect();
     const camera = planFocusCamera(
       [rect],
       { panX: this.panX, panY: this.panY, scale: this.scale },
       viewport,
-      "detail",
+      options.framing === "course" ? "course" : "detail",
       this.viewportInsets,
     );
-    this.cameraAuthority.holdHostCamera();
+    this.cameraAuthority.holdHostCamera(options.exclusive === true);
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
     this.transform();
+    return {
+      x: -camera.panX / camera.scale,
+      y: -camera.panY / camera.scale,
+      width: viewport.width / camera.scale,
+      height: viewport.height / camera.scale,
+    };
+  }
+
+  releaseHostCamera(): void {
+    this.cameraAuthority.releaseHostCamera();
+    this.viewport.classList.remove("manual-navigation");
   }
 
   resize(): void {
@@ -1649,9 +1661,10 @@ export class InfiniteBoardView {
     this.cameraAuthority.beginManualNavigation();
     this.viewport.classList.add("manual-navigation");
   }
-  private resumeAutomaticCamera(): void {
-    this.cameraAuthority.resumeTeachingCamera();
+  private resumeAutomaticCamera(): boolean {
+    if (!this.cameraAuthority.resumeTeachingCamera()) return false;
     this.viewport.classList.remove("manual-navigation");
+    return true;
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
   private updateVariableDrag(event: PointerEvent): void {
