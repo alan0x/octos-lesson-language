@@ -1,8 +1,9 @@
 import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
 
 export const INK_SELECTION_FORMAT = "oll.student-ink.selection" as const;
-export const INK_SELECTION_FORMAT_VERSION = 2 as const;
+export const INK_SELECTION_FORMAT_VERSION = 3 as const;
 export const LEGACY_INK_SELECTION_FORMAT_VERSION = 1 as const;
+export const REGION_INK_SELECTION_FORMAT_VERSION = 2 as const;
 
 export interface InkSelectionBounds {
   x: number;
@@ -50,13 +51,20 @@ export function inkSelectionRectangleRegion(
 
 export interface InkSelectionSnapshot {
   format: typeof INK_SELECTION_FORMAT;
-  format_version: typeof LEGACY_INK_SELECTION_FORMAT_VERSION | typeof INK_SELECTION_FORMAT_VERSION;
+  format_version:
+    | typeof LEGACY_INK_SELECTION_FORMAT_VERSION
+    | typeof REGION_INK_SELECTION_FORMAT_VERSION
+    | typeof INK_SELECTION_FORMAT_VERSION;
   source_id: string;
   document_id: string;
   document_version: number;
   created_at: string;
   bounds: InkSelectionBounds;
   region?: InkSelectionRegion;
+  /** IDs of the immutable js-draw components captured by this snapshot.
+   * Version 3 records use them only to detect that source ink was erased;
+   * the saved SVG remains the content sent to an assistant. */
+  component_ids?: string[];
   checksum: {
     algorithm: "sha-256";
     value: string;
@@ -94,10 +102,20 @@ function validRegion(value: unknown): value is InkSelectionRegion {
     && region.points.every((point) => point && Number.isFinite(point.x) && Number.isFinite(point.y));
 }
 
-function selectionChecksumSource(snapshot: Pick<InkSelectionSnapshot, "format_version" | "svg" | "region">): string {
-  return snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION
-    ? snapshot.svg
-    : JSON.stringify({ svg: snapshot.svg, region: snapshot.region });
+function selectionChecksumSource(
+  snapshot: Pick<InkSelectionSnapshot, "format_version" | "svg" | "region" | "component_ids">,
+): string {
+  if (snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION) {
+    return snapshot.svg;
+  }
+  if (snapshot.format_version === REGION_INK_SELECTION_FORMAT_VERSION) {
+    return JSON.stringify({ svg: snapshot.svg, region: snapshot.region });
+  }
+  return JSON.stringify({
+    svg: snapshot.svg,
+    region: snapshot.region,
+    component_ids: snapshot.component_ids,
+  });
 }
 
 export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapshot {
@@ -109,6 +127,7 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
   if (
     snapshot.format !== INK_SELECTION_FORMAT
     || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== REGION_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION)
     || typeof snapshot.source_id !== "string"
     || !snapshot.source_id
@@ -124,8 +143,16 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     || bounds.width <= 0
     || !Number.isFinite(bounds.height)
     || bounds.height <= 0
-    || (snapshot.format_version === INK_SELECTION_FORMAT_VERSION && !validRegion(snapshot.region))
+    || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION && !validRegion(snapshot.region))
     || (snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION && snapshot.region !== undefined)
+    || (snapshot.format_version === INK_SELECTION_FORMAT_VERSION
+      && (!Array.isArray(snapshot.component_ids)
+        || snapshot.component_ids.length === 0
+        || snapshot.component_ids.length > 4096
+        || snapshot.component_ids.some((id) => typeof id !== "string" || !id)
+        || new Set(snapshot.component_ids).size !== snapshot.component_ids.length))
+    || (snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+      && snapshot.component_ids !== undefined)
     || snapshot.checksum?.algorithm !== "sha-256"
     || !/^[a-f0-9]{64}$/.test(snapshot.checksum.value ?? "")
     || typeof snapshot.svg !== "string"
@@ -134,6 +161,18 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     throw new InkRuntimeError("INK_INVALID_RECORD", "Ink selection source metadata is invalid");
   }
   return structuredClone(snapshot as InkSelectionSnapshot);
+}
+
+/**
+ * Return whether every stroke captured by a selection still exists.
+ * Old snapshots did not record component IDs, so their status is unknown.
+ */
+export function inkSelectionSourceExists(
+  snapshot: InkSelectionSnapshot,
+  lookupComponent: (id: string) => unknown,
+): boolean | null {
+  if (snapshot.format_version !== INK_SELECTION_FORMAT_VERSION) return null;
+  return snapshot.component_ids!.every((id) => Boolean(lookupComponent(id)));
 }
 
 export async function assertInkSelectionIntegrity(

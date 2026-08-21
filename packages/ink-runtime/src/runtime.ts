@@ -39,6 +39,7 @@ import { createInkSelectionSnapshot } from "./selection.js";
 import {
   inkSelectionPathRegion,
   inkSelectionRectangleRegion,
+  inkSelectionSourceExists,
   type InkSelectionBounds,
   type InkSelectionPoint,
   type InkSelectionRegion,
@@ -585,6 +586,18 @@ export class InkRuntime {
       documentVersion: this.documentVersion,
       ...(region ? { region } : {}),
     });
+  }
+
+  /**
+   * Check whether the immutable strokes behind an assistance source still
+   * exist in the current document. `null` means the snapshot predates source
+   * tracking and cannot be checked safely.
+   */
+  hasSelectionSource(snapshot: InkSelectionSnapshot): boolean | null {
+    return inkSelectionSourceExists(
+      snapshot,
+      (componentId) => this.editor.image.lookupElement(componentId),
+    );
   }
 
   serialize(): string { return this.editor.toSVG().outerHTML; }
