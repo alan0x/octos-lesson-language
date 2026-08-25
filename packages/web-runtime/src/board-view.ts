@@ -168,6 +168,33 @@ export function cameraFocusTargets(
   return lastAttentionTargets.length ? lastAttentionTargets : boardFocus;
 }
 
+export function focusTargetsInRegion(
+  board: SemanticBoardState,
+  targetIds: string[],
+  regionId: string | undefined,
+): string[] {
+  if (!regionId) return [...targetIds];
+  const regionsFor = (id: string, visited = new Set<string>()): Set<string> => {
+    if (visited.has(id)) return new Set();
+    visited.add(id);
+    const node = board.nodes[id];
+    if (node) return new Set([node.region_id ?? "__legacy__"]);
+    const regions = new Set<string>();
+    const group = board.groups[id];
+    for (const member of group?.members ?? []) {
+      for (const memberRegion of regionsFor(member, new Set(visited))) regions.add(memberRegion);
+    }
+    const connection = board.connections[id];
+    for (const endpoint of [connection?.from, connection?.to]) {
+      const endpointId = endpoint?.node_id ?? endpoint?.group_id ?? endpoint?.connection_id;
+      if (!endpointId) continue;
+      for (const endpointRegion of regionsFor(endpointId, new Set(visited))) regions.add(endpointRegion);
+    }
+    return regions;
+  };
+  return targetIds.filter((id) => regionsFor(id).has(regionId));
+}
+
 export function variableAnimationFocusTargets(
   board: SemanticBoardState,
   variable: string,
@@ -778,32 +805,109 @@ function orderedDiagramPath(content: Record<string, any>): string[] | undefined 
   return ordered.length === ids.size ? ordered : undefined;
 }
 
-function orderedDiagramPosition(index: number, total: number): { x: number; y: number } {
-  const columns = Math.min(4, total);
-  const row = Math.floor(index / columns);
-  const indexInRow = index % columns;
-  const column = row % 2 === 0 ? indexInRow : columns - 1 - indexInRow;
-  const x = columns === 1 ? 150 : 38 + column * 224 / (columns - 1);
-  const rows = Math.ceil(total / columns);
-  const y = rows === 1 ? 94 : 52 + row * 84;
-  return { x, y };
+function diagramTextUnits(value: string): number {
+  return [...value].reduce((total, character) => total + (/[^\u0000-\u00ff]/u.test(character) ? 2 : 1), 0);
 }
 
-function diagramPoints(content: Record<string, any>): Map<string, { x: number; y: number; label: string }> {
+export function wrapDiagramLabel(value: string, maxUnits: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  let units = 0;
+  for (const character of [...value.trim()]) {
+    const characterUnits = /[^\u0000-\u00ff]/u.test(character) ? 2 : 1;
+    if (line && units + characterUnits > maxUnits) {
+      lines.push(line.trimEnd());
+      line = "";
+      units = 0;
+    }
+    if (!line && /\s/u.test(character)) continue;
+    line += character;
+    units += characterUnits;
+  }
+  if (line) lines.push(line.trimEnd());
+  return lines.length ? lines : [""];
+}
+
+export interface DiagramPointLayout {
+  x: number;
+  y: number;
+  label: string;
+  lines: string[];
+  width?: number;
+  height?: number;
+}
+
+export interface DiagramLayout {
+  width: number;
+  height: number;
+  points: Map<string, DiagramPointLayout>;
+  ordered: boolean;
+}
+
+export function diagramLayout(content: Record<string, any>): DiagramLayout {
   const elements = Array.isArray(content.elements) ? content.elements : [];
   const orderedPath = orderedDiagramPath(content);
-  const orderedIndex = orderedPath
-    ? new Map(orderedPath.map((id, index) => [id, index]))
-    : undefined;
-  return new Map(elements.map((element: Record<string, any>, index: number) => [
-    text(element.id),
-    {
-      ...(orderedIndex
-        ? orderedDiagramPosition(orderedIndex.get(text(element.id))!, elements.length)
-        : diagramPosition(text(element.semantic_position), index, elements.length)),
-      label: text(element.label),
-    },
-  ]));
+  if (!orderedPath) {
+    return {
+      width: 300,
+      height: 190,
+      ordered: false,
+      points: new Map(elements.map((element: Record<string, any>, index: number) => {
+        const label = text(element.label);
+        return [text(element.id), {
+          ...diagramPosition(text(element.semantic_position), index, elements.length),
+          label,
+          lines: [label],
+        }];
+      })),
+    };
+  }
+
+  const elementById = new Map(elements.map((element: Record<string, any>) => [text(element.id), element]));
+  const longestLabel = Math.max(0, ...elements.map((element: Record<string, any>) => diagramTextUnits(text(element.label))));
+  const columns = longestLabel > 12 ? Math.min(2, elements.length) : Math.min(4, elements.length);
+  const nodeWidth = columns <= 2 ? 190 : 96;
+  const maxLabelUnits = columns <= 2 ? 18 : 8;
+  const rows = Math.ceil(elements.length / columns);
+  const lineSets = orderedPath.map((id) => wrapDiagramLabel(text(elementById.get(id)?.label), maxLabelUnits));
+  const nodeHeights = lineSets.map((lines) => Math.max(42, 18 + lines.length * 17));
+  const rowHeights = Array.from({ length: rows }, (_unused, row) => Math.max(
+    ...nodeHeights.slice(row * columns, Math.min((row + 1) * columns, nodeHeights.length)),
+  ));
+  const rowCenters: number[] = [];
+  let cursorY = 22;
+  for (const rowHeight of rowHeights) {
+    rowCenters.push(cursorY + rowHeight / 2);
+    cursorY += rowHeight + 54;
+  }
+  const width = 480;
+  const height = Math.max(190, cursorY - 32);
+  const orderedIndex = new Map(orderedPath.map((id, index) => [id, index]));
+  return {
+    width,
+    height,
+    ordered: true,
+    points: new Map(elements.map((element: Record<string, any>) => {
+      const index = orderedIndex.get(text(element.id))!;
+      const row = Math.floor(index / columns);
+      const indexInRow = index % columns;
+      const column = row % 2 === 0 ? indexInRow : columns - 1 - indexInRow;
+      const x = columns === 1 ? width / 2 : width * (column + .5) / columns;
+      const label = text(element.label);
+      return [text(element.id), {
+        x,
+        y: rowCenters[row]!,
+        label,
+        lines: lineSets[index]!,
+        width: nodeWidth,
+        height: nodeHeights[index]!,
+      }];
+    })),
+  };
+}
+
+function diagramPoints(content: Record<string, any>): Map<string, DiagramPointLayout> {
+  return diagramLayout(content).points;
 }
 
 export interface DiagramConnectionGeometry {
@@ -876,9 +980,10 @@ export function diagramConnectionGeometry(content: Record<string, any>, connecti
 
 function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
-  const points = diagramPoints(content);
+  const layout = diagramLayout(content);
+  const points = layout.points;
   const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 300 190");
+  svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
   svg.classList.add("diagram-preview");
   for (const region of Array.isArray(content.regions) ? content.regions : []) {
     const members = (region.members ?? []).map((id: string) => points.get(id)).filter(Boolean) as { x: number; y: number }[];
@@ -899,8 +1004,22 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
     }
   }
   for (const [pointId, point] of points) {
-    const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(point.x)); dot.setAttribute("cy", String(point.y)); dot.setAttribute("r", "4"); dot.classList.add("diagram-point"); dot.dataset.id = pointId; applyEmphasisClass(dot, latestEmphasis(node, pointId)); svg.append(dot);
-    const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x + 8)); label.setAttribute("y", String(point.y - 7)); label.classList.add("diagram-label"); label.textContent = point.label; svg.append(label);
+    if (point.width && point.height) {
+      const box = document.createElementNS(SVG_NS, "rect");
+      box.setAttribute("x", String(point.x - point.width / 2)); box.setAttribute("y", String(point.y - point.height / 2));
+      box.setAttribute("width", String(point.width)); box.setAttribute("height", String(point.height)); box.setAttribute("rx", "10");
+      box.classList.add("diagram-node"); box.dataset.id = pointId; applyEmphasisClass(box, latestEmphasis(node, pointId)); svg.append(box);
+      const anchor = document.createElementNS(SVG_NS, "circle"); anchor.setAttribute("cx", String(point.x)); anchor.setAttribute("cy", String(point.y)); anchor.setAttribute("r", "0"); anchor.classList.add("diagram-point", "diagram-anchor"); svg.append(anchor);
+      const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x)); label.setAttribute("text-anchor", "middle"); label.classList.add("diagram-label");
+      const firstY = point.y - (point.lines.length - 1) * 8.5 + 5;
+      point.lines.forEach((line, index) => {
+        const span = document.createElementNS(SVG_NS, "tspan"); span.setAttribute("x", String(point.x)); span.setAttribute("y", String(firstY + index * 17)); span.textContent = line; label.append(span);
+      });
+      svg.append(label);
+    } else {
+      const dot = document.createElementNS(SVG_NS, "circle"); dot.setAttribute("cx", String(point.x)); dot.setAttribute("cy", String(point.y)); dot.setAttribute("r", "4"); dot.classList.add("diagram-point"); dot.dataset.id = pointId; applyEmphasisClass(dot, latestEmphasis(node, pointId)); svg.append(dot);
+      const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x + 8)); label.setAttribute("y", String(point.y - 7)); label.classList.add("diagram-label"); label.textContent = point.label; svg.append(label);
+    }
   }
   parent.append(svg);
 }
@@ -1045,10 +1164,11 @@ function connectionTargetRect(board: SemanticBoardState, layout: BoardLayout, ta
   if (nodeId && fragmentId) {
     const node = board.nodes[nodeId]; const nodeRect = layout.nodes[nodeId];
     if (node?.kind === "diagram" && nodeRect) {
-      const point = diagramPoints(node.content ?? {}).get(fragmentId);
+      const diagram = diagramLayout(node.content ?? {});
+      const point = diagram.points.get(fragmentId);
       if (point) {
         const innerWidth = Math.max(1, nodeRect.width - 36); const innerHeight = Math.max(1, nodeRect.height - 52);
-        return { x: nodeRect.x + 18 + point.x / 300 * innerWidth - 4, y: nodeRect.y + 36 + point.y / 190 * innerHeight - 4, width: 8, height: 8 };
+        return { x: nodeRect.x + 18 + point.x / diagram.width * innerWidth - 4, y: nodeRect.y + 36 + point.y / diagram.height * innerHeight - 4, width: 8, height: 8 };
       }
     }
   }
@@ -1063,6 +1183,7 @@ export class InfiniteBoardView {
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
+  private activeRegionId?: string;
   private dragging?: { x: number; y: number; panX: number; panY: number };
   private variableDragging?: {
     alias: string;
@@ -1138,22 +1259,25 @@ export class InfiniteBoardView {
     const animatedTargets = operation?.action?.animation
       ? variableAnimationFocusTargets(board, operation.action.animation.variable)
       : [];
-    const focusTargets = animatedTargets.length
+    const requestedFocusTargets = animatedTargets.length
       ? animatedTargets
       : cameraFocusTargets(operation, board.focus, this.lastAttentionTargets);
+    const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
       this.focusRects(focusTargets, focusRects, board);
     }
     else if (teachingCameraChanged && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
-      const activeRect = targetRect(board, layout, activeTarget);
+      const activeId = operation?.action?.op === "board.create"
+        ? operation.action.node?.id
+        : operation?.action?.target?.node_id
+          ?? operation?.action?.target?.group_id
+          ?? operation?.action?.target?.connection_id;
+      const activeRect = activeId && focusTargetsInRegion(board, [activeId], this.activeRegionId).length
+        ? targetRect(board, layout, activeTarget)
+        : undefined;
       if (activeRect && this.resumeAutomaticCamera()) {
-        const activeId = operation?.action?.op === "board.create"
-          ? operation.action.node?.id
-          : operation?.action?.target?.node_id
-            ?? operation?.action?.target?.group_id
-            ?? operation?.action?.target?.connection_id;
         this.focusRects(activeId ? [activeId] : [], [activeRect], board);
       }
     }
@@ -1333,6 +1457,13 @@ export class InfiniteBoardView {
     if (this.board) this.render(this.board, this.operation);
   }
 
+  /** Limits automatic teaching-camera decisions to the currently playing course. */
+  setActiveRegion(regionId: string | undefined): void {
+    if (regionId === this.activeRegionId) return;
+    this.activeRegionId = regionId;
+    this.lastAttentionTargets = [];
+  }
+
   getRegionBounds(regionId: string): Rect | undefined {
     const bounds = this.layout?.regions?.[regionId];
     return bounds ? { ...bounds } : undefined;
@@ -1368,10 +1499,12 @@ export class InfiniteBoardView {
 
   focusTargets(targetIds: string[]): void {
     if (!this.layout || !this.board || targetIds.length === 0) return;
-    const rects = this.resolveFocusRects(targetIds, this.board, this.layout);
+    const activeTargets = focusTargetsInRegion(this.board, targetIds, this.activeRegionId);
+    if (activeTargets.length === 0) return;
+    const rects = this.resolveFocusRects(activeTargets, this.board, this.layout);
     if (rects.length === 0) return;
     if (!this.resumeAutomaticCamera()) return;
-    this.focusRects(targetIds, rects, this.board);
+    this.focusRects(activeTargets, rects, this.board);
   }
 
   /**
@@ -1414,7 +1547,11 @@ export class InfiniteBoardView {
 
   resize(): void {
     if (!this.layout || !this.board || !this.cameraAuthority.layoutReframeAllowed) return;
-    const operationFocus = this.operation?.action?.focus?.targets ?? [];
+    const operationFocus = focusTargetsInRegion(
+      this.board,
+      this.operation?.action?.focus?.targets ?? [],
+      this.activeRegionId,
+    );
     const operationFocusRects = this.resolveFocusRects(operationFocus, this.board, this.layout);
     if (operationFocusRects.length) {
       this.focusRects(operationFocus, operationFocusRects, this.board);
@@ -1423,23 +1560,27 @@ export class InfiniteBoardView {
     const activeTarget = this.operation?.action?.op === "board.create"
       ? this.operation.action.node?.id
       : this.operation?.action?.target;
-    const activeRect = targetRect(this.board, this.layout, activeTarget);
+    const activeId = this.operation?.action?.op === "board.create"
+      ? this.operation.action.node?.id
+      : this.operation?.action?.target?.node_id
+        ?? this.operation?.action?.target?.group_id
+        ?? this.operation?.action?.target?.connection_id;
+    const activeRect = activeId && focusTargetsInRegion(this.board, [activeId], this.activeRegionId).length
+      ? targetRect(this.board, this.layout, activeTarget)
+      : undefined;
     if (activeRect) {
-      const activeId = this.operation?.action?.op === "board.create"
-        ? this.operation.action.node?.id
-        : this.operation?.action?.target?.node_id
-          ?? this.operation?.action?.target?.group_id
-          ?? this.operation?.action?.target?.connection_id;
       this.focusRects(activeId ? [activeId] : [], [activeRect], this.board);
       return;
     }
-    const priorRects = this.resolveFocusRects(this.lastAttentionTargets, this.board, this.layout);
+    const priorTargets = focusTargetsInRegion(this.board, this.lastAttentionTargets, this.activeRegionId);
+    const priorRects = this.resolveFocusRects(priorTargets, this.board, this.layout);
     if (priorRects.length) {
-      this.focusRects(this.lastAttentionTargets, priorRects, this.board);
+      this.focusRects(priorTargets, priorRects, this.board);
       return;
     }
-    const focusRects = this.resolveFocusRects(this.board.focus, this.board, this.layout);
-    if (focusRects.length) this.focusRects(this.board.focus, focusRects, this.board);
+    const boardFocus = focusTargetsInRegion(this.board, this.board.focus, this.activeRegionId);
+    const focusRects = this.resolveFocusRects(boardFocus, this.board, this.layout);
+    if (focusRects.length) this.focusRects(boardFocus, focusRects, this.board);
   }
 
   fit(): void {
@@ -1471,6 +1612,7 @@ export class InfiniteBoardView {
     this.variableInputHandler = undefined;
     this.scene3dInputHandler = undefined;
     this.regionLayouts = {};
+    this.activeRegionId = undefined;
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation");
   }

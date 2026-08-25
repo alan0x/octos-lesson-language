@@ -273,6 +273,33 @@ test("reading flow keeps one visual lane beside an ordered derivation lane", () 
   assert.ok(layout.nodes.first!.x >= layout.nodes.visual!.x + layout.nodes.visual!.width + 54);
 });
 
+test("reading flow starts a new narrative column after four cards", () => {
+  const ids = Array.from({ length: 9 }, (_unused, index) => `card-${index + 1}`);
+  const board: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: Object.fromEntries(ids.map((id) => [id, {
+      id,
+      kind: "math",
+      region_id: "course-a",
+      content: { latex: id },
+      placement: { relation: "new_region" },
+    }])),
+    groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [],
+  };
+  const layout = computeBoardLayout(board, Object.fromEntries(ids.map((id) => [id, { width: 320, height: 96 }])), {
+    regions: { "course-a": { x: 420, y: 160, reservedWidth: 1_100, flow: "reading" } },
+  });
+  const columns = new Map<number, string[]>();
+  for (const id of ids) {
+    const x = layout.nodes[id]!.x;
+    columns.set(x, [...(columns.get(x) ?? []), id]);
+  }
+  assert.equal(columns.size, 3);
+  assert.deepEqual([...columns.values()].map((column) => column.length), [4, 4, 1]);
+  assert.ok(layout.regions!["course-a"]!.height <= 760);
+});
+
 test("host controls reserve board space below their semantic visual", () => {
   const board: SemanticBoardState = {
     board_id: "board",

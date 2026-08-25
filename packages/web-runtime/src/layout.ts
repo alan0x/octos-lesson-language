@@ -36,7 +36,9 @@ export interface BoardLayoutOptions {
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
-const MAX_READING_COLUMN_HEIGHT = 1_150;
+const MAX_READING_COLUMN_HEIGHT = 760;
+const MAX_READING_COLUMN_ITEMS = 4;
+const MAX_AUTHORED_COLUMN_HEIGHT = 1_150;
 const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "diagram"]);
 
 interface RegionCursor {
@@ -50,6 +52,8 @@ interface RegionCursor {
   visualBottom?: number;
   narrativeBottom?: number;
   narrativeX?: number;
+  narrativeColumnWidth?: number;
+  narrativeColumnItems?: number;
 }
 
 function visibleContentLength(value: unknown): number {
@@ -406,6 +410,18 @@ export function computeBoardLayout(
         }, profile.hasVisual ? region.x + profile.visualWidth : region.x);
         x = region.narrativeX ?? (profile.hasVisual ? visualRight + GAP.normal : region.x);
         region.narrativeX ??= x;
+        const nextY = region.narrativeBottom === undefined
+          ? region.y
+          : region.narrativeBottom + GAP.compact;
+        const columnIsFull = (region.narrativeColumnItems ?? 0) >= MAX_READING_COLUMN_ITEMS
+          || nextY + size.height > region.y + MAX_READING_COLUMN_HEIGHT;
+        if (region.narrativeBottom !== undefined && columnIsFull) {
+          region.narrativeX = x + Math.max(280, region.narrativeColumnWidth ?? 0) + GAP.normal;
+          region.narrativeBottom = undefined;
+          region.narrativeColumnWidth = 0;
+          region.narrativeColumnItems = 0;
+          x = region.narrativeX;
+        }
         const usedWidth = x - region.x;
         const availableWidth = region.reservedWidth > usedWidth
           ? region.reservedWidth - usedWidth
@@ -469,7 +485,7 @@ export function computeBoardLayout(
           const candidate = state.nodes[id];
           return candidate && (candidate.region_id ?? "__legacy__") === regionId ? [rect.y] : [];
         }));
-      if (y + size.height > regionTop + MAX_READING_COLUMN_HEIGHT) {
+      if (y + size.height > regionTop + MAX_AUTHORED_COLUMN_HEIGHT) {
         const sameRegionRects = Object.entries(nodes).flatMap(([id, rect]) => {
           const candidate = state.nodes[id];
           return candidate && (candidate.region_id ?? "__legacy__") === regionId ? [rect] : [];
@@ -517,7 +533,11 @@ export function computeBoardLayout(
       attachedBottom = Math.max(attachedBottom, attachmentCandidate.y + attachmentCandidate.height);
     }
     if (flowRegion && flowLane === "visual") flowRegion.visualBottom = attachedBottom;
-    if (flowRegion && flowLane === "narrative") flowRegion.narrativeBottom = attachedBottom;
+    if (flowRegion && flowLane === "narrative") {
+      flowRegion.narrativeBottom = attachedBottom;
+      flowRegion.narrativeColumnWidth = Math.max(flowRegion.narrativeColumnWidth ?? 0, candidate.width);
+      flowRegion.narrativeColumnItems = (flowRegion.narrativeColumnItems ?? 0) + 1;
+    }
     const region = regionCursors.get(regionId);
     if (
       region

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, emphasisClassName, fitMathScale, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import { boardInputTargetsInteractiveUi } from "../src/input-routing.js";
@@ -242,6 +242,19 @@ test("beat boundaries preserve the latest visible teaching target", () => {
   assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
 });
 
+test("automatic camera targets cannot leak from another course region", () => {
+  const board = {
+    nodes: {
+      old: { id: "old", region_id: "course-old" },
+      current: { id: "current", region_id: "course-current" },
+    },
+    groups: {},
+    connections: {},
+  } as any;
+  assert.deepEqual(focusTargetsInRegion(board, ["old", "current"], "course-current"), ["current"]);
+  assert.deepEqual(focusTargetsInRegion(board, ["old"], "course-current"), []);
+});
+
 test("variable animation focuses every node driven by the shared variable", () => {
   const board = {
     nodes: {
@@ -430,6 +443,42 @@ test("a simple process diagram follows edge order instead of a radial relationsh
   assert.ok(first.from.x < first.to.x);
   assert.ok(second.from.x < second.to.x);
   assert.ok(third.from.x < third.to.x);
+});
+
+test("long process labels wrap inside non-overlapping diagram nodes", () => {
+  const content = {
+    elements: [
+      { id: "input", label: "输入两个需要求最大公约数的整数" },
+      { id: "divide", label: "计算被除数除以除数得到的余数" },
+      { id: "check", label: "判断当前余数是否已经等于零" },
+      { id: "finish", label: "输出最后一个非零余数作为答案" },
+    ],
+    edges: [
+      { id: "edge-1", from: "input", to: "divide" },
+      { id: "edge-2", from: "divide", to: "check" },
+      { id: "edge-3", from: "check", to: "finish" },
+    ],
+  };
+  const layout = diagramLayout(content);
+  assert.equal(layout.ordered, true);
+  assert.ok(layout.height >= 190);
+  assert.ok(wrapDiagramLabel(content.elements[0]!.label, 18).length > 1);
+  const nodes = [...layout.points.values()].map((point) => ({
+    x: point.x - point.width! / 2,
+    y: point.y - point.height! / 2,
+    width: point.width!,
+    height: point.height!,
+  }));
+  for (let left = 0; left < nodes.length; left += 1) {
+    for (let right = left + 1; right < nodes.length; right += 1) {
+      const a = nodes[left]!;
+      const b = nodes[right]!;
+      assert.equal(
+        a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y,
+        false,
+      );
+    }
+  }
 });
 
 test("geometry viewport preserves equal coordinate scale for circles", () => {
