@@ -49,11 +49,6 @@ import {
   lockSelectionTransform,
   type LockableSelectionTool,
 } from "./selection-lock.js";
-import {
-  planInkWorldLayerBounds,
-  viewportPointToInkSurface,
-  type InkWorldLayerBounds,
-} from "./world-layer.js";
 
 export type InkMode = "navigate" | "draw" | "erase" | "select";
 export type InkSelectionMode = "rectangle" | "lasso";
@@ -107,7 +102,8 @@ export class InkRuntime {
   private destroyPromise?: Promise<void>;
   private restoreFailure?: unknown;
   private suppressSave = false;
-  private layerBounds: InkWorldLayerBounds;
+  private appliedPixelRatio?: number;
+  private renderedCamera: { panX: number; panY: number; scale: number };
   private expectedViewportTransform = Mat33.identity;
   private readonly activePointers = new Map<number, Pointer>();
   private selectionGesture: InkSelectionPoint[] = [];
@@ -119,10 +115,10 @@ export class InkRuntime {
   private constructor(
     private readonly options: MountInkRuntimeOptions,
     private readonly host: HTMLElement,
-    layerBounds: InkWorldLayerBounds,
+    renderedCamera: { panX: number; panY: number; scale: number },
     unmountWorldLayer: () => void,
   ) {
-    this.layerBounds = layerBounds;
+    this.renderedCamera = renderedCamera;
     this.editor = this.createEditor();
     this.prepareEditor();
     this.unmountWorldLayer = unmountWorldLayer;
@@ -141,28 +137,18 @@ export class InkRuntime {
     const host = options.viewport.ownerDocument.createElement("div");
     host.className = "oll-ink-layer";
     host.dataset.ollInkLayer = "";
-    const layerBounds = planInkWorldLayerBounds({
-      camera: options.board.getCameraState(),
-      viewport: {
-        width: options.viewport.clientWidth,
-        height: options.viewport.clientHeight,
-      },
-    });
-    InkRuntime.applyWorldLayerBounds(host, layerBounds);
-    const unmountWorldLayer = options.board.mountWorldLayer(host);
+    host.style.inset = "0";
+    host.style.width = "100%";
+    host.style.height = "100%";
+    const renderedCamera = options.board.getCameraState();
+    options.viewport.append(host);
+    const unmountWorldLayer = () => host.remove();
     try {
-      return new InkRuntime(options, host, layerBounds, unmountWorldLayer);
+      return new InkRuntime(options, host, renderedCamera, unmountWorldLayer);
     } catch (cause) {
       unmountWorldLayer();
       throw cause;
     }
-  }
-
-  private static applyWorldLayerBounds(host: HTMLElement, bounds: InkWorldLayerBounds): void {
-    host.style.left = `${bounds.left}px`;
-    host.style.top = `${bounds.top}px`;
-    host.style.width = `${bounds.width}px`;
-    host.style.height = `${bounds.height}px`;
   }
 
   private createEditor(): Editor {
@@ -229,30 +215,25 @@ export class InkRuntime {
 
   private resetEditorViewport(): void {
     this.expectedViewportTransform = Mat33.translation(
-      Vec2.of(-this.layerBounds.left, -this.layerBounds.top),
-    );
+      Vec2.of(this.renderedCamera.panX, this.renderedCamera.panY),
+    ).rightMul(Mat33.scaling2D(this.renderedCamera.scale));
     this.editor.viewport.resetTransform(this.expectedViewportTransform);
   }
 
   private updateWorldLayer(camera: { panX: number; panY: number; scale: number }): void {
-    const nextBounds = planInkWorldLayerBounds({
-      camera,
-      viewport: {
-        width: this.options.viewport.clientWidth,
-        height: this.options.viewport.clientHeight,
-      },
-      current: this.layerBounds,
-    });
-    if (nextBounds !== this.layerBounds) {
-      this.layerBounds = nextBounds;
-      InkRuntime.applyWorldLayerBounds(this.host, nextBounds);
-      this.resetEditorViewport();
-    }
+    // Keep the drawing surface viewport-sized. js-draw owns the ink camera,
+    // while Octos remains the single source of truth for board pan and zoom.
+    this.renderedCamera = { ...camera };
+    this.resetEditorViewport();
     const hostWindow = this.options.viewport.ownerDocument.defaultView;
     if (hostWindow) {
-      const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
-      void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
+      const ratio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio));
+      if (this.appliedPixelRatio === undefined || Math.abs(ratio - this.appliedPixelRatio) >= .02) {
+        this.appliedPixelRatio = ratio;
+        void this.editor.display.setDevicePixelRatio(ratio);
+      }
     }
+    void this.editor.queueRerender();
   }
 
   private prepareBoardInput(): () => void {
@@ -272,20 +253,13 @@ export class InkRuntime {
     };
     const pointerBoardPoint = (event: PointerEvent): InkSelectionPoint => {
       const viewportRect = this.options.viewport.getBoundingClientRect();
-      const camera = this.options.board.getCameraState();
       const point = { x: event.clientX - viewportRect.left, y: event.clientY - viewportRect.top };
       return this.options.board.viewportToBoard(point);
     };
     const mappedPointer = (event: PointerEvent, down: boolean): Pointer => {
-      const camera = this.options.board.getCameraState();
       const boardPoint = pointerBoardPoint(event);
-      const surfacePoint = viewportPointToInkSurface(
-        this.options.board.boardToViewport(boardPoint),
-        camera,
-        this.layerBounds,
-      );
       return Pointer.ofCanvasPoint(
-        Vec2.of(surfacePoint.x + this.layerBounds.left, surfacePoint.y + this.layerBounds.top),
+        Vec2.of(boardPoint.x, boardPoint.y),
         down,
         this.editor.viewport,
         event.pointerId,

@@ -271,6 +271,7 @@ test("supporting formula focus keeps the nearest visual in the same lesson regio
       prior: { x: 120, y: 650, width: 340, height: 230 },
     },
     groups: {},
+    attachments: {},
     bounds: { x: 0, y: 0, width: 1200, height: 900 },
   };
   assert.deepEqual(supportingVisualFocusTargets(["formula"], board, layout), ["scene"]);
@@ -298,6 +299,7 @@ test("focused visual keeps directly connected visual context", () => {
       oldPlot: { x: 100, y: 500, width: 340, height: 230 },
     },
     groups: {},
+    attachments: {},
     bounds: { x: 0, y: 0, width: 1000, height: 800 },
   };
   assert.deepEqual(supportingVisualFocusTargets(["circle"], board, layout), ["sine"]);
@@ -393,6 +395,41 @@ test("diagram-internal connections resolve exact fragment coordinates", () => {
   assert.deepEqual(geometry.from, { x: 150, y: 24 });
   assert.deepEqual(geometry.to, { x: 150, y: 164 });
   assert.ok(geometry.labelPosition.x > geometry.from.x, "label should sit beside the segment, not on top of it");
+});
+
+test("a simple process diagram follows edge order instead of a radial relationship layout", () => {
+  const content = {
+    elements: [
+      { id: "calculate", label: "计算" },
+      { id: "observe", label: "观察" },
+      { id: "conclude", label: "结论" },
+      { id: "verify", label: "验证" },
+    ],
+    edges: [
+      { id: "edge-1", from: "observe", to: "calculate" },
+      { id: "edge-2", from: "calculate", to: "verify" },
+      { id: "edge-3", from: "verify", to: "conclude" },
+    ],
+  };
+  const first = diagramConnectionGeometry(content, {
+    from: { fragment_id: "observe" },
+    to: { fragment_id: "calculate" },
+  });
+  const second = diagramConnectionGeometry(content, {
+    from: { fragment_id: "calculate" },
+    to: { fragment_id: "verify" },
+  });
+  const third = diagramConnectionGeometry(content, {
+    from: { fragment_id: "verify" },
+    to: { fragment_id: "conclude" },
+  });
+  assert.ok(first && second && third);
+  assert.equal(first.from.y, first.to.y);
+  assert.equal(second.from.y, second.to.y);
+  assert.equal(third.from.y, third.to.y);
+  assert.ok(first.from.x < first.to.x);
+  assert.ok(second.from.x < second.to.x);
+  assert.ok(third.from.x < third.to.x);
 });
 
 test("geometry viewport preserves equal coordinate scale for circles", () => {

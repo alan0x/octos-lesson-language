@@ -747,11 +747,62 @@ function diagramPosition(position: string | undefined, index: number, total: num
   return { x: 150 + Math.cos(angle) * 105, y: 94 + Math.sin(angle) * 68 };
 }
 
+function orderedDiagramPath(content: Record<string, any>): string[] | undefined {
+  const elements = Array.isArray(content.elements) ? content.elements : [];
+  const edges = Array.isArray(content.edges) ? content.edges : [];
+  if (elements.length < 2 || elements.length > 8 || edges.length !== elements.length - 1) return undefined;
+  if (elements.some((element: Record<string, any>) => text(element.semantic_position))) return undefined;
+  const ids = new Set(elements.map((element: Record<string, any>) => text(element.id)).filter(Boolean));
+  if (ids.size !== elements.length) return undefined;
+  const incoming = new Map([...ids].map((id) => [id, 0]));
+  const outgoing = new Map([...ids].map((id) => [id, [] as string[]]));
+  for (const edge of edges) {
+    const from = text(edge.from);
+    const to = text(edge.to);
+    if (!ids.has(from) || !ids.has(to) || from === to) return undefined;
+    incoming.set(to, (incoming.get(to) ?? 0) + 1);
+    outgoing.get(from)!.push(to);
+  }
+  const starts = [...ids].filter((id) => (incoming.get(id) ?? 0) === 0);
+  const ends = [...ids].filter((id) => (outgoing.get(id)?.length ?? 0) === 0);
+  if (starts.length !== 1 || ends.length !== 1) return undefined;
+  if ([...ids].some((id) => (incoming.get(id) ?? 0) > 1 || (outgoing.get(id)?.length ?? 0) > 1)) return undefined;
+  const ordered: string[] = [];
+  const visited = new Set<string>();
+  let current: string | undefined = starts[0];
+  while (current && !visited.has(current)) {
+    ordered.push(current);
+    visited.add(current);
+    current = outgoing.get(current)?.[0];
+  }
+  return ordered.length === ids.size ? ordered : undefined;
+}
+
+function orderedDiagramPosition(index: number, total: number): { x: number; y: number } {
+  const columns = Math.min(4, total);
+  const row = Math.floor(index / columns);
+  const indexInRow = index % columns;
+  const column = row % 2 === 0 ? indexInRow : columns - 1 - indexInRow;
+  const x = columns === 1 ? 150 : 38 + column * 224 / (columns - 1);
+  const rows = Math.ceil(total / columns);
+  const y = rows === 1 ? 94 : 52 + row * 84;
+  return { x, y };
+}
+
 function diagramPoints(content: Record<string, any>): Map<string, { x: number; y: number; label: string }> {
   const elements = Array.isArray(content.elements) ? content.elements : [];
+  const orderedPath = orderedDiagramPath(content);
+  const orderedIndex = orderedPath
+    ? new Map(orderedPath.map((id, index) => [id, index]))
+    : undefined;
   return new Map(elements.map((element: Record<string, any>, index: number) => [
     text(element.id),
-    { ...diagramPosition(text(element.semantic_position), index, elements.length), label: text(element.label) },
+    {
+      ...(orderedIndex
+        ? orderedDiagramPosition(orderedIndex.get(text(element.id))!, elements.length)
+        : diagramPosition(text(element.semantic_position), index, elements.length)),
+      label: text(element.label),
+    },
   ]));
 }
 
@@ -1291,6 +1342,10 @@ export class InfiniteBoardView {
     return structuredClone(this.layout?.regions ?? {});
   }
 
+  getAttachmentBoundsMap(): Record<string, Rect> {
+    return structuredClone(this.layout?.attachments ?? {});
+  }
+
   /**
    * Adds a course-owned layer to the board's world coordinate space.
    *
@@ -1597,7 +1652,8 @@ export class InfiniteBoardView {
   }
   private scheduleCameraNotifications(): void {
     if (this.cameraListeners.size === 0) return;
-    this.cameraNotifyUntil = Math.max(this.cameraNotifyUntil, this.hostWindow.performance.now() + 760);
+    const transitionDuration = this.viewport.classList.contains("manual-navigation") ? 0 : 760;
+    this.cameraNotifyUntil = Math.max(this.cameraNotifyUntil, this.hostWindow.performance.now() + transitionDuration);
     if (this.cameraFrame !== undefined) return;
     const notify = (timestamp: number): void => {
       const camera = this.getCameraState();
@@ -1649,7 +1705,7 @@ export class InfiniteBoardView {
   }
   private onWheel(event: WheelEvent): void {
     if (
-      this.inputOwner !== "runtime"
+      this.inputOwner === "course-object"
       || boardInputTargetsInteractiveUi(event.composedPath())
     ) return;
     event.preventDefault();
