@@ -353,6 +353,95 @@ test("host controls reserve board space below their semantic visual", () => {
   assert.ok(layout.regions!["course-a"]!.y + layout.regions!["course-a"]!.height >= controls.y + controls.height);
 });
 
+test("one interaction attachment stays with its complete linked visual scene", () => {
+  const board: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      geometry: {
+        id: "geometry",
+        kind: "geometry",
+        region_id: "course-a",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "course-a",
+        content: {},
+        placement: { relation: "right_of", anchor: "geometry", gap: "normal" },
+      },
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course-a",
+        content: { latex: "y=\\sin\\theta" },
+        placement: { relation: "new_region" },
+      },
+      note: {
+        id: "note",
+        kind: "note",
+        region_id: "course-a",
+        content: { title: "旋转与波动", items: ["圆上点的高度映射为正弦值"] },
+        placement: { relation: "below", anchor: "formula" },
+      },
+    },
+    groups: {},
+    connections: {},
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const layout = computeBoardLayout(board, {
+    geometry: { width: 420, height: 320 },
+    plot: { width: 360, height: 280 },
+    formula: { width: 300, height: 100 },
+    note: { width: 360, height: 130 },
+  }, {
+    regions: {
+      "course-a": {
+        x: 320,
+        y: 160,
+        reservedWidth: 1_300,
+        flow: "reading",
+        attachments: [{
+          id: "course-a:interaction",
+          anchorNodeId: "plot",
+          anchorNodeIds: ["geometry", "plot"],
+          width: 360,
+          height: 250,
+          gap: 42,
+        }],
+      },
+    },
+  });
+
+  const geometry = layout.nodes.geometry!;
+  const plot = layout.nodes.plot!;
+  const formula = layout.nodes.formula!;
+  const note = layout.nodes.note!;
+  const interaction = layout.attachments["course-a:interaction"]!;
+  const visualLeft = Math.min(geometry.x, plot.x);
+  const visualRight = Math.max(
+    geometry.x + geometry.width,
+    plot.x + plot.width,
+  );
+  const visualBottom = Math.max(
+    geometry.y + geometry.height,
+    plot.y + plot.height,
+  );
+
+  assert.equal(interaction.x, visualLeft);
+  assert.equal(interaction.y, visualBottom + 42);
+  assert.ok(formula.x >= visualRight + 54);
+  assert.equal(formula.y, 160);
+  assert.equal(note.x, formula.x);
+  assert.ok(note.y > formula.y);
+  assert.ok(note.y + note.height < interaction.y + interaction.height);
+});
+
 test("an independent formula starts below a linked visual row", () => {
   const board: SemanticBoardState = {
     board_id: "board",

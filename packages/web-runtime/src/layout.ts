@@ -24,6 +24,12 @@ export interface RegionLayoutConstraint {
   attachments?: Array<{
     id: string;
     anchorNodeId: string;
+    /**
+     * All semantic visuals controlled by this attachment. When present, the
+     * host UI is placed below their union instead of below only the final
+     * visual that happened to expose the control.
+     */
+    anchorNodeIds?: string[];
     width: number;
     height: number;
     gap?: number;
@@ -130,6 +136,7 @@ export function computeBoardLayout(
   const attachmentsByAnchor = new Map<string, Array<{
     id: string;
     anchorNodeId: string;
+    anchorNodeIds?: string[];
     width: number;
     height: number;
     gap?: number;
@@ -138,7 +145,11 @@ export function computeBoardLayout(
   for (const [regionId, constraint] of Object.entries(options.regions ?? {})) {
     for (const attachment of constraint.attachments ?? []) {
       const anchored = attachmentsByAnchor.get(attachment.anchorNodeId) ?? [];
-      anchored.push({ ...attachment, regionId });
+      anchored.push({
+        ...attachment,
+        anchorNodeIds: attachment.anchorNodeIds?.filter((id) => Boolean(id)),
+        regionId,
+      });
       attachmentsByAnchor.set(attachment.anchorNodeId, anchored);
     }
   }
@@ -511,15 +522,20 @@ export function computeBoardLayout(
       const attachmentWidth = Math.max(1, attachment.width);
       const attachmentHeight = Math.max(1, attachment.height);
       const attachmentGap = Math.max(12, attachment.gap ?? 42);
+      const semanticAnchors = (attachment.anchorNodeIds?.length
+        ? attachment.anchorNodeIds
+        : [attachment.anchorNodeId])
+        .flatMap((id) => nodes[id] ? [nodes[id]!] : []);
+      const attachmentAnchor = union(semanticAnchors) ?? candidate;
       const attachmentConstraint = options.regions?.[attachment.regionId];
-      const regionLeft = attachmentConstraint?.x ?? flowRegion?.x ?? candidate.x;
+      const regionLeft = attachmentConstraint?.x ?? flowRegion?.x ?? attachmentAnchor.x;
       const reservedWidth = Math.max(0, attachmentConstraint?.reservedWidth ?? 0);
       const maximumX = reservedWidth > 0
         ? Math.max(regionLeft, regionLeft + reservedWidth - attachmentWidth)
-        : candidate.x;
+        : attachmentAnchor.x;
       let attachmentCandidate: Rect = {
-        x: Math.min(Math.max(regionLeft, candidate.x), maximumX),
-        y: candidate.y + candidate.height + attachmentGap,
+        x: Math.min(Math.max(regionLeft, attachmentAnchor.x), maximumX),
+        y: attachmentAnchor.y + attachmentAnchor.height + attachmentGap,
         width: attachmentWidth,
         height: attachmentHeight,
       };
