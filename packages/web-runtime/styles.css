@@ -120,6 +120,11 @@
 .diagram-edge-label { fill: #766f65; font: 11px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 4px; }
 .diagram-point { fill: #247f74; }
 .diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
+.diagram-node { fill: rgba(255,253,247,.96); stroke: #6e8d86; stroke-width: 1.5; }
+.diagram-node.emphasis-focus { fill: rgba(225,93,69,.1); stroke: #e15d45; stroke-width: 2.5; }
+.diagram-node.emphasis-supporting { fill: rgba(215,154,41,.1); stroke: #d79a29; stroke-width: 2.2; }
+.diagram-node.emphasis-warning { fill: rgba(204,52,71,.1); stroke: #cc3447; stroke-width: 2.5; }
+.diagram-anchor { pointer-events: none; }
 .diagram-connection { stroke: #e34f5f; stroke-width: 3.2; stroke-linecap: round; filter: drop-shadow(0 1px 1px rgba(97,24,32,.18)); }
 .diagram-connection.emphasis-focus, .diagram-connection.focused { stroke-width: 4.6; }
 .diagram-connection.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.6; }
