@@ -37,6 +37,11 @@ import { inkInputTargetsInteractiveUi } from "./input-routing.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
+  ensurePersistentInkComponentIds,
+  hasPersistentInkComponentId,
+} from "./component-identity.js";
+import {
+  INK_SELECTION_FORMAT_VERSION,
   inkSelectionPathRegion,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
@@ -550,6 +555,9 @@ export class InkRuntime {
   }
 
   async captureSelectionSnapshot(): Promise<InkSelectionSnapshot> {
+    // Attach stable IDs before saving. js-draw recreates its private component
+    // IDs when loading SVG, but preserves these data-* attributes.
+    ensurePersistentInkComponentIds(this.selectedComponents);
     await this.saveNow();
     const region: InkSelectionRegion | undefined = this.selectionMode === "rectangle"
       ? inkSelectionRectangleRegion(this.selectionGesture)
@@ -568,10 +576,19 @@ export class InkRuntime {
    * tracking and cannot be checked safely.
    */
   hasSelectionSource(snapshot: InkSelectionSnapshot): boolean | null {
-    return inkSelectionSourceExists(
-      snapshot,
-      (componentId) => this.editor.image.lookupElement(componentId),
-    );
+    if (snapshot.format_version === INK_SELECTION_FORMAT_VERSION) {
+      const components = this.editor.image.getAllComponents();
+      return inkSelectionSourceExists(
+        snapshot,
+        (componentId) => components.some((component) =>
+          hasPersistentInkComponentId(component, componentId)
+        ),
+      );
+    }
+    // Older snapshots contain js-draw's transient in-memory IDs. They remain
+    // readable, but after a reload their absence cannot prove an erase. New
+    // captures use the persistent format above.
+    return null;
   }
 
   serialize(): string { return this.editor.toSVG().outerHTML; }

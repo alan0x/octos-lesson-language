@@ -1,6 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { inkSelectionPathRegion, inkSelectionRectangleRegion } from "../src/selection-record.js";
+import {
+  ensurePersistentInkComponentIds,
+  hasPersistentInkComponentId,
+} from "../src/component-identity.js";
+
+test("selection component identities survive SVG attribute round trips", () => {
+  type Component = Parameters<typeof ensurePersistentInkComponentIds>[0][number];
+  const loadSaveData: Record<string, string[][]> = {};
+  const component = {
+    getLoadSaveData: () => loadSaveData,
+    attachLoadSaveData: (key: string, data: string[]) => {
+      (loadSaveData[key] ??= []).push(data);
+    },
+  } as unknown as Component;
+
+  const first = ensurePersistentInkComponentIds([component])[0]!;
+  const second = ensurePersistentInkComponentIds([component])[0]!;
+
+  assert.equal(first, second);
+  assert.equal(hasPersistentInkComponentId(component, first), true);
+  assert.match(first, /^octos-ink-component:/);
+});
 
 test("rectangle selections persist the rectangle shown by the selection tool", () => {
   assert.deepEqual(inkSelectionRectangleRegion([

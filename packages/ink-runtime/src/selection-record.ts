@@ -1,9 +1,10 @@
 import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
 
 export const INK_SELECTION_FORMAT = "oll.student-ink.selection" as const;
-export const INK_SELECTION_FORMAT_VERSION = 3 as const;
+export const INK_SELECTION_FORMAT_VERSION = 4 as const;
 export const LEGACY_INK_SELECTION_FORMAT_VERSION = 1 as const;
 export const REGION_INK_SELECTION_FORMAT_VERSION = 2 as const;
+export const TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION = 3 as const;
 
 export interface InkSelectionBounds {
   x: number;
@@ -54,6 +55,7 @@ export interface InkSelectionSnapshot {
   format_version:
     | typeof LEGACY_INK_SELECTION_FORMAT_VERSION
     | typeof REGION_INK_SELECTION_FORMAT_VERSION
+    | typeof TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
     | typeof INK_SELECTION_FORMAT_VERSION;
   source_id: string;
   document_id: string;
@@ -62,8 +64,8 @@ export interface InkSelectionSnapshot {
   bounds: InkSelectionBounds;
   region?: InkSelectionRegion;
   /** IDs of the immutable js-draw components captured by this snapshot.
-   * Version 3 records use them only to detect that source ink was erased;
-   * the saved SVG remains the content sent to an assistant. */
+   * Version 3 used in-memory js-draw IDs. Version 4 uses IDs persisted into
+   * the saved SVG so source erasure can still be checked after a reload. */
   component_ids?: string[];
   checksum: {
     algorithm: "sha-256";
@@ -128,6 +130,7 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     snapshot.format !== INK_SELECTION_FORMAT
     || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== REGION_INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION)
     || typeof snapshot.source_id !== "string"
     || !snapshot.source_id
@@ -145,13 +148,15 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     || bounds.height <= 0
     || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION && !validRegion(snapshot.region))
     || (snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION && snapshot.region !== undefined)
-    || (snapshot.format_version === INK_SELECTION_FORMAT_VERSION
+    || ((snapshot.format_version === TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
+      || snapshot.format_version === INK_SELECTION_FORMAT_VERSION)
       && (!Array.isArray(snapshot.component_ids)
         || snapshot.component_ids.length === 0
         || snapshot.component_ids.length > 4096
         || snapshot.component_ids.some((id) => typeof id !== "string" || !id)
         || new Set(snapshot.component_ids).size !== snapshot.component_ids.length))
-    || (snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+    || (snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
       && snapshot.component_ids !== undefined)
     || snapshot.checksum?.algorithm !== "sha-256"
     || !/^[a-f0-9]{64}$/.test(snapshot.checksum.value ?? "")
@@ -171,7 +176,10 @@ export function inkSelectionSourceExists(
   snapshot: InkSelectionSnapshot,
   lookupComponent: (id: string) => unknown,
 ): boolean | null {
-  if (snapshot.format_version !== INK_SELECTION_FORMAT_VERSION) return null;
+  if (
+    snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
+    && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+  ) return null;
   return snapshot.component_ids!.every((id) => Boolean(lookupComponent(id)));
 }
 
