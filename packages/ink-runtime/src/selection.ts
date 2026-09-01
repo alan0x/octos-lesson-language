@@ -14,6 +14,7 @@ import {
   type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
+import { ensurePersistentInkComponentIds } from "./component-identity.js";
 
 export function selectedComponentsToSvg(components: AbstractComponent[]): {
   bounds: InkSelectionBounds;
@@ -43,9 +44,9 @@ export async function createInkSelectionSnapshot(options: {
   region?: InkSelectionRegion;
 }): Promise<InkSelectionSnapshot> {
   const selection = selectedComponentsToSvg(options.components);
-  const componentIds = [...options.components]
-    .sort((left, right) => left.getZIndex() - right.getZIndex())
-    .map((component) => component.getId());
+  const componentIds = ensurePersistentInkComponentIds(
+    [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()),
+  );
   const region: InkSelectionRegion = options.region ?? {
     kind: "rectangle",
     closed: true,

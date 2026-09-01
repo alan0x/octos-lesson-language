@@ -16,10 +16,15 @@ export {
   selectedComponentsToSvg,
 } from "./selection.js";
 export {
+  ensurePersistentInkComponentIds,
+  hasPersistentInkComponentId,
+} from "./component-identity.js";
+export {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
   LEGACY_INK_SELECTION_FORMAT_VERSION,
   REGION_INK_SELECTION_FORMAT_VERSION,
+  TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,

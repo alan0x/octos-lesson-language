@@ -14,6 +14,7 @@ import {
   INK_SELECTION_FORMAT_VERSION,
   LEGACY_INK_SELECTION_FORMAT_VERSION,
   REGION_INK_SELECTION_FORMAT_VERSION,
+  TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
   inkSelectionSourceExists,
   validateInkSelectionSnapshot,
@@ -190,6 +191,35 @@ test("version 2 selection snapshots remain readable but cannot prove source pres
   assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
   await assertInkSelectionIntegrity(snapshot);
   assert.equal(inkSelectionSourceExists(snapshot, () => true), null);
+});
+
+test("version 3 selection snapshots remain readable for in-memory source checks", async () => {
+  const svg = '<svg data-oll-ink-selection="1" viewBox="0 0 40 20"><path d="M1 1L39 19"/></svg>';
+  const snapshot = {
+    format: INK_SELECTION_FORMAT,
+    format_version: TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,
+    source_id: "ink-source:transient-v3",
+    document_id: "lesson-1:student-ink",
+    document_version: 4,
+    created_at: "2026-08-14T12:00:00.000Z",
+    bounds: { x: 120, y: 80, width: 40, height: 20 },
+    region: {
+      kind: "rectangle" as const,
+      closed: true,
+      points: [{ x: 120, y: 80 }, { x: 160, y: 80 }, { x: 160, y: 100 }, { x: 120, y: 100 }],
+    },
+    component_ids: ["legacy-js-draw-id"],
+    checksum: { algorithm: "sha-256" as const, value: "" },
+    svg,
+  };
+  snapshot.checksum.value = await inkSvgChecksum(JSON.stringify({
+    svg,
+    region: snapshot.region,
+    component_ids: snapshot.component_ids,
+  }));
+  assert.deepEqual(validateInkSelectionSnapshot(snapshot), snapshot);
+  await assertInkSelectionIntegrity(snapshot);
+  assert.equal(inkSelectionSourceExists(snapshot, () => true), true);
 });
 
 test("legacy selection snapshots remain readable after region paths are added", async () => {
