@@ -42,7 +42,6 @@ import {
 } from "./component-identity.js";
 import {
   INK_SELECTION_FORMAT_VERSION,
-  TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,
   inkSelectionPathRegion,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
@@ -586,14 +585,10 @@ export class InkRuntime {
         ),
       );
     }
-    if (
-      snapshot.format_version
-      !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
-    ) return null;
-    return inkSelectionSourceExists(
-      snapshot,
-      (componentId) => this.editor.image.lookupElement(componentId),
-    );
+    // Older snapshots contain js-draw's transient in-memory IDs. They remain
+    // readable, but after a reload their absence cannot prove an erase. New
+    // captures use the persistent format above.
+    return null;
   }
 
   serialize(): string { return this.editor.toSVG().outerHTML; }
