@@ -105,3 +105,35 @@ test("implicit plot expressions can also read lesson variables", () => {
   assert.ok(Math.min(...segments.flat().map((point) => point.x)) < -1.95);
   assert.ok(Math.max(...segments.flat().map((point) => point.x)) > 1.95);
 });
+
+
+test("zero axes are omitted outside the visible range instead of impersonating frame edges", async () => {
+  const {zeroAxisPosition} = await import("../src/plot.js");
+  assert.equal(zeroAxisPosition({min:2,max:5}, v=>v*10), undefined);
+  assert.equal(zeroAxisPosition({min:-5,max:-2}, v=>v*10), undefined);
+  assert.equal(zeroAxisPosition({min:-2,max:5}, v=>100+v*10), 100);
+  assert.equal(zeroAxisPosition({min:0,max:5}, v=>20+v*10), 20);
+});
+
+
+test("secant feedback uses mathematical coordinates and rejects coincident points", async () => {
+  const {secantMeasurement} = await import("../src/plot.js");
+  assert.deepEqual(secantMeasurement({x:1,y:3},{x:4,y:9}),{dx:3,dy:6,slope:2});
+  assert.equal(secantMeasurement({x:1,y:1},{x:1,y:1}),undefined);
+  assert.equal(secantMeasurement({x:1,y:1},{x:1+1e-12,y:2}),undefined);
+  assert.equal(secantMeasurement({x:1,y:1},{x:2,y:Infinity}),undefined);
+  assert.equal(secantMeasurement({x:1,y:1},{x:2,y:4})?.slope,3);
+  assert.equal(secantMeasurement({x:1,y:1},{x:3,y:9})?.slope,4);
+});
+
+
+test("plot zoom preserves the selected mathematical anchor and pan does not change spans", async () => {
+  const {zoomPlotRanges,panPlotRanges}=await import("../src/plot-explorer.js");
+  const r={x:{min:-4,max:4},y:{min:-2,max:6}};
+  const zoom=zoomPlotRanges(r,.5,{x:.25,y:.75});
+  assert.equal(zoom.x.min+(zoom.x.max-zoom.x.min)*.25,-2);
+  assert.equal(zoom.y.min+(zoom.y.max-zoom.y.min)*.75,4);
+  assert.deepEqual(panPlotRanges(r,2,-1),{x:{min:-2,max:6},y:{min:-3,max:5}});
+  assert.deepEqual(zoomPlotRanges(r,Infinity),r);
+  assert.deepEqual(r,{x:{min:-4,max:4},y:{min:-2,max:6}});
+});

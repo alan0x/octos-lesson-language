@@ -189,3 +189,26 @@
 @media (prefers-reduced-motion: reduce) {
   .oll-variable-control.animating output { color: #176b62; }
 }
+
+.plot-secant { stroke: #b94735; stroke-width: 2; fill: none; }
+.plot-measurement, .plot-control-hint { font-size: 11px; line-height: 1.4; }
+.plot-control-hint { color: #6b685e; }
+
+.geometry-arc.geometry-sector { fill: #d5e8ee; fill-opacity: .8; stroke-width: 1; }
+.geometry-sector:nth-of-type(even) { fill: #f4d9a4; }
+
+.plot-toolbar { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0 8px; }
+.plot-toolbar button, .oll-plot-dialog > button { border:1px solid #cec8bd; border-radius:6px; padding:4px 8px; background:#fffdf7; color:#214c48; cursor:pointer; font:12px/1.4 system-ui; }
+.plot-toolbar button[aria-pressed="true"] { background:#d6eee7; }
+.plot-explorer-body { min-width:0; }
+.plot-probe-readout { display:block; min-height:28px; font:11px/1.4 system-ui; color:#4d645f; }
+.oll-plot-dialog { width:min(1100px,94vw); max-height:94vh; box-sizing:border-box; border:1px solid #cec8bd; border-radius:16px; padding:20px; background:#fffdf7; color:#214c48; }
+.oll-plot-dialog::backdrop { background:#152c2b88; }
+.oll-plot-dialog h2 { font:18px/1.4 system-ui; }
+.plot-dialog-shell { position:relative; background-image:none; padding:12px; }
+.plot-dialog-shell svg { width:100%; height:auto; }
+.plot-dialog-shell .plot-legend { display:flex; flex-wrap:wrap; gap:12px; }
+.plot-legend label { cursor:pointer; }
+.plot-probe-readout, .plot-legend-item { overflow-wrap:anywhere; }
+
+.geometry-caption { font:12px/1.5 system-ui; color:#53635c; margin-top:8px; }

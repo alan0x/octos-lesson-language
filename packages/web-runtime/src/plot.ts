@@ -204,3 +204,18 @@ export function plotPathData(
       .join(" "))
     .join(" ");
 }
+
+
+/** A frame edge is not a zero axis when the origin is outside the window. */
+export function zeroAxisPosition(range: PlotRange, map: (value: number) => number): number | undefined {
+  return range.min <= 0 && range.max >= 0 ? map(0) : undefined;
+}
+
+
+export function secantMeasurement(a: PlotSample, b: PlotSample): {dx:number;dy:number;slope:number} | undefined {
+  const dx=b.x-a.x, dy=b.y-a.y;
+  if (![a.x,a.y,b.x,b.y,dx,dy].every(Number.isFinite)
+    || Math.abs(dx)<=1e-9*Math.max(1,Math.abs(a.x),Math.abs(b.x))) return;
+  const slope=dy/dx;
+  return Number.isFinite(slope) ? {dx,dy,slope} : undefined;
+}

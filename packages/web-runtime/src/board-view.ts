@@ -1,3 +1,4 @@
+import { renderPlotExplorer } from "./plot-explorer.js";
 import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
@@ -30,6 +31,8 @@ import {
   type RegionLayoutConstraint,
 } from "./layout.js";
 import {
+  secantMeasurement,
+  zeroAxisPosition,
   plotPathData,
   referencedPlotVariables,
   sampleImplicitPlotExpression,
@@ -448,11 +451,16 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
   svg.append(label);
 }
 
-function plot(
+let plotClipSequence = 0;
+
+function drawPlot(
   parent: HTMLElement,
   node: Record<string, any>,
   variables: Record<string, number>,
+  width = 300,
+  height = 150,
 ): void {
+  const PLOT_LEFT = 30, PLOT_RIGHT = width-12, PLOT_TOP = 10, PLOT_BOTTOM = height-24;
   const content = node.content ?? {};
   const axes = content.axes ?? {};
   const xRange = plotRange(axes.x, { min: -5, max: 5 });
@@ -460,28 +468,38 @@ function plot(
   const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
   const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
   const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 300 150");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.classList.add("plot-preview");
 
   for (const value of plotTicks(xRange)) {
     const x = mapX(value);
     appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
-    appendPlotLabel(svg, plotTickLabel(value), x, 146);
+    appendPlotLabel(svg, plotTickLabel(value), x, height-4);
   }
   for (const value of plotTicks(yRange)) {
     const y = mapY(value);
     appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
     appendPlotLabel(svg, plotTickLabel(value), PLOT_LEFT - 5, y + 3, "end");
   }
-  const xAxisY = Math.min(PLOT_BOTTOM, Math.max(PLOT_TOP, mapY(0)));
-  const yAxisX = Math.min(PLOT_RIGHT, Math.max(PLOT_LEFT, mapX(0)));
-  appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
-  appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+  const xAxisY = zeroAxisPosition(yRange, mapY);
+  const yAxisX = zeroAxisPosition(xRange, mapX);
+  if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
+  if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+  appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
+  appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
+  const clipId = `plot-clip-${++plotClipSequence}`;
+  const defs = document.createElementNS(SVG_NS, "defs");
+  const clip = document.createElementNS(SVG_NS, "clipPath");
+  clip.setAttribute("id", clipId);
+  const clipRect = document.createElementNS(SVG_NS, "rect");
+  for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
+  clip.append(clipRect); defs.append(clip); svg.append(defs);
 
   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
     const value = Number(guide.value);
     if (!Number.isFinite(value)) continue;
     const horizontal = guide.kind === "horizontal_line";
+    if (horizontal ? value < yRange.min || value > yRange.max : value < xRange.min || value > xRange.max) continue;
     const line = horizontal
       ? appendPlotLine(svg, "plot-guide", PLOT_LEFT, mapY(value), PLOT_RIGHT, mapY(value))
       : appendPlotLine(svg, "plot-guide", mapX(value), PLOT_TOP, mapX(value), PLOT_BOTTOM);
@@ -511,15 +529,17 @@ function plot(
               samples: Number(curve.samples ?? 80),
               variables,
             })
-          : samplePlotExpression(expression, xRange, yRange, 241, variables),
+          : samplePlotExpression(expression, xRange, yRange, Math.min(1001, Math.max(241, width)), variables),
         mapX,
         mapY,
       );
       if (!pathData) return;
       const path = document.createElementNS(SVG_NS, "path");
-      const series = index % 6;
+      const series = Number(curve.plotSeries ?? index) % 6;
       path.setAttribute("d", pathData);
+      path.setAttribute("clip-path", `url(#${clipId})`);
       path.classList.add("plot-curve", `plot-series-${series}`);
+      if (series > 0) path.setAttribute("stroke-dasharray", ["", "6 3", "2 3", "8 3 2 3", "10 4", "3 2"][series]!);
       if (curve.id) {
         path.dataset.id = text(curve.id);
         applyEmphasisClass(path, latestEmphasis(node, text(curve.id)));
@@ -531,10 +551,28 @@ function plot(
     }
   });
 
+  if (content.measurement === "secant" && content.points?.length === 2) {
+    const [a,b] = content.points;
+    const measurement = secantMeasurement(a,b);
+    if (measurement) {
+      const line = appendPlotLine(svg, "plot-secant", mapX(a.x), mapY(a.y), mapX(b.x), mapY(b.y));
+      line.setAttribute("clip-path", `url(#${clipId})`);
+      const dx = appendPlotLine(svg, "plot-guide", mapX(a.x), mapY(a.y), mapX(b.x), mapY(a.y));
+      const dy = appendPlotLine(svg, "plot-guide", mapX(b.x), mapY(a.y), mapX(b.x), mapY(b.y));
+      dx.setAttribute("clip-path", `url(#${clipId})`); dy.setAttribute("clip-path", `url(#${clipId})`);
+    }
+    const display = (n:number) => Number(n.toPrecision(5)).toString();
+    appendText(parent, measurement
+      ? `Δx = ${display(measurement.dx)} · Δy = ${display(measurement.dy)} · 割线斜率 ≈ ${display(measurement.slope)}`
+      : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。", "plot-measurement");
+    appendText(parent, "通过两个滑块分别调整 A、B 的横坐标。", "plot-control-hint");
+  }
+
   for (const point of Array.isArray(content.points) ? content.points : []) {
     const pointX = Number(point.x);
     const pointY = Number(point.y);
     if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) continue;
+    if (pointX < xRange.min || pointX > xRange.max || pointY < yRange.min || pointY > yRange.max) continue;
     const x = mapX(pointX);
     const y = mapY(pointY);
     const dot = document.createElementNS(SVG_NS, "circle");
@@ -655,10 +693,12 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     appendPlotLine(svg, "geometry-grid", GEOMETRY_LEFT, y, GEOMETRY_RIGHT, y);
     appendGeometryLabel(svg, plotTickLabel(value), GEOMETRY_LEFT - 5, y + 3, "end");
   }
-  const xAxisY = Math.min(GEOMETRY_BOTTOM, Math.max(GEOMETRY_TOP, viewport.mapY(0)));
-  const yAxisX = Math.min(GEOMETRY_RIGHT, Math.max(GEOMETRY_LEFT, viewport.mapX(0)));
-  appendPlotLine(svg, "geometry-axis", GEOMETRY_LEFT, xAxisY, GEOMETRY_RIGHT, xAxisY);
-  appendPlotLine(svg, "geometry-axis", yAxisX, GEOMETRY_TOP, yAxisX, GEOMETRY_BOTTOM);
+  const zeroY = zeroAxisPosition(viewport.yRange, viewport.mapY);
+  const zeroX = zeroAxisPosition(viewport.xRange, viewport.mapX);
+  if (zeroY !== undefined) appendPlotLine(svg, "geometry-axis", GEOMETRY_LEFT, zeroY, GEOMETRY_RIGHT, zeroY);
+  if (zeroX !== undefined) appendPlotLine(svg, "geometry-axis", zeroX, GEOMETRY_TOP, zeroX, GEOMETRY_BOTTOM);
+  const xAxisY = zeroY ?? GEOMETRY_BOTTOM;
+  const yAxisX = zeroX ?? GEOMETRY_LEFT;
   appendGeometryLabel(svg, content.axes?.x?.label ?? "x", GEOMETRY_RIGHT - 2, xAxisY - 5, "end");
   appendGeometryLabel(svg, content.axes?.y?.label ?? "y", yAxisX + 5, GEOMETRY_TOP + 10);
 
@@ -724,7 +764,9 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     const endAngle = Number(arc.end_angle);
     if (!center || ![radius, startAngle, endAngle].every(Number.isFinite) || radius <= 0) continue;
     const path = document.createElementNS(SVG_NS, "path");
-    path.setAttribute("d", geometryArcPath(viewport, { x: center.x, y: center.y }, radius, startAngle, endAngle));
+    const arcPath = geometryArcPath(viewport, { x: center.x, y: center.y }, radius, startAngle, endAngle);
+    path.setAttribute("d", arc.filled ? `${arcPath} L ${viewport.mapX(center.x)} ${viewport.mapY(center.y)} Z` : arcPath);
+    if (arc.filled) path.classList.add("geometry-sector");
     path.classList.add("geometry-arc");
     path.dataset.id = text(arc.id);
     applyEmphasisClass(path, latestEmphasis(node, text(arc.id)));
@@ -761,6 +803,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     if (point.label) appendGeometryLabel(svg, point.label, x + 7, y - 7);
   }
   parent.append(svg);
+  if (content.caption) appendText(parent, text(content.caption), "geometry-caption");
 }
 
 function diagramPosition(position: string | undefined, index: number, total: number): { x: number; y: number } {
@@ -1078,7 +1121,7 @@ function renderContent(
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometry(parent, node); return; }
-  if (node.kind === "plot") { plot(parent, node, variables); return; }
+  if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot); return; }
   if (node.kind === "scene3d") {
     try {
       renderScene3d(parent, node, sceneView, variables, sceneInput);
@@ -1649,6 +1692,7 @@ export class InfiniteBoardView {
       }
       element.className = `board-node kind-${kind}`;
       element.dataset.kind = kind;
+      element.dataset.plotViewScope = board.board_id;
       if (created && node.id === activeCreateId) element.classList.add("active");
       if (board.focus.includes(node.id)) element.classList.add("focused");
       if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");

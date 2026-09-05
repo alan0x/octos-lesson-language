@@ -633,6 +633,7 @@ function validateGeometryContent(
         if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/radius`, "Radius must be greater than zero");
       }
       if (field === "arcs") {
+        if (item.filled !== undefined && typeof item.filled !== "boolean") fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/filled`, "Sector fill must be boolean");
         requireFiniteNumber(item.start_angle, `${itemPath}/start_angle`);
         requireFiniteNumber(item.end_angle, `${itemPath}/end_angle`);
       }
