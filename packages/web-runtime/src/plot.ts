@@ -219,3 +219,14 @@ export function secantMeasurement(a: PlotSample, b: PlotSample): {dx:number;dy:n
   const slope=dy/dx;
   return Number.isFinite(slope) ? {dx,dy,slope} : undefined;
 }
+
+
+/** Letterbox equal-unit plots without changing the requested mathematical range. */
+export function plotFrame(width:number,height:number,x:PlotRange,y:PlotRange,equalScale=false) {
+  const availableWidth=width-42, availableHeight=height-34;
+  const scale=Math.min(availableWidth/(x.max-x.min),availableHeight/(y.max-y.min));
+  const w=equalScale?scale*(x.max-x.min):availableWidth;
+  const h=equalScale?scale*(y.max-y.min):availableHeight;
+  const left=30+(availableWidth-w)/2,top=10+(availableHeight-h)/2;
+  return {left,right:left+w,top,bottom:top+h,width:w,height:h};
+}

@@ -1,4 +1,4 @@
-import { compilePlotExpression, type PlotRange } from "./plot.js";
+import { plotFrame, compilePlotExpression, type PlotRange } from "./plot.js";
 
 type Ranges = {x:PlotRange;y:PlotRange};
 type State = {ranges:Ranges;signature:string;exploring:boolean;hidden:Set<number>;dialog?:HTMLDialogElement;gesture?:{host:HTMLElement;pointers:Map<number,{x:number;y:number}>};draw?:()=>void};
@@ -65,7 +65,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     const title=document.createElement('h2');title.textContent=node.content?.title??'函数图';dialog.append(title);
     const controls=toolbar.cloneNode(true) as HTMLElement;
     const original=Array.from(toolbar.querySelectorAll('button'));
-    controls.querySelectorAll('button').forEach((b,i)=>{b.onclick=()=>original[i]?.click();});dialog.append(controls);
+    controls.querySelectorAll('button').forEach((b,i)=>{b.onclick=()=>{original[i]?.click();b.setAttribute("aria-pressed",original[i]?.getAttribute("aria-pressed")??"false");};if(i===4)b.remove();});dialog.append(controls);
     const shell=document.createElement('div');shell.className='oll-board-runtime plot-dialog-shell';
     const body=document.createElement('div');shell.append(body);dialog.append(shell);surfaces.push({body,large:true});paint(body,true);
   }
@@ -74,6 +74,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     host.replaceChildren();
     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
     const width=large?Math.max(300,Math.min(1000,window.innerWidth-80)):300, height=large?Math.max(200,Math.min(520,window.innerHeight-220)):150;
+    const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
     const content={...node.content,axes:{...axes,...current.ranges},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
     draw(host,{...node,content},variables,width,height);
     host.querySelector('.plot-legend')?.remove();
@@ -88,8 +89,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     const svg=host.querySelector('svg') as SVGSVGElement|null;if(!svg)return;
     svg.style.touchAction=current.exploring?'none':'';svg.setAttribute('tabindex','0');svg.setAttribute('aria-label','函数图；探索模式可平移缩放');
     const anchor=(event:PointerEvent|WheelEvent)=>{const rect=svg.getBoundingClientRect();return {
-      x:Math.max(0,Math.min(1,( (event.clientX-rect.left)/rect.width*width-30)/(width-42))),
-      y:Math.max(0,Math.min(1,1-((event.clientY-rect.top)/rect.height*height-10)/(height-34))),
+      x:Math.max(0,Math.min(1,( (event.clientX-rect.left)/rect.width*width-frame.left)/frame.width)),
+      y:Math.max(0,Math.min(1,1-((event.clientY-rect.top)/rect.height*height-frame.top)/frame.height)),
     };};
     svg.addEventListener('wheel',event=>{if(!current.exploring)return;event.preventDefault();event.stopPropagation();current.ranges=zoomPlotRanges(current.ranges,event.deltaY>0?1.12:1/1.12,anchor(event));schedule();},{passive:false});
     // Pointer capture lives on the persistent host: redraws do not lose the gesture.
@@ -111,8 +112,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
           if(a>1&&b>1)current.ranges=zoomPlotRanges(current.ranges,a/b,center);
         } else {
           const rect=svg.getBoundingClientRect();
-          const dx=(previous.x-event.clientX)/rect.width*width/(width-42)*(current.ranges.x.max-current.ranges.x.min);
-          const dy=(event.clientY-previous.y)/rect.height*height/(height-34)*(current.ranges.y.max-current.ranges.y.min);
+          const dx=(previous.x-event.clientX)/rect.width*width/frame.width*(current.ranges.x.max-current.ranges.x.min);
+          const dy=(event.clientY-previous.y)/rect.height*height/frame.height*(current.ranges.y.max-current.ranges.y.min);
           const next=panPlotRanges(current.ranges,dx,dy);
           if([next.x.min,next.x.max,next.y.min,next.y.max].every(v=>Number.isFinite(v)&&Math.abs(v)<=1e12))current.ranges=next;
         }
@@ -123,8 +124,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
         return Number.isFinite(y)&&y>=current.ranges.y.min&&y<=current.ranges.y.max?[{i,y,distance:Math.abs((y-current.ranges.y.min)/(current.ranges.y.max-current.ranges.y.min)-point.y)}]:[];});
       candidates.sort((a,b)=>a.distance-b.distance);const hit=candidates[0];
       svg.querySelectorAll('[data-plot-probe]').forEach(e=>e.remove());
-      if(hit){const px=30+point.x*(width-42),py=height-24-(hit.y-current.ranges.y.min)/(current.ranges.y.max-current.ranges.y.min)*(height-34);
-        for(const coordinates of [[px,10,px,height-24],[30,py,width-12,py]]){
+      if(hit){const px=frame.left+point.x*frame.width,py=frame.bottom-(hit.y-current.ranges.y.min)/(current.ranges.y.max-current.ranges.y.min)*frame.height;
+        for(const coordinates of [[px,frame.top,px,frame.bottom],[frame.left,py,frame.right,py]]){
           const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.dataset.plotProbe='true';
           ['x1','y1','x2','y2'].forEach((key,i)=>line.setAttribute(key,String(coordinates[i])));
           line.setAttribute('stroke','#7b8d88');line.setAttribute('stroke-dasharray','3 3');line.setAttribute('pointer-events','none');svg.append(line);
@@ -134,7 +135,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     };
     host.onpointerup=event=>{current.gesture?.pointers.delete(event.pointerId);if(host.hasPointerCapture(event.pointerId))host.releasePointerCapture(event.pointerId);};host.onpointercancel=host.onpointerup;
     svg.onkeydown=event=>{if(!['+','=','-','0'].includes(event.key))return;event.preventDefault();event.stopPropagation();
-      current.ranges=event.key==='0'?structuredClone(recommended):zoomPlotRanges(current.ranges,event.key==='-'?1.25:.8);refresh();};
+      current.ranges=event.key==='0'?structuredClone(recommended):zoomPlotRanges(current.ranges,event.key==='-'?1.25:.8);refresh();(host.querySelector("svg") as SVGSVGElement|null)?.focus();};
   }
   current.draw=refresh;
   if(current.dialog)mountDialog(current.dialog);

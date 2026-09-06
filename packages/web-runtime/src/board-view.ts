@@ -32,6 +32,7 @@ import {
 } from "./layout.js";
 import {
   secantMeasurement,
+  plotFrame,
   zeroAxisPosition,
   plotPathData,
   referencedPlotVariables,
@@ -460,11 +461,11 @@ function drawPlot(
   width = 300,
   height = 150,
 ): void {
-  const PLOT_LEFT = 30, PLOT_RIGHT = width-12, PLOT_TOP = 10, PLOT_BOTTOM = height-24;
   const content = node.content ?? {};
   const axes = content.axes ?? {};
   const xRange = plotRange(axes.x, { min: -5, max: 5 });
   const yRange = plotRange(axes.y, { min: -5, max: 5 });
+  const {left:PLOT_LEFT,right:PLOT_RIGHT,top:PLOT_TOP,bottom:PLOT_BOTTOM}=plotFrame(width,height,xRange,yRange,axes.equal_scale===true);
   const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
   const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
   const svg = document.createElementNS(SVG_NS, "svg");
@@ -565,7 +566,7 @@ function drawPlot(
     appendText(parent, measurement
       ? `Δx = ${display(measurement.dx)} · Δy = ${display(measurement.dy)} · 割线斜率 ≈ ${display(measurement.slope)}`
       : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。", "plot-measurement");
-    appendText(parent, "通过两个滑块分别调整 A、B 的横坐标。", "plot-control-hint");
+    appendText(parent, content.sample_input === "fixed_x" ? "A、B 的横坐标固定；曲线参数变化时同步观察两点与割线。" : "通过两个滑块分别调整 A、B 的横坐标。", "plot-control-hint");
   }
 
   for (const point of Array.isArray(content.points) ? content.points : []) {

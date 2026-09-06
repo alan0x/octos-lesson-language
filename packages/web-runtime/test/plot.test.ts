@@ -137,3 +137,15 @@ test("plot zoom preserves the selected mathematical anchor and pan does not chan
   assert.deepEqual(zoomPlotRanges(r,Infinity),r);
   assert.deepEqual(r,{x:{min:-4,max:4},y:{min:-2,max:6}});
 });
+
+
+test("equal-unit plotting letterboxes both small and enlarged views", async () => {
+  const {plotFrame} = await import("../src/plot.js");
+  for (const [width,height] of [[300,150],[1000,520]]) {
+    const x={min:-2,max:6}, y={min:-2,max:6};
+    const frame=plotFrame(width,height,x,y,true);
+    assert.equal(frame.width/(x.max-x.min),frame.height/(y.max-y.min));
+    assert.ok(frame.left>=30 && frame.right<=width-12);
+    assert.ok(frame.top>=10 && frame.bottom<=height-24);
+  }
+});
