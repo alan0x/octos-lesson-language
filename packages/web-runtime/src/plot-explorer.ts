@@ -92,8 +92,9 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};
       label.append(checkbox,document.createTextNode(c.label||c.expression));legend.append(label);
     });host.append(legend);
-    if(current.hidden.size){const notice=document.createElement('div');notice.className='plot-control-hint';notice.textContent='部分曲线已隐藏；练习前请恢复课程视图。';host.append(notice);}
-    const readout=document.createElement('output');readout.className='plot-probe-readout';readout.textContent=current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标';host.append(readout);
+    const readout=document.createElement('output');readout.className='plot-probe-readout';readout.textContent=current.hidden.size
+      ? '部分曲线已隐藏；练习前请恢复课程视图。'
+      : current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标';host.append(readout);
     const svg=host.querySelector('svg') as SVGSVGElement|null;if(!svg)return;
     svg.style.touchAction=current.exploring?'none':'';svg.setAttribute('tabindex','0');svg.setAttribute('aria-label','函数图；探索模式可平移缩放');
     const anchor=(event:PointerEvent|WheelEvent)=>{const rect=svg.getBoundingClientRect();return {

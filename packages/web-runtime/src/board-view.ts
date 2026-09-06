@@ -1685,7 +1685,7 @@ export class InfiniteBoardView {
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
-      const fixedVisualSize = kind === "plot" || kind === "geometry" || kind === "scene3d"
+      const fixedVisualSize = kind === "geometry" || kind === "scene3d"
         || (kind === "diagram" && Array.isArray(node.content?.elements));
       let element = this.nodeElements.get(node.id);
       const created = !element;

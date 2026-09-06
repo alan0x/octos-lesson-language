@@ -201,8 +201,8 @@
 .plot-toolbar button, .oll-plot-dialog > button { border:1px solid #cec8bd; border-radius:6px; padding:4px 8px; background:#fffdf7; color:#214c48; cursor:pointer; font:12px/1.4 system-ui; }
 .plot-toolbar button[aria-pressed="true"] { background:#d6eee7; }
 .plot-explorer-body { min-width:0; }
-.plot-probe-readout { display:block; min-height:28px; font:11px/1.4 system-ui; color:#4d645f; }
-.oll-plot-dialog { width:min(1100px,94vw); max-height:94vh; box-sizing:border-box; border:1px solid #cec8bd; border-radius:16px; padding:20px; background:#fffdf7; color:#214c48; }
+.plot-probe-readout { display:block; min-height:16px; font:11px/1.4 system-ui; color:#4d645f; }
+.oll-plot-dialog { position:fixed; inset:50% auto auto 50%; width:min(1100px,94vw); max-height:94vh; margin:0; transform:translate(-50%,-50%); box-sizing:border-box; overflow:auto; border:1px solid #cec8bd; border-radius:16px; padding:20px; background:#fffdf7; color:#214c48; }
 .oll-plot-dialog::backdrop { background:#152c2b88; }
 .oll-plot-dialog h2 { font:18px/1.4 system-ui; }
 .plot-dialog-shell { position:relative; background-image:none; padding:12px; }
