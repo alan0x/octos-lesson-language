@@ -1,4 +1,4 @@
-import { renderPlotExplorer } from "./plot-explorer.js";
+import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
 import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
@@ -416,7 +416,9 @@ function plotRange(value: unknown, fallback: PlotRange): PlotRange {
 }
 
 function plotTicks(range: PlotRange, count = 4): number[] {
-  return Array.from({ length: count + 1 }, (_, index) => range.min + (range.max - range.min) * index / count);
+  const ticks = Array.from({ length: count + 1 }, (_, index) => range.min + (range.max - range.min) * index / count);
+  if (range.min < 0 && range.max > 0 && !ticks.some(value => Math.abs(value) < 1e-10)) ticks.push(0);
+  return ticks.sort((a,b) => a-b);
 }
 
 function plotTickLabel(value: number): string {
@@ -1645,6 +1647,7 @@ export class InfiniteBoardView {
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
   dispose(): void {
+    for (const element of this.nodeElements.values()) disposePlotExplorer(element);
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
@@ -1662,6 +1665,7 @@ export class InfiniteBoardView {
   }
 
   private clearBoard(): void {
+    for (const element of this.nodeElements.values()) disposePlotExplorer(element);
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
     this.lastAttentionTargets = [];
@@ -1676,6 +1680,7 @@ export class InfiniteBoardView {
     const measured: MeasuredNodeSizes = {};
     for (const [id, element] of this.nodeElements) {
       if (board.nodes[id]) continue;
+      disposePlotExplorer(element);
       element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id);
     }
     for (const node of Object.values(board.nodes)) {

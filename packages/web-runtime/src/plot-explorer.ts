@@ -1,8 +1,16 @@
 import { plotFrame, compilePlotExpression, type PlotRange } from "./plot.js";
 
 type Ranges = {x:PlotRange;y:PlotRange};
-type State = {ranges:Ranges;signature:string;exploring:boolean;hidden:Set<number>;dialog?:HTMLDialogElement;gesture?:{host:HTMLElement;pointers:Map<number,{x:number;y:number}>};draw?:()=>void};
+type State = {disposed?:boolean;ranges:Ranges;signature:string;exploring:boolean;hidden:Set<number>;dialog?:HTMLDialogElement;gesture?:{host:HTMLElement;pointers:Map<number,{x:number;y:number}>};draw?:()=>void};
 const states=new WeakMap<HTMLElement,State>();
+export function disposePlotExplorer(parent:HTMLElement):void {
+  const state=states.get(parent);
+  if (!state) return;
+  state.disposed=true;
+  state.dialog?.close();
+  state.dialog?.remove();
+  states.delete(parent);
+}
 export function zoomPlotRanges(ranges:Ranges,factor:number,anchor={x:.5,y:.5}):Ranges {
   const axis=(r:PlotRange,t:number)=>{
     const span=r.max-r.min, next=span*factor, center=r.min+span*t;
@@ -43,7 +51,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   const button=(label:string,title:string,action:()=>void)=>{
     const b=document.createElement('button');b.type='button';b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.onclick=action;toolbar.append(b);return b;
   };
-  const refresh=()=>{save();for(const s of surfaces)paint(s.body,s.large);};
+  const refresh=()=>{if(current.disposed)return;save();for(const s of surfaces)paint(s.body,s.large);};
   let queued=false;
   const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;refresh();});};
   button('+','放大坐标范围中的局部',()=>{current.ranges=zoomPlotRanges(current.ranges,.8);refresh();});
