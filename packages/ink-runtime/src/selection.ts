@@ -10,11 +10,12 @@ import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
 import {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
+  AI_INK_SELECTION_FORMAT_VERSION,
   type InkSelectionBounds,
   type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
-import { ensurePersistentInkComponentIds } from "./component-identity.js";
+import { ensurePersistentInkComponentIds, inkComponentOrigin } from "./component-identity.js";
 
 export function selectedComponentsToSvg(components: AbstractComponent[]): {
   bounds: InkSelectionBounds;
@@ -47,6 +48,8 @@ export async function createInkSelectionSnapshot(options: {
   const componentIds = ensurePersistentInkComponentIds(
     [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()),
   );
+  const origins = [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()).map(inkComponentOrigin);
+  const ai = origins.includes("ai");
   const region: InkSelectionRegion = options.region ?? {
     kind: "rectangle",
     closed: true,
@@ -59,7 +62,7 @@ export async function createInkSelectionSnapshot(options: {
   };
   return {
     format: INK_SELECTION_FORMAT,
-    format_version: INK_SELECTION_FORMAT_VERSION,
+    format_version: ai ? AI_INK_SELECTION_FORMAT_VERSION : INK_SELECTION_FORMAT_VERSION,
     source_id: options.sourceId ?? `ink-source:${crypto.randomUUID()}`,
     document_id: options.documentId,
     document_version: options.documentVersion,
@@ -67,12 +70,14 @@ export async function createInkSelectionSnapshot(options: {
     bounds: selection.bounds,
     region,
     component_ids: componentIds,
+    ...(ai ? { component_origins: origins } : {}),
     checksum: {
       algorithm: "sha-256",
       value: await inkSvgChecksum(JSON.stringify({
         svg: selection.svg,
         region,
         component_ids: componentIds,
+        ...(ai ? { component_origins: origins } : {}),
       })),
     },
     svg: selection.svg,

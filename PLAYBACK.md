@@ -96,3 +96,8 @@ Headless Player 不负责：
 - TTS 供应商与音频缓冲；
 - 模型生成、Skill 或 Session 持久化；
 - 教学内容正确性评分。
+
+
+## 独立笔迹回放与 AI 批注
+
+AI 批注与学生笔迹属于同一个 Ink Editor 的独立资源，不进入 Canonical checkpoint。宿主回放临时使用新文档，结束后通过 `mergeSavedDocument` 合并旧笔迹和板书消费记录；不为 AI 另设隐藏层。恢复使用当前用户编辑结果，不依据 artifact 重建已经擦除或撤销的字。来源原稿删除不联动删除 AI 批注。

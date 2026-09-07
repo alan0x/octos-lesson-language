@@ -1,6 +1,7 @@
 import {
   BaseTool,
   Color4,
+  Stroke,
   Editor,
   EditorEventType,
   EraserTool,
@@ -39,9 +40,11 @@ import { createInkSelectionSnapshot } from "./selection.js";
 import {
   ensurePersistentInkComponentIds,
   hasPersistentInkComponentId,
+  markAiInkComponent,
 } from "./component-identity.js";
 import {
   INK_SELECTION_FORMAT_VERSION,
+  AI_INK_SELECTION_FORMAT_VERSION,
   inkSelectionPathRegion,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
@@ -54,6 +57,8 @@ import {
   lockSelectionTransform,
   type LockableSelectionTool,
 } from "./selection-lock.js";
+
+import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
 
 export type InkMode = "navigate" | "draw" | "erase" | "select";
 export type InkSelectionMode = "rectangle" | "lasso";
@@ -75,6 +80,7 @@ export interface InkRuntimeState {
   selection_color: string | null;
   selection_input: StudentInputMethod;
   selection_mode: InkSelectionMode;
+  selection_transform_enabled: boolean;
   document_version: number;
   saved: boolean;
 }
@@ -98,8 +104,10 @@ export class InkRuntime {
   private penColor = "#176b62";
   private selectionInput: StudentInputMethod = "unknown";
   private selectionMode: InkSelectionMode = "rectangle";
+  private selectionTransformEnabled = false;
   private documentVersion = 0;
   private savedSvg = "";
+  private aiWritingRecords: AiWritingRecord[] = [];
   private changeRevision = 0;
   private savedChangeRevision = 0;
   private saveTimer?: ReturnType<typeof setTimeout>;
@@ -193,8 +201,9 @@ export class InkRuntime {
     this.editor.notifier.on(EditorEventType.SelectionUpdated, (event) => {
       if (event.kind !== EditorEventType.SelectionUpdated) return;
       this.selectedComponents = [...event.selectedComponents];
+      if (this.selectedComponents.length === 0) this.selectionTransformEnabled = false;
       this.selectionRevision += 1;
-      lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool);
+      lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool, !this.selectionTransformEnabled);
       this.emit();
     });
     this.editor.notifier.on(EditorEventType.ViewportChanged, () => {
@@ -379,7 +388,7 @@ export class InkRuntime {
   private async restoreSavedDocument(): Promise<void> {
     const record = await this.store.load(this.options.storageKey);
     if (!record) {
-      this.savedSvg = this.editor.toSVG().outerHTML;
+      this.savedSvg = this.exportSvg().outerHTML;
       this.emit();
       return;
     }
@@ -389,6 +398,8 @@ export class InkRuntime {
     }
     this.suppressSave = true;
     try {
+      const sourceSvg = new DOMParser().parseFromString(record.svg, "image/svg+xml").documentElement as unknown as SVGElement;
+      this.aiWritingRecords = readAiWritingRecords(sourceSvg);
       await this.editor.loadFromSVG(record.svg);
       // Documents saved before infinite-canvas mode may restore js-draw's fixed
       // export rectangle. Normalize them without adding an undoable user action.
@@ -396,7 +407,7 @@ export class InkRuntime {
     }
     finally { this.suppressSave = false; }
     this.documentVersion = record.document_version;
-    this.savedSvg = this.editor.toSVG().outerHTML;
+    this.savedSvg = this.exportSvg().outerHTML;
     this.resetEditorViewport();
     this.emit();
   }
@@ -427,6 +438,7 @@ export class InkRuntime {
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,
       selection_mode: this.selectionMode,
+      selection_transform_enabled: this.selectionTransformEnabled,
       document_version: this.documentVersion,
       saved: this.changeRevision === this.savedChangeRevision,
     };
@@ -440,6 +452,7 @@ export class InkRuntime {
 
   setMode(mode: InkMode): void {
     this.modeValue = mode;
+    this.selectionTransformEnabled = false;
     this.options.board.setInputOwner(mode === "navigate" ? "runtime" : "ink");
     for (const pen of this.editor.toolController.getMatchingTools(PenTool)) pen.setEnabled(false);
     for (const eraser of this.editor.toolController.getMatchingTools(EraserTool)) eraser.setEnabled(false);
@@ -472,6 +485,13 @@ export class InkRuntime {
 
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
 
+  setSelectionTransformEnabled(enabled: boolean): void {
+    this.selectionTransformEnabled = enabled && this.modeValue === "select";
+    this.selectionGesture = [];
+    lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool, !this.selectionTransformEnabled);
+    this.emit();
+  }
+
   setSelectionMode(mode: InkSelectionMode): void {
     this.selectionMode = mode;
     if (this.modeValue === "select") this.setMode("select");
@@ -494,13 +514,65 @@ export class InkRuntime {
     return this.editor.dispatch(uniteCommands(commands));
   }
 
+  private exportSvg(): SVGElement {
+    ensurePersistentInkComponentIds(this.editor.image.getAllComponents().filter((component) => component.isSelectable()));
+    const svg = this.editor.toSVG();
+    writeAiWritingRecords(svg, this.aiWritingRecords);
+    return svg;
+  }
+
+  /** One artifact is one undoable addition; consumption survives user edits. */
+  async writeAiPaths(artifactId: string, paths: string[], color = "#84523c"): Promise<boolean> {
+    await this.ready;
+    if (!artifactId || artifactId.length > 512 || paths.length === 0 || paths.length > 2048
+      || paths.some((path) => !path || path.length > 200_000)
+      || paths.reduce((sum, path) => sum + path.length, 0) > 4_000_000) {
+      throw new InkRuntimeError("INK_INVALID_RECORD", "AI writing exceeds its geometry budget");
+    }
+    if (this.destroyPromise) throw new InkRuntimeError("INK_INVALID_RECORD", "Ink runtime is closed");
+    if (this.aiWritingRecords.some((record) => record.artifact_id === artifactId)) {
+      // A prior save may have failed. Persist the current user-edited document,
+      // never reconstruct missing strokes from an already consumed artifact.
+      await this.saveNow();
+      return false;
+    }
+    if (this.aiWritingRecords.length >= 4096) {
+      throw new InkRuntimeError("INK_INVALID_RECORD", "AI writing ledger is full");
+    }
+    const components = paths.map((path) => Stroke.fromFilled(path, Color4.fromHex(color)));
+    components.forEach(markAiInkComponent);
+    const componentIds = ensurePersistentInkComponentIds(components);
+    const command = uniteCommands(components.map((component) => this.editor.image.addComponent(component)),
+      { description: "小章鱼板书" });
+    const wasSuppressed = this.suppressSave;
+    this.suppressSave = true;
+    try {
+      // Filled-stroke additions are synchronous. Keep dispatch and the ledger in
+      // the same JS turn so neither autosave nor another writer can observe half.
+      this.editor.dispatch(command);
+      this.aiWritingRecords.push({ artifact_id: artifactId, component_ids: componentIds });
+      this.changeRevision += 1;
+    } catch (cause) {
+      command.unapply(this.editor);
+      throw cause;
+    } finally {
+      this.suppressSave = wasSuppressed;
+    }
+    // Geometry and consumption metadata share one checksummed storage record.
+    // On storage failure keep the visible transaction available for save retry.
+    await this.saveNow();
+    this.emit();
+    return true;
+  }
+
   saveNow(): Promise<InkDocumentRecord | null> {
     if (this.restoreFailure) return Promise.reject(this.restoreFailure);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
-    const svg = this.editor.toSVG().outerHTML;
+    const svg = this.exportSvg().outerHTML;
     const revision = this.changeRevision;
-    this.saveQueue = this.saveQueue.then(async () => {
+    const containsAiWriting = this.aiWritingRecords.length > 0;
+    this.saveQueue = this.saveQueue.catch(() => null).then(async () => {
       if (svg === this.savedSvg) {
         if (this.changeRevision === revision) this.savedChangeRevision = revision;
         this.emit();
@@ -511,6 +583,7 @@ export class InkRuntime {
         documentVersion: this.documentVersion + 1,
         editorVersion: __js_draw__version.number,
         svg,
+        containsAiWriting,
       });
       await this.store.save(this.options.storageKey, record);
       this.documentVersion = record.document_version;
@@ -543,7 +616,11 @@ export class InkRuntime {
     if (source.document_id === this.options.documentId) return null;
     this.suppressSave = true;
     try {
+      const sourceSvg = new DOMParser().parseFromString(source.svg, "image/svg+xml").documentElement as unknown as SVGElement;
+      const sourceRecords = readAiWritingRecords(sourceSvg);
       await this.editor.loadFromSVG(source.svg, true);
+      const existing = new Set(this.aiWritingRecords.map((record) => record.artifact_id));
+      this.aiWritingRecords.push(...sourceRecords.filter((record) => !existing.has(record.artifact_id)));
       this.enableInfiniteCanvas();
       this.resetEditorViewport();
     } finally {
@@ -554,20 +631,28 @@ export class InkRuntime {
     return this.saveNow();
   }
 
-  async captureSelectionSnapshot(): Promise<InkSelectionSnapshot> {
+  async captureSelectionSnapshot(onCaptured?: (selection: { bounds: InkSelectionBounds; region?: InkSelectionRegion }) => void): Promise<InkSelectionSnapshot> {
     // Attach stable IDs before saving. js-draw recreates its private component
     // IDs when loading SVG, but preserves these data-* attributes.
     ensurePersistentInkComponentIds(this.selectedComponents);
-    await this.saveNow();
-    const region: InkSelectionRegion | undefined = this.selectionMode === "rectangle"
+    const region: InkSelectionRegion | undefined = this.selectionTransformEnabled ? undefined : this.selectionMode === "rectangle"
       ? inkSelectionRectangleRegion(this.selectionGesture)
       : inkSelectionPathRegion(this.selectionGesture);
-    return createInkSelectionSnapshot({
+    if (onCaptured && this.selectedComponents.length) {
+      const bounds = Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox())).grownBy(8);
+      onCaptured({ bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }, region });
+    }
+    const captured = createInkSelectionSnapshot({
       components: this.selectedComponents,
       documentId: this.options.documentId,
       documentVersion: this.documentVersion,
       ...(region ? { region } : {}),
     });
+    // SVG, region and component identities are frozen before persistence yields.
+    // A selection change during save must not alter this utterance's source.
+    void captured.catch(() => undefined);
+    await this.saveNow();
+    return { ...await captured, document_version: this.documentVersion };
   }
 
   /**
@@ -576,7 +661,7 @@ export class InkRuntime {
    * tracking and cannot be checked safely.
    */
   hasSelectionSource(snapshot: InkSelectionSnapshot): boolean | null {
-    if (snapshot.format_version === INK_SELECTION_FORMAT_VERSION) {
+    if (snapshot.format_version === INK_SELECTION_FORMAT_VERSION || snapshot.format_version === AI_INK_SELECTION_FORMAT_VERSION) {
       const components = this.editor.image.getAllComponents();
       return inkSelectionSourceExists(
         snapshot,
@@ -591,7 +676,7 @@ export class InkRuntime {
     return null;
   }
 
-  serialize(): string { return this.editor.toSVG().outerHTML; }
+  serialize(): string { return this.exportSvg().outerHTML; }
 
   destroy(): Promise<void> {
     if (this.destroyPromise) return this.destroyPromise;

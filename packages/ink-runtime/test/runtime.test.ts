@@ -118,3 +118,19 @@ test("ink surface keeps its bounds while the visible camera remains in its buffe
 
   assert.equal(retained, initial);
 });
+
+
+test("explicit transformation unlocks selection and can safely relock it", () => {
+  let visible = false;
+  const drag = () => true;
+  const selection = { onDragStart: drag, setHandlesVisible: (value: boolean) => { visible = value; } };
+  const tool = { getSelection: () => selection };
+  lockSelectionTransform(tool);
+  lockSelectionTransform(tool);
+  lockSelectionTransform(tool, false);
+  assert.equal(selection.onDragStart, drag);
+  assert.equal(visible, true);
+  lockSelectionTransform(tool);
+  assert.equal(selection.onDragStart(), false);
+  assert.equal(visible, false);
+});

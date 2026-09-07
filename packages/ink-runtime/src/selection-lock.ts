@@ -7,14 +7,13 @@ export type LockableSelectionTool = {
   getSelection: () => LockedSelection | null;
 };
 
-/**
- * Rectangle selection is identification only. Moving/resizing ink will get an
- * explicit Octos interaction later; the stock js-draw selection background and
- * handles must not silently transform student work.
- */
-export function lockSelectionTransform(tool: LockableSelectionTool): void {
+const originalDragStarts = new WeakMap<LockedSelection, LockedSelection["onDragStart"]>();
+
+/** Selection identifies ink by default; transformation is an explicit action. */
+export function lockSelectionTransform(tool: LockableSelectionTool, locked = true): void {
   const selection = tool.getSelection();
   if (!selection) return;
-  selection.setHandlesVisible(false);
-  selection.onDragStart = () => false;
+  if (!originalDragStarts.has(selection)) originalDragStarts.set(selection, selection.onDragStart);
+  selection.setHandlesVisible(!locked);
+  selection.onDragStart = locked ? () => false : originalDragStarts.get(selection)!;
 }
