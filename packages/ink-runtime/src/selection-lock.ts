@@ -1,41 +1,28 @@
-export type LockedSelection = {
-  onDragStart: (pointer: unknown) => boolean;
-  onDragUpdate: (pointer: unknown) => void;
-  onDragEnd: () => void | Promise<void>;
-  onDragCancel: () => void;
-  getScreenRegion: () => {
-    containsPoint: (point: { x: number; y: number }) => boolean;
-    grownBy: (margin: number) => {
-      containsPoint: (point: { x: number; y: number }) => boolean;
-    };
-  };
+export type TranslationOnlySelection = {
   setHandlesVisible: (visible: boolean) => void;
+  childwidgets?: Array<{
+    containsPoint: (point: unknown) => boolean;
+    presentation?: { action?: unknown };
+  }>;
 };
 
-export type LockableSelectionTool = {
-  getSelection: () => LockedSelection | null;
+export type SelectionToolAccess = {
+  getSelection: () => TranslationOnlySelection | null;
 };
 
-const originalDragStarts = new WeakMap<LockedSelection, LockedSelection["onDragStart"]>();
+const translationOnlySelections = new WeakSet<TranslationOnlySelection>();
+const transformActions = new Set(["resize-x", "resize-y", "resize-xy", "rotate"]);
 
-/** Return whether a viewport-relative pointer is inside the selection box the
- * learner can currently see. js-draw derives this box from the selected ink,
- * so it can be larger than the rectangle or lasso that originally found it. */
-export function selectionBoxContainsScreenPoint(
-  tool: LockableSelectionTool,
-  point: { x: number; y: number },
-  margin = 0,
-): boolean {
-  const region = tool.getSelection()?.getScreenRegion();
-  if (!region) return false;
-  return (margin > 0 ? region.grownBy(margin) : region).containsPoint(point);
-}
-
-/** Toggle js-draw's selection transform without replacing its original handler. */
-export function lockSelectionTransform(tool: LockableSelectionTool, locked = true): void {
+/** Keep js-draw's selection state machine, but remove its hidden resize/rotate hit targets. */
+export function restrictSelectionToTranslation(tool: SelectionToolAccess): void {
   const selection = tool.getSelection();
   if (!selection) return;
-  if (!originalDragStarts.has(selection)) originalDragStarts.set(selection, selection.onDragStart);
-  selection.setHandlesVisible(!locked);
-  selection.onDragStart = locked ? () => false : originalDragStarts.get(selection)!;
+  selection.setHandlesVisible(false);
+  if (translationOnlySelections.has(selection)) return;
+  for (const widget of selection.childwidgets ?? []) {
+    if (transformActions.has(String(widget.presentation?.action))) {
+      widget.containsPoint = () => false;
+    }
+  }
+  translationOnlySelections.add(selection);
 }

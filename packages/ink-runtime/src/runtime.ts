@@ -34,10 +34,7 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
-import {
-  inkInputTargetsInteractiveUi,
-  inkInputTargetsSelectionBackground,
-} from "./input-routing.js";
+import { inkInputTargetsInteractiveUi } from "./input-routing.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -57,9 +54,8 @@ import {
   type InkSelectionSnapshot,
 } from "./selection-record.js";
 import {
-  lockSelectionTransform,
-  selectionBoxContainsScreenPoint,
-  type LockableSelectionTool,
+  restrictSelectionToTranslation,
+  type SelectionToolAccess,
 } from "./selection-lock.js";
 
 import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
@@ -124,10 +120,6 @@ export class InkRuntime {
   private renderedCamera: { panX: number; panY: number; scale: number };
   private expectedViewportTransform = Mat33.identity;
   private readonly activePointers = new Map<number, Pointer>();
-  private activeSelectionDrag?: {
-    pointerId: number;
-    selection: NonNullable<ReturnType<LockableSelectionTool["getSelection"]>>;
-  };
   private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
   private readonly geometryListeners = new Set<() => void>();
@@ -222,9 +214,8 @@ export class InkRuntime {
       }
       this.selectionTransformEnabled = this.selectedComponents.length > 0;
       this.selectionRevision += 1;
-      lockSelectionTransform(
-        this.getTool(SelectionTool) as unknown as LockableSelectionTool,
-        this.selectedComponents.length === 0,
+      restrictSelectionToTranslation(
+        this.getTool(SelectionTool) as unknown as SelectionToolAccess,
       );
       this.emit();
     });
@@ -314,41 +305,10 @@ export class InkRuntime {
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
-      const inputPath = rawEvent.composedPath();
-      if (inkInputTargetsInteractiveUi(inputPath)) return;
+      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
-        const selectionTool = this.getTool(SelectionTool) as unknown as LockableSelectionTool;
-        const viewportRect = this.options.viewport.getBoundingClientRect();
-        const startsInsideSelection = this.selectedComponents.length > 0
-          && (
-            inkInputTargetsSelectionBackground(inputPath)
-            || selectionBoxContainsScreenPoint(selectionTool, {
-              x: event.clientX - viewportRect.left,
-              y: event.clientY - viewportRect.top,
-            })
-          );
-        const selection = startsInsideSelection ? selectionTool.getSelection() : null;
-        if (selection) {
-          lockSelectionTransform(selectionTool, false);
-          const pointer = mappedPointer(event, true);
-          if (selection.onDragStart(pointer)) {
-            this.selectionRegionValid = false;
-            this.selectionTransformEnabled = true;
-            this.selectionGesture = [];
-            this.activeSelectionDrag = { pointerId: event.pointerId, selection };
-            event.preventDefault();
-            event.stopPropagation();
-            try { inputTarget.setPointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
-            return;
-          }
-        }
-        lockSelectionTransform(
-          selectionTool,
-          true,
-        );
-        this.selectionTransformEnabled = false;
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
         this.selectionInput = event.pointerType === "touch"
           ? "touch"
@@ -380,14 +340,6 @@ export class InkRuntime {
     };
     const onPointerMove = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
-      const selectionDrag = this.activeSelectionDrag;
-      if (selectionDrag?.pointerId === event.pointerId) {
-        event.preventDefault();
-        event.stopPropagation();
-        selectionDrag.selection.onDragUpdate(mappedPointer(event, true));
-        this.scheduleGeometryNotification();
-        return;
-      }
       const previous = this.activePointers.get(event.pointerId);
       if (!previous) return;
       event.preventDefault();
@@ -411,16 +363,6 @@ export class InkRuntime {
     };
     const onPointerUp = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
-      const selectionDrag = this.activeSelectionDrag;
-      if (selectionDrag?.pointerId === event.pointerId) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.activeSelectionDrag = undefined;
-        void Promise.resolve(selectionDrag.selection.onDragEnd());
-        try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
-        this.scheduleGeometryNotification();
-        return;
-      }
       if (!this.activePointers.has(event.pointerId)) return;
       event.preventDefault();
       event.stopPropagation();
@@ -435,35 +377,17 @@ export class InkRuntime {
       });
       this.activePointers.delete(pointer.id);
       try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
-      // SelectionUpdated can be delivered before js-draw has attached the
-      // materialized selection object. Re-apply the unlocked transform after
-      // pointer-up so a gesture-created selection is immediately draggable.
       if (this.modeValue === "select" && this.selectedComponents.length > 0) {
         this.selectionTransformEnabled = true;
-        lockSelectionTransform(
-          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
-          false,
+        restrictSelectionToTranslation(
+          this.getTool(SelectionTool) as unknown as SelectionToolAccess,
         );
       }
-    };
-    const onPointerCancel = (rawEvent: Event) => {
-      const event = rawEvent as PointerEvent;
-      const selectionDrag = this.activeSelectionDrag;
-      if (selectionDrag?.pointerId === event.pointerId) {
-        event.preventDefault();
-        event.stopPropagation();
-        this.activeSelectionDrag = undefined;
-        selectionDrag.selection.onDragCancel();
-        try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
-        this.scheduleGeometryNotification();
-        return;
-      }
-      onPointerUp(rawEvent);
     };
     add("pointerdown", onPointerDown);
     add("pointermove", onPointerMove);
     add("pointerup", onPointerUp);
-    add("pointercancel", onPointerCancel);
+    add("pointercancel", onPointerUp);
     add("contextmenu", (event) => {
       if (this.modeValue !== "navigate") event.preventDefault();
     });
@@ -472,7 +396,6 @@ export class InkRuntime {
         inputTarget.removeEventListener(name, listener, { capture: true });
       }
       this.activePointers.clear();
-      this.activeSelectionDrag = undefined;
     };
   }
 
@@ -593,7 +516,7 @@ export class InkRuntime {
       const selection = this.getTool(SelectionTool);
       selection.modeValue.set(this.selectionMode === "rectangle" ? SelectionMode.Rectangle : SelectionMode.Lasso);
       selection.setEnabled(true);
-      lockSelectionTransform(selection as unknown as LockableSelectionTool);
+      restrictSelectionToTranslation(selection as unknown as SelectionToolAccess);
     }
     this.emit();
   }
@@ -611,14 +534,6 @@ export class InkRuntime {
   }
 
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
-
-  setSelectionTransformEnabled(enabled: boolean): void {
-    this.selectionTransformEnabled = enabled && this.modeValue === "select";
-    if (this.selectionTransformEnabled) this.selectionRegionValid = false;
-    this.selectionGesture = [];
-    lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool, !this.selectionTransformEnabled);
-    this.emit();
-  }
 
   setSelectionMode(mode: InkSelectionMode): void {
     this.selectionMode = mode;

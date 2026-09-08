@@ -151,6 +151,30 @@ try {
  });
  const visibleSelection=await page.locator('.selection-tool-selection-background').last().boundingBox();
  if(!visibleSelection) throw new Error('visible selection box is missing');
+ const beforeEdgeDrag=await page.evaluate(()=>window.pointerInk.state.content_bounds);
+ const edgeStart={
+   // The native resize handle owns a 30px hit area centred on the edge.
+   // Probe 10px inside it so the point is also unambiguously inside the selection.
+   x:visibleSelection.x+visibleSelection.width-10,
+   y:visibleSelection.y+visibleSelection.height*.5,
+ };
+ await page.mouse.move(edgeStart.x,edgeStart.y);await page.mouse.down();
+ await page.mouse.move(edgeStart.x+30,edgeStart.y+20,{steps:5});await page.mouse.up();
+ await page.evaluate(async ({before})=>{
+   const ink=window.pointerInk;
+   const after=ink.state.content_bounds;
+   const close=(actual,expected)=>Math.abs(actual-expected)<=2;
+   if(!close(after.x,before.x+30)||!close(after.y,before.y+20)) {
+     throw new Error('selection edge did not translate ink: '+JSON.stringify({before,after}));
+   }
+   if(!close(after.width,before.width)||!close(after.height,before.height)) {
+     throw new Error('hidden selection handle resized ink: '+JSON.stringify({before,after}));
+   }
+   if(!document.querySelector('.selection-tool-selection-background')) {
+     throw new Error('selection overlay disappeared after edge drag');
+   }
+   await ink.undo();
+ },{before:beforeEdgeDrag});
  const inkLayout=await page.evaluate(()=>({
    board:document.querySelector('#board').getBoundingClientRect().toJSON(),
    layer:document.querySelector('.oll-ink-layer').getBoundingClientRect().toJSON(),
@@ -202,6 +226,6 @@ try {
    }
    await ink.destroy();
  }, move);
- result.passed.push('selection-only drag boundary','visible selection target','selection overlay lifecycle','live source bounds','direct pointer drag and undo','playback merge');
+ result.passed.push('selection-only drag boundary','selection edge translates only','visible selection target','selection overlay lifecycle','live source bounds','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

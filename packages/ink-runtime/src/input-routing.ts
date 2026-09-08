@@ -8,20 +8,7 @@ const nativeControlTags = new Set([
 
 interface InputPathElement {
   tagName?: unknown;
-  classList?: {
-    contains: (className: string) => boolean;
-  };
   getAttribute?: (name: string) => string | null;
-}
-
-const selectionBackgroundClass = "selection-tool-selection-background";
-
-/** The visible selection box is the authoritative drag target. */
-export function inkInputTargetsSelectionBackground(path: readonly unknown[]): boolean {
-  return path.some((candidate) => {
-    if (!candidate || typeof candidate !== "object") return false;
-    return (candidate as InputPathElement).classList?.contains(selectionBackgroundClass) ?? false;
-  });
 }
 
 /**
