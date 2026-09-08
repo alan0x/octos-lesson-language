@@ -34,10 +34,7 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
-import {
-  inkInputTargetsInteractiveUi,
-  inkInputTargetsSelectionBackground,
-} from "./input-routing.js";
+import { inkInputTargetsInteractiveUi } from "./input-routing.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -124,6 +121,11 @@ export class InkRuntime {
   private renderedCamera: { panX: number; panY: number; scale: number };
   private expectedViewportTransform = Mat33.identity;
   private readonly activePointers = new Map<number, Pointer>();
+  private activeSelectionDrag?: {
+    pointerId: number;
+    selection: NonNullable<ReturnType<LockableSelectionTool["getSelection"]>>;
+    start: InkSelectionPoint;
+  };
   private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
   private readonly geometryListeners = new Set<() => void>();
@@ -310,39 +312,39 @@ export class InkRuntime {
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
-      const inputPath = rawEvent.composedPath();
-      if (inkInputTargetsInteractiveUi(inputPath)) return;
+      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
-      if (
-        this.modeValue === "select"
-        && this.selectedComponents.length > 0
-        && inkInputTargetsSelectionBackground(inputPath)
-      ) {
-        this.selectionRegionValid = false;
-        this.selectionTransformEnabled = true;
-        lockSelectionTransform(
-          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
-          false,
-        );
-        // The selection background has its own js-draw pointer listener. Let
-        // that listener receive the original event and use js-draw's own
-        // pointer coordinates, capture, and drag lifecycle.
-        return;
-      }
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         const selectionTool = this.getTool(SelectionTool) as unknown as LockableSelectionTool;
         const viewportRect = this.options.viewport.getBoundingClientRect();
+        const hitSlop = event.pointerType === "touch" ? 20 : 12;
         const startsInsideSelection = this.selectedComponents.length > 0
           && selectionBoxContainsScreenPoint(selectionTool, {
             x: event.clientX - viewportRect.left,
             y: event.clientY - viewportRect.top,
-          });
+          }, hitSlop);
+        const selection = startsInsideSelection ? selectionTool.getSelection() : null;
+        if (selection) {
+          lockSelectionTransform(selectionTool, false);
+          this.selectionRegionValid = false;
+          this.selectionTransformEnabled = true;
+          this.selectionGesture = [];
+          this.activeSelectionDrag = {
+            pointerId: event.pointerId,
+            selection,
+            start: point,
+          };
+          event.preventDefault();
+          event.stopPropagation();
+          try { inputTarget.setPointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
+          return;
+        }
         lockSelectionTransform(
           selectionTool,
-          !startsInsideSelection,
+          true,
         );
-        this.selectionTransformEnabled = startsInsideSelection;
+        this.selectionTransformEnabled = false;
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
         this.selectionInput = event.pointerType === "touch"
           ? "touch"
@@ -374,20 +376,20 @@ export class InkRuntime {
     };
     const onPointerMove = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
-      const previous = this.activePointers.get(event.pointerId);
-      if (!previous) {
-        if (
-          this.modeValue === "select"
-          && this.selectedComponents.length > 0
-          && inkInputTargetsSelectionBackground(rawEvent.composedPath())
-        ) {
-          // js-draw updates the transform later in this same event. Queue the
-          // geometry notification for the following animation frame so host
-          // connectors track the moving ink in real time.
-          this.scheduleGeometryNotification();
-        }
+      const selectionDrag = this.activeSelectionDrag;
+      if (selectionDrag?.pointerId === event.pointerId) {
+        event.preventDefault();
+        event.stopPropagation();
+        const current = pointerBoardPoint(event);
+        selectionDrag.selection.setTransform(Mat33.translation(Vec2.of(
+          current.x - selectionDrag.start.x,
+          current.y - selectionDrag.start.y,
+        )));
+        this.scheduleGeometryNotification();
         return;
       }
+      const previous = this.activePointers.get(event.pointerId);
+      if (!previous) return;
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, true);
@@ -409,6 +411,16 @@ export class InkRuntime {
     };
     const onPointerUp = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
+      const selectionDrag = this.activeSelectionDrag;
+      if (selectionDrag?.pointerId === event.pointerId) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.activeSelectionDrag = undefined;
+        void Promise.resolve(selectionDrag.selection.finalizeTransform());
+        try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
+        this.scheduleGeometryNotification();
+        return;
+      }
       if (!this.activePointers.has(event.pointerId)) return;
       event.preventDefault();
       event.stopPropagation();
@@ -446,6 +458,7 @@ export class InkRuntime {
         inputTarget.removeEventListener(name, listener, { capture: true });
       }
       this.activePointers.clear();
+      this.activeSelectionDrag = undefined;
     };
   }
 

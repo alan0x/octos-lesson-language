@@ -157,6 +157,19 @@ try {
    root:window.pointerInk.editor.getRootElement().getBoundingClientRect().toJSON(),
    render:window.pointerInk.editor.getRootElement().querySelector('.imageEditorRenderArea').getBoundingClientRect().toJSON(),
  }));
+ const slopStart={
+   x:visibleSelection.x+visibleSelection.width*.5,
+   y:visibleSelection.y+visibleSelection.height+8,
+ };
+ await page.mouse.move(slopStart.x,slopStart.y);await page.mouse.down();
+ await page.mouse.move(slopStart.x+30,slopStart.y+20,{steps:5});await page.mouse.up();
+ await page.evaluate(async ({before})=>{
+   const ink=window.pointerInk;
+   if(ink.state.selected_count!==1 || ink.state.content_bounds.x<before+20) {
+     throw new Error('selection hit slop did not move selected ink: '+JSON.stringify(ink.state));
+   }
+   await ink.undo();
+ },move);
  move.x=visibleSelection.x+visibleSelection.width*.78;
  move.y=visibleSelection.y+visibleSelection.height*.72;
  if(move.x>=move.left+245&&move.x<=move.left+270&&move.y>=move.top+190&&move.y<=move.top+210) {
@@ -186,6 +199,6 @@ try {
    }
    await ink.destroy();
  }, move);
- result.passed.push('selection-only drag boundary','live source bounds','direct pointer drag and undo','playback merge');
+ result.passed.push('selection-only drag boundary','selection drag hit slop','live source bounds','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

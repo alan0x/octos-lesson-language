@@ -1,9 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  inkInputTargetsInteractiveUi,
-  inkInputTargetsSelectionBackground,
-} from "../src/input-routing.js";
+import { inkInputTargetsInteractiveUi } from "../src/input-routing.js";
 import { coalesceInkOccupiedBounds } from "../src/occupied-bounds.js";
 import {
   lockSelectionTransform,
@@ -18,7 +15,12 @@ test("rectangle selection cannot move or resize student ink", () => {
   let handlesVisible = true;
   let originalDragStarts = 0;
   const selection = {
-    getScreenRegion: () => ({ containsPoint: () => true }),
+    getScreenRegion: () => ({
+      containsPoint: () => true,
+      grownBy: () => ({ containsPoint: () => true }),
+    }),
+    setTransform: () => {},
+    finalizeTransform: () => {},
     setHandlesVisible(visible: boolean) {
       handlesVisible = visible;
     },
@@ -45,45 +47,34 @@ test("selection dragging follows the currently visible selection box", () => {
       getScreenRegion: () => ({
         containsPoint: ({ x, y }: { x: number; y: number }) =>
           x >= 100 && x <= 300 && y >= 80 && y <= 220,
+        grownBy: (margin: number) => ({
+          containsPoint: ({ x, y }: { x: number; y: number }) =>
+            x >= 100 - margin && x <= 300 + margin
+            && y >= 80 - margin && y <= 220 + margin,
+        }),
       }),
       onDragStart: () => true,
+      setTransform: () => {},
+      finalizeTransform: () => {},
       setHandlesVisible: () => {},
     }),
   };
 
   assert.equal(selectionBoxContainsScreenPoint(tool, { x: 260, y: 180 }), true);
   assert.equal(selectionBoxContainsScreenPoint(tool, { x: 40, y: 180 }), false);
+  assert.equal(selectionBoxContainsScreenPoint(tool, { x: 92, y: 180 }, 12), true);
+  assert.equal(selectionBoxContainsScreenPoint(tool, { x: 80, y: 180 }, 12), false);
 });
 
 function inputElement(
   tagName: string,
   attributes: Record<string, string> = {},
-  classes: string[] = [],
-): {
-  tagName: string;
-  classList: { contains: (className: string) => boolean };
-  getAttribute: (name: string) => string | null;
-} {
+): { tagName: string; getAttribute: (name: string) => string | null } {
   return {
     tagName,
-    classList: { contains: (className) => classes.includes(className) },
     getAttribute: (name) => attributes[name] ?? null,
   };
 }
-
-test("visible selection background keeps its native drag path", () => {
-  assert.equal(
-    inkInputTargetsSelectionBackground([
-      inputElement("div", {}, ["selection-tool-selection-background"]),
-      inputElement("div"),
-    ]),
-    true,
-  );
-  assert.equal(
-    inkInputTargetsSelectionBackground([inputElement("div"), {}]),
-    false,
-  );
-});
 
 test("ink leaves native controls usable while a drawing tool owns the board", () => {
   for (const tagName of ["button", "input", "select", "textarea", "a"]) {
@@ -167,8 +158,13 @@ test("explicit transformation unlocks selection and can safely relock it", () =>
   let visible = false;
   const drag = () => true;
   const selection = {
-    getScreenRegion: () => ({ containsPoint: () => true }),
+    getScreenRegion: () => ({
+      containsPoint: () => true,
+      grownBy: () => ({ containsPoint: () => true }),
+    }),
     onDragStart: drag,
+    setTransform: () => {},
+    finalizeTransform: () => {},
     setHandlesVisible: (value: boolean) => { visible = value; },
   };
   const tool = { getSelection: () => selection };

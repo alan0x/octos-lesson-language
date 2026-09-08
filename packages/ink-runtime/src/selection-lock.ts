@@ -2,7 +2,12 @@ export type LockedSelection = {
   onDragStart: (...args: unknown[]) => boolean;
   getScreenRegion: () => {
     containsPoint: (point: { x: number; y: number }) => boolean;
+    grownBy: (margin: number) => {
+      containsPoint: (point: { x: number; y: number }) => boolean;
+    };
   };
+  setTransform: (transform: unknown, preview?: boolean) => void;
+  finalizeTransform: () => void | Promise<void>;
   setHandlesVisible: (visible: boolean) => void;
 };
 
@@ -18,8 +23,11 @@ const originalDragStarts = new WeakMap<LockedSelection, LockedSelection["onDragS
 export function selectionBoxContainsScreenPoint(
   tool: LockableSelectionTool,
   point: { x: number; y: number },
+  margin = 0,
 ): boolean {
-  return tool.getSelection()?.getScreenRegion().containsPoint(point) ?? false;
+  const region = tool.getSelection()?.getScreenRegion();
+  if (!region) return false;
+  return (margin > 0 ? region.grownBy(margin) : region).containsPoint(point);
 }
 
 /** Toggle js-draw's selection transform without replacing its original handler. */
