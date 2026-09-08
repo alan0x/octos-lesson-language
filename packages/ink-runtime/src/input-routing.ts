@@ -8,7 +8,24 @@ const nativeControlTags = new Set([
 
 interface InputPathElement {
   tagName?: unknown;
+  classList?: {
+    contains: (className: string) => boolean;
+  };
   getAttribute?: (name: string) => string | null;
+}
+
+const selectionBackgroundClass = "selection-tool-selection-background";
+
+/**
+ * The visible js-draw selection background already owns pointer dragging.
+ * Let js-draw receive these events directly instead of translating and
+ * redispatching them through the board input bridge.
+ */
+export function inkInputTargetsSelectionBackground(path: readonly unknown[]): boolean {
+  return path.some((candidate) => {
+    if (!candidate || typeof candidate !== "object") return false;
+    return (candidate as InputPathElement).classList?.contains(selectionBackgroundClass) ?? false;
+  });
 }
 
 /**

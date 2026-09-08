@@ -34,7 +34,10 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
-import { inkInputTargetsInteractiveUi } from "./input-routing.js";
+import {
+  inkInputTargetsInteractiveUi,
+  inkInputTargetsSelectionBackground,
+} from "./input-routing.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -307,8 +310,25 @@ export class InkRuntime {
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
-      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
+      const inputPath = rawEvent.composedPath();
+      if (inkInputTargetsInteractiveUi(inputPath)) return;
       const event = rawEvent as PointerEvent;
+      if (
+        this.modeValue === "select"
+        && this.selectedComponents.length > 0
+        && inkInputTargetsSelectionBackground(inputPath)
+      ) {
+        this.selectionRegionValid = false;
+        this.selectionTransformEnabled = true;
+        lockSelectionTransform(
+          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
+          false,
+        );
+        // The selection background has its own js-draw pointer listener. Let
+        // that listener receive the original event and use js-draw's own
+        // pointer coordinates, capture, and drag lifecycle.
+        return;
+      }
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         const selectionTool = this.getTool(SelectionTool) as unknown as LockableSelectionTool;
@@ -355,7 +375,19 @@ export class InkRuntime {
     const onPointerMove = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
       const previous = this.activePointers.get(event.pointerId);
-      if (!previous) return;
+      if (!previous) {
+        if (
+          this.modeValue === "select"
+          && this.selectedComponents.length > 0
+          && inkInputTargetsSelectionBackground(rawEvent.composedPath())
+        ) {
+          // js-draw updates the transform later in this same event. Queue the
+          // geometry notification for the following animation frame so host
+          // connectors track the moving ink in real time.
+          this.scheduleGeometryNotification();
+        }
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       const pointer = mappedPointer(event, true);
