@@ -105,6 +105,7 @@ export class InkRuntime {
   private selectionInput: StudentInputMethod = "unknown";
   private selectionMode: InkSelectionMode = "rectangle";
   private selectionTransformEnabled = false;
+  private selectionRegionValid = false;
   private documentVersion = 0;
   private savedSvg = "";
   private aiWritingRecords: AiWritingRecord[] = [];
@@ -200,10 +201,21 @@ export class InkRuntime {
     this.getTool(PenTool).setColor(Color4.fromHex(this.penColor));
     this.editor.notifier.on(EditorEventType.SelectionUpdated, (event) => {
       if (event.kind !== EditorEventType.SelectionUpdated) return;
+      const previousComponents = this.selectedComponents;
       this.selectedComponents = [...event.selectedComponents];
-      if (this.selectedComponents.length === 0) this.selectionTransformEnabled = false;
+      const selectionChanged = previousComponents.length !== this.selectedComponents.length
+        || previousComponents.some((component, index) => component !== this.selectedComponents[index]);
+      if (this.selectedComponents.length === 0) {
+        this.selectionRegionValid = false;
+      } else if (selectionChanged) {
+        this.selectionRegionValid = this.selectionGesture.length > 1;
+      }
+      this.selectionTransformEnabled = this.selectedComponents.length > 0;
       this.selectionRevision += 1;
-      lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool, !this.selectionTransformEnabled);
+      lockSelectionTransform(
+        this.getTool(SelectionTool) as unknown as LockableSelectionTool,
+        this.selectedComponents.length === 0,
+      );
       this.emit();
     });
     this.editor.notifier.on(EditorEventType.ViewportChanged, () => {
@@ -289,6 +301,7 @@ export class InkRuntime {
       if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
+        if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
         this.selectionInput = event.pointerType === "touch"
           ? "touch"
           : event.pointerType === "pen"
@@ -453,6 +466,7 @@ export class InkRuntime {
   setMode(mode: InkMode): void {
     this.modeValue = mode;
     this.selectionTransformEnabled = false;
+    this.selectionRegionValid = false;
     this.options.board.setInputOwner(mode === "navigate" ? "runtime" : "ink");
     for (const pen of this.editor.toolController.getMatchingTools(PenTool)) pen.setEnabled(false);
     for (const eraser of this.editor.toolController.getMatchingTools(EraserTool)) eraser.setEnabled(false);
@@ -479,6 +493,7 @@ export class InkRuntime {
     if (this.modeValue !== "select") this.setMode("select");
     const selection = this.getTool(SelectionTool);
     selection.setEnabled(true);
+    this.selectionRegionValid = false;
     this.selectionGesture = [];
     selection.setSelection(this.editor.image.getAllComponents());
   }
@@ -487,6 +502,7 @@ export class InkRuntime {
 
   setSelectionTransformEnabled(enabled: boolean): void {
     this.selectionTransformEnabled = enabled && this.modeValue === "select";
+    if (this.selectionTransformEnabled) this.selectionRegionValid = false;
     this.selectionGesture = [];
     lockSelectionTransform(this.getTool(SelectionTool) as unknown as LockableSelectionTool, !this.selectionTransformEnabled);
     this.emit();
@@ -635,9 +651,11 @@ export class InkRuntime {
     // Attach stable IDs before saving. js-draw recreates its private component
     // IDs when loading SVG, but preserves these data-* attributes.
     ensurePersistentInkComponentIds(this.selectedComponents);
-    const region: InkSelectionRegion | undefined = this.selectionTransformEnabled ? undefined : this.selectionMode === "rectangle"
+    const region: InkSelectionRegion | undefined = this.selectionRegionValid && this.selectionMode === "rectangle"
       ? inkSelectionRectangleRegion(this.selectionGesture)
-      : inkSelectionPathRegion(this.selectionGesture);
+      : this.selectionRegionValid
+        ? inkSelectionPathRegion(this.selectionGesture)
+        : undefined;
     if (onCaptured && this.selectedComponents.length) {
       const bounds = Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox())).grownBy(8);
       onCaptured({ bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }, region });

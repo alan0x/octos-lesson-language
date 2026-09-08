@@ -108,9 +108,10 @@ try {
    const board={setInputOwner:()=>{},getCameraState:()=>camera,subscribeCamera:fn=>{fn(camera);return()=>{};},viewportToBoard:p=>p};
    const ink=window.InkRuntime.mount({board,viewport,storageKey:'pointer-move',documentId:'pointer-move'});
    await ink.ready;await ink.writeAiPaths('move',['M200 200 L350 200 L350 280 L200 280 Z']);
-   ink.setMode('select');ink.selectAll();ink.setSelectionTransformEnabled(true);ink.clearSelection();
+   ink.setMode('select');ink.selectAll();ink.clearSelection();
    if(ink.state.selection_transform_enabled)throw new Error('clearing selection did not relock movement');
-   ink.selectAll();ink.setSelectionTransformEnabled(true);
+   ink.selectAll();
+   if(!ink.state.selection_transform_enabled)throw new Error('selected ink is not directly draggable');
    window.pointerInk=ink;
    const bounds=viewport.getBoundingClientRect();
    return {x:bounds.x+260,y:bounds.y+240,before:ink.state.content_bounds.x};
@@ -118,13 +119,11 @@ try {
  await page.mouse.move(move.x,move.y);await page.mouse.down();await page.mouse.move(move.x+70,move.y+40,{steps:8});await page.mouse.up();
  await page.evaluate(async ({before}) => {
    const ink=window.pointerInk;
-   if(ink.state.content_bounds.x < before+60) throw new Error('explicit pointer drag did not move selected ink');
-   ink.setSelectionTransformEnabled(false);
-   if(ink.state.selection_transform_enabled) throw new Error('movement did not relock');
+   if(ink.state.content_bounds.x < before+60) throw new Error('direct pointer drag did not move selected ink');
    await ink.undo();await ink.saveNow();
    if(Math.abs(ink.state.content_bounds.x-before)>1) throw new Error('pointer move undo');
    await ink.destroy();
  }, move);
- result.passed.push('explicit pointer drag and undo','playback merge');
+ result.passed.push('direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

@@ -9,7 +9,7 @@ export type LockableSelectionTool = {
 
 const originalDragStarts = new WeakMap<LockedSelection, LockedSelection["onDragStart"]>();
 
-/** Selection identifies ink by default; transformation is an explicit action. */
+/** Toggle js-draw's selection transform without replacing its original handler. */
 export function lockSelectionTransform(tool: LockableSelectionTool, locked = true): void {
   const selection = tool.getSelection();
   if (!selection) return;
