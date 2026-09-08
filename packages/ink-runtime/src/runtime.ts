@@ -231,12 +231,14 @@ export class InkRuntime {
       if (event.kind !== EditorEventType.CommandDone || this.suppressSave) return;
       this.changeRevision += 1;
       this.scheduleSave();
+      this.scheduleGeometryNotification();
       this.emit();
     });
     this.editor.notifier.on(EditorEventType.CommandUndone, (event) => {
       if (event.kind !== EditorEventType.CommandUndone || this.suppressSave) return;
       this.changeRevision += 1;
       this.scheduleSave();
+      this.scheduleGeometryNotification();
       this.emit();
     });
   }
@@ -268,7 +270,11 @@ export class InkRuntime {
     const inputTarget = this.options.viewport;
     const listeners: Array<[string, EventListener]> = [];
     const add = (name: string, listener: EventListener) => {
-      inputTarget.addEventListener(name, listener);
+      // js-draw's materialized selection overlay can stop pointer events
+      // before they bubble to the host viewport. Capture them first so direct
+      // selection dragging works when the ink layer is mounted alongside the
+      // whiteboard's world layers, as it is in the real product.
+      inputTarget.addEventListener(name, listener, { capture: true });
       listeners.push([name, listener]);
     };
     const pointerDevice = (event: PointerEvent): PointerDevice => {
@@ -390,7 +396,9 @@ export class InkRuntime {
       if (this.modeValue !== "navigate") event.preventDefault();
     });
     return () => {
-      for (const [name, listener] of listeners) inputTarget.removeEventListener(name, listener);
+      for (const [name, listener] of listeners) {
+        inputTarget.removeEventListener(name, listener, { capture: true });
+      }
       this.activePointers.clear();
     };
   }
