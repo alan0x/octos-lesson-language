@@ -118,6 +118,22 @@ try {
  if(selected.selected_count!==1 || !selected.selection_transform_enabled) {
    throw new Error('gesture-created selection is not directly draggable: '+JSON.stringify(selected));
  }
+ // Dragging outside the visible selection must start a new selection gesture,
+ // not move the already selected ink as though the whole ink layer were a
+ // transform handle.
+ const beforeOutsideDrag=await page.evaluate(()=>window.pointerInk.state.content_bounds);
+ await page.mouse.move(move.left+600,move.top+500);await page.mouse.down();
+ await page.mouse.move(move.left+650,move.top+540,{steps:5});await page.mouse.up();
+ const afterOutsideDrag=await page.evaluate(()=>window.pointerInk.state.content_bounds);
+ if(Math.abs(afterOutsideDrag.x-beforeOutsideDrag.x)>1||Math.abs(afterOutsideDrag.y-beforeOutsideDrag.y)>1) {
+   throw new Error('dragging outside the selection moved ink: '+JSON.stringify({beforeOutsideDrag,afterOutsideDrag}));
+ }
+ // Select the original region again before testing the intended direct drag.
+ await page.mouse.move(move.left+180,move.top+180);await page.mouse.down();
+ await page.mouse.move(move.left+370,move.top+300,{steps:8});await page.mouse.up();
+ if((await page.evaluate(()=>window.pointerInk.state.selected_count))!==1) {
+   throw new Error('selection could not be recreated after an outside gesture');
+ }
  await page.evaluate(async () => {
    const ink=window.pointerInk;
    window.pointerSource=await ink.captureSelectionSnapshot();
@@ -147,6 +163,6 @@ try {
    }
    await ink.destroy();
  }, move);
- result.passed.push('live source bounds','direct pointer drag and undo','playback merge');
+ result.passed.push('selection-only drag boundary','live source bounds','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

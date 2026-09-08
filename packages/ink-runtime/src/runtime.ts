@@ -46,6 +46,7 @@ import {
   INK_SELECTION_FORMAT_VERSION,
   AI_INK_SELECTION_FORMAT_VERSION,
   inkSelectionPathRegion,
+  inkSelectionRegionContainsPoint,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
   type InkSelectionBounds,
@@ -309,6 +310,29 @@ export class InkRuntime {
       if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
+        const point = pointerBoardPoint(event);
+        const selectedRegion = this.selectionRegionValid
+          ? this.selectionMode === "rectangle"
+            ? inkSelectionRectangleRegion(this.selectionGesture)
+            : inkSelectionPathRegion(this.selectionGesture)
+          : undefined;
+        const selectedBounds = this.selectedComponents.length > 0
+          ? Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox())).grownBy(8)
+          : undefined;
+        const startsInsideSelection = this.selectedComponents.length > 0 && (
+          selectedRegion
+            ? inkSelectionRegionContainsPoint(selectedRegion, point)
+            : Boolean(selectedBounds
+              && point.x >= selectedBounds.x
+              && point.x <= selectedBounds.x + selectedBounds.width
+              && point.y >= selectedBounds.y
+              && point.y <= selectedBounds.y + selectedBounds.height)
+        );
+        lockSelectionTransform(
+          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
+          !startsInsideSelection,
+        );
+        this.selectionTransformEnabled = startsInsideSelection;
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
         this.selectionInput = event.pointerType === "touch"
           ? "touch"
@@ -317,7 +341,7 @@ export class InkRuntime {
             : event.pointerType === "mouse"
               ? "mouse"
               : "unknown";
-        this.selectionGesture = [pointerBoardPoint(event)];
+        this.selectionGesture = [point];
       }
       event.preventDefault();
       event.stopPropagation();

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inkSelectionPathRegion, inkSelectionRectangleRegion } from "../src/selection-record.js";
+import {
+  inkSelectionPathRegion,
+  inkSelectionRectangleRegion,
+  inkSelectionRegionContainsPoint,
+} from "../src/selection-record.js";
 import {
   ensurePersistentInkComponentIds,
   hasPersistentInkComponentId,
@@ -38,6 +42,25 @@ test("rectangle selections persist the rectangle shown by the selection tool", (
       { x: 20, y: 70 },
     ],
   });
+});
+
+test("selection movement starts only inside the region the learner drew", () => {
+  const rectangle = inkSelectionRectangleRegion([
+    { x: 10, y: 20 },
+    { x: 90, y: 80 },
+  ])!;
+  assert.equal(inkSelectionRegionContainsPoint(rectangle, { x: 50, y: 50 }), true);
+  assert.equal(inkSelectionRegionContainsPoint(rectangle, { x: 10, y: 40 }), true);
+  assert.equal(inkSelectionRegionContainsPoint(rectangle, { x: 100, y: 50 }), false);
+
+  const lasso = inkSelectionPathRegion([
+    { x: 0, y: 0 },
+    { x: 80, y: 0 },
+    { x: 20, y: 70 },
+    { x: 0, y: 0 },
+  ])!;
+  assert.equal(inkSelectionRegionContainsPoint(lasso, { x: 20, y: 20 }), true);
+  assert.equal(inkSelectionRegionContainsPoint(lasso, { x: 70, y: 50 }), false);
 });
 
 test("selection snapshots preserve the learner's lasso instead of replacing it with a rectangle", () => {
