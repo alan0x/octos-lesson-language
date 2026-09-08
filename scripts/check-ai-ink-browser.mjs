@@ -209,8 +209,9 @@ try {
  const duringMove=await page.evaluate(()=>({
    updates:window.geometryUpdates,
    bounds:window.pointerInk.getSelectionSourceBounds(window.pointerSource),
+   sourceExists:window.pointerInk.hasSelectionSource(window.pointerSource),
  }));
- if(duringMove.updates<1 || duringMove.bounds.x<move.before+60) {
+ if(duringMove.updates<1 || duringMove.bounds.x<move.before+60 || duringMove.sourceExists!==true) {
    throw new Error('source bounds did not update during pointer drag: '+JSON.stringify({duringMove,dragStartState,visibleSelection,inkLayout,move}));
  }
  await page.mouse.up();
@@ -218,6 +219,7 @@ try {
    const ink=window.pointerInk;
    if(ink.state.content_bounds.x < before+60) throw new Error('direct pointer drag did not move selected ink');
    if(ink.getSelectionSourceBounds(window.pointerSource).x < before+60) throw new Error('moved source bounds were not retained');
+   if(ink.hasSelectionSource(window.pointerSource)!==true) throw new Error('move falsely erased the selection source');
    await ink.undo();await ink.saveNow();
    if(Math.abs(ink.state.content_bounds.x-before)>1) throw new Error('pointer move undo');
    const undoneSource=ink.getSelectionSourceBounds(window.pointerSource);
@@ -226,6 +228,6 @@ try {
    }
    await ink.destroy();
  }, move);
- result.passed.push('selection-only drag boundary','selection edge translates only','visible selection target','selection overlay lifecycle','live source bounds','direct pointer drag and undo','playback merge');
+ result.passed.push('selection-only drag boundary','selection edge translates only','visible selection target','selection overlay lifecycle','live source bounds','source survives move','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

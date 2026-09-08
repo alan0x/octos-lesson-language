@@ -743,7 +743,14 @@ export class InkRuntime {
    */
   hasSelectionSource(snapshot: InkSelectionSnapshot): boolean | null {
     if (snapshot.format_version === INK_SELECTION_FORMAT_VERSION || snapshot.format_version === AI_INK_SELECTION_FORMAT_VERSION) {
-      const components = this.editor.image.getAllComponents();
+      // js-draw temporarily removes selected components from the ordinary
+      // image list while it prepares a move command. They still exist in the
+      // live selection and must not be reported as erased during that window.
+      const liveSelected = this.getTool(SelectionTool).getSelection()?.getSelectedObjects() ?? [];
+      const components = [...new Set([
+        ...liveSelected,
+        ...this.editor.image.getAllComponents(),
+      ])];
       return inkSelectionSourceExists(
         snapshot,
         (componentId) => components.some((component) =>
