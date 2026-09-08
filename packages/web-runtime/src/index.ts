@@ -71,7 +71,10 @@ export {
   type Rect,
   type RegionLayoutConstraint,
 } from "./layout.js";
-export { boardInputTargetsInteractiveUi } from "./input-routing.js";
+export {
+  boardInputTargetsInteractiveUi,
+  boardWheelTargetsInteractiveUi,
+} from "./input-routing.js";
 export {
   plotPathData,
   sampleImplicitPlotExpression,

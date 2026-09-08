@@ -26,3 +26,19 @@ export function boardInputTargetsInteractiveUi(path: readonly unknown[]): boolea
       && nativeInteractiveTags.has(element.tagName.toLocaleUpperCase());
   });
 }
+
+/**
+ * A world-layer card can own pointer input while still allowing the board to
+ * zoom when the wheel is over ordinary card content. Controls that explicitly
+ * own board input keep their wheel events.
+ */
+export function boardWheelTargetsInteractiveUi(path: readonly unknown[]): boolean {
+  return path.some((candidate) => {
+    if (!candidate || typeof candidate !== "object") return false;
+    const element = candidate as InputPathElement;
+    if (element.getAttribute?.("data-oll-board-input") === "ignore") return true;
+    if (element.getAttribute?.("contenteditable") === "true") return true;
+    return typeof element.tagName === "string"
+      && nativeInteractiveTags.has(element.tagName.toLocaleUpperCase());
+  });
+}
