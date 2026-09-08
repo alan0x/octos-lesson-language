@@ -1,13 +1,14 @@
 export type LockedSelection = {
-  onDragStart: (...args: unknown[]) => boolean;
+  onDragStart: (pointer: unknown) => boolean;
+  onDragUpdate: (pointer: unknown) => void;
+  onDragEnd: () => void | Promise<void>;
+  onDragCancel: () => void;
   getScreenRegion: () => {
     containsPoint: (point: { x: number; y: number }) => boolean;
     grownBy: (margin: number) => {
       containsPoint: (point: { x: number; y: number }) => boolean;
     };
   };
-  setTransform: (transform: unknown, preview?: boolean) => void;
-  finalizeTransform: () => void | Promise<void>;
   setHandlesVisible: (visible: boolean) => void;
 };
 

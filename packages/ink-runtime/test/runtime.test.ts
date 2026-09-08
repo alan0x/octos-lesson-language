@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inkInputTargetsInteractiveUi } from "../src/input-routing.js";
+import {
+  inkInputTargetsInteractiveUi,
+  inkInputTargetsSelectionBackground,
+} from "../src/input-routing.js";
 import { coalesceInkOccupiedBounds } from "../src/occupied-bounds.js";
 import {
   lockSelectionTransform,
@@ -21,6 +24,9 @@ test("rectangle selection cannot move or resize student ink", () => {
     }),
     setTransform: () => {},
     finalizeTransform: () => {},
+    onDragUpdate: () => {},
+    onDragEnd: () => {},
+    onDragCancel: () => {},
     setHandlesVisible(visible: boolean) {
       handlesVisible = visible;
     },
@@ -56,6 +62,9 @@ test("selection dragging follows the currently visible selection box", () => {
       onDragStart: () => true,
       setTransform: () => {},
       finalizeTransform: () => {},
+      onDragUpdate: () => {},
+      onDragEnd: () => {},
+      onDragCancel: () => {},
       setHandlesVisible: () => {},
     }),
   };
@@ -69,12 +78,29 @@ test("selection dragging follows the currently visible selection box", () => {
 function inputElement(
   tagName: string,
   attributes: Record<string, string> = {},
-): { tagName: string; getAttribute: (name: string) => string | null } {
+  classes: string[] = [],
+): {
+  tagName: string;
+  classList: { contains: (className: string) => boolean };
+  getAttribute: (name: string) => string | null;
+} {
   return {
     tagName,
+    classList: { contains: (className) => classes.includes(className) },
     getAttribute: (name) => attributes[name] ?? null,
   };
 }
+
+test("visible selection background is the authoritative drag target", () => {
+  assert.equal(
+    inkInputTargetsSelectionBackground([
+      inputElement("div", {}, ["selection-tool-selection-background"]),
+      inputElement("div"),
+    ]),
+    true,
+  );
+  assert.equal(inkInputTargetsSelectionBackground([inputElement("div"), {}]), false);
+});
 
 test("ink leaves native controls usable while a drawing tool owns the board", () => {
   for (const tagName of ["button", "input", "select", "textarea", "a"]) {
@@ -165,6 +191,9 @@ test("explicit transformation unlocks selection and can safely relock it", () =>
     onDragStart: drag,
     setTransform: () => {},
     finalizeTransform: () => {},
+    onDragUpdate: () => {},
+    onDragEnd: () => {},
+    onDragCancel: () => {},
     setHandlesVisible: (value: boolean) => { visible = value; },
   };
   const tool = { getSelection: () => selection };

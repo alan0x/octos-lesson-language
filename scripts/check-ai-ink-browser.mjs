@@ -157,16 +157,19 @@ try {
    root:window.pointerInk.editor.getRootElement().getBoundingClientRect().toJSON(),
    render:window.pointerInk.editor.getRootElement().querySelector('.imageEditorRenderArea').getBoundingClientRect().toJSON(),
  }));
- const slopStart={
+ const backgroundStart={
    x:visibleSelection.x+visibleSelection.width*.5,
-   y:visibleSelection.y+visibleSelection.height+8,
+   y:visibleSelection.y+visibleSelection.height*.7,
  };
- await page.mouse.move(slopStart.x,slopStart.y);await page.mouse.down();
- await page.mouse.move(slopStart.x+30,slopStart.y+20,{steps:5});await page.mouse.up();
+ await page.mouse.move(backgroundStart.x,backgroundStart.y);await page.mouse.down();
+ await page.mouse.move(backgroundStart.x+30,backgroundStart.y+20,{steps:5});await page.mouse.up();
  await page.evaluate(async ({before})=>{
    const ink=window.pointerInk;
    if(ink.state.selected_count!==1 || ink.state.content_bounds.x<before+20) {
-     throw new Error('selection hit slop did not move selected ink: '+JSON.stringify(ink.state));
+     throw new Error('visible selection background did not move selected ink: '+JSON.stringify(ink.state));
+   }
+   if(!document.querySelector('.selection-tool-selection-background')) {
+     throw new Error('selection overlay disappeared after dragging');
    }
    await ink.undo();
  },move);
@@ -199,6 +202,6 @@ try {
    }
    await ink.destroy();
  }, move);
- result.passed.push('selection-only drag boundary','selection drag hit slop','live source bounds','direct pointer drag and undo','playback merge');
+ result.passed.push('selection-only drag boundary','visible selection target','selection overlay lifecycle','live source bounds','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}

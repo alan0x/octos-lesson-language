@@ -34,7 +34,10 @@ import {
   type InkDocumentRecord,
   type InkDocumentStore,
 } from "./persistence.js";
-import { inkInputTargetsInteractiveUi } from "./input-routing.js";
+import {
+  inkInputTargetsInteractiveUi,
+  inkInputTargetsSelectionBackground,
+} from "./input-routing.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -124,7 +127,6 @@ export class InkRuntime {
   private activeSelectionDrag?: {
     pointerId: number;
     selection: NonNullable<ReturnType<LockableSelectionTool["getSelection"]>>;
-    start: InkSelectionPoint;
   };
   private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
@@ -312,33 +314,35 @@ export class InkRuntime {
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
       if (this.modeValue === "navigate") return;
-      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
+      const inputPath = rawEvent.composedPath();
+      if (inkInputTargetsInteractiveUi(inputPath)) return;
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         const selectionTool = this.getTool(SelectionTool) as unknown as LockableSelectionTool;
         const viewportRect = this.options.viewport.getBoundingClientRect();
-        const hitSlop = event.pointerType === "touch" ? 20 : 12;
         const startsInsideSelection = this.selectedComponents.length > 0
-          && selectionBoxContainsScreenPoint(selectionTool, {
-            x: event.clientX - viewportRect.left,
-            y: event.clientY - viewportRect.top,
-          }, hitSlop);
+          && (
+            inkInputTargetsSelectionBackground(inputPath)
+            || selectionBoxContainsScreenPoint(selectionTool, {
+              x: event.clientX - viewportRect.left,
+              y: event.clientY - viewportRect.top,
+            })
+          );
         const selection = startsInsideSelection ? selectionTool.getSelection() : null;
         if (selection) {
           lockSelectionTransform(selectionTool, false);
-          this.selectionRegionValid = false;
-          this.selectionTransformEnabled = true;
-          this.selectionGesture = [];
-          this.activeSelectionDrag = {
-            pointerId: event.pointerId,
-            selection,
-            start: point,
-          };
-          event.preventDefault();
-          event.stopPropagation();
-          try { inputTarget.setPointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
-          return;
+          const pointer = mappedPointer(event, true);
+          if (selection.onDragStart(pointer)) {
+            this.selectionRegionValid = false;
+            this.selectionTransformEnabled = true;
+            this.selectionGesture = [];
+            this.activeSelectionDrag = { pointerId: event.pointerId, selection };
+            event.preventDefault();
+            event.stopPropagation();
+            try { inputTarget.setPointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
+            return;
+          }
         }
         lockSelectionTransform(
           selectionTool,
@@ -380,11 +384,7 @@ export class InkRuntime {
       if (selectionDrag?.pointerId === event.pointerId) {
         event.preventDefault();
         event.stopPropagation();
-        const current = pointerBoardPoint(event);
-        selectionDrag.selection.setTransform(Mat33.translation(Vec2.of(
-          current.x - selectionDrag.start.x,
-          current.y - selectionDrag.start.y,
-        )));
+        selectionDrag.selection.onDragUpdate(mappedPointer(event, true));
         this.scheduleGeometryNotification();
         return;
       }
@@ -416,7 +416,7 @@ export class InkRuntime {
         event.preventDefault();
         event.stopPropagation();
         this.activeSelectionDrag = undefined;
-        void Promise.resolve(selectionDrag.selection.finalizeTransform());
+        void Promise.resolve(selectionDrag.selection.onDragEnd());
         try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
         this.scheduleGeometryNotification();
         return;
@@ -446,10 +446,24 @@ export class InkRuntime {
         );
       }
     };
+    const onPointerCancel = (rawEvent: Event) => {
+      const event = rawEvent as PointerEvent;
+      const selectionDrag = this.activeSelectionDrag;
+      if (selectionDrag?.pointerId === event.pointerId) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.activeSelectionDrag = undefined;
+        selectionDrag.selection.onDragCancel();
+        try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
+        this.scheduleGeometryNotification();
+        return;
+      }
+      onPointerUp(rawEvent);
+    };
     add("pointerdown", onPointerDown);
     add("pointermove", onPointerMove);
     add("pointerup", onPointerUp);
-    add("pointercancel", onPointerUp);
+    add("pointercancel", onPointerCancel);
     add("contextmenu", (event) => {
       if (this.modeValue !== "navigate") event.preventDefault();
     });
