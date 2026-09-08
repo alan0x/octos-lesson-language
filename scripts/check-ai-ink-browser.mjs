@@ -8,6 +8,7 @@ import { createServer } from 'node:http';
 const temp = await mkdtemp(join(tmpdir(), 'oll-ai-ink-'));
 const outfile = join(temp, 'probe.js');
 await build({ stdin: { contents: `
+import './packages/ink-runtime/styles.css';
 import { InkRuntime } from './packages/ink-runtime/src/runtime.ts';
 import { Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands } from 'js-draw';
 import { assertInkSelectionIntegrity } from './packages/ink-runtime/src/selection-record.ts';
@@ -15,7 +16,11 @@ import { inkComponentOrigin } from './packages/ink-runtime/src/component-identit
 Object.assign(window, { InkRuntime, Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands, inkComponentOrigin, assertInkSelectionIntegrity });
 `, resolveDir: process.cwd(), loader: 'ts' }, bundle: true, format: 'esm', platform: 'browser', outfile });
 const bundle = await readFile(outfile);
-const server = createServer((req,res) => { res.setHeader('Content-Type',req.url==='/probe.js'?'text/javascript':'text/html'); res.end(req.url==='/probe.js'?bundle:'<div id="board" style="width:900px;height:700px"></div><script type="module" src="/probe.js"></script>'); });
+const styles = await readFile(join(temp, 'probe.css'));
+const server = createServer((req,res) => {
+ res.setHeader('Content-Type',req.url==='/probe.js'?'text/javascript':req.url==='/probe.css'?'text/css':'text/html');
+ res.end(req.url==='/probe.js'?bundle:req.url==='/probe.css'?styles:'<link rel="stylesheet" href="/probe.css"><div id="board" style="position:relative;width:900px;height:700px"></div><script type="module" src="/probe.js"></script>');
+});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({headless:true, ...(process.env.OLL_BROWSER_EXECUTABLE ? { executablePath: process.env.OLL_BROWSER_EXECUTABLE } : {})});
 try {
@@ -112,8 +117,12 @@ try {
    const bounds=viewport.getBoundingClientRect();
    return {left:bounds.x,top:bounds.y,before:ink.state.content_bounds.x};
  });
- await page.mouse.move(move.left+180,move.top+180);await page.mouse.down();
- await page.mouse.move(move.left+370,move.top+300,{steps:8});await page.mouse.up();
+ // A small selection gesture only needs to intersect the large stroke. The
+ // resulting visible selection box is derived from the entire selected stroke.
+ // Dragging must work throughout that visible box, not just inside this small
+ // original gesture.
+ await page.mouse.move(move.left+245,move.top+190);await page.mouse.down();
+ await page.mouse.move(move.left+270,move.top+210,{steps:5});await page.mouse.up();
  const selected = await page.evaluate(() => window.pointerInk.state);
  if(selected.selected_count!==1 || !selected.selection_transform_enabled) {
    throw new Error('gesture-created selection is not directly draggable: '+JSON.stringify(selected));
@@ -129,8 +138,8 @@ try {
    throw new Error('dragging outside the selection moved ink: '+JSON.stringify({beforeOutsideDrag,afterOutsideDrag}));
  }
  // Select the original region again before testing the intended direct drag.
- await page.mouse.move(move.left+180,move.top+180);await page.mouse.down();
- await page.mouse.move(move.left+370,move.top+300,{steps:8});await page.mouse.up();
+ await page.mouse.move(move.left+245,move.top+190);await page.mouse.down();
+ await page.mouse.move(move.left+270,move.top+210,{steps:5});await page.mouse.up();
  if((await page.evaluate(()=>window.pointerInk.state.selected_count))!==1) {
    throw new Error('selection could not be recreated after an outside gesture');
  }
@@ -140,15 +149,29 @@ try {
    window.geometryUpdates=0;
    ink.subscribeGeometry(()=>{window.geometryUpdates+=1;});
  });
- move.x=move.left+260;move.y=move.top+240;
- await page.mouse.move(move.x,move.y);await page.mouse.down();await page.mouse.move(move.x+70,move.y+40,{steps:8});
+ const visibleSelection=await page.locator('.selection-tool-selection-background').last().boundingBox();
+ if(!visibleSelection) throw new Error('visible selection box is missing');
+ const inkLayout=await page.evaluate(()=>({
+   board:document.querySelector('#board').getBoundingClientRect().toJSON(),
+   layer:document.querySelector('.oll-ink-layer').getBoundingClientRect().toJSON(),
+   root:window.pointerInk.editor.getRootElement().getBoundingClientRect().toJSON(),
+   render:window.pointerInk.editor.getRootElement().querySelector('.imageEditorRenderArea').getBoundingClientRect().toJSON(),
+ }));
+ move.x=visibleSelection.x+visibleSelection.width*.78;
+ move.y=visibleSelection.y+visibleSelection.height*.72;
+ if(move.x>=move.left+245&&move.x<=move.left+270&&move.y>=move.top+190&&move.y<=move.top+210) {
+   throw new Error('drag probe did not leave the original selection gesture');
+ }
+ await page.mouse.move(move.x,move.y);await page.mouse.down();
+ const dragStartState=await page.evaluate(()=>window.pointerInk.state);
+ await page.mouse.move(move.x+70,move.y+40,{steps:8});
  await page.waitForTimeout(32);
  const duringMove=await page.evaluate(()=>({
    updates:window.geometryUpdates,
    bounds:window.pointerInk.getSelectionSourceBounds(window.pointerSource),
  }));
  if(duringMove.updates<1 || duringMove.bounds.x<move.before+60) {
-   throw new Error('source bounds did not update during pointer drag: '+JSON.stringify(duringMove));
+   throw new Error('source bounds did not update during pointer drag: '+JSON.stringify({duringMove,dragStartState,visibleSelection,inkLayout,move}));
  }
  await page.mouse.up();
  await page.evaluate(async ({before}) => {

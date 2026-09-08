@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { inkInputTargetsInteractiveUi } from "../src/input-routing.js";
 import { coalesceInkOccupiedBounds } from "../src/occupied-bounds.js";
-import { lockSelectionTransform } from "../src/selection-lock.js";
+import {
+  lockSelectionTransform,
+  selectionBoxContainsScreenPoint,
+} from "../src/selection-lock.js";
 import {
   planInkWorldLayerBounds,
   viewportPointToInkSurface,
@@ -12,6 +15,7 @@ test("rectangle selection cannot move or resize student ink", () => {
   let handlesVisible = true;
   let originalDragStarts = 0;
   const selection = {
+    getScreenRegion: () => ({ containsPoint: () => true }),
     setHandlesVisible(visible: boolean) {
       handlesVisible = visible;
     },
@@ -30,6 +34,22 @@ test("rectangle selection cannot move or resize student ink", () => {
 
 test("locking an empty selection is a no-op", () => {
   assert.doesNotThrow(() => lockSelectionTransform({ getSelection: () => null }));
+});
+
+test("selection dragging follows the currently visible selection box", () => {
+  const tool = {
+    getSelection: () => ({
+      getScreenRegion: () => ({
+        containsPoint: ({ x, y }: { x: number; y: number }) =>
+          x >= 100 && x <= 300 && y >= 80 && y <= 220,
+      }),
+      onDragStart: () => true,
+      setHandlesVisible: () => {},
+    }),
+  };
+
+  assert.equal(selectionBoxContainsScreenPoint(tool, { x: 260, y: 180 }), true);
+  assert.equal(selectionBoxContainsScreenPoint(tool, { x: 40, y: 180 }), false);
 });
 
 function inputElement(
@@ -123,7 +143,11 @@ test("ink surface keeps its bounds while the visible camera remains in its buffe
 test("explicit transformation unlocks selection and can safely relock it", () => {
   let visible = false;
   const drag = () => true;
-  const selection = { onDragStart: drag, setHandlesVisible: (value: boolean) => { visible = value; } };
+  const selection = {
+    getScreenRegion: () => ({ containsPoint: () => true }),
+    onDragStart: drag,
+    setHandlesVisible: (value: boolean) => { visible = value; },
+  };
   const tool = { getSelection: () => selection };
   lockSelectionTransform(tool);
   lockSelectionTransform(tool);

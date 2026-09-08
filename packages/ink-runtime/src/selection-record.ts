@@ -25,37 +25,6 @@ export interface InkSelectionRegion {
   closed: boolean;
 }
 
-/** Return whether a board point is inside the exact region drawn by the
- * learner. Points on the outline count as inside so the visible border can be
- * used as a drag handle. */
-export function inkSelectionRegionContainsPoint(
-  region: InkSelectionRegion,
-  point: InkSelectionPoint,
-): boolean {
-  if (!region.closed || region.points.length < 3) return false;
-  let inside = false;
-  for (let index = 0, previous = region.points.length - 1;
-    index < region.points.length;
-    previous = index, index += 1) {
-    const start = region.points[previous]!;
-    const end = region.points[index]!;
-    const cross = (point.x - start.x) * (end.y - start.y)
-      - (point.y - start.y) * (end.x - start.x);
-    const onSegment = Math.abs(cross) <= 1e-7
-      && point.x >= Math.min(start.x, end.x)
-      && point.x <= Math.max(start.x, end.x)
-      && point.y >= Math.min(start.y, end.y)
-      && point.y <= Math.max(start.y, end.y);
-    if (onSegment) return true;
-    if (
-      (start.y > point.y) !== (end.y > point.y)
-      && point.x < (end.x - start.x) * (point.y - start.y)
-        / (end.y - start.y) + start.x
-    ) inside = !inside;
-  }
-  return inside;
-}
-
 /** Convert the first and last pointer positions of a rectangle gesture into
  * the exact board-space rectangle that was shown by the selection tool. */
 export function inkSelectionRectangleRegion(

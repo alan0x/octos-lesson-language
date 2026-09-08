@@ -30,7 +30,6 @@ export {
   REGION_INK_SELECTION_FORMAT_VERSION,
   TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,
   assertInkSelectionIntegrity,
-  inkSelectionRegionContainsPoint,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
   validateInkSelectionSnapshot,

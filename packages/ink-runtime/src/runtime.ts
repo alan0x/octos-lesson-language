@@ -46,7 +46,6 @@ import {
   INK_SELECTION_FORMAT_VERSION,
   AI_INK_SELECTION_FORMAT_VERSION,
   inkSelectionPathRegion,
-  inkSelectionRegionContainsPoint,
   inkSelectionRectangleRegion,
   inkSelectionSourceExists,
   type InkSelectionBounds,
@@ -56,6 +55,7 @@ import {
 } from "./selection-record.js";
 import {
   lockSelectionTransform,
+  selectionBoxContainsScreenPoint,
   type LockableSelectionTool,
 } from "./selection-lock.js";
 
@@ -311,25 +311,15 @@ export class InkRuntime {
       const event = rawEvent as PointerEvent;
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
-        const selectedRegion = this.selectionRegionValid
-          ? this.selectionMode === "rectangle"
-            ? inkSelectionRectangleRegion(this.selectionGesture)
-            : inkSelectionPathRegion(this.selectionGesture)
-          : undefined;
-        const selectedBounds = this.selectedComponents.length > 0
-          ? Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox())).grownBy(8)
-          : undefined;
-        const startsInsideSelection = this.selectedComponents.length > 0 && (
-          selectedRegion
-            ? inkSelectionRegionContainsPoint(selectedRegion, point)
-            : Boolean(selectedBounds
-              && point.x >= selectedBounds.x
-              && point.x <= selectedBounds.x + selectedBounds.width
-              && point.y >= selectedBounds.y
-              && point.y <= selectedBounds.y + selectedBounds.height)
-        );
+        const selectionTool = this.getTool(SelectionTool) as unknown as LockableSelectionTool;
+        const viewportRect = this.options.viewport.getBoundingClientRect();
+        const startsInsideSelection = this.selectedComponents.length > 0
+          && selectionBoxContainsScreenPoint(selectionTool, {
+            x: event.clientX - viewportRect.left,
+            y: event.clientY - viewportRect.top,
+          });
         lockSelectionTransform(
-          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
+          selectionTool,
           !startsInsideSelection,
         );
         this.selectionTransformEnabled = startsInsideSelection;
