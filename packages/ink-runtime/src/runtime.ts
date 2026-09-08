@@ -122,6 +122,8 @@ export class InkRuntime {
   private readonly activePointers = new Map<number, Pointer>();
   private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
+  private readonly geometryListeners = new Set<() => void>();
+  private geometryFrame?: number;
   private readonly unmountWorldLayer: () => void;
   private readonly removeInputListeners: () => void;
   private readonly unsubscribeCamera: () => void;
@@ -351,6 +353,7 @@ export class InkRuntime {
         current: pointer,
         allPointers: allPointers(),
       });
+      if (this.modeValue === "select" && this.selectedComponents.length > 0) this.scheduleGeometryNotification();
     };
     const onPointerUp = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
@@ -390,6 +393,24 @@ export class InkRuntime {
       for (const [name, listener] of listeners) inputTarget.removeEventListener(name, listener);
       this.activePointers.clear();
     };
+  }
+
+  private scheduleGeometryNotification(): void {
+    if (this.geometryFrame !== undefined) return;
+    const hostWindow = this.host.ownerDocument.defaultView;
+    if (!hostWindow) {
+      for (const listener of this.geometryListeners) listener();
+      return;
+    }
+    this.geometryFrame = hostWindow.requestAnimationFrame(() => {
+      this.geometryFrame = undefined;
+      for (const listener of this.geometryListeners) listener();
+    });
+  }
+
+  subscribeGeometry(listener: () => void): () => void {
+    this.geometryListeners.add(listener);
+    return () => this.geometryListeners.delete(listener);
   }
 
   private enableInfiniteCanvas(): void {
@@ -683,6 +704,42 @@ export class InkRuntime {
     return { ...await captured, document_version: this.documentVersion };
   }
 
+  /** Return the current bounds of the exact strokes captured by a source. */
+  getSelectionSourceBounds(snapshot: InkSelectionSnapshot): InkSelectionBounds | null {
+    if (
+      snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== AI_INK_SELECTION_FORMAT_VERSION
+    ) return null;
+    const componentIds = snapshot.component_ids;
+    if (!componentIds?.length) return null;
+    // js-draw temporarily removes a transforming selection from the ordinary
+    // image list. Include the live selection so callers can follow it before
+    // pointer-up, not just after the move command is committed.
+    const available = [...new Set([
+      ...this.selectedComponents,
+      ...this.editor.image.getAllComponents(),
+    ])];
+    const components = componentIds.map((componentId) =>
+      available.find((component) => hasPersistentInkComponentId(component, componentId))
+    );
+    if (components.some((component) => !component)) return null;
+    const liveSelection = this.getTool(SelectionTool).getSelection();
+    const liveSelected = new Set(liveSelection?.getSelectedObjects() ?? []);
+    const liveTransform = liveSelection?.getTransform();
+    const bounds = Rect2.union(...components.map((component) => {
+      const exact = component!.getExactBBox();
+      return liveTransform && liveSelected.has(component!)
+        ? exact.transformedBoundingBox(liveTransform)
+        : exact;
+    })).grownBy(8);
+    return {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+    };
+  }
+
   /**
    * Check whether the immutable strokes behind an assistance source still
    * exist in the current document. `null` means the snapshot predates source
@@ -711,6 +768,12 @@ export class InkRuntime {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.unsubscribeCamera();
     this.removeInputListeners();
+    const hostWindow = this.host.ownerDocument.defaultView;
+    if (hostWindow && this.geometryFrame !== undefined) {
+      hostWindow.cancelAnimationFrame(this.geometryFrame);
+      this.geometryFrame = undefined;
+    }
+    this.geometryListeners.clear();
     this.options.board.setInputOwner("runtime");
     this.destroyPromise = (async () => {
       try { await this.ready; }

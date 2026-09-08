@@ -118,15 +118,35 @@ try {
  if(selected.selected_count!==1 || !selected.selection_transform_enabled) {
    throw new Error('gesture-created selection is not directly draggable: '+JSON.stringify(selected));
  }
+ await page.evaluate(async () => {
+   const ink=window.pointerInk;
+   window.pointerSource=await ink.captureSelectionSnapshot();
+   window.geometryUpdates=0;
+   ink.subscribeGeometry(()=>{window.geometryUpdates+=1;});
+ });
  move.x=move.left+260;move.y=move.top+240;
- await page.mouse.move(move.x,move.y);await page.mouse.down();await page.mouse.move(move.x+70,move.y+40,{steps:8});await page.mouse.up();
+ await page.mouse.move(move.x,move.y);await page.mouse.down();await page.mouse.move(move.x+70,move.y+40,{steps:8});
+ await page.waitForTimeout(32);
+ const duringMove=await page.evaluate(()=>({
+   updates:window.geometryUpdates,
+   bounds:window.pointerInk.getSelectionSourceBounds(window.pointerSource),
+ }));
+ if(duringMove.updates<1 || duringMove.bounds.x<move.before+60) {
+   throw new Error('source bounds did not update during pointer drag: '+JSON.stringify(duringMove));
+ }
+ await page.mouse.up();
  await page.evaluate(async ({before}) => {
    const ink=window.pointerInk;
    if(ink.state.content_bounds.x < before+60) throw new Error('direct pointer drag did not move selected ink');
+   if(ink.getSelectionSourceBounds(window.pointerSource).x < before+60) throw new Error('moved source bounds were not retained');
    await ink.undo();await ink.saveNow();
    if(Math.abs(ink.state.content_bounds.x-before)>1) throw new Error('pointer move undo');
+   const undoneSource=ink.getSelectionSourceBounds(window.pointerSource);
+   if(Math.abs(undoneSource.x-window.pointerSource.bounds.x)>1) {
+     throw new Error('source bounds did not follow undo: '+JSON.stringify({expected:window.pointerSource.bounds,undoneSource,state:ink.state}));
+   }
    await ink.destroy();
  }, move);
- result.passed.push('direct pointer drag and undo','playback merge');
+ result.passed.push('live source bounds','direct pointer drag and undo','playback merge');
  console.log(JSON.stringify(result));
 } finally {await browser.close();server.close();await rm(temp,{recursive:true,force:true});}
