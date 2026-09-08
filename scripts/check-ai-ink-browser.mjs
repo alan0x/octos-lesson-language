@@ -108,14 +108,17 @@ try {
    const board={setInputOwner:()=>{},getCameraState:()=>camera,subscribeCamera:fn=>{fn(camera);return()=>{};},viewportToBoard:p=>p};
    const ink=window.InkRuntime.mount({board,viewport,storageKey:'pointer-move',documentId:'pointer-move'});
    await ink.ready;await ink.writeAiPaths('move',['M200 200 L350 200 L350 280 L200 280 Z']);
-   ink.setMode('select');ink.selectAll();ink.clearSelection();
-   if(ink.state.selection_transform_enabled)throw new Error('clearing selection did not relock movement');
-   ink.selectAll();
-   if(!ink.state.selection_transform_enabled)throw new Error('selected ink is not directly draggable');
-   window.pointerInk=ink;
+   ink.setMode('select');window.pointerInk=ink;
    const bounds=viewport.getBoundingClientRect();
-   return {x:bounds.x+260,y:bounds.y+240,before:ink.state.content_bounds.x};
+   return {left:bounds.x,top:bounds.y,before:ink.state.content_bounds.x};
  });
+ await page.mouse.move(move.left+180,move.top+180);await page.mouse.down();
+ await page.mouse.move(move.left+370,move.top+300,{steps:8});await page.mouse.up();
+ const selected = await page.evaluate(() => window.pointerInk.state);
+ if(selected.selected_count!==1 || !selected.selection_transform_enabled) {
+   throw new Error('gesture-created selection is not directly draggable: '+JSON.stringify(selected));
+ }
+ move.x=move.left+260;move.y=move.top+240;
  await page.mouse.move(move.x,move.y);await page.mouse.down();await page.mouse.move(move.x+70,move.y+40,{steps:8});await page.mouse.up();
  await page.evaluate(async ({before}) => {
    const ink=window.pointerInk;

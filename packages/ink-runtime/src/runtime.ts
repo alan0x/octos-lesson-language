@@ -368,6 +368,16 @@ export class InkRuntime {
       });
       this.activePointers.delete(pointer.id);
       try { inputTarget.releasePointerCapture(event.pointerId); } catch { /* Synthetic tests may not support capture. */ }
+      // SelectionUpdated can be delivered before js-draw has attached the
+      // materialized selection object. Re-apply the unlocked transform after
+      // pointer-up so a gesture-created selection is immediately draggable.
+      if (this.modeValue === "select" && this.selectedComponents.length > 0) {
+        this.selectionTransformEnabled = true;
+        lockSelectionTransform(
+          this.getTool(SelectionTool) as unknown as LockableSelectionTool,
+          false,
+        );
+      }
     };
     add("pointerdown", onPointerDown);
     add("pointermove", onPointerMove);
