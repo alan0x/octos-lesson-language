@@ -73,8 +73,19 @@ export {
 } from "./layout.js";
 export {
   boardInputTargetsInteractiveUi,
+  boardKeyboardTargetsTextInput,
   boardWheelTargetsInteractiveUi,
+  isAuxiliaryPanButton,
 } from "./input-routing.js";
+export {
+  BoardGestureRecognizer,
+  trackpadPinchZoomFactor,
+  TRACKPAD_PINCH_ZOOM_SENSITIVITY,
+  type BoardGestureAction,
+  type BoardGesturePhase,
+  type GesturePointerEvent,
+  type GesturePointerEventType,
+} from "./gestures.js";
 export {
   plotPathData,
   sampleImplicitPlotExpression,

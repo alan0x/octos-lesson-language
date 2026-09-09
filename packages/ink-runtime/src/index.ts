@@ -47,3 +47,13 @@ export {
   type MountInkRuntimeOptions,
 } from "./runtime.js";
 export { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
+export {
+  PALM_REJECTION_WINDOW_MS,
+  shouldIgnoreTouchForPalmRejection,
+} from "./palm-rejection.js";
+export {
+  TOUCH_MARQUEE_CANCEL_PX,
+  TOUCH_MARQUEE_HOLD_MS,
+  TouchMarqueeArbiter,
+  type TouchMarqueePhase,
+} from "./touch-marquee.js";

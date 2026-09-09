@@ -57,7 +57,8 @@ The board exposes the integration boundary used by optional input layers:
 - `getCameraState()` reads the camera actually visible during a transition;
 - `subscribeCamera()` reports target and intermediate camera frames;
 - `boardToViewport()` / `viewportToBoard()` convert stable board coordinates;
-- `setInputOwner()` explicitly hands pointer/wheel input to the Runtime, ink, or a future course-object interaction.
+- `setInputOwner()` explicitly hands pointer/wheel input to the Runtime, ink, or a future course-object interaction;
+- `isPanOverrideActive()` lets capture-phase input layers honor the space-pan override, and `abortActiveGesture()` stops an in-flight pan/pinch without changing ownership.
 
 The optional `octos-lesson-language/ink-runtime` uses only this public boundary. Do not statically import it on an ordinary lesson route; load its JavaScript and stylesheet when the learner enables writing.
 
@@ -66,6 +67,29 @@ Hosts with persistent overlays should call
 teaching focus is then composed inside the unobstructed rectangle instead of
 the raw canvas viewport. The method also reframes the current teaching target,
 so it can be called from a `ResizeObserver`.
+
+## Board navigation and gestures
+
+Pointer input runs through a DOM-free gesture recognizer
+(`BoardGestureRecognizer`, exported from this package), so the camera behaves
+identically for mouse and touch:
+
+- A single-pointer drag pans. A second touch starts pinch zoom without
+  resetting the ongoing pan; pinch applies an incremental zoom factor anchored
+  at the current midpoint (the midpoint's own motion keeps panning), and
+  lifting one finger rebuilds the pan baseline from the remaining finger, so
+  the camera never jumps. A third contact is ignored.
+- Space+left-drag, right-drag and middle-drag pan in every tool mode,
+  including while an ink tool owns primary input. The browser context menu is
+  suppressed over the canvas so right-drag panning is uninterrupted.
+- Mouse-wheel zoom keeps fixed ×1.1/×0.9 steps. Trackpad pinch (reported by
+  browsers as ctrl+wheel) instead zooms smoothly, proportional to pinch
+  velocity and anchored at the pointer.
+
+While any gesture is active, new teaching-camera requests are deferred and
+replayed once the last pointer lifts, so automatic camera moves never shift
+pinch baselines mid-gesture. `setInputOwner()` away from the Runtime and
+`abortActiveGesture()` both abort in-flight gestures immediately.
 
 ## Teaching clock
 
