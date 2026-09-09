@@ -14,8 +14,11 @@ import {
   PointerDevice,
   Rect2,
   InputEvtType,
+  SelectAllShortcutHandler,
   SelectionMode,
   SelectionTool,
+  ToolSwitcherShortcut,
+  UndoRedoShortcut,
   uniteCommands,
   Vec2,
   __js_draw__version,
@@ -35,6 +38,7 @@ import {
   type InkDocumentStore,
 } from "./persistence.js";
 import { inkInputTargetsInteractiveUi } from "./input-routing.js";
+import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -195,6 +199,15 @@ export class InkRuntime {
   private prepareEditor(): void {
     this.enableInfiniteCanvas();
     this.resetEditorViewport();
+    // Undo/redo and select-all belong to the host application layer: js-draw
+    // calls preventDefault but not stopPropagation, so leaving its handlers
+    // enabled would run each shortcut twice. ToolSwitcherShortcut maps digit
+    // keys straight to tools, bypassing setMode's four-mode model.
+    applyInkKeyboardPolicy(this.editor, [
+      UndoRedoShortcut,
+      ToolSwitcherShortcut,
+      SelectAllShortcutHandler,
+    ]);
     for (const tool of this.editor.toolController.getMatchingTools(PanZoomTool)) tool.setEnabled(false);
     for (const pen of this.editor.toolController.getMatchingTools(PenTool)) {
       pen.setPressureSensitivityEnabled(true);
