@@ -14,8 +14,16 @@ import type { BaseTool } from "js-draw";
  * - tools/keybindings.mjs:13 (snap-to-grid)
  *
  * Delete/Backspace is deliberately absent: SelectionTool.mjs:341-345 hard-codes
- * deletion outside the shortcut system, so it cannot be overridden here and
- * keeps working.
+ * deletion outside the shortcut system, so it cannot be overridden here.
+ *
+ * Note: the whole js-draw keyboard path is currently unreachable end-to-end.
+ * js-draw listens for keydown only on its renderingRegion / handleOverlay
+ * (Editor.mjs:277, SelectionTool.mjs:73), .oll-ink-layer is pointer-events:none
+ * so clicks can never focus them, and nothing calls .focus() on them. Arrow-key
+ * translation and Delete therefore do not fire either. Undo/redo/select-all are
+ * handled by the host at the window level instead. This policy is defense in
+ * depth: if the ink layer ever becomes focusable, these shortcuts must already
+ * be dead.
  *
  * js-draw upgrade checklist — re-verify all of these on every js-draw bump:
  * - editor.shortcuts.overrideShortcut (shortcuts/KeyboardShortcutManager.mjs:23, @internal)
