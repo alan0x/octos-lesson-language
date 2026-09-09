@@ -39,6 +39,7 @@ import {
 } from "./persistence.js";
 import { inkInputTargetsInteractiveUi } from "./input-routing.js";
 import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
+import { shouldIgnoreTouchForPalmRejection } from "./palm-rejection.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -124,6 +125,8 @@ export class InkRuntime {
   private renderedCamera: { panX: number; panY: number; scale: number };
   private expectedViewportTransform = Mat33.identity;
   private readonly activePointers = new Map<number, Pointer>();
+  /** Timestamp of the most recent pen down/move, for palm rejection. */
+  private lastPenActiveAt?: number;
   private selectionGesture: InkSelectionPoint[] = [];
   private readonly listeners = new Set<(state: InkRuntimeState) => void>();
   private readonly geometryListeners = new Set<() => void>();
@@ -320,9 +323,10 @@ export class InkRuntime {
     };
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
     const onPointerDown = (rawEvent: Event) => {
+      const event = rawEvent as PointerEvent;
+      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
       if (this.modeValue === "navigate") return;
       if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
-      const event = rawEvent as PointerEvent;
       // Pan-override protocol (capture here, bubble at the board): right and
       // middle button drags, and left-button drags while the board's space-pan
       // override is held, pan the board camera in every tool mode. They are
@@ -333,6 +337,16 @@ export class InkRuntime {
       // (the auxiliaryPan/spacePan path). P5 long-press marquee selection will
       // instead delay this intercept decision until the hold elapses.
       if (event.button !== 0 || this.options.board.isPanOverrideActive()) return;
+      // Palm rejection: while a pen is (or just was) active, a touch contact
+      // is a resting palm, not drawing input. It is not tracked or dispatched,
+      // and it is NOT intercepted, so it bubbles to the board as a pan
+      // candidate — writing with the pen while the other hand drags the
+      // canvas works. Receiving end: the touch-pan path of
+      // InfiniteBoardView.onPointerDown.
+      if (
+        event.pointerType === "touch"
+        && shouldIgnoreTouchForPalmRejection(event.timeStamp, this.lastPenActiveAt)
+      ) return;
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
@@ -366,6 +380,10 @@ export class InkRuntime {
     };
     const onPointerMove = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
+      // Pen hovers/moves keep the palm-rejection window open even for pens
+      // whose driver reports hover moves; only tracked (button-down) pen
+      // pointers reach the dispatch path below.
+      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
       const previous = this.activePointers.get(event.pointerId);
       if (!previous) return;
       event.preventDefault();

@@ -2046,8 +2046,14 @@ export class InfiniteBoardView {
     // marquee will instead decide after a delay whether ink intercepts.
     const auxiliaryPan = isAuxiliaryPanButton(event.button);
     const spacePan = event.button === 0 && this.spacePanHeld;
+    // While ink owns primary input, the only touch downs that can bubble here
+    // are ones ink deliberately released: palm-rejected touches (pen in use)
+    // and, in select mode, touches whose long-press marquee arbitration is
+    // still pending. Both are pan candidates — the multi-pointer gesture
+    // recognizer already tolerates a pen stroke happening alongside.
+    const inkReleasedTouchPan = event.pointerType === "touch" && this.inputOwner === "ink";
     if (
-      (this.inputOwner !== "runtime" && !auxiliaryPan && !spacePan)
+      (this.inputOwner !== "runtime" && !auxiliaryPan && !spacePan && !inkReleasedTouchPan)
       || boardInputTargetsInteractiveUi(event.composedPath())
     ) return;
     const control = (event.target as Element).closest<SVGElement>("[data-oll-variable-control]");
@@ -2058,7 +2064,7 @@ export class InfiniteBoardView {
     const viewBox = svg?.viewBox.baseVal;
     const variable = alias ? this.board?.variables?.[alias] : undefined;
     if (
-      !auxiliaryPan && !spacePan
+      !auxiliaryPan && !spacePan && !inkReleasedTouchPan
       && control && svg && alias && variable && this.variableInputHandler
       && Number.isFinite(centerX) && Number.isFinite(centerY)
       && viewBox && Number.isFinite(viewBox.width) && viewBox.width > 0

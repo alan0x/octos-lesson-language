@@ -47,3 +47,7 @@ export {
   type MountInkRuntimeOptions,
 } from "./runtime.js";
 export { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
+export {
+  PALM_REJECTION_WINDOW_MS,
+  shouldIgnoreTouchForPalmRejection,
+} from "./palm-rejection.js";
