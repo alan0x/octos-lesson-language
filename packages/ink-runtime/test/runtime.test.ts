@@ -10,6 +10,8 @@ import {
 
 test("selection keeps native dragging but disables hidden transform handles", () => {
   let handlesVisible = true;
+  let regionRecomputed = 0;
+  let uiUpdated = 0;
   const widgets = [
     { presentation: { action: "resize-x" }, containsPoint: () => true },
     { presentation: { action: "rotate" }, containsPoint: () => true },
@@ -17,6 +19,9 @@ test("selection keeps native dragging but disables hidden transform handles", ()
   ];
   const selection = {
     childwidgets: widgets,
+    getMinCanvasSize: () => 60,
+    recomputeRegion: () => { regionRecomputed += 1; return true; },
+    updateUI: () => { uiUpdated += 1; },
     setHandlesVisible(visible: boolean) { handlesVisible = visible; },
   };
   const tool = { getSelection: () => selection };
@@ -25,6 +30,9 @@ test("selection keeps native dragging but disables hidden transform handles", ()
   restrictSelectionToTranslation(tool);
 
   assert.equal(handlesVisible, false);
+  assert.equal(selection.getMinCanvasSize(), 0);
+  assert.equal(regionRecomputed, 1);
+  assert.equal(uiUpdated, 1);
   assert.equal(widgets[0].containsPoint(), false);
   assert.equal(widgets[1].containsPoint(), false);
   assert.equal(widgets[2].containsPoint(), true);
