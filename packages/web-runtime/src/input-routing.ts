@@ -47,3 +47,31 @@ export function boardWheelTargetsInteractiveUi(path: readonly unknown[]): boolea
       && nativeInteractiveTags.has(element.tagName.toLocaleUpperCase());
   });
 }
+
+const textInputTags = new Set([
+  "INPUT",
+  "SELECT",
+  "TEXTAREA",
+]);
+
+/**
+ * The space-pan override must not steal key events from text entry. Buttons
+ * and links deliberately do not count: space-pan stays available when a
+ * toolbar control still has focus, and the keydown is preventDefaulted so the
+ * focused control is not re-triggered.
+ */
+export function boardKeyboardTargetsTextInput(target: unknown): boolean {
+  if (!target || typeof target !== "object") return false;
+  const element = target as InputPathElement;
+  if (element.getAttribute?.("contenteditable") === "true") return true;
+  return typeof element.tagName === "string"
+    && textInputTags.has(element.tagName.toLocaleUpperCase());
+}
+
+/**
+ * Auxiliary pan buttons: middle (1) and right (2) button drags always pan the
+ * board, regardless of which layer currently owns primary pointer input.
+ */
+export function isAuxiliaryPanButton(button: number): boolean {
+  return button === 1 || button === 2;
+}

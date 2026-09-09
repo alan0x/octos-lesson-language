@@ -22,7 +22,9 @@ import {
 } from "./camera.js";
 import {
   boardInputTargetsInteractiveUi,
+  boardKeyboardTargetsTextInput,
   boardWheelTargetsInteractiveUi,
+  isAuxiliaryPanButton,
 } from "./input-routing.js";
 import {
   BoardGestureRecognizer,
@@ -1241,6 +1243,9 @@ export class InfiniteBoardView {
   private readonly gesture = new BoardGestureRecognizer();
   /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
   private pendingCameraFocus?: { targetIds: string[]; rects: Rect[]; board: SemanticBoardState };
+  /** Space-pan override: space+left drag pans in any tool mode. */
+  private spacePanHeld = false;
+  private spacePanPointerId?: number;
   private variableDragging?: {
     alias: string;
     operationId?: string;
@@ -1272,6 +1277,10 @@ export class InfiniteBoardView {
   private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
   private readonly handlePointerUp = (event: PointerEvent): void => this.onPointerEnd(event, "up");
   private readonly handlePointerCancel = (event: PointerEvent): void => this.onPointerEnd(event, "cancel");
+  private readonly handleKeyDown = (event: KeyboardEvent): void => this.onKeyDown(event);
+  private readonly handleKeyUp = (event: KeyboardEvent): void => this.onKeyUp(event);
+  private readonly handleWindowBlur = (): void => this.releaseSpacePan();
+  private readonly handleContextMenu = (event: Event): void => event.preventDefault();
 
   constructor(
     private readonly viewport: HTMLElement,
@@ -1288,9 +1297,15 @@ export class InfiniteBoardView {
     this.hostWindow = hostWindow;
     viewport.addEventListener("wheel", this.handleWheel, { passive: false });
     viewport.addEventListener("pointerdown", this.handlePointerDown);
+    // Right-button drag pans the board, so the browser context menu would
+    // interrupt a first-class gesture anywhere over the canvas.
+    viewport.addEventListener("contextmenu", this.handleContextMenu);
     hostWindow.addEventListener("pointermove", this.handlePointerMove);
     hostWindow.addEventListener("pointerup", this.handlePointerUp);
     hostWindow.addEventListener("pointercancel", this.handlePointerCancel);
+    hostWindow.addEventListener("keydown", this.handleKeyDown);
+    hostWindow.addEventListener("keyup", this.handleKeyUp);
+    hostWindow.addEventListener("blur", this.handleWindowBlur);
     this.transform();
   }
 
@@ -1488,12 +1503,46 @@ export class InfiniteBoardView {
       // camera (or later replay a deferred teaching focus) under new input.
       this.gesture.reset();
       this.pendingCameraFocus = undefined;
+      this.spacePanPointerId = undefined;
       this.finishVariableDrag();
       this.viewport.classList.remove("dragging");
     }
   }
 
   getInputOwner(): BoardInputOwner { return this.inputOwner; }
+
+  /**
+   * True while the space-pan override is held. The ink runtime queries this
+   * from its capture-phase pointerdown handler: space+left drags must bubble
+   * to this view's pan gesture instead of starting an ink stroke. See
+   * prepareBoardInput in packages/ink-runtime/src/runtime.ts.
+   */
+  isPanOverrideActive(): boolean { return this.spacePanHeld; }
+
+  private onKeyDown(event: KeyboardEvent): void {
+    if (event.code !== "Space" || boardKeyboardTargetsTextInput(event.target)) return;
+    // Keep space from re-triggering a toolbar control that still has focus.
+    event.preventDefault();
+    if (this.spacePanHeld) return;
+    this.spacePanHeld = true;
+    this.viewport.classList.add("space-panning");
+  }
+  private onKeyUp(event: KeyboardEvent): void {
+    if (event.code === "Space") this.releaseSpacePan();
+  }
+  private releaseSpacePan(): void {
+    this.spacePanHeld = false;
+    this.viewport.classList.remove("space-panning");
+    if (this.spacePanPointerId === undefined) return;
+    // Abort a space-pan drag the moment space is released, like Figma/Miro.
+    // Cancelling only this pointer keeps any concurrent touch gesture alive.
+    this.gesture.handlePointer({ pointerId: this.spacePanPointerId, x: 0, y: 0, type: "cancel" });
+    this.spacePanPointerId = undefined;
+    if (!this.gesture.isActive()) {
+      this.viewport.classList.remove("dragging");
+      this.replayPendingCameraFocus();
+    }
+  }
 
   setVariableInputHandler(handler: VariableInputHandler | undefined): void {
     if (!handler) this.finishVariableDrag();
@@ -1666,20 +1715,26 @@ export class InfiniteBoardView {
     for (const element of this.nodeElements.values()) disposePlotExplorer(element);
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
+    this.viewport.removeEventListener("contextmenu", this.handleContextMenu);
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
     this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
     this.hostWindow.removeEventListener("pointercancel", this.handlePointerCancel);
+    this.hostWindow.removeEventListener("keydown", this.handleKeyDown);
+    this.hostWindow.removeEventListener("keyup", this.handleKeyUp);
+    this.hostWindow.removeEventListener("blur", this.handleWindowBlur);
     this.cameraAuthority.reset();
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.gesture.reset();
     this.pendingCameraFocus = undefined;
+    this.spacePanHeld = false;
+    this.spacePanPointerId = undefined;
     this.finishVariableDrag();
     this.variableInputHandler = undefined;
     this.scene3dInputHandler = undefined;
     this.regionLayouts = {};
     this.activeRegionId = undefined;
     this.cameraListeners.clear();
-    this.viewport.classList.remove("dragging", "manual-navigation");
+    this.viewport.classList.remove("dragging", "manual-navigation", "space-panning");
   }
 
   private clearBoard(): void {
@@ -1974,8 +2029,15 @@ export class InfiniteBoardView {
     }
   }
   private onPointerDown(event: PointerEvent): void {
+    // Pan overrides work in every tool mode: middle/right-button drags always
+    // pan, and so does a left-button drag while space is held. Ink lets these
+    // bubble here from its capture-phase handler (cross-reference:
+    // prepareBoardInput in packages/ink-runtime/src/runtime.ts); P5 long-press
+    // marquee will instead decide after a delay whether ink intercepts.
+    const auxiliaryPan = isAuxiliaryPanButton(event.button);
+    const spacePan = event.button === 0 && this.spacePanHeld;
     if (
-      this.inputOwner !== "runtime"
+      (this.inputOwner !== "runtime" && !auxiliaryPan && !spacePan)
       || boardInputTargetsInteractiveUi(event.composedPath())
     ) return;
     const control = (event.target as Element).closest<SVGElement>("[data-oll-variable-control]");
@@ -1986,7 +2048,8 @@ export class InfiniteBoardView {
     const viewBox = svg?.viewBox.baseVal;
     const variable = alias ? this.board?.variables?.[alias] : undefined;
     if (
-      control && svg && alias && variable && this.variableInputHandler
+      !auxiliaryPan && !spacePan
+      && control && svg && alias && variable && this.variableInputHandler
       && Number.isFinite(centerX) && Number.isFinite(centerY)
       && viewBox && Number.isFinite(viewBox.width) && viewBox.width > 0
       && Number.isFinite(viewBox.height) && viewBox.height > 0
@@ -2012,8 +2075,11 @@ export class InfiniteBoardView {
       this.updateVariableDrag(event);
       return;
     }
+    // Middle-button autoscroll and other button defaults would fight the pan.
+    if (auxiliaryPan || spacePan) event.preventDefault();
     this.beginManualNavigation();
     this.feedGesture(event, "down");
+    if (spacePan) this.spacePanPointerId = event.pointerId;
     if (this.gesture.isActive()) this.viewport.classList.add("dragging");
   }
   private onPointerMove(event: PointerEvent): void {

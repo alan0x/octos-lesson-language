@@ -293,6 +293,9 @@ export class InkRuntime {
       if (event.pointerType === "pen" && (event.buttons & 0x20) !== 0) return PointerDevice.Eraser;
       if (event.pointerType === "pen") return PointerDevice.Pen;
       if (event.pointerType === "touch") return PointerDevice.Touch;
+      // Right-button *downs* never reach js-draw anymore (they pan the board,
+      // see onPointerDown below); this mapping still describes button chords
+      // during a left-button stroke the way js-draw itself would.
       if (event.pointerType === "mouse" && (event.buttons & 0x2) !== 0) return PointerDevice.RightButtonMouse;
       if (event.pointerType === "mouse") return PointerDevice.PrimaryButtonMouse;
       return PointerDevice.Other;
@@ -320,6 +323,16 @@ export class InkRuntime {
       if (this.modeValue === "navigate") return;
       if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
       const event = rawEvent as PointerEvent;
+      // Pan-override protocol (capture here, bubble at the board): right and
+      // middle button drags, and left-button drags while the board's space-pan
+      // override is held, pan the board camera in every tool mode. They are
+      // not ink input, so they must bubble to the board untouched — no
+      // stopPropagation, no pointer tracking, no js-draw dispatch. This also
+      // keeps right-button drags from drawing strokes. Receiving end:
+      // InfiniteBoardView.onPointerDown in packages/web-runtime/src/board-view.ts
+      // (the auxiliaryPan/spacePan path). P5 long-press marquee selection will
+      // instead delay this intercept decision until the hold elapses.
+      if (event.button !== 0 || this.options.board.isPanOverrideActive()) return;
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;

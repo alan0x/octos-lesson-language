@@ -73,7 +73,9 @@ export {
 } from "./layout.js";
 export {
   boardInputTargetsInteractiveUi,
+  boardKeyboardTargetsTextInput,
   boardWheelTargetsInteractiveUi,
+  isAuxiliaryPanButton,
 } from "./input-routing.js";
 export {
   BoardGestureRecognizer,
