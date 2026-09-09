@@ -684,7 +684,7 @@ export class InkRuntime {
         ? inkSelectionPathRegion(this.selectionGesture)
         : undefined;
     if (onCaptured && this.selectedComponents.length) {
-      const bounds = Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox())).grownBy(8);
+      const bounds = Rect2.union(...this.selectedComponents.map((component) => component.getExactBBox()));
       onCaptured({ bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }, region });
     }
     const captured = createInkSelectionSnapshot({
@@ -727,7 +727,7 @@ export class InkRuntime {
       return liveTransform && liveSelected.has(component!)
         ? exact.transformedBoundingBox(liveTransform)
         : exact;
-    })).grownBy(8);
+    }));
     return {
       x: bounds.x,
       y: bounds.y,

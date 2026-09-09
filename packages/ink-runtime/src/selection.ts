@@ -23,7 +23,7 @@ export function selectedComponentsToSvg(components: AbstractComponent[]): {
 } {
   if (components.length === 0) throw new InkRuntimeError("INK_NO_SELECTION", "Select student ink before creating a source snapshot");
   const ordered = [...components].sort((left, right) => left.getZIndex() - right.getZIndex());
-  const bounds = Rect2.union(...ordered.map((component) => component.getExactBBox())).grownBy(8);
+  const bounds = Rect2.union(...ordered.map((component) => component.getExactBBox()));
   const viewport = new Viewport(() => {});
   viewport.updateScreenSize(Vec2.of(Math.max(1, bounds.width), Math.max(1, bounds.height)));
   viewport.resetTransform(Mat33.translation(Vec2.of(-bounds.x, -bounds.y)));
