@@ -38,6 +38,7 @@ import {
   type InkDocumentStore,
 } from "./persistence.js";
 import { inkInputTargetsInteractiveUi } from "./input-routing.js";
+import { coalescedPointerSamples } from "./pointer-samples.js";
 import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
 import { shouldIgnoreTouchForPalmRejection } from "./palm-rejection.js";
 import {
@@ -488,7 +489,9 @@ export class InkRuntime {
       if (!previous) return;
       event.preventDefault();
       event.stopPropagation();
-      dispatchMove(event);
+      for (const sample of coalescedPointerSamples(event)) {
+        dispatchMove(sample);
+      }
     };
     const onPointerUp = (rawEvent: Event) => {
       const event = rawEvent as PointerEvent;
