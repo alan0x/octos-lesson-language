@@ -1,9 +1,10 @@
 export const INK_DOCUMENT_FORMAT = "oll.student-ink.svg" as const;
 export const INK_DOCUMENT_FORMAT_VERSION = 1 as const;
+export const AI_INK_DOCUMENT_FORMAT_VERSION = 2 as const;
 
 export interface InkDocumentRecord {
   format: typeof INK_DOCUMENT_FORMAT;
-  format_version: typeof INK_DOCUMENT_FORMAT_VERSION;
+  format_version: typeof INK_DOCUMENT_FORMAT_VERSION | typeof AI_INK_DOCUMENT_FORMAT_VERSION;
   editor: {
     name: "js-draw";
     version: string;
@@ -64,13 +65,14 @@ export async function createInkDocumentRecord(options: {
   editorVersion: string;
   svg: string;
   updatedAt?: string;
+  containsAiWriting?: boolean;
 }): Promise<InkDocumentRecord> {
   if (!options.documentId || !Number.isInteger(options.documentVersion) || options.documentVersion < 1) {
     throw new InkRuntimeError("INK_INVALID_RECORD", "Ink document ID and positive version are required");
   }
   return {
     format: INK_DOCUMENT_FORMAT,
-    format_version: INK_DOCUMENT_FORMAT_VERSION,
+    format_version: options.containsAiWriting ? AI_INK_DOCUMENT_FORMAT_VERSION : INK_DOCUMENT_FORMAT_VERSION,
     editor: { name: "js-draw", version: options.editorVersion },
     document_id: options.documentId,
     document_version: options.documentVersion,
@@ -85,7 +87,8 @@ export function validateInkDocumentRecord(value: unknown): InkDocumentRecord {
   const record = value as Partial<InkDocumentRecord>;
   if (
     record.format !== INK_DOCUMENT_FORMAT
-    || record.format_version !== INK_DOCUMENT_FORMAT_VERSION
+    || (record.format_version !== INK_DOCUMENT_FORMAT_VERSION
+      && record.format_version !== AI_INK_DOCUMENT_FORMAT_VERSION)
     || record.editor?.name !== "js-draw"
     || typeof record.editor.version !== "string"
     || typeof record.document_id !== "string"

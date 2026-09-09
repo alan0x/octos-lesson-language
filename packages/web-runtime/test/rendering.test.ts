@@ -4,7 +4,10 @@ import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel 
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
-import { boardInputTargetsInteractiveUi } from "../src/input-routing.js";
+import {
+  boardInputTargetsInteractiveUi,
+  boardWheelTargetsInteractiveUi,
+} from "../src/input-routing.js";
 import { describeBoardTarget } from "../src/board-targets.js";
 
 test("geometry polygons are addressable teaching targets", () => {
@@ -52,6 +55,13 @@ test("world-coordinate controls keep pointer and wheel input away from board nav
   assert.equal(boardInputTargetsInteractiveUi([slider, markedCard]), true);
   assert.equal(boardInputTargetsInteractiveUi([markedCard]), true);
   assert.equal(boardInputTargetsInteractiveUi([boardSpace]), false);
+  assert.equal(boardWheelTargetsInteractiveUi([markedCard]), false);
+  assert.equal(boardWheelTargetsInteractiveUi([slider, markedCard]), true);
+  const wheelPassHost = {
+    tagName: "DIV",
+    getAttribute: (name: string) => name === "data-oll-board-wheel" ? "pass" : null,
+  };
+  assert.equal(boardWheelTargetsInteractiveUi([slider, wheelPassHost]), false);
 });
 
 test("public camera coordinates round-trip between board and viewport space", () => {

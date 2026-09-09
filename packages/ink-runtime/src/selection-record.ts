@@ -2,6 +2,7 @@ import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
 
 export const INK_SELECTION_FORMAT = "oll.student-ink.selection" as const;
 export const INK_SELECTION_FORMAT_VERSION = 4 as const;
+export const AI_INK_SELECTION_FORMAT_VERSION = 5 as const;
 export const LEGACY_INK_SELECTION_FORMAT_VERSION = 1 as const;
 export const REGION_INK_SELECTION_FORMAT_VERSION = 2 as const;
 export const TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION = 3 as const;
@@ -56,7 +57,8 @@ export interface InkSelectionSnapshot {
     | typeof LEGACY_INK_SELECTION_FORMAT_VERSION
     | typeof REGION_INK_SELECTION_FORMAT_VERSION
     | typeof TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
-    | typeof INK_SELECTION_FORMAT_VERSION;
+    | typeof INK_SELECTION_FORMAT_VERSION
+    | typeof AI_INK_SELECTION_FORMAT_VERSION;
   source_id: string;
   document_id: string;
   document_version: number;
@@ -67,6 +69,7 @@ export interface InkSelectionSnapshot {
    * Version 3 used in-memory js-draw IDs. Version 4 uses IDs persisted into
    * the saved SVG so source erasure can still be checked after a reload. */
   component_ids?: string[];
+  component_origins?: Array<"student" | "ai">;
   checksum: {
     algorithm: "sha-256";
     value: string;
@@ -105,7 +108,7 @@ function validRegion(value: unknown): value is InkSelectionRegion {
 }
 
 function selectionChecksumSource(
-  snapshot: Pick<InkSelectionSnapshot, "format_version" | "svg" | "region" | "component_ids">,
+  snapshot: Pick<InkSelectionSnapshot, "format_version" | "svg" | "region" | "component_ids" | "component_origins">,
 ): string {
   if (snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION) {
     return snapshot.svg;
@@ -117,6 +120,7 @@ function selectionChecksumSource(
     svg: snapshot.svg,
     region: snapshot.region,
     component_ids: snapshot.component_ids,
+    ...(snapshot.format_version === AI_INK_SELECTION_FORMAT_VERSION ? { component_origins: snapshot.component_origins } : {}),
   });
 }
 
@@ -131,7 +135,8 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== REGION_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
-      && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION)
+      && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== AI_INK_SELECTION_FORMAT_VERSION)
     || typeof snapshot.source_id !== "string"
     || !snapshot.source_id
     || typeof snapshot.document_id !== "string"
@@ -149,7 +154,8 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
     || (snapshot.format_version !== LEGACY_INK_SELECTION_FORMAT_VERSION && !validRegion(snapshot.region))
     || (snapshot.format_version === LEGACY_INK_SELECTION_FORMAT_VERSION && snapshot.region !== undefined)
     || ((snapshot.format_version === TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
-      || snapshot.format_version === INK_SELECTION_FORMAT_VERSION)
+      || snapshot.format_version === INK_SELECTION_FORMAT_VERSION
+      || snapshot.format_version === AI_INK_SELECTION_FORMAT_VERSION)
       && (!Array.isArray(snapshot.component_ids)
         || snapshot.component_ids.length === 0
         || snapshot.component_ids.length > 4096
@@ -157,7 +163,13 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
         || new Set(snapshot.component_ids).size !== snapshot.component_ids.length))
     || (snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
       && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+      && snapshot.format_version !== AI_INK_SELECTION_FORMAT_VERSION
       && snapshot.component_ids !== undefined)
+    || (snapshot.format_version === AI_INK_SELECTION_FORMAT_VERSION
+      ? !Array.isArray(snapshot.component_origins)
+        || snapshot.component_origins.length !== snapshot.component_ids?.length
+        || snapshot.component_origins.some((origin) => origin !== "student" && origin !== "ai")
+      : snapshot.component_origins !== undefined)
     || snapshot.checksum?.algorithm !== "sha-256"
     || !/^[a-f0-9]{64}$/.test(snapshot.checksum.value ?? "")
     || typeof snapshot.svg !== "string"
@@ -179,6 +191,7 @@ export function inkSelectionSourceExists(
   if (
     snapshot.format_version !== TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION
     && snapshot.format_version !== INK_SELECTION_FORMAT_VERSION
+    && snapshot.format_version !== AI_INK_SELECTION_FORMAT_VERSION
   ) return null;
   return snapshot.component_ids!.every((id) => Boolean(lookupComponent(id)));
 }

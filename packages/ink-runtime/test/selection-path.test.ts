@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inkSelectionPathRegion, inkSelectionRectangleRegion } from "../src/selection-record.js";
+import {
+  inkSelectionPathRegion,
+  inkSelectionRectangleRegion,
+} from "../src/selection-record.js";
 import {
   ensurePersistentInkComponentIds,
   hasPersistentInkComponentId,

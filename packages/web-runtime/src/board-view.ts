@@ -20,7 +20,10 @@ import {
   type CameraState,
   type ViewportInsets,
 } from "./camera.js";
-import { boardInputTargetsInteractiveUi } from "./input-routing.js";
+import {
+  boardInputTargetsInteractiveUi,
+  boardWheelTargetsInteractiveUi,
+} from "./input-routing.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
@@ -1898,7 +1901,7 @@ export class InfiniteBoardView {
   private onWheel(event: WheelEvent): void {
     if (
       this.inputOwner === "course-object"
-      || boardInputTargetsInteractiveUi(event.composedPath())
+      || boardWheelTargetsInteractiveUi(event.composedPath())
     ) return;
     event.preventDefault();
     this.beginManualNavigation();

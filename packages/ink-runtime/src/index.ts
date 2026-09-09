@@ -1,6 +1,7 @@
 export {
   INK_DOCUMENT_FORMAT,
   INK_DOCUMENT_FORMAT_VERSION,
+  AI_INK_DOCUMENT_FORMAT_VERSION,
   InkRuntimeError,
   LocalInkDocumentStore,
   assertInkDocumentIntegrity,
@@ -18,10 +19,13 @@ export {
 export {
   ensurePersistentInkComponentIds,
   hasPersistentInkComponentId,
+  inkComponentOrigin,
+  type InkComponentOrigin,
 } from "./component-identity.js";
 export {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
+  AI_INK_SELECTION_FORMAT_VERSION,
   LEGACY_INK_SELECTION_FORMAT_VERSION,
   REGION_INK_SELECTION_FORMAT_VERSION,
   TRANSIENT_COMPONENT_INK_SELECTION_FORMAT_VERSION,

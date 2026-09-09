@@ -10,11 +10,12 @@ import { InkRuntimeError, inkSvgChecksum } from "./persistence.js";
 import {
   INK_SELECTION_FORMAT,
   INK_SELECTION_FORMAT_VERSION,
+  AI_INK_SELECTION_FORMAT_VERSION,
   type InkSelectionBounds,
   type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
-import { ensurePersistentInkComponentIds } from "./component-identity.js";
+import { ensurePersistentInkComponentIds, inkComponentOrigin } from "./component-identity.js";
 
 export function selectedComponentsToSvg(components: AbstractComponent[]): {
   bounds: InkSelectionBounds;
@@ -22,7 +23,7 @@ export function selectedComponentsToSvg(components: AbstractComponent[]): {
 } {
   if (components.length === 0) throw new InkRuntimeError("INK_NO_SELECTION", "Select student ink before creating a source snapshot");
   const ordered = [...components].sort((left, right) => left.getZIndex() - right.getZIndex());
-  const bounds = Rect2.union(...ordered.map((component) => component.getExactBBox())).grownBy(8);
+  const bounds = Rect2.union(...ordered.map((component) => component.getExactBBox()));
   const viewport = new Viewport(() => {});
   viewport.updateScreenSize(Vec2.of(Math.max(1, bounds.width), Math.max(1, bounds.height)));
   viewport.resetTransform(Mat33.translation(Vec2.of(-bounds.x, -bounds.y)));
@@ -47,6 +48,8 @@ export async function createInkSelectionSnapshot(options: {
   const componentIds = ensurePersistentInkComponentIds(
     [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()),
   );
+  const origins = [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()).map(inkComponentOrigin);
+  const ai = origins.includes("ai");
   const region: InkSelectionRegion = options.region ?? {
     kind: "rectangle",
     closed: true,
@@ -59,7 +62,7 @@ export async function createInkSelectionSnapshot(options: {
   };
   return {
     format: INK_SELECTION_FORMAT,
-    format_version: INK_SELECTION_FORMAT_VERSION,
+    format_version: ai ? AI_INK_SELECTION_FORMAT_VERSION : INK_SELECTION_FORMAT_VERSION,
     source_id: options.sourceId ?? `ink-source:${crypto.randomUUID()}`,
     document_id: options.documentId,
     document_version: options.documentVersion,
@@ -67,12 +70,14 @@ export async function createInkSelectionSnapshot(options: {
     bounds: selection.bounds,
     region,
     component_ids: componentIds,
+    ...(ai ? { component_origins: origins } : {}),
     checksum: {
       algorithm: "sha-256",
       value: await inkSvgChecksum(JSON.stringify({
         svg: selection.svg,
         region,
         component_ids: componentIds,
+        ...(ai ? { component_origins: origins } : {}),
       })),
     },
     svg: selection.svg,

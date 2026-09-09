@@ -2,40 +2,53 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { inkInputTargetsInteractiveUi } from "../src/input-routing.js";
 import { coalesceInkOccupiedBounds } from "../src/occupied-bounds.js";
-import { lockSelectionTransform } from "../src/selection-lock.js";
+import { restrictSelectionToTranslation } from "../src/selection-lock.js";
 import {
   planInkWorldLayerBounds,
   viewportPointToInkSurface,
 } from "../src/world-layer.js";
 
-test("rectangle selection cannot move or resize student ink", () => {
+test("selection keeps native dragging but disables hidden transform handles", () => {
   let handlesVisible = true;
-  let originalDragStarts = 0;
+  let regionRecomputed = 0;
+  let uiUpdated = 0;
+  const widgets = [
+    { presentation: { action: "resize-x" }, containsPoint: () => true },
+    { presentation: { action: "rotate" }, containsPoint: () => true },
+    { containsPoint: () => true },
+  ];
   const selection = {
-    setHandlesVisible(visible: boolean) {
-      handlesVisible = visible;
-    },
-    onDragStart() {
-      originalDragStarts += 1;
-      return true;
-    },
+    childwidgets: widgets,
+    getMinCanvasSize: () => 60,
+    recomputeRegion: () => { regionRecomputed += 1; return true; },
+    updateUI: () => { uiUpdated += 1; },
+    setHandlesVisible(visible: boolean) { handlesVisible = visible; },
   };
+  const tool = { getSelection: () => selection };
 
-  lockSelectionTransform({ getSelection: () => selection });
+  restrictSelectionToTranslation(tool);
+  restrictSelectionToTranslation(tool);
 
   assert.equal(handlesVisible, false);
-  assert.equal(selection.onDragStart(), false);
-  assert.equal(originalDragStarts, 0);
+  assert.equal(selection.getMinCanvasSize(), 0);
+  assert.equal(regionRecomputed, 1);
+  assert.equal(uiUpdated, 1);
+  assert.equal(widgets[0].containsPoint(), false);
+  assert.equal(widgets[1].containsPoint(), false);
+  assert.equal(widgets[2].containsPoint(), true);
 });
 
-test("locking an empty selection is a no-op", () => {
-  assert.doesNotThrow(() => lockSelectionTransform({ getSelection: () => null }));
+test("translation restriction is a no-op without a selection", () => {
+  assert.doesNotThrow(() => restrictSelectionToTranslation({ getSelection: () => null }));
 });
 
 function inputElement(
   tagName: string,
   attributes: Record<string, string> = {},
-): { tagName: string; getAttribute: (name: string) => string | null } {
+): {
+  tagName: string;
+  getAttribute: (name: string) => string | null;
+} {
   return {
     tagName,
     getAttribute: (name) => attributes[name] ?? null,
