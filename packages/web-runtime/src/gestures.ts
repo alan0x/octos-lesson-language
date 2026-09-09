@@ -53,6 +53,22 @@ export type BoardGesturePhase = "idle" | "panning" | "pinching";
 
 const NONE: BoardGestureAction = { type: "none" };
 
+/**
+ * Trackpad pinch-to-zoom arrives as ctrlKey+wheel on Chrome/Edge/Safari, with
+ * deltaY proportional to pinch velocity. An exponential mapping makes each
+ * wheel event scale the camera by a consistent ratio for its delta, so zoom
+ * speed tracks finger speed smoothly in both directions. Firefox reports
+ * wheel deltas in lines (deltaMode 1); those are converted to pixels first so
+ * pinch does not crawl there.
+ */
+export const TRACKPAD_PINCH_ZOOM_SENSITIVITY = .0022;
+export const WHEEL_LINE_MODE_PIXELS = 33;
+
+export function trackpadPinchZoomFactor(deltaY: number, deltaMode: number): number {
+  const pixels = deltaMode === 1 ? deltaY * WHEEL_LINE_MODE_PIXELS : deltaY;
+  return Math.exp(-pixels * TRACKPAD_PINCH_ZOOM_SENSITIVITY);
+}
+
 interface TrackedPointer {
   x: number;
   y: number;

@@ -30,6 +30,7 @@ import {
   BoardGestureRecognizer,
   type BoardGestureAction,
   type GesturePointerEventType,
+  trackpadPinchZoomFactor,
 } from "./gestures.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
@@ -1998,7 +1999,16 @@ export class InfiniteBoardView {
     event.preventDefault();
     this.beginManualNavigation();
     const rect = this.viewport.getBoundingClientRect();
-    this.zoomAt(event.deltaY < 0 ? 1.1 : .9, event.clientX - rect.left, event.clientY - rect.top);
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    if (event.ctrlKey) {
+      // Trackpad pinch-to-zoom reports as ctrlKey+wheel: zoom smoothly,
+      // proportional to pinch velocity, anchored at the pointer.
+      this.zoomAt(trackpadPinchZoomFactor(event.deltaY, event.deltaMode), x, y);
+      return;
+    }
+    // Ordinary mouse-wheel zoom keeps fixed steps (Miro-style).
+    this.zoomAt(event.deltaY < 0 ? 1.1 : .9, x, y);
   }
   private beginManualNavigation(): void {
     this.cameraAuthority.beginManualNavigation();

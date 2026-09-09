@@ -79,6 +79,8 @@ export {
 } from "./input-routing.js";
 export {
   BoardGestureRecognizer,
+  trackpadPinchZoomFactor,
+  TRACKPAD_PINCH_ZOOM_SENSITIVITY,
   type BoardGestureAction,
   type BoardGesturePhase,
   type GesturePointerEvent,

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   BoardGestureRecognizer,
+  trackpadPinchZoomFactor,
   type BoardGestureAction,
   type GesturePointerEvent,
 } from "../src/gestures.js";
@@ -172,4 +173,25 @@ test("reset aborts the gesture and drops all baselines", () => {
   assert.equal(recognizer.phase, "idle");
   assert.equal(recognizer.isActive(), false);
   assert.deepEqual(recognizer.handlePointer(move(1, 100, 100)), NONE);
+});
+
+test("trackpad pinch zoom factor is smooth, symmetric, and direction-aware", () => {
+  // Pinch out (negative deltaY) zooms in, pinch in zooms out.
+  assert.ok(trackpadPinchZoomFactor(-10, 0) > 1);
+  assert.ok(trackpadPinchZoomFactor(10, 0) < 1);
+  // Neutral delta is exactly 1.
+  assert.equal(trackpadPinchZoomFactor(0, 0), 1);
+  // Exponential mapping: equal-magnitude deltas are exact reciprocals.
+  assert.equal(
+    trackpadPinchZoomFactor(-25, 0) * trackpadPinchZoomFactor(25, 0),
+    1,
+  );
+  // Larger deltas zoom more (velocity-proportional).
+  assert.ok(trackpadPinchZoomFactor(-40, 0) > trackpadPinchZoomFactor(-10, 0));
+});
+
+test("trackpad pinch zoom factor converts Firefox line-mode deltas to pixels", () => {
+  // One line of delta must behave like its pixel equivalent, not crawl.
+  assert.equal(trackpadPinchZoomFactor(-1, 1), trackpadPinchZoomFactor(-33, 0));
+  assert.ok(trackpadPinchZoomFactor(-1, 1) > 1.05);
 });
