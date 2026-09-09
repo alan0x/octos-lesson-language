@@ -76,6 +76,13 @@ export {
   boardWheelTargetsInteractiveUi,
 } from "./input-routing.js";
 export {
+  BoardGestureRecognizer,
+  type BoardGestureAction,
+  type BoardGesturePhase,
+  type GesturePointerEvent,
+  type GesturePointerEventType,
+} from "./gestures.js";
+export {
   plotPathData,
   sampleImplicitPlotExpression,
   samplePlotExpression,

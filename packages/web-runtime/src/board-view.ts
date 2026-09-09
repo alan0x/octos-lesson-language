@@ -24,6 +24,11 @@ import {
   boardInputTargetsInteractiveUi,
   boardWheelTargetsInteractiveUi,
 } from "./input-routing.js";
+import {
+  BoardGestureRecognizer,
+  type BoardGestureAction,
+  type GesturePointerEventType,
+} from "./gestures.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
@@ -1233,7 +1238,9 @@ export class InfiniteBoardView {
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
   private activeRegionId?: string;
-  private dragging?: { x: number; y: number; panX: number; panY: number };
+  private readonly gesture = new BoardGestureRecognizer();
+  /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
+  private pendingCameraFocus?: { targetIds: string[]; rects: Rect[]; board: SemanticBoardState };
   private variableDragging?: {
     alias: string;
     operationId?: string;
@@ -1263,7 +1270,8 @@ export class InfiniteBoardView {
   private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
   private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
   private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
-  private readonly handlePointerUp = (): void => this.onPointerUp();
+  private readonly handlePointerUp = (event: PointerEvent): void => this.onPointerEnd(event, "up");
+  private readonly handlePointerCancel = (event: PointerEvent): void => this.onPointerEnd(event, "cancel");
 
   constructor(
     private readonly viewport: HTMLElement,
@@ -1282,6 +1290,7 @@ export class InfiniteBoardView {
     viewport.addEventListener("pointerdown", this.handlePointerDown);
     hostWindow.addEventListener("pointermove", this.handlePointerMove);
     hostWindow.addEventListener("pointerup", this.handlePointerUp);
+    hostWindow.addEventListener("pointercancel", this.handlePointerCancel);
     this.transform();
   }
 
@@ -1314,7 +1323,7 @@ export class InfiniteBoardView {
     const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
-      this.focusRects(focusTargets, focusRects, board);
+      this.requestTeachingFocus(focusTargets, focusRects, board);
     }
     else if (teachingCameraChanged && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
@@ -1327,7 +1336,7 @@ export class InfiniteBoardView {
         ? targetRect(board, layout, activeTarget)
         : undefined;
       if (activeRect && this.resumeAutomaticCamera()) {
-        this.focusRects(activeId ? [activeId] : [], [activeRect], board);
+        this.requestTeachingFocus(activeId ? [activeId] : [], [activeRect], board);
       }
     }
   }
@@ -1474,7 +1483,11 @@ export class InfiniteBoardView {
     if (owner === this.inputOwner) return;
     this.inputOwner = owner;
     if (owner !== "runtime") {
-      this.dragging = undefined;
+      // Another layer is taking pointer ownership: abort any in-flight board
+      // gesture outright so a pending pan/pinch cannot keep moving the
+      // camera (or later replay a deferred teaching focus) under new input.
+      this.gesture.reset();
+      this.pendingCameraFocus = undefined;
       this.finishVariableDrag();
       this.viewport.classList.remove("dragging");
     }
@@ -1655,9 +1668,11 @@ export class InfiniteBoardView {
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.hostWindow.removeEventListener("pointermove", this.handlePointerMove);
     this.hostWindow.removeEventListener("pointerup", this.handlePointerUp);
+    this.hostWindow.removeEventListener("pointercancel", this.handlePointerCancel);
     this.cameraAuthority.reset();
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
-    this.dragging = undefined;
+    this.gesture.reset();
+    this.pendingCameraFocus = undefined;
     this.finishVariableDrag();
     this.variableInputHandler = undefined;
     this.scene3dInputHandler = undefined;
@@ -1878,6 +1893,28 @@ export class InfiniteBoardView {
     for (const id of supportingVisualFocusTargets(targetIds, board, layout)) visit(id);
     return rects;
   }
+  /**
+   * Applies a teaching-camera focus request, unless a pointer gesture is in
+   * flight. Applying an automatic camera mid-gesture would move the pinch
+   * baselines under the learner's fingers, so the newest request is deferred
+   * and replayed when the last pointer lifts. The manual-navigation flag is
+   * re-asserted meanwhile so gesture transforms stay transition-free.
+   */
+  private requestTeachingFocus(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
+    if (this.gesture.isActive()) {
+      this.pendingCameraFocus = { targetIds, rects, board };
+      this.beginManualNavigation();
+      return;
+    }
+    this.pendingCameraFocus = undefined;
+    this.focusRects(targetIds, rects, board);
+  }
+  private replayPendingCameraFocus(): void {
+    const pending = this.pendingCameraFocus;
+    this.pendingCameraFocus = undefined;
+    if (!pending) return;
+    if (this.resumeAutomaticCamera()) this.focusRects(pending.targetIds, pending.rects, pending.board);
+  }
   private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
     const viewport = this.viewport.getBoundingClientRect();
@@ -1976,8 +2013,8 @@ export class InfiniteBoardView {
       return;
     }
     this.beginManualNavigation();
-    this.dragging = { x: event.clientX, y: event.clientY, panX: this.panX, panY: this.panY };
-    this.viewport.classList.add("dragging");
+    this.feedGesture(event, "down");
+    if (this.gesture.isActive()) this.viewport.classList.add("dragging");
   }
   private onPointerMove(event: PointerEvent): void {
     if (this.variableDragging) {
@@ -1985,17 +2022,40 @@ export class InfiniteBoardView {
       this.updateVariableDrag(event);
       return;
     }
-    if (!this.dragging) return;
-    this.beginManualNavigation();
-    this.panX = this.dragging.panX + event.clientX - this.dragging.x;
-    this.panY = this.dragging.panY + event.clientY - this.dragging.y;
-    this.transform();
+    if (!this.gesture.isActive()) return;
+    this.feedGesture(event, "move");
   }
-  private onPointerUp(): void {
+  private onPointerEnd(event: PointerEvent, type: "up" | "cancel"): void {
     this.finishVariableDrag();
-    if (this.dragging) this.beginManualNavigation();
-    this.dragging = undefined;
-    this.viewport.classList.remove("dragging");
+    if (this.gesture.isActive()) this.beginManualNavigation();
+    this.feedGesture(event, type);
+    if (!this.gesture.isActive()) {
+      this.viewport.classList.remove("dragging");
+      // A teaching focus deferred while the gesture owned the camera is
+      // replayed exactly once, when the last pointer lifts.
+      this.replayPendingCameraFocus();
+    }
+  }
+  private feedGesture(event: PointerEvent, type: GesturePointerEventType): void {
+    const rect = this.viewport.getBoundingClientRect();
+    const actions = this.gesture.handlePointer({
+      pointerId: event.pointerId,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      type,
+    });
+    this.applyGestureActions(actions);
+  }
+  private applyGestureActions(actions: BoardGestureAction[]): void {
+    for (const action of actions) {
+      if (action.type === "panBy") {
+        this.panX += action.dx;
+        this.panY += action.dy;
+        this.transform();
+      } else if (action.type === "zoomAt") {
+        this.zoomAt(action.factor, action.x, action.y);
+      }
+    }
   }
 
   private finishVariableDrag(): void {
