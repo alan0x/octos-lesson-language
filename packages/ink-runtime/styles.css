@@ -6,6 +6,9 @@
   overflow: visible;
   background: transparent;
   pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .oll-ink-layer > .imageEditorContainer {

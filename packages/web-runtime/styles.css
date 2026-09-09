@@ -1,6 +1,6 @@
 @import "katex/dist/katex.min.css";
 
-.oll-board-runtime { position: relative; overflow: hidden; background-color: #f8f5ed; background-image: radial-gradient(#d7d1c5 1px, transparent 1px); background-size: 24px 24px; touch-action: none; cursor: grab; }
+.oll-board-runtime { position: relative; overflow: hidden; background-color: #f8f5ed; background-image: radial-gradient(#d7d1c5 1px, transparent 1px); background-size: 24px 24px; touch-action: none; cursor: grab; -webkit-touch-callout: none; }
 .oll-board-runtime.dragging { cursor: grabbing; }
 .oll-board-runtime.space-panning { cursor: grab; }
 .oll-board-runtime.space-panning.dragging { cursor: grabbing; }

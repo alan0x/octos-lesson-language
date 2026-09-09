@@ -1520,6 +1520,21 @@ export class InfiniteBoardView {
    */
   isPanOverrideActive(): boolean { return this.spacePanHeld; }
 
+  /**
+   * Aborts any in-flight pan/pinch without changing input ownership. The ink
+   * runtime calls this when a touch long-press resolves to marquee selection:
+   * until the hold elapsed, the same finger was allowed to pan the board (its
+   * events bubble while ink deliberates), and that pan must stop before
+   * js-draw takes the pointer.
+   */
+  abortActiveGesture(): void {
+    if (this.gesture.isActive()) this.beginManualNavigation();
+    this.gesture.reset();
+    this.spacePanPointerId = undefined;
+    this.viewport.classList.remove("dragging");
+    this.replayPendingCameraFocus();
+  }
+
   private onKeyDown(event: KeyboardEvent): void {
     if (event.code !== "Space" || boardKeyboardTargetsTextInput(event.target)) return;
     // Keep space from re-triggering a toolbar control that still has focus.

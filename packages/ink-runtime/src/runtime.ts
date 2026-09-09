@@ -40,6 +40,10 @@ import {
 import { inkInputTargetsInteractiveUi } from "./input-routing.js";
 import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
 import { shouldIgnoreTouchForPalmRejection } from "./palm-rejection.js";
+import {
+  TOUCH_MARQUEE_HOLD_MS,
+  TouchMarqueeArbiter,
+} from "./touch-marquee.js";
 import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -322,31 +326,7 @@ export class InkRuntime {
       );
     };
     const allPointers = (): Pointer[] => [...this.activePointers.values()];
-    const onPointerDown = (rawEvent: Event) => {
-      const event = rawEvent as PointerEvent;
-      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
-      if (this.modeValue === "navigate") return;
-      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
-      // Pan-override protocol (capture here, bubble at the board): right and
-      // middle button drags, and left-button drags while the board's space-pan
-      // override is held, pan the board camera in every tool mode. They are
-      // not ink input, so they must bubble to the board untouched — no
-      // stopPropagation, no pointer tracking, no js-draw dispatch. This also
-      // keeps right-button drags from drawing strokes. Receiving end:
-      // InfiniteBoardView.onPointerDown in packages/web-runtime/src/board-view.ts
-      // (the auxiliaryPan/spacePan path). P5 long-press marquee selection will
-      // instead delay this intercept decision until the hold elapses.
-      if (event.button !== 0 || this.options.board.isPanOverrideActive()) return;
-      // Palm rejection: while a pen is (or just was) active, a touch contact
-      // is a resting palm, not drawing input. It is not tracked or dispatched,
-      // and it is NOT intercepted, so it bubbles to the board as a pan
-      // candidate — writing with the pen while the other hand drags the
-      // canvas works. Receiving end: the touch-pan path of
-      // InfiniteBoardView.onPointerDown.
-      if (
-        event.pointerType === "touch"
-        && shouldIgnoreTouchForPalmRejection(event.timeStamp, this.lastPenActiveAt)
-      ) return;
+    const dispatchDown = (event: PointerEvent): void => {
       if (this.modeValue === "select") {
         const point = pointerBoardPoint(event);
         if (this.selectedComponents.length > 0) this.selectionRegionValid = false;
@@ -359,8 +339,6 @@ export class InkRuntime {
               : "unknown";
         this.selectionGesture = [point];
       }
-      event.preventDefault();
-      event.stopPropagation();
       const pointer = mappedPointer(event, true);
       if (this.modeValue === "select") {
         const next = pointerBoardPoint(event);
@@ -378,16 +356,7 @@ export class InkRuntime {
         allPointers: allPointers(),
       });
     };
-    const onPointerMove = (rawEvent: Event) => {
-      const event = rawEvent as PointerEvent;
-      // Pen hovers/moves keep the palm-rejection window open even for pens
-      // whose driver reports hover moves; only tracked (button-down) pen
-      // pointers reach the dispatch path below.
-      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
-      const previous = this.activePointers.get(event.pointerId);
-      if (!previous) return;
-      event.preventDefault();
-      event.stopPropagation();
+    const dispatchMove = (event: PointerEvent): void => {
       const pointer = mappedPointer(event, true);
       if (this.modeValue === "select") {
         const next = pointerBoardPoint(event);
@@ -405,11 +374,7 @@ export class InkRuntime {
       });
       if (this.modeValue === "select" && this.selectedComponents.length > 0) this.scheduleGeometryNotification();
     };
-    const onPointerUp = (rawEvent: Event) => {
-      const event = rawEvent as PointerEvent;
-      if (!this.activePointers.has(event.pointerId)) return;
-      event.preventDefault();
-      event.stopPropagation();
+    const dispatchUp = (event: PointerEvent): void => {
       const pointer = mappedPointer(event, false);
       if (this.modeValue === "select") this.selectionGesture.push(pointerBoardPoint(event));
       this.activePointers.set(pointer.id, pointer);
@@ -428,6 +393,124 @@ export class InkRuntime {
         );
       }
     };
+    // Long-press marquee arbitration (select mode, touch only): a touch down
+    // is buffered while a hold timer runs. See touch-marquee.ts for the pure
+    // state machine. While pending, events are NOT intercepted, so the board
+    // may already be panning with this finger.
+    let pendingMarquee: {
+      pointerId: number;
+      arbiter: TouchMarqueeArbiter;
+      events: PointerEvent[];
+      timer: ReturnType<typeof setTimeout>;
+    } | undefined;
+    const discardPendingMarquee = (): void => {
+      if (!pendingMarquee) return;
+      clearTimeout(pendingMarquee.timer);
+      pendingMarquee.arbiter.cancel();
+      pendingMarquee = undefined;
+    };
+    const resolveMarqueeHold = (): void => {
+      const pending = pendingMarquee;
+      pendingMarquee = undefined;
+      if (!pending || pending.arbiter.holdElapsed() !== "marquee") return;
+      // The mode may have changed during the hold; the buffered events then
+      // already happened as board pan and there is nothing to select.
+      if (this.modeValue !== "select") return;
+      // The same finger may have been panning the board until now; that pan
+      // must stop before js-draw takes the pointer.
+      this.options.board.abortActiveGesture();
+      dispatchDown(pending.events[0]!);
+      for (const event of pending.events.slice(1)) dispatchMove(event);
+    };
+    const onPointerDown = (rawEvent: Event) => {
+      const event = rawEvent as PointerEvent;
+      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
+      if (this.modeValue === "navigate") return;
+      if (inkInputTargetsInteractiveUi(rawEvent.composedPath())) return;
+      // Pan-override protocol (capture here, bubble at the board): right and
+      // middle button drags, and left-button drags while the board's space-pan
+      // override is held, pan the board camera in every tool mode. They are
+      // not ink input, so they must bubble to the board untouched — no
+      // stopPropagation, no pointer tracking, no js-draw dispatch. This also
+      // keeps right-button drags from drawing strokes. Receiving end:
+      // InfiniteBoardView.onPointerDown in packages/web-runtime/src/board-view.ts
+      // (the auxiliaryPan/spacePan path). Touch long-press in select mode is
+      // arbitrated below instead of being intercepted immediately.
+      if (event.button !== 0 || this.options.board.isPanOverrideActive()) return;
+      // Palm rejection: while a pen is (or just was) active, a touch contact
+      // is a resting palm, not drawing input. It is not tracked or dispatched,
+      // and it is NOT intercepted, so it bubbles to the board as a pan
+      // candidate — writing with the pen while the other hand drags the
+      // canvas works. Receiving end: the touch-pan path of
+      // InfiniteBoardView.onPointerDown.
+      if (
+        event.pointerType === "touch"
+        && shouldIgnoreTouchForPalmRejection(event.timeStamp, this.lastPenActiveAt)
+      ) return;
+      if (this.modeValue === "select" && event.pointerType === "touch") {
+        if (pendingMarquee) {
+          // A second finger joining mid-hold makes this a two-finger board
+          // gesture: abandon the marquee and let both touches pan.
+          discardPendingMarquee();
+          return;
+        }
+        // Long-press arbitration: buffer the down and deliberate. The event
+        // is not intercepted, so the board treats this finger as a pan
+        // candidate until the hold resolves (see resolveMarqueeHold). Mouse
+        // and pen skip arbitration and select immediately below.
+        pendingMarquee = {
+          pointerId: event.pointerId,
+          arbiter: new TouchMarqueeArbiter(),
+          events: [event],
+          timer: setTimeout(resolveMarqueeHold, TOUCH_MARQUEE_HOLD_MS),
+        };
+        pendingMarquee.arbiter.begin(event.clientX, event.clientY);
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      dispatchDown(event);
+    };
+    const onPointerMove = (rawEvent: Event) => {
+      const event = rawEvent as PointerEvent;
+      // Pen hovers/moves keep the palm-rejection window open even for pens
+      // whose driver reports hover moves; only tracked (button-down) pen
+      // pointers reach the dispatch path below.
+      if (event.pointerType === "pen") this.lastPenActiveAt = event.timeStamp;
+      if (pendingMarquee && event.pointerId === pendingMarquee.pointerId) {
+        pendingMarquee.events.push(event);
+        // Too much travel during the hold commits the gesture to board pan;
+        // the buffered events are dropped (they already panned live).
+        if (pendingMarquee.arbiter.move(event.clientX, event.clientY) === "pan") discardPendingMarquee();
+        return;
+      }
+      const previous = this.activePointers.get(event.pointerId);
+      if (!previous) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dispatchMove(event);
+    };
+    const onPointerUp = (rawEvent: Event) => {
+      const event = rawEvent as PointerEvent;
+      if (pendingMarquee && event.pointerId === pendingMarquee.pointerId) {
+        const tapped = pendingMarquee.arbiter.end() === "tap";
+        const pendingEvents = pendingMarquee.events;
+        discardPendingMarquee();
+        // A cancelled touch never selects; its events already only panned.
+        if (rawEvent.type !== "pointercancel" && tapped && this.modeValue === "select") {
+          // Quick tap: replay down+up so js-draw click-selects (or clears the
+          // selection on empty space), matching mouse behavior. This live up
+          // is NOT stopped, so the board cleanly ends any pan it started.
+          dispatchDown(pendingEvents[0]!);
+          dispatchUp(event);
+        }
+        return;
+      }
+      if (!this.activePointers.has(event.pointerId)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      dispatchUp(event);
+    };
     add("pointerdown", onPointerDown);
     add("pointermove", onPointerMove);
     add("pointerup", onPointerUp);
@@ -440,6 +523,7 @@ export class InkRuntime {
         inputTarget.removeEventListener(name, listener, { capture: true });
       }
       this.activePointers.clear();
+      discardPendingMarquee();
     };
   }
 
