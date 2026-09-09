@@ -57,6 +57,11 @@ test("world-coordinate controls keep pointer and wheel input away from board nav
   assert.equal(boardInputTargetsInteractiveUi([boardSpace]), false);
   assert.equal(boardWheelTargetsInteractiveUi([markedCard]), false);
   assert.equal(boardWheelTargetsInteractiveUi([slider, markedCard]), true);
+  const wheelPassHost = {
+    tagName: "DIV",
+    getAttribute: (name: string) => name === "data-oll-board-wheel" ? "pass" : null,
+  };
+  assert.equal(boardWheelTargetsInteractiveUi([slider, wheelPassHost]), false);
 });
 
 test("public camera coordinates round-trip between board and viewport space", () => {
