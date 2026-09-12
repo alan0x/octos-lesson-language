@@ -79,6 +79,8 @@ export interface InkRuntimeState {
   selected_count: number;
   /** Changes whenever the selected components change, even when the count is unchanged. */
   selection_revision: number;
+  /** Changes only when durable ink content changes. */
+  content_revision: number;
   /** Board-coordinate bounds occupied by all student ink. */
   content_bounds?: InkSelectionBounds | null;
   /**
@@ -609,6 +611,7 @@ export class InkRuntime {
       component_count: components.length,
       selected_count: this.selectedComponents.length,
       selection_revision: this.selectionRevision,
+      content_revision: this.changeRevision,
       content_bounds: bounds
         ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
         : null,
