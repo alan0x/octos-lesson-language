@@ -46,7 +46,6 @@ import {
   TOUCH_MARQUEE_HOLD_MS,
   TouchMarqueeArbiter,
 } from "./touch-marquee.js";
-import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
   ensurePersistentInkComponentIds,
@@ -69,6 +68,7 @@ import {
   type SelectionToolAccess,
 } from "./selection-lock.js";
 import { planInkVectorUpdate } from "./vector-update.js";
+import { InkContentGeometryCache } from "./content-geometry-cache.js";
 
 import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
 
@@ -141,6 +141,7 @@ export class InkRuntime {
   private savedChangeRevision = 0;
   private vectorComponentRefs: Map<string, AbstractComponent> | null = null;
   private vectorRevision = -1;
+  private readonly contentGeometryCache = new InkContentGeometryCache();
   private saveTimer?: ReturnType<typeof setTimeout>;
   private saveQueue: Promise<InkDocumentRecord | null> = Promise.resolve(null);
   private destroyPromise?: Promise<void>;
@@ -612,28 +613,18 @@ export class InkRuntime {
   }
 
   get state(): InkRuntimeState {
-    const components = this.editor.image.getAllComponents()
-      .filter((component) => component.isSelectable());
-    const componentBounds = components.map((component) => component.getExactBBox())
-      .map((bounds) => ({
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-      }));
-    const bounds = components.length > 0
-      ? Rect2.union(...components.map((component) => component.getExactBBox()))
-      : null;
+    const geometry = this.contentGeometryCache.read(
+      this.changeRevision,
+      this.editor.image.getAllComponents(),
+    );
     return {
       mode: this.modeValue,
-      component_count: components.length,
+      component_count: geometry.component_count,
       selected_count: this.selectedComponents.length,
       selection_revision: this.selectionRevision,
       content_revision: this.changeRevision,
-      content_bounds: bounds
-        ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
-        : null,
-      content_bounds_list: coalesceInkOccupiedBounds(componentBounds),
+      content_bounds: geometry.content_bounds,
+      content_bounds_list: geometry.content_bounds_list,
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,
