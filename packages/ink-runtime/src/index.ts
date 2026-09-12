@@ -44,6 +44,8 @@ export {
   type InkMode,
   type InkSelectionMode,
   type InkRuntimeState,
+  type InkVectorComponent,
+  type InkVectorUpdate,
   type MountInkRuntimeOptions,
 } from "./runtime.js";
 export { coalesceInkOccupiedBounds } from "./occupied-bounds.js";

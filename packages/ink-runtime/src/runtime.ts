@@ -17,6 +17,7 @@ import {
   SelectAllShortcutHandler,
   SelectionMode,
   SelectionTool,
+  SVGRenderer,
   ToolSwitcherShortcut,
   UndoRedoShortcut,
   uniteCommands,
@@ -67,6 +68,7 @@ import {
   restrictSelectionToTranslation,
   type SelectionToolAccess,
 } from "./selection-lock.js";
+import { planInkVectorUpdate } from "./vector-update.js";
 
 import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
 
@@ -97,6 +99,20 @@ export interface InkRuntimeState {
   saved: boolean;
 }
 
+export interface InkVectorComponent {
+  id: string;
+  z_index: number;
+  element: SVGGElement;
+}
+
+export type InkVectorUpdate = {
+  kind: "full" | "delta";
+  revision: number;
+  upsert: InkVectorComponent[];
+  remove_ids: string[];
+  root?: SVGSVGElement;
+};
+
 export interface MountInkRuntimeOptions {
   board: InfiniteBoardView;
   viewport: HTMLElement;
@@ -123,6 +139,8 @@ export class InkRuntime {
   private aiWritingRecords: AiWritingRecord[] = [];
   private changeRevision = 0;
   private savedChangeRevision = 0;
+  private vectorComponentRefs: Map<string, AbstractComponent> | null = null;
+  private vectorRevision = -1;
   private saveTimer?: ReturnType<typeof setTimeout>;
   private saveQueue: Promise<InkDocumentRecord | null> = Promise.resolve(null);
   private destroyPromise?: Promise<void>;
@@ -624,6 +642,72 @@ export class InkRuntime {
       document_version: this.documentVersion,
       saved: this.changeRevision === this.savedChangeRevision,
     };
+  }
+
+  private createVectorRenderer(): {
+    element: SVGSVGElement;
+    renderer: SVGRenderer;
+  } {
+    const viewport = this.editor.viewport.getTemporaryClone();
+    viewport.resetTransform(Mat33.identity);
+    return SVGRenderer.fromViewport(viewport, {
+      sanitize: false,
+      useViewBoxForPositioning: true,
+    });
+  }
+
+  private renderVectorComponent(
+    component: AbstractComponent,
+    id: string,
+  ): InkVectorComponent {
+    const { element, renderer } = this.createVectorRenderer();
+    component.render(renderer);
+    const wrapper = this.host.ownerDocument.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g",
+    );
+    wrapper.dataset.octosVectorComponentId = id;
+    wrapper.dataset.octosVectorZ = String(component.getZIndex());
+    for (const child of [...element.children]) {
+      if (child.id === "js-draw-style-sheet") continue;
+      wrapper.append(child);
+    }
+    return { id, z_index: component.getZIndex(), element: wrapper };
+  }
+
+  /**
+   * Returns only vector components structurally changed since the preceding
+   * call. Transform/style changes fall back to a complete component refresh;
+   * ordinary pen additions, erasing and undo/redo remain incremental.
+   */
+  getVectorInkUpdate(): InkVectorUpdate {
+    const components = this.editor.image.getAllComponents()
+      .filter((component) => component.isSelectable())
+      .sort((left, right) => left.getZIndex() - right.getZIndex());
+    const ids = ensurePersistentInkComponentIds(components);
+    const identities = components.map((component, index) => ({
+      id: ids[index]!,
+      reference: component,
+    }));
+    const plan = planInkVectorUpdate(
+      this.vectorComponentRefs,
+      identities,
+      this.vectorRevision !== this.changeRevision,
+    );
+    const byId = new Map(identities.map(({ id, reference }) => [id, reference]));
+    const update: InkVectorUpdate = {
+      kind: plan.kind,
+      revision: this.changeRevision,
+      upsert: plan.upsert_ids.map((id) =>
+        this.renderVectorComponent(byId.get(id)!, id)),
+      remove_ids: plan.remove_ids,
+    };
+    if (plan.kind === "full") {
+      update.root = this.createVectorRenderer().element;
+    }
+    this.vectorComponentRefs = byId;
+    this.vectorRevision = this.changeRevision;
+    return update;
   }
 
   subscribe(listener: (state: InkRuntimeState) => void): () => void {
