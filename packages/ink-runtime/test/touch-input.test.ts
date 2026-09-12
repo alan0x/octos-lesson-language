@@ -5,6 +5,7 @@ import {
   shouldIgnoreTouchForPalmRejection,
 } from "../src/palm-rejection.js";
 import {
+  shouldArbitrateTouchMarquee,
   TOUCH_MARQUEE_CANCEL_PX,
   TouchMarqueeArbiter,
 } from "../src/touch-marquee.js";
@@ -36,6 +37,12 @@ test("a pen timestamp in the future still counts as active (clock skew)", () => 
 test("a custom window is honored", () => {
   assert.equal(shouldIgnoreTouchForPalmRejection(1300, 1000, 200), false);
   assert.equal(shouldIgnoreTouchForPalmRejection(1100, 1000, 200), true);
+});
+
+test("direct touch marquee bypasses hold arbitration", () => {
+  assert.equal(shouldArbitrateTouchMarquee("direct", "touch"), false);
+  assert.equal(shouldArbitrateTouchMarquee("hold", "touch"), true);
+  assert.equal(shouldArbitrateTouchMarquee("hold", "pen"), false);
 });
 
 test("marquee arbitration: hold still, timer elapses, becomes marquee", () => {

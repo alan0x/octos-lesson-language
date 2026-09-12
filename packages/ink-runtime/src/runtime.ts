@@ -43,8 +43,10 @@ import { coalescedPointerSamples } from "./pointer-samples.js";
 import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
 import { shouldIgnoreTouchForPalmRejection } from "./palm-rejection.js";
 import {
+  shouldArbitrateTouchMarquee,
   TOUCH_MARQUEE_HOLD_MS,
   TouchMarqueeArbiter,
+  type TouchMarqueeActivation,
 } from "./touch-marquee.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
@@ -121,6 +123,12 @@ export interface MountInkRuntimeOptions {
   locale?: string;
   store?: InkDocumentStore;
   autosaveDelayMs?: number;
+  /**
+   * `hold` preserves touch pan while selecting; `direct` gives the selection
+   * tool the first touch immediately. Large touch whiteboards should use
+   * `direct` so a drag starts a marquee without a long press.
+   */
+  touchMarqueeActivation?: TouchMarqueeActivation;
 }
 
 export class InkRuntime {
@@ -469,7 +477,13 @@ export class InkRuntime {
         event.pointerType === "touch"
         && shouldIgnoreTouchForPalmRejection(event.timeStamp, this.lastPenActiveAt)
       ) return;
-      if (this.modeValue === "select" && event.pointerType === "touch") {
+      if (
+        this.modeValue === "select"
+        && shouldArbitrateTouchMarquee(
+          this.options.touchMarqueeActivation ?? "hold",
+          event.pointerType,
+        )
+      ) {
         if (pendingMarquee) {
           // A second finger joining mid-hold makes this a two-finger board
           // gesture: abandon the marquee and let both touches pan.

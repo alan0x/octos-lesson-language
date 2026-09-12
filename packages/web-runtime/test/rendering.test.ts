@@ -704,6 +704,37 @@ test("relationship focus composes all declared targets as one attention scene", 
     "the complete two-card relationship should be centered");
 });
 
+test("relationship focus may relax a device readability floor to keep every target visible", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 100, y: 100, width: 520, height: 420 },
+      { x: 100, y: 620, width: 520, height: 420 },
+    ],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 1200, height: 800 },
+    "relationship",
+    { top: 70, bottom: 170 },
+    .55,
+  );
+  assert.ok(focused.scale < .55);
+  const top = focused.panY + 100 * focused.scale;
+  const bottom = focused.panY + 1040 * focused.scale;
+  assert.ok(top >= 140 - .001);
+  assert.ok(bottom <= 560 + .001);
+});
+
+test("detail focus preserves a device readability floor", () => {
+  const focused = planFocusCamera(
+    [{ x: 100, y: 100, width: 520, height: 940 }],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 1200, height: 800 },
+    "detail",
+    { top: 70, bottom: 170 },
+    .55,
+  );
+  assert.equal(focused.scale, .55);
+});
+
 test("focus centers teaching content inside the host's unobstructed viewport", () => {
   const focused = planFocusCamera(
     [{ x: 1000, y: 800, width: 420, height: 160 }],

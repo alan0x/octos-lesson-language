@@ -1267,6 +1267,7 @@ export class InfiniteBoardView {
   private cameraNotifyUntil = 0;
   private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
+  private automaticCameraMinimumScale = .18;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
@@ -1591,6 +1592,12 @@ export class InfiniteBoardView {
     this.lastAttentionTargets = [];
   }
 
+  /** Sets a readability floor for ordinary automatic teaching-camera moves. */
+  setAutomaticCameraMinimumScale(scale: number): void {
+    if (!Number.isFinite(scale)) return;
+    this.automaticCameraMinimumScale = Math.min(1, Math.max(.18, scale));
+  }
+
   getRegionBounds(regionId: string): Rect | undefined {
     const bounds = this.layout?.regions?.[regionId];
     return bounds ? { ...bounds } : undefined;
@@ -1653,6 +1660,7 @@ export class InfiniteBoardView {
       viewport,
       options.framing === "course" ? "course" : "detail",
       this.viewportInsets,
+      this.automaticCameraMinimumScale,
     );
     this.cameraAuthority.holdHostCamera(options.exclusive === true);
     this.panX = camera.panX;
@@ -2000,6 +2008,7 @@ export class InfiniteBoardView {
       viewport,
       mode,
       this.viewportInsets,
+      this.automaticCameraMinimumScale,
     );
     this.panX = camera.panX;
     this.panY = camera.panY;

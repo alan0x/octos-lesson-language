@@ -20,6 +20,17 @@ export const TOUCH_MARQUEE_HOLD_MS = 400;
 /** Travel that cancels the hold and commits the gesture to board panning. */
 export const TOUCH_MARQUEE_CANCEL_PX = 10;
 
+/** How touch should enter marquee selection while the selection tool is active. */
+export type TouchMarqueeActivation = "hold" | "direct";
+
+/** Whether a touch needs the hold-vs-pan arbitration before js-draw receives it. */
+export function shouldArbitrateTouchMarquee(
+  activation: TouchMarqueeActivation,
+  pointerType: string,
+): boolean {
+  return pointerType === "touch" && activation === "hold";
+}
+
 export type TouchMarqueePhase = "idle" | "pending" | "pan" | "marquee";
 
 export class TouchMarqueeArbiter {

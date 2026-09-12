@@ -235,16 +235,23 @@ export function planFocusCamera(
   viewport: ViewportSize,
   mode: AttentionMode,
   insets: ViewportInsets = {},
+  automaticScaleFloor = MIN_AUTOMATIC_SCALE,
 ): CameraState {
   if (!targets.length) return current;
   const scene = unionRects(targets);
   const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
   const safeWidth = safe.width;
   const safeHeight = safe.height;
+  // A relationship is only intelligible when every related target stays in
+  // frame. Device readability floors remain appropriate for a single card,
+  // but must not crop a multi-card comparison or shared-variable animation.
+  const scaleFloor = mode === "relationship"
+    ? MIN_AUTOMATIC_SCALE
+    : Math.min(MAX_AUTOMATIC_SCALE, Math.max(MIN_AUTOMATIC_SCALE, automaticScaleFloor));
   const fitScale = Math.min(
     MAX_AUTOMATIC_SCALE,
     Math.max(
-      MIN_AUTOMATIC_SCALE,
+      scaleFloor,
       Math.min(safeWidth / Math.max(1, scene.width), safeHeight / Math.max(1, scene.height)),
     ),
   );
@@ -252,7 +259,7 @@ export function planFocusCamera(
   const sceneExtent = Math.max(scene.width / safeWidth, scene.height / safeHeight);
   const compositionScale = COMPOSITION_TARGET[mode] / Math.max(.001, sceneExtent);
   const readableScale = Math.max(...targets.map((rect) => MIN_READABLE_FOCUS_WIDTH / Math.max(1, rect.width)));
-  const scale = Math.min(fitScale, Math.max(MIN_AUTOMATIC_SCALE, readableScale, compositionScale));
+  const scale = Math.min(fitScale, Math.max(scaleFloor, readableScale, compositionScale));
 
   if (
     Math.abs(scale - current.scale) < .000_001

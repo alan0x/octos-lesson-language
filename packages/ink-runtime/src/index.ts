@@ -54,8 +54,10 @@ export {
   shouldIgnoreTouchForPalmRejection,
 } from "./palm-rejection.js";
 export {
+  shouldArbitrateTouchMarquee,
   TOUCH_MARQUEE_CANCEL_PX,
   TOUCH_MARQUEE_HOLD_MS,
   TouchMarqueeArbiter,
+  type TouchMarqueeActivation,
   type TouchMarqueePhase,
 } from "./touch-marquee.js";
