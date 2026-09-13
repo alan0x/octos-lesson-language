@@ -704,6 +704,37 @@ test("relationship focus composes all declared targets as one attention scene", 
     "the complete two-card relationship should be centered");
 });
 
+test("relationship focus may relax a device readability floor to keep every target visible", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 100, y: 100, width: 520, height: 420 },
+      { x: 100, y: 620, width: 520, height: 420 },
+    ],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 1200, height: 800 },
+    "relationship",
+    { top: 70, bottom: 170 },
+    .55,
+  );
+  assert.ok(focused.scale < .55);
+  const top = focused.panY + 100 * focused.scale;
+  const bottom = focused.panY + 1040 * focused.scale;
+  assert.ok(top >= 140 - .001);
+  assert.ok(bottom <= 560 + .001);
+});
+
+test("detail focus preserves a device readability floor", () => {
+  const focused = planFocusCamera(
+    [{ x: 100, y: 100, width: 520, height: 940 }],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 1200, height: 800 },
+    "detail",
+    { top: 70, bottom: 170 },
+    .55,
+  );
+  assert.equal(focused.scale, .55);
+});
+
 test("focus centers teaching content inside the host's unobstructed viewport", () => {
   const focused = planFocusCamera(
     [{ x: 1000, y: 800, width: 420, height: 160 }],
@@ -734,6 +765,31 @@ test("focus avoids the actual floating UI rectangle instead of reserving an enti
   const safeCenterX = (70 + clearRight) / 2;
   assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
   assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - 400) < .001);
+});
+
+test("focus chooses the unobstructed rectangle that best fits the teaching scene", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 3714.85, y: 90, width: 380, height: 300 },
+      { x: 4148.85, y: 501, width: 440, height: 135 },
+    ],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 960, height: 540 },
+    "relationship",
+    {
+      focusMargin: 24,
+      occlusions: [
+        { x: 6, y: 9, width: 65, height: 30 },
+        { x: 74, y: 6, width: 880, height: 36 },
+        { x: 8, y: 48, width: 314, height: 35 },
+        { x: 220, y: 495, width: 520, height: 37 },
+        { x: 658, y: 421, width: 292, height: 65 },
+      ],
+    },
+    .55,
+  );
+
+  assert.ok(Math.abs(focused.scale - .631578947) < .000_001);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

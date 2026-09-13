@@ -45,6 +45,7 @@ export {
 } from "./scene3d.js";
 export {
   boardToViewportPoint,
+  planFocusCamera,
   viewportToBoardPoint,
   type BoardPoint,
   type CameraState,

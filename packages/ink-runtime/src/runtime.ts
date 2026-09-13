@@ -17,6 +17,7 @@ import {
   SelectAllShortcutHandler,
   SelectionMode,
   SelectionTool,
+  SVGRenderer,
   ToolSwitcherShortcut,
   UndoRedoShortcut,
   uniteCommands,
@@ -42,10 +43,11 @@ import { coalescedPointerSamples } from "./pointer-samples.js";
 import { applyInkKeyboardPolicy } from "./keyboard-policy.js";
 import { shouldIgnoreTouchForPalmRejection } from "./palm-rejection.js";
 import {
+  shouldArbitrateTouchMarquee,
   TOUCH_MARQUEE_HOLD_MS,
   TouchMarqueeArbiter,
+  type TouchMarqueeActivation,
 } from "./touch-marquee.js";
-import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
 import { createInkSelectionSnapshot } from "./selection.js";
 import {
   ensurePersistentInkComponentIds,
@@ -67,6 +69,8 @@ import {
   restrictSelectionToTranslation,
   type SelectionToolAccess,
 } from "./selection-lock.js";
+import { planInkVectorUpdate } from "./vector-update.js";
+import { InkContentGeometryCache } from "./content-geometry-cache.js";
 
 import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
 
@@ -79,6 +83,8 @@ export interface InkRuntimeState {
   selected_count: number;
   /** Changes whenever the selected components change, even when the count is unchanged. */
   selection_revision: number;
+  /** Changes only when durable ink content changes. */
+  content_revision: number;
   /** Board-coordinate bounds occupied by all student ink. */
   content_bounds?: InkSelectionBounds | null;
   /**
@@ -95,6 +101,20 @@ export interface InkRuntimeState {
   saved: boolean;
 }
 
+export interface InkVectorComponent {
+  id: string;
+  z_index: number;
+  element: SVGGElement;
+}
+
+export type InkVectorUpdate = {
+  kind: "full" | "delta";
+  revision: number;
+  upsert: InkVectorComponent[];
+  remove_ids: string[];
+  root?: SVGSVGElement;
+};
+
 export interface MountInkRuntimeOptions {
   board: InfiniteBoardView;
   viewport: HTMLElement;
@@ -103,6 +123,12 @@ export interface MountInkRuntimeOptions {
   locale?: string;
   store?: InkDocumentStore;
   autosaveDelayMs?: number;
+  /**
+   * `hold` preserves touch pan while selecting; `direct` gives the selection
+   * tool the first touch immediately. Large touch whiteboards should use
+   * `direct` so a drag starts a marquee without a long press.
+   */
+  touchMarqueeActivation?: TouchMarqueeActivation;
 }
 
 export class InkRuntime {
@@ -121,6 +147,9 @@ export class InkRuntime {
   private aiWritingRecords: AiWritingRecord[] = [];
   private changeRevision = 0;
   private savedChangeRevision = 0;
+  private vectorComponentRefs: Map<string, AbstractComponent> | null = null;
+  private vectorRevision = -1;
+  private readonly contentGeometryCache = new InkContentGeometryCache();
   private saveTimer?: ReturnType<typeof setTimeout>;
   private saveQueue: Promise<InkDocumentRecord | null> = Promise.resolve(null);
   private destroyPromise?: Promise<void>;
@@ -448,7 +477,13 @@ export class InkRuntime {
         event.pointerType === "touch"
         && shouldIgnoreTouchForPalmRejection(event.timeStamp, this.lastPenActiveAt)
       ) return;
-      if (this.modeValue === "select" && event.pointerType === "touch") {
+      if (
+        this.modeValue === "select"
+        && shouldArbitrateTouchMarquee(
+          this.options.touchMarqueeActivation ?? "hold",
+          event.pointerType,
+        )
+      ) {
         if (pendingMarquee) {
           // A second finger joining mid-hold makes this a two-finger board
           // gesture: abandon the marquee and let both touches pan.
@@ -592,27 +627,18 @@ export class InkRuntime {
   }
 
   get state(): InkRuntimeState {
-    const components = this.editor.image.getAllComponents()
-      .filter((component) => component.isSelectable());
-    const componentBounds = components.map((component) => component.getExactBBox())
-      .map((bounds) => ({
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-      }));
-    const bounds = components.length > 0
-      ? Rect2.union(...components.map((component) => component.getExactBBox()))
-      : null;
+    const geometry = this.contentGeometryCache.read(
+      this.changeRevision,
+      this.editor.image.getAllComponents(),
+    );
     return {
       mode: this.modeValue,
-      component_count: components.length,
+      component_count: geometry.component_count,
       selected_count: this.selectedComponents.length,
       selection_revision: this.selectionRevision,
-      content_bounds: bounds
-        ? { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height }
-        : null,
-      content_bounds_list: coalesceInkOccupiedBounds(componentBounds),
+      content_revision: this.changeRevision,
+      content_bounds: geometry.content_bounds,
+      content_bounds_list: geometry.content_bounds_list,
       pen_color: this.penColor,
       selection_color: this.getSelectionColor(),
       selection_input: this.selectionInput,
@@ -621,6 +647,72 @@ export class InkRuntime {
       document_version: this.documentVersion,
       saved: this.changeRevision === this.savedChangeRevision,
     };
+  }
+
+  private createVectorRenderer(): {
+    element: SVGSVGElement;
+    renderer: SVGRenderer;
+  } {
+    const viewport = this.editor.viewport.getTemporaryClone();
+    viewport.resetTransform(Mat33.identity);
+    return SVGRenderer.fromViewport(viewport, {
+      sanitize: false,
+      useViewBoxForPositioning: true,
+    });
+  }
+
+  private renderVectorComponent(
+    component: AbstractComponent,
+    id: string,
+  ): InkVectorComponent {
+    const { element, renderer } = this.createVectorRenderer();
+    component.render(renderer);
+    const wrapper = this.host.ownerDocument.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "g",
+    );
+    wrapper.dataset.octosVectorComponentId = id;
+    wrapper.dataset.octosVectorZ = String(component.getZIndex());
+    for (const child of [...element.children]) {
+      if (child.id === "js-draw-style-sheet") continue;
+      wrapper.append(child);
+    }
+    return { id, z_index: component.getZIndex(), element: wrapper };
+  }
+
+  /**
+   * Returns only vector components structurally changed since the preceding
+   * call. Transform/style changes fall back to a complete component refresh;
+   * ordinary pen additions, erasing and undo/redo remain incremental.
+   */
+  getVectorInkUpdate(): InkVectorUpdate {
+    const components = this.editor.image.getAllComponents()
+      .filter((component) => component.isSelectable())
+      .sort((left, right) => left.getZIndex() - right.getZIndex());
+    const ids = ensurePersistentInkComponentIds(components);
+    const identities = components.map((component, index) => ({
+      id: ids[index]!,
+      reference: component,
+    }));
+    const plan = planInkVectorUpdate(
+      this.vectorComponentRefs,
+      identities,
+      this.vectorRevision !== this.changeRevision,
+    );
+    const byId = new Map(identities.map(({ id, reference }) => [id, reference]));
+    const update: InkVectorUpdate = {
+      kind: plan.kind,
+      revision: this.changeRevision,
+      upsert: plan.upsert_ids.map((id) =>
+        this.renderVectorComponent(byId.get(id)!, id)),
+      remove_ids: plan.remove_ids,
+    };
+    if (plan.kind === "full") {
+      update.root = this.createVectorRenderer().element;
+    }
+    this.vectorComponentRefs = byId;
+    this.vectorRevision = this.changeRevision;
+    return update;
   }
 
   subscribe(listener: (state: InkRuntimeState) => void): () => void {

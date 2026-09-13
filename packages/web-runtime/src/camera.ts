@@ -95,6 +95,8 @@ export interface ViewportInsets {
   right?: number;
   bottom?: number;
   left?: number;
+  /** Optional host-specific margin around automatically focused content. */
+  focusMargin?: number;
   /** Viewport-local rectangles occupied by floating host UI. */
   occlusions?: ViewportOcclusion[];
 }
@@ -139,7 +141,7 @@ function visibleAt(
   margin: number,
   insets: ViewportInsets,
 ): boolean {
-  const safe = safeViewport(viewport, insets, margin);
+  const safe = safeViewport(viewport, insets, margin, rect);
   const left = camera.panX + rect.x * camera.scale;
   const right = left + rect.width * camera.scale;
   const top = camera.panY + rect.y * camera.scale;
@@ -154,10 +156,17 @@ function inset(value: number | undefined): number {
   return Number.isFinite(value) ? Math.max(0, value ?? 0) : 0;
 }
 
+function configuredFocusMargin(insets: ViewportInsets): number {
+  return Number.isFinite(insets.focusMargin)
+    ? Math.max(0, insets.focusMargin ?? 0)
+    : FOCUS_MARGIN;
+}
+
 function safeViewport(
   viewport: ViewportSize,
   insets: ViewportInsets,
   margin: number,
+  content?: Rect,
 ): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
   const base = {
     left: inset(insets.left) + margin,
@@ -182,16 +191,23 @@ function safeViewport(
   const xs = [...new Set([base.left, base.right, ...occlusions.flatMap((item) => [item.left, item.right])])];
   const ys = [...new Set([base.top, base.bottom, ...occlusions.flatMap((item) => [item.top, item.bottom])])];
   let best = { ...base, width: base.right - base.left, height: base.bottom - base.top };
+  let bestFit = -1;
   let bestArea = -1;
   for (const left of xs) for (const right of xs) for (const top of ys) for (const bottom of ys) {
     if (right <= left || bottom <= top) continue;
     const overlaps = occlusions.some((item) => left < item.right && right > item.left
       && top < item.bottom && bottom > item.top);
     if (overlaps) continue;
-    const area = (right - left) * (bottom - top);
-    if (area > bestArea) {
+    const width = right - left;
+    const height = bottom - top;
+    const area = width * height;
+    const fit = content
+      ? Math.min(width / Math.max(1, content.width), height / Math.max(1, content.height))
+      : area;
+    if (fit > bestFit || (Math.abs(fit - bestFit) < .000_001 && area > bestArea)) {
+      bestFit = fit;
       bestArea = area;
-      best = { left, top, right, bottom, width: right - left, height: bottom - top };
+      best = { left, top, right, bottom, width, height };
     }
   }
   return best;
@@ -203,7 +219,7 @@ function centeredCamera(
   viewport: ViewportSize,
   insets: ViewportInsets,
 ): CameraState {
-  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect);
   return {
     scale,
     panX: safe.left + safe.width / 2 - (rect.x + rect.width / 2) * scale,
@@ -217,7 +233,7 @@ function composedAt(
   viewport: ViewportSize,
   insets: ViewportInsets,
 ): boolean {
-  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect);
   const sceneCenterX = camera.panX + (rect.x + rect.width / 2) * camera.scale;
   const sceneCenterY = camera.panY + (rect.y + rect.height / 2) * camera.scale;
   return Math.abs(sceneCenterX - (safe.left + safe.width / 2)) < 1
@@ -235,16 +251,24 @@ export function planFocusCamera(
   viewport: ViewportSize,
   mode: AttentionMode,
   insets: ViewportInsets = {},
+  automaticScaleFloor = MIN_AUTOMATIC_SCALE,
 ): CameraState {
   if (!targets.length) return current;
   const scene = unionRects(targets);
-  const safe = safeViewport(viewport, insets, FOCUS_MARGIN);
+  const margin = configuredFocusMargin(insets);
+  const safe = safeViewport(viewport, insets, margin, scene);
   const safeWidth = safe.width;
   const safeHeight = safe.height;
+  // A relationship is only intelligible when every related target stays in
+  // frame. Device readability floors remain appropriate for a single card,
+  // but must not crop a multi-card comparison or shared-variable animation.
+  const scaleFloor = mode === "relationship"
+    ? MIN_AUTOMATIC_SCALE
+    : Math.min(MAX_AUTOMATIC_SCALE, Math.max(MIN_AUTOMATIC_SCALE, automaticScaleFloor));
   const fitScale = Math.min(
     MAX_AUTOMATIC_SCALE,
     Math.max(
-      MIN_AUTOMATIC_SCALE,
+      scaleFloor,
       Math.min(safeWidth / Math.max(1, scene.width), safeHeight / Math.max(1, scene.height)),
     ),
   );
@@ -252,11 +276,11 @@ export function planFocusCamera(
   const sceneExtent = Math.max(scene.width / safeWidth, scene.height / safeHeight);
   const compositionScale = COMPOSITION_TARGET[mode] / Math.max(.001, sceneExtent);
   const readableScale = Math.max(...targets.map((rect) => MIN_READABLE_FOCUS_WIDTH / Math.max(1, rect.width)));
-  const scale = Math.min(fitScale, Math.max(MIN_AUTOMATIC_SCALE, readableScale, compositionScale));
+  const scale = Math.min(fitScale, Math.max(scaleFloor, readableScale, compositionScale));
 
   if (
     Math.abs(scale - current.scale) < .000_001
-    && visibleAt(scene, current, viewport, FOCUS_MARGIN, insets)
+    && visibleAt(scene, current, viewport, margin, insets)
     && composedAt(scene, current, viewport, insets)
   ) return current;
   return centeredCamera(scene, scale, viewport, insets);
@@ -269,7 +293,7 @@ export function planRevealCamera(
   insets: ViewportInsets = {},
 ): CameraState {
   if (visibleAt(rect, current, viewport, REVEAL_MARGIN, insets)) return current;
-  const safe = safeViewport(viewport, insets, REVEAL_MARGIN);
+  const safe = safeViewport(viewport, insets, REVEAL_MARGIN, rect);
   let { panX, panY } = current;
   const left = panX + rect.x * current.scale;
   const right = left + rect.width * current.scale;
