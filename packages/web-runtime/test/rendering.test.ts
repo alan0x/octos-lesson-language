@@ -767,6 +767,31 @@ test("focus avoids the actual floating UI rectangle instead of reserving an enti
   assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - 400) < .001);
 });
 
+test("focus chooses the unobstructed rectangle that best fits the teaching scene", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 3714.85, y: 90, width: 380, height: 300 },
+      { x: 4148.85, y: 501, width: 440, height: 135 },
+    ],
+    { panX: 0, panY: 0, scale: .55 },
+    { width: 960, height: 540 },
+    "relationship",
+    {
+      focusMargin: 24,
+      occlusions: [
+        { x: 6, y: 9, width: 65, height: 30 },
+        { x: 74, y: 6, width: 880, height: 36 },
+        { x: 8, y: 48, width: 314, height: 35 },
+        { x: 220, y: 495, width: 520, height: 37 },
+        { x: 658, y: 421, width: 292, height: 65 },
+      ],
+    },
+    .55,
+  );
+
+  assert.ok(Math.abs(focused.scale - .631578947) < .000_001);
+});
+
 test("overview focus keeps small member cards readable inside a larger group", () => {
   const focused = planFocusCamera(
     [

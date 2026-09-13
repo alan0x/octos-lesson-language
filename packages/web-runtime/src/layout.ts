@@ -16,6 +16,8 @@ export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
 export interface RegionLayoutConstraint {
   x: number;
   y: number;
+  /** Host-owned world-space rectangles that lesson cards must avoid. */
+  obstacles?: Rect[];
   /** Space reserved for a progressively delivered course before every node exists. */
   reservedWidth?: number;
   /** Arrange lesson content as a visual lane beside a reading lane. */
@@ -32,6 +34,8 @@ export interface RegionLayoutConstraint {
     anchorNodeIds?: string[];
     width: number;
     height: number;
+    /** Currently rendered attachment height used by teaching-camera focus. */
+    focusHeight?: number;
     gap?: number;
   }>;
 }
@@ -339,9 +343,14 @@ export function computeBoardLayout(
 
   const collisionRects = (nodeId: string): Rect[] => {
     for (const groupId of Object.keys(state.groups)) groupRect(groupId);
+    const node = state.nodes[nodeId];
+    const regionId = typeof node?.region_id === "string" && node.region_id
+      ? node.region_id
+      : "__legacy__";
     return [
       ...Object.values(nodes),
       ...Object.values(attachments),
+      ...(options.regions?.[regionId]?.obstacles ?? []),
       ...Object.entries(groups)
         .filter(([groupId]) => !groupContains(groupId, nodeId))
         .map(([, rect]) => rect),
@@ -511,6 +520,16 @@ export function computeBoardLayout(
     }
     let candidate: Rect = { x, y, ...size };
     if (!["inside", "overlay"].includes(placement.relation)) {
+      const externalObstacles = constraint?.obstacles ?? [];
+      const blockingRightEdges = externalObstacles
+        .filter((rect) => intersects(candidate, rect))
+        .map((rect) => rect.x + rect.width);
+      if (blockingRightEdges.length > 0) {
+        candidate = {
+          ...candidate,
+          x: Math.max(candidate.x, ...blockingRightEdges) + GAP.compact,
+        };
+      }
       let guard = 0;
       while (collisionRects(node.id).some((rect) => intersects(candidate, rect)) && guard < 40) {
         candidate = { ...candidate, y: candidate.y + 36 };

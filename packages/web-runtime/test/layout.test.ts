@@ -442,6 +442,45 @@ test("one interaction attachment stays with its complete linked visual scene", (
   assert.ok(note.y + note.height < interaction.y + interaction.height);
 });
 
+test("host obstacles move new lesson cards out of occupied whiteboard space", () => {
+  const board: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course-a",
+        content: { latex: "x^2" },
+        placement: { relation: "new_region" },
+      },
+    },
+    groups: {},
+    connections: {},
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const obstacle = { x: 100, y: 90, width: 360, height: 180 };
+  const layout = computeBoardLayout(
+    board,
+    { formula: { width: 300, height: 100 } },
+    {
+      regions: {
+        "course-a": {
+          x: 100,
+          y: 90,
+          obstacles: [obstacle],
+        },
+      },
+    },
+  );
+
+  assert.equal(layout.nodes.formula!.x, obstacle.x + obstacle.width + 28);
+  assert.equal(layout.nodes.formula!.y, 90);
+});
+
 test("an independent formula starts below a linked visual row", () => {
   const board: SemanticBoardState = {
     board_id: "board",

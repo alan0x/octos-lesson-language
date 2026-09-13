@@ -1970,6 +1970,25 @@ export class InfiniteBoardView {
     };
     for (const id of targetIds) visit(id);
     for (const id of supportingVisualFocusTargets(targetIds, board, layout)) visit(id);
+    // Course controls and tasks are laid out as attachments beneath their
+    // semantic anchor nodes. They share the same teaching scene, so a camera
+    // focused on an anchor must reserve room for the visible attachment too.
+    for (const constraint of Object.values(this.regionLayouts)) {
+      for (const attachment of constraint.attachments ?? []) {
+        const anchorIds = attachment.anchorNodeIds?.length
+          ? attachment.anchorNodeIds
+          : [attachment.anchorNodeId];
+        if (!anchorIds.some((id) => visited.has(id))) continue;
+        const rect = layout.attachments[attachment.id];
+        const focusHeight = Number.isFinite(attachment.focusHeight)
+          ? Math.min(
+              rect?.height ?? 0,
+              Math.max(0, attachment.focusHeight ?? 0),
+            )
+          : rect?.height;
+        if (rect && focusHeight) rects.push({ ...rect, height: focusHeight });
+      }
+    }
     return rects;
   }
   /**
