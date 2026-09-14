@@ -442,6 +442,109 @@ test("one interaction attachment stays with its complete linked visual scene", (
   assert.ok(note.y + note.height < interaction.y + interaction.height);
 });
 
+test("narrative cards below an interactive visual group use its adjacent reading lane", () => {
+  const board: SemanticBoardState = {
+    board_id: "board",
+    revision: 1,
+    nodes: {
+      intro: {
+        id: "intro",
+        kind: "math",
+        region_id: "course-a",
+        content: { latex: "y=\\sin(x)" },
+        placement: { relation: "new_region" },
+      },
+      geometry: {
+        id: "geometry",
+        kind: "geometry",
+        region_id: "course-a",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "course-a",
+        content: {},
+        placement: { relation: "right_of", anchor: "geometry", gap: "normal" },
+      },
+      note: {
+        id: "note",
+        kind: "note",
+        region_id: "course-a",
+        content: { title: "正弦函数基本认识" },
+        placement: { relation: "below", anchor: "visuals" },
+      },
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course-a",
+        content: { latex: "y=\\sin(x)" },
+        placement: { relation: "below", anchor: "visuals" },
+      },
+    },
+    groups: {
+      visuals: {
+        id: "visuals",
+        members: ["geometry", "plot"],
+      },
+    },
+    connections: {},
+    focus: [],
+    applied_lessons: [],
+    applied_steps: [],
+    applied_actions: [],
+  };
+  const layout = computeBoardLayout(board, {
+    intro: { width: 280, height: 96 },
+    geometry: { width: 380, height: 300 },
+    plot: { width: 360, height: 297 },
+    note: { width: 400, height: 135 },
+    formula: { width: 280, height: 96 },
+  }, {
+    regions: {
+      "course-a": {
+        x: 340,
+        y: 90,
+        reservedWidth: 1_180,
+        flow: "reading",
+        attachments: [{
+          id: "course-a:interaction",
+          anchorNodeId: "plot",
+          anchorNodeIds: ["geometry", "plot"],
+          width: 360,
+          height: 420,
+          gap: 42,
+        }],
+      },
+    },
+  });
+
+  const interaction = layout.attachments["course-a:interaction"]!;
+  const geometry = layout.nodes.geometry!;
+  const plot = layout.nodes.plot!;
+  const note = layout.nodes.note!;
+  const formula = layout.nodes.formula!;
+  const visualBottom = Math.max(
+    geometry.y + geometry.height,
+    plot.y + plot.height,
+  );
+
+  assert.equal(interaction.x, Math.min(geometry.x, plot.x));
+  assert.equal(interaction.y, visualBottom + 42);
+  assert.equal(note.x, layout.nodes.intro!.x);
+  assert.ok(
+    note.x >= interaction.x + interaction.width + 12,
+    "narrative must stay beside, rather than below, the interaction lane",
+  );
+  assert.ok(
+    note.y < interaction.y + interaction.height,
+    "future interaction height must not push narrative below the whole attachment",
+  );
+  assert.equal(formula.x, note.x);
+  assert.ok(formula.y >= note.y + note.height + 12);
+});
+
 test("host obstacles move new lesson cards out of occupied whiteboard space", () => {
   const board: SemanticBoardState = {
     board_id: "board",
