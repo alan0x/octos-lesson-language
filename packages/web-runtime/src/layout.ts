@@ -399,9 +399,24 @@ export function computeBoardLayout(
       ? Object.entries(nodes).find(([, rect]) => rect === connected)?.[0]
       : undefined;
     const connectedNode = connectedNodeId ? state.nodes[connectedNodeId] : undefined;
-    const authoredVisualRelationship = Boolean(anchor) && (
-      Boolean(placement.anchor && state.groups[placement.anchor])
-      || (nodeIsVisual && VISUAL_LANE_KINDS.has(String(anchorNode?.kind ?? "")))
+    const anchoredGroupHasInteractionLane = Boolean(
+      !nodeIsVisual
+      && placement.relation === "below"
+      && placement.anchor
+      && state.groups[placement.anchor]
+      && (constraint?.attachments ?? []).some((attachment) => {
+        const semanticAnchors = attachment.anchorNodeIds?.length
+          ? attachment.anchorNodeIds
+          : [attachment.anchorNodeId];
+        return semanticAnchors.some((id) => groupContains(placement.anchor!, id));
+      }),
+    );
+    const authoredVisualRelationship = (
+      Boolean(anchor) && (
+        (Boolean(placement.anchor && state.groups[placement.anchor])
+          && !anchoredGroupHasInteractionLane)
+        || (nodeIsVisual && VISUAL_LANE_KINDS.has(String(anchorNode?.kind ?? "")))
+      )
     ) || Boolean(connected && nodeIsVisual
       && VISUAL_LANE_KINDS.has(String(connectedNode?.kind ?? "")));
     const readingFlow = constraint?.flow === "reading"
