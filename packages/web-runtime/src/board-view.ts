@@ -176,9 +176,11 @@ export function cameraFocusTargets(
   operation: PlaybackOperation | undefined,
   boardFocus: string[],
   lastAttentionTargets: string[],
+  policy: TeachingCameraPolicy = "automatic",
 ): string[] {
   const operationFocus = operation?.action?.focus?.targets ?? [];
   if (operationFocus.length) return operationFocus;
+  if (policy === "explicit") return [];
   if (operation?.type !== "beat.end" && operation?.type !== "step.commit") return [];
   return lastAttentionTargets.length ? lastAttentionTargets : boardFocus;
 }
@@ -995,8 +997,13 @@ export interface MountedInfiniteBoard {
 }
 
 export type BoardInputOwner = "runtime" | "ink" | "course-object";
+export type TeachingCameraPolicy = "automatic" | "explicit";
 export type CameraListener = (camera: CameraState) => void;
 export type VariableInputHandler = StudentVariableInputHandler;
+
+export function viewportInsetsCanReframe(policy: TeachingCameraPolicy): boolean {
+  return policy === "automatic";
+}
 
 export function angleControlValue(
   rawAngle: number,
@@ -1240,6 +1247,7 @@ export class InfiniteBoardView {
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
+  private teachingCameraPolicy: TeachingCameraPolicy = "automatic";
   private activeRegionId?: string;
   private readonly gesture = new BoardGestureRecognizer();
   /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
@@ -1331,18 +1339,25 @@ export class InfiniteBoardView {
     this.syncGroups(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
-    const animatedTargets = operation?.action?.animation
+    const animatedTargets = this.teachingCameraPolicy === "automatic" && operation?.action?.animation
       ? variableAnimationFocusTargets(board, operation.action.animation.variable)
       : [];
     const requestedFocusTargets = animatedTargets.length
       ? animatedTargets
-      : cameraFocusTargets(operation, board.focus, this.lastAttentionTargets);
+      : cameraFocusTargets(
+          operation,
+          board.focus,
+          this.lastAttentionTargets,
+          this.teachingCameraPolicy,
+        );
     const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
       this.requestTeachingFocus(focusTargets, focusRects, board);
     }
-    else if (teachingCameraChanged && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
+    else if (this.teachingCameraPolicy === "automatic"
+      && teachingCameraChanged
+      && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeId = operation?.action?.op === "board.create"
         ? operation.action.node?.id
@@ -1358,8 +1373,25 @@ export class InfiniteBoardView {
     }
   }
 
+  /**
+   * Curated CoursePacks own their complete camera timeline. In explicit mode
+   * only board.focus (or a direct host/user request) may move the camera;
+   * content operations and playback boundaries never synthesize a move.
+   */
+  setTeachingCameraPolicy(policy: TeachingCameraPolicy): void {
+    if (this.teachingCameraPolicy === policy) return;
+    this.teachingCameraPolicy = policy;
+    this.lastAttentionTargets = [];
+    this.pendingCameraFocus = undefined;
+  }
+
   setViewportInsets(insets: ViewportInsets): void {
     this.viewportInsets = { ...insets };
+    // Narration and other floating chrome can change at every Beat. In an
+    // explicit CoursePack that geometry is used by the next declared focus,
+    // but it is not itself a camera command. Automatic live lessons retain
+    // the existing responsive reframe behavior.
+    if (!viewportInsetsCanReframe(this.teachingCameraPolicy)) return;
     this.resize();
   }
 

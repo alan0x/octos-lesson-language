@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
@@ -250,6 +250,51 @@ test("beat boundaries preserve the latest visible teaching target", () => {
     "current-problem",
   ]);
   assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
+});
+
+test("explicit camera policy ignores implicit Beat and Step boundary focus", () => {
+  const beatBoundary = {
+    operation_id: "lesson:beat:end",
+    type: "beat.end",
+    lesson_id: "lesson",
+    event_index: 3,
+  } as const;
+  const stepBoundary = {
+    ...beatBoundary,
+    operation_id: "lesson:step:commit",
+    type: "step.commit",
+  } as const;
+  assert.deepEqual(
+    cameraFocusTargets(beatBoundary, ["board-focus"], ["attention"], "explicit"),
+    [],
+  );
+  assert.deepEqual(
+    cameraFocusTargets(stepBoundary, ["board-focus"], ["attention"], "explicit"),
+    [],
+  );
+});
+
+test("explicit camera policy still honors a declared board focus action", () => {
+  const focus = {
+    operation_id: "lesson:focus",
+    type: "action.apply",
+    lesson_id: "lesson",
+    event_index: 3,
+    action: {
+      action_id: "focus-action",
+      op: "board.focus",
+      focus: { targets: ["declared-target"], intent: "show-target" },
+    },
+  } as const;
+  assert.deepEqual(
+    cameraFocusTargets(focus as any, ["old"], ["attention"], "explicit"),
+    ["declared-target"],
+  );
+});
+
+test("floating chrome cannot reframe an explicit CoursePack camera", () => {
+  assert.equal(viewportInsetsCanReframe("explicit"), false);
+  assert.equal(viewportInsetsCanReframe("automatic"), true);
 });
 
 test("automatic camera targets cannot leak from another course region", () => {
