@@ -860,6 +860,11 @@ export class InkRuntime {
     this.documentVersion = record.document_version;
     this.savedSvg = this.exportSvg().outerHTML;
     this.resetEditorViewport();
+    // Loading an SVG updates js-draw's document model, but some Android
+    // WebViews do not paint the restored display until the next editor
+    // command. Force the initial frame now so persisted ink is visible before
+    // the learner draws another stroke.
+    await this.editor.queueRerender();
     this.emit();
   }
 
