@@ -115,6 +115,13 @@ const REVEAL_MARGIN = FOCUS_MARGIN;
 const MIN_READABLE_FOCUS_WIDTH = 240;
 const MIN_AUTOMATIC_SCALE = .18;
 const MAX_AUTOMATIC_SCALE = 1;
+// An occlusion that enters the usable viewport by less than this on either
+// axis is a sliver (e.g. a collapsed avatar peeking 2px above the bottom
+// inset). Inflating it by the focus margin would amputate a whole strip of
+// the safe viewport for an overlap the learner cannot even see, and the
+// grid search's winner-take-all tie-break turns that into a discontinuous
+// camera jump when the sliver crosses the threshold.
+const MIN_OCCLUSION_OVERLAP = 8;
 
 const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   detail: .64,
@@ -179,6 +186,11 @@ function safeViewport(
   const occlusions = (insets.occlusions ?? []).flatMap((occlusion) => {
     if (![occlusion.x, occlusion.y, occlusion.width, occlusion.height].every(Number.isFinite)
       || occlusion.width <= 0 || occlusion.height <= 0) return [];
+    const overlapWidth = Math.min(base.right, occlusion.x + occlusion.width)
+      - Math.max(base.left, occlusion.x);
+    const overlapHeight = Math.min(base.bottom, occlusion.y + occlusion.height)
+      - Math.max(base.top, occlusion.y);
+    if (overlapWidth < MIN_OCCLUSION_OVERLAP || overlapHeight < MIN_OCCLUSION_OVERLAP) return [];
     const left = Math.max(base.left, occlusion.x - margin);
     const top = Math.max(base.top, occlusion.y - margin);
     const right = Math.min(base.right, occlusion.x + occlusion.width + margin);

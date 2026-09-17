@@ -881,6 +881,51 @@ test("focus stays centered when a bottom dock and a side column both fit at 1x",
     "the bottom dock must not push a fully fitting lesson into a side column");
 });
 
+test("focus ignores a floating control that only sliver-overlaps the usable viewport", () => {
+  // A collapsed teacher avatar sits inside the bottom inset and enters the
+  // usable viewport by only 2px. Inflating that sliver by the focus margin
+  // must not amputate the safe viewport's right edge and shove the lesson
+  // into a narrower column.
+  const focused = planFocusCamera(
+    [
+      { x: 20, y: 20, width: 360, height: 332 },
+      { x: 20, y: 394, width: 360, height: 162 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 1400, height: 900 },
+    "detail",
+    {
+      top: 92, right: 28, bottom: 190, left: 28,
+      occlusions: [{ x: 1282, y: 708, width: 94, height: 94 }],
+    },
+  );
+  // Sliver ignored: the safe viewport is the full inset box
+  // [98..1302]×[162..640] with center (700, 401); scene center is (200, 288).
+  assert.ok(Math.abs(focused.panX - (700 - 200 * focused.scale)) < .001);
+  assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
+});
+
+test("focus still avoids a floating control that meaningfully overlaps the usable viewport", () => {
+  // Same avatar moved up so it overlaps the usable viewport by 80px: the
+  // right edge is genuinely blocked and the narrow full-height column wins.
+  const focused = planFocusCamera(
+    [
+      { x: 20, y: 20, width: 360, height: 332 },
+      { x: 20, y: 394, width: 360, height: 162 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 1400, height: 900 },
+    "detail",
+    {
+      top: 92, right: 28, bottom: 190, left: 28,
+      occlusions: [{ x: 1282, y: 560, width: 94, height: 94 }],
+    },
+  );
+  // Safe viewport narrows to [98..1212]×[162..640] with center (655, 401).
+  assert.ok(Math.abs(focused.panX - (655 - 200 * focused.scale)) < .001);
+  assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
+});
+
 test("overview focus keeps small member cards readable inside a larger group", () => {
   const focused = planFocusCamera(
     [
