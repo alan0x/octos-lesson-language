@@ -201,8 +201,17 @@ function safeViewport(
     const width = right - left;
     const height = bottom - top;
     const area = width * height;
+    // Every teaching-camera plan is capped at 1×. Once two clear rectangles
+    // can both show the complete scene at that scale, preferring a narrow
+    // side column for its meaningless theoretical zoom (>1×) only pushes the
+    // lesson away from the screen center. Treat those candidates as an equal
+    // fit and use clear area as the tie-breaker instead.
     const fit = content
-      ? Math.min(width / Math.max(1, content.width), height / Math.max(1, content.height))
+      ? Math.min(
+          MAX_AUTOMATIC_SCALE,
+          width / Math.max(1, content.width),
+          height / Math.max(1, content.height),
+        )
       : area;
     if (fit > bestFit || (Math.abs(fit - bestFit) < .000_001 && area > bestArea)) {
       bestFit = fit;
