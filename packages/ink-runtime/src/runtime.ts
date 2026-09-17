@@ -859,6 +859,14 @@ export class InkRuntime {
     finally { this.suppressSave = false; }
     this.documentVersion = record.document_version;
     this.savedSvg = this.exportSvg().outerHTML;
+    // The editor starts empty, so subscribers can populate the geometry cache
+    // for revision 0 before the asynchronous SVG restore finishes. Loading the
+    // saved document is a real in-memory content change even though it must not
+    // create a new persisted document version. Advance both revisions together
+    // so geometry/vector readers see the restored components while the runtime
+    // still reports the document as saved.
+    this.changeRevision += 1;
+    this.savedChangeRevision = this.changeRevision;
     this.resetEditorViewport();
     // Loading an SVG updates js-draw's document model, but some Android
     // WebViews do not paint the restored display until the next editor
