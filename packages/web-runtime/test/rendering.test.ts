@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, explicitStartupFocusTargets, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
-import { boardToViewportPoint, courseFitsCamera, planCourseBoundedFocusCamera, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
+import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
   boardInputTargetsInteractiveUi,
   boardWheelTargetsInteractiveUi,
@@ -179,47 +179,6 @@ test("course framing no longer exposes an entire three-course row", () => {
   assert.ok(visibleLeft > oldestCourse.x + oldestCourse.width);
   assert.ok(visibleLeft < currentCourse.x);
   assert.ok(visibleRight > currentCourse.x + currentCourse.width);
-});
-
-test("curated focus keeps the whole rendered course visible beside floating controls", () => {
-  const course = { x: 20, y: 20, width: 1300, height: 730 };
-  const focus = { x: 990, y: 540, width: 300, height: 170 };
-  const viewport = { width: 960, height: 540 };
-  const insets = {
-    focusMargin: 24,
-    occlusions: [
-      { x: 0, y: 0, width: 960, height: 46 },
-      { x: 240, y: 490, width: 480, height: 50 },
-    ],
-  };
-  const camera = planCourseBoundedFocusCamera([focus], course,
-    { panX: 0, panY: 0, scale: 1 }, viewport, insets);
-  assert.equal(courseFitsCamera(course, camera, viewport, insets), true);
-  assert.ok(camera.scale < .55, "readability floors must never crop the course");
-  const courseCenter = camera.panX + (course.x + course.width / 2) * camera.scale;
-  assert.ok(Math.abs(courseCenter - viewport.width / 2) < 90,
-    "focus must not push the whole course to an edge");
-});
-
-test("curated and desktop viewports use the same containment rule", () => {
-  const course = { x: 1700, y: 120, width: 1200, height: 1050 };
-  const focus = { x: 2470, y: 220, width: 400, height: 390 };
-  for (const viewport of [{ width: 960, height: 540 }, { width: 1920, height: 1080 }]) {
-    const camera = planCourseBoundedFocusCamera([focus], course,
-      { panX: 0, panY: 0, scale: .55 }, viewport, { focusMargin: 24 });
-    assert.equal(courseFitsCamera(course, camera, viewport, { focusMargin: 24 }), true);
-  }
-});
-
-test("curated camera retains a valid frame when no content or viewport changed", () => {
-  const course = { x: 20, y: 20, width: 540, height: 360 };
-  const viewport = { width: 960, height: 540 };
-  const camera = planCourseBoundedFocusCamera([], course,
-    { panX: 0, panY: 0, scale: 1 }, viewport, { focusMargin: 24 });
-  assert.strictEqual(planCourseBoundedFocusCamera([], course, camera, viewport,
-    { focusMargin: 24 }), camera);
-  assert.equal(courseFitsCamera(course, camera, viewport,
-    { focusMargin: 24, occlusions: [{ x: 0, y: 0, width: 960, height: 540 }] }), false);
 });
 
 test("math content resolves LaTeX from canonical forms and strips display delimiters", () => {

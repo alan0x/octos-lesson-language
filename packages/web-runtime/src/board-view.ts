@@ -12,8 +12,6 @@ import {
 } from "./board-targets.js";
 import {
   boardToViewportPoint,
-  courseFitsCamera,
-  planCourseBoundedFocusCamera,
   planFocusCamera,
   viewportToBoardPoint,
   type AttentionMode,
@@ -1290,7 +1288,6 @@ export class InfiniteBoardView {
   private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
   private explicitCameraInitializedFor?: string;
-  private pendingExplicitRegionFrame = false;
   private automaticCameraMinimumScale = .18;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
@@ -1336,7 +1333,6 @@ export class InfiniteBoardView {
   }
 
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
-    const priorCourseBounds = this.layout?.regions?.[this.activeRegionId ?? "__legacy__"];
     const teachingCameraChanged = this.cameraAuthority.observeRender(
       board?.board_id,
       operation?.operation_id,
@@ -1378,12 +1374,10 @@ export class InfiniteBoardView {
         : startupTargets;
     const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
-    let explicitFocusApplied = false;
     if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
       this.requestTeachingFocus(focusTargets, focusRects, board);
       if (this.teachingCameraPolicy === "explicit") {
         this.explicitCameraInitializedFor = explicitCameraKey;
-        explicitFocusApplied = true;
       }
     }
     else if (this.teachingCameraPolicy === "automatic"
@@ -1402,30 +1396,12 @@ export class InfiniteBoardView {
         this.requestTeachingFocus(activeId ? [activeId] : [], [activeRect], board);
       }
     }
-    if (this.teachingCameraPolicy === "explicit" && !explicitFocusApplied) {
-      const courseBounds = layout.regions?.[this.activeRegionId ?? "__legacy__"];
-      const boundsChanged = courseBounds && (!priorCourseBounds
-        || ["x", "y", "width", "height"].some((key) =>
-          Math.abs(courseBounds[key as keyof Rect] - priorCourseBounds[key as keyof Rect]) > .5));
-      if (courseBounds && (this.pendingExplicitRegionFrame || boundsChanged)
-        && this.cameraAuthority.layoutReframeAllowed) {
-        const viewport = this.viewport.getBoundingClientRect();
-        const camera = { panX: this.panX, panY: this.panY, scale: this.scale };
-        if (this.pendingExplicitRegionFrame
-          || !courseFitsCamera(courseBounds, camera, viewport, this.viewportInsets)) {
-          this.focusRects([], [courseBounds], board);
-        }
-        this.pendingExplicitRegionFrame = false;
-      }
-    } else if (explicitFocusApplied) {
-      this.pendingExplicitRegionFrame = false;
-    }
   }
 
   /**
-   * Curated CoursePacks supply sparse focus hints. Their rendered course must
-   * remain visible when a hint is applied or its content/host chrome changes;
-   * playback boundaries alone never synthesize a move.
+   * Curated CoursePacks own their complete camera timeline. In explicit mode
+   * only board.focus (or a direct host/user request) may move the camera;
+   * content operations and playback boundaries never synthesize a move.
    */
   setTeachingCameraPolicy(policy: TeachingCameraPolicy): void {
     if (this.teachingCameraPolicy === policy) return;
@@ -1433,24 +1409,15 @@ export class InfiniteBoardView {
     this.lastAttentionTargets = [];
     this.pendingCameraFocus = undefined;
     this.explicitCameraInitializedFor = undefined;
-    this.pendingExplicitRegionFrame = policy === "explicit";
   }
 
   setViewportInsets(insets: ViewportInsets): void {
     this.viewportInsets = { ...insets };
-    // Narration and other floating chrome can change at every Beat. Explicit
-    // CoursePacks only reframe if the current course no longer fits; live
-    // automatic lessons retain their existing responsive reframe behavior.
-    if (!viewportInsetsCanReframe(this.teachingCameraPolicy)) {
-      const bounds = this.layout?.regions?.[this.activeRegionId ?? "__legacy__"];
-      if (bounds && this.board && this.cameraAuthority.layoutReframeAllowed) {
-        const viewport = this.viewport.getBoundingClientRect();
-        if (!courseFitsCamera(bounds,
-          { panX: this.panX, panY: this.panY, scale: this.scale },
-          viewport, insets)) this.focusRects([], [bounds], this.board);
-      }
-      return;
-    }
+    // Narration and other floating chrome can change at every Beat. In an
+    // explicit CoursePack that geometry is used by the next declared focus,
+    // but it is not itself a camera command. Automatic live lessons retain
+    // the existing responsive reframe behavior.
+    if (!viewportInsetsCanReframe(this.teachingCameraPolicy)) return;
     this.resize();
   }
 
@@ -1681,7 +1648,6 @@ export class InfiniteBoardView {
     if (regionId === this.activeRegionId) return;
     this.activeRegionId = regionId;
     this.lastAttentionTargets = [];
-    if (this.teachingCameraPolicy === "explicit") this.pendingExplicitRegionFrame = true;
   }
 
   /** Sets a readability floor for ordinary automatic teaching-camera moves. */
@@ -1746,17 +1712,14 @@ export class InfiniteBoardView {
     if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
       || rect.width <= 0 || rect.height <= 0) return undefined;
     const viewport = this.viewport.getBoundingClientRect();
-    const current = { panX: this.panX, panY: this.panY, scale: this.scale };
-    const camera = options.framing === "course" && this.teachingCameraPolicy === "explicit"
-      ? planCourseBoundedFocusCamera([], rect, current, viewport, this.viewportInsets)
-      : planFocusCamera(
-          [rect],
-          current,
-          viewport,
-          options.framing === "course" ? "course" : "detail",
-          this.viewportInsets,
-          this.automaticCameraMinimumScale,
-        );
+    const camera = planFocusCamera(
+      [rect],
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      options.framing === "course" ? "course" : "detail",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+    );
     this.cameraAuthority.holdHostCamera(options.exclusive === true);
     this.panX = camera.panX;
     this.panY = camera.panY;
@@ -1861,8 +1824,6 @@ export class InfiniteBoardView {
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
     this.lastAttentionTargets = [];
-    this.explicitCameraInitializedFor = undefined;
-    this.pendingExplicitRegionFrame = this.teachingCameraPolicy === "explicit";
   }
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
@@ -2118,25 +2079,14 @@ export class InfiniteBoardView {
       : targetIds.some((id) => Boolean(board.groups[id]))
         ? "overview"
         : "detail";
-    const courseBounds = this.teachingCameraPolicy === "explicit"
-      ? this.layout?.regions?.[this.activeRegionId ?? "__legacy__"]
-      : undefined;
-    const camera = courseBounds
-      ? planCourseBoundedFocusCamera(
-          rects,
-          courseBounds,
-          { panX: this.panX, panY: this.panY, scale: this.scale },
-          viewport,
-          this.viewportInsets,
-        )
-      : planFocusCamera(
-          rects,
-          { panX: this.panX, panY: this.panY, scale: this.scale },
-          viewport,
-          mode,
-          this.viewportInsets,
-          this.automaticCameraMinimumScale,
-        );
+    const camera = planFocusCamera(
+      rects,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      mode,
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+    );
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
