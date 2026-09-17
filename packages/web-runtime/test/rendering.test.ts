@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, explicitStartupFocusTargets, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
@@ -290,6 +290,23 @@ test("explicit camera policy still honors a declared board focus action", () => 
     cameraFocusTargets(focus as any, ["old"], ["attention"], "explicit"),
     ["declared-target"],
   );
+});
+
+test("explicit camera initializes from the first created node only once", () => {
+  const create = {
+    operation_id: "lesson:create:first",
+    type: "action.apply",
+    lesson_id: "lesson",
+    event_index: 1,
+    action: {
+      action_id: "create-first",
+      op: "board.create",
+      node: { id: "first-visual", kind: "geometry", content: {} },
+    },
+  } as const;
+  assert.deepEqual(explicitStartupFocusTargets(create as any, "explicit", false), ["first-visual"]);
+  assert.deepEqual(explicitStartupFocusTargets(create as any, "explicit", true), []);
+  assert.deepEqual(explicitStartupFocusTargets(create as any, "automatic", false), []);
 });
 
 test("floating chrome cannot reframe an explicit CoursePack camera", () => {
@@ -835,6 +852,33 @@ test("focus chooses the unobstructed rectangle that best fits the teaching scene
   );
 
   assert.ok(Math.abs(focused.scale - .631578947) < .000_001);
+});
+
+test("focus stays centered when a bottom dock and a side column both fit at 1x", () => {
+  const focused = planFocusCamera(
+    [
+      { x: 20, y: 20, width: 380, height: 390 },
+      { x: 20, y: 452, width: 360, height: 162 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 1920, height: 1080 },
+    "relationship",
+    {
+      focusMargin: 24,
+      occlusions: [
+        { x: 6, y: 9, width: 65, height: 30 },
+        { x: 74, y: 6, width: 1840, height: 36 },
+        { x: 8, y: 48, width: 308.640625, height: 35 },
+        { x: 1854, y: 970, width: 56, height: 56 },
+        { x: 700, y: 1035, width: 520, height: 37 },
+      ],
+    },
+    .55,
+  );
+
+  assert.equal(focused.scale, 1);
+  assert.ok(Math.abs(focused.panX - 717) < .001,
+    "the bottom dock must not push a fully fitting lesson into a side column");
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

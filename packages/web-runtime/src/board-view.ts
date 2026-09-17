@@ -185,6 +185,18 @@ export function cameraFocusTargets(
   return lastAttentionTargets.length ? lastAttentionTargets : boardFocus;
 }
 
+export function explicitStartupFocusTargets(
+  operation: PlaybackOperation | undefined,
+  policy: TeachingCameraPolicy,
+  initialized: boolean,
+): string[] {
+  if (policy !== "explicit" || initialized || operation?.action?.op !== "board.create") {
+    return [];
+  }
+  const nodeId = operation.action.node?.id;
+  return nodeId ? [nodeId] : [];
+}
+
 export function focusTargetsInRegion(
   board: SemanticBoardState,
   targetIds: string[],
@@ -1275,6 +1287,7 @@ export class InfiniteBoardView {
   private cameraNotifyUntil = 0;
   private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
+  private explicitCameraInitializedFor?: string;
   private automaticCameraMinimumScale = .18;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
@@ -1342,18 +1355,30 @@ export class InfiniteBoardView {
     const animatedTargets = this.teachingCameraPolicy === "automatic" && operation?.action?.animation
       ? variableAnimationFocusTargets(board, operation.action.animation.variable)
       : [];
+    const explicitCameraKey = `${board.board_id}\u0000${this.activeRegionId ?? ""}`;
+    const startupTargets = explicitStartupFocusTargets(
+      operation,
+      this.teachingCameraPolicy,
+      this.explicitCameraInitializedFor === explicitCameraKey,
+    );
+    const declaredFocusTargets = cameraFocusTargets(
+      operation,
+      board.focus,
+      this.lastAttentionTargets,
+      this.teachingCameraPolicy,
+    );
     const requestedFocusTargets = animatedTargets.length
       ? animatedTargets
-      : cameraFocusTargets(
-          operation,
-          board.focus,
-          this.lastAttentionTargets,
-          this.teachingCameraPolicy,
-        );
+      : declaredFocusTargets.length
+        ? declaredFocusTargets
+        : startupTargets;
     const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
     if (teachingCameraChanged && focusRects.length && this.resumeAutomaticCamera()) {
       this.requestTeachingFocus(focusTargets, focusRects, board);
+      if (this.teachingCameraPolicy === "explicit") {
+        this.explicitCameraInitializedFor = explicitCameraKey;
+      }
     }
     else if (this.teachingCameraPolicy === "automatic"
       && teachingCameraChanged
@@ -1383,6 +1408,7 @@ export class InfiniteBoardView {
     this.teachingCameraPolicy = policy;
     this.lastAttentionTargets = [];
     this.pendingCameraFocus = undefined;
+    this.explicitCameraInitializedFor = undefined;
   }
 
   setViewportInsets(insets: ViewportInsets): void {
