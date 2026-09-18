@@ -851,7 +851,9 @@ test("focus chooses the unobstructed rectangle that best fits the teaching scene
     .55,
   );
 
-  assert.ok(Math.abs(focused.scale - .631578947) < .000_001);
+  // The centered candidate trades ~2% of scale for a placement closer to the
+  // screen center (364 vs 329); both stay above the readable floor.
+  assert.ok(Math.abs(focused.scale - .616704805) < .000_001);
 });
 
 test("focus stays centered when a bottom dock and a side column both fit at 1x", () => {
@@ -877,7 +879,7 @@ test("focus stays centered when a bottom dock and a side column both fit at 1x",
   );
 
   assert.equal(focused.scale, 1);
-  assert.ok(Math.abs(focused.panX - 717) < .001,
+  assert.ok(Math.abs(focused.panX - 750) < .001,
     "the bottom dock must not push a fully fitting lesson into a side column");
 });
 
@@ -903,6 +905,41 @@ test("focus ignores a floating control that only sliver-overlaps the usable view
   // [98..1302]×[162..640] with center (700, 401); scene center is (200, 288).
   assert.ok(Math.abs(focused.panX - (700 - 200 * focused.scale)) < .001);
   assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
+});
+
+test("focus prefers the centered candidate when a side column fits only marginally better", () => {
+  // TV viewport trace (960x540, Android insets): the portrait scene fits the
+  // right-of-toolbar column ~11% better than the near-center strip, but the
+  // column centers content at x=605 while the strip centers it at x=482 —
+  // almost the viewport center. Near-ties must hold the screen center.
+  const focused = planFocusCamera(
+    [
+      { x: 20.6, y: 19.7, width: 360, height: 390.9 },
+      { x: 20.6, y: 451, width: 360, height: 161.8 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 960, height: 540 },
+    "detail",
+    {
+      focusMargin: 24,
+      occlusions: [
+        { x: 6, y: 9, width: 65, height: 30 },
+        { x: 74, y: 6, width: 880, height: 36 },
+        { x: 8, y: 48, width: 309, height: 35 },
+        { x: 894, y: 430, width: 56, height: 56 },
+        { x: 220, y: 495, width: 520, height: 37 },
+      ],
+    },
+    .55,
+  );
+  // The centered strip [95..870]x[107..471] centers the scene at x=482.5.
+  const sceneCenterX = 20.6 + 360 / 2;
+  assert.ok(
+    Math.abs(focused.panX + sceneCenterX * focused.scale - 482.5) < .5,
+    `expected the centered strip to win, got scene center ${
+      focused.panX + sceneCenterX * focused.scale
+    } (off-center column would give 605.5)`,
+  );
 });
 
 test("focus still avoids a floating control that meaningfully overlaps the usable viewport", () => {

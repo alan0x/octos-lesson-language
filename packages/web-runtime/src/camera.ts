@@ -122,6 +122,11 @@ const MAX_AUTOMATIC_SCALE = 1;
 // grid search's winner-take-all tie-break turns that into a discontinuous
 // camera jump when the sliver crosses the threshold.
 const MIN_OCCLUSION_OVERLAP = 8;
+// Readability and centeredness trade off: a side column that fits the scene
+// only marginally better but sits far off-center reads as a framing bug to
+// the viewer. Candidates within this ratio of the best fit compete on
+// distance to the usable area's center instead.
+const NEAR_FIT_RATIO = .85;
 
 const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   detail: .64,
@@ -202,9 +207,11 @@ function safeViewport(
   }
   const xs = [...new Set([base.left, base.right, ...occlusions.flatMap((item) => [item.left, item.right])])];
   const ys = [...new Set([base.top, base.bottom, ...occlusions.flatMap((item) => [item.top, item.bottom])])];
-  let best = { ...base, width: base.right - base.left, height: base.bottom - base.top };
-  let bestFit = -1;
-  let bestArea = -1;
+  interface Candidate {
+    left: number; top: number; right: number; bottom: number;
+    width: number; height: number; area: number; fit: number;
+  }
+  const candidates: Candidate[] = [];
   for (const left of xs) for (const right of xs) for (const top of ys) for (const bottom of ys) {
     if (right <= left || bottom <= top) continue;
     const overlaps = occlusions.some((item) => left < item.right && right > item.left
@@ -213,11 +220,10 @@ function safeViewport(
     const width = right - left;
     const height = bottom - top;
     const area = width * height;
-    // Every teaching-camera plan is capped at 1×. Once two clear rectangles
-    // can both show the complete scene at that scale, preferring a narrow
-    // side column for its meaningless theoretical zoom (>1×) only pushes the
-    // lesson away from the screen center. Treat those candidates as an equal
-    // fit and use clear area as the tie-breaker instead.
+    // Every teaching-camera plan is capped at 1×. Once a clear rectangle can
+    // show the complete scene at that scale, a larger theoretical fit only
+    // means unused zoom headroom, so near-best candidates are treated as
+    // equal and the most centered one wins instead of the largest.
     const fit = content
       ? Math.min(
           MAX_AUTOMATIC_SCALE,
@@ -225,10 +231,28 @@ function safeViewport(
           height / Math.max(1, content.height),
         )
       : area;
-    if (fit > bestFit || (Math.abs(fit - bestFit) < .000_001 && area > bestArea)) {
-      bestFit = fit;
-      bestArea = area;
-      best = { left, top, right, bottom, width, height };
+    candidates.push({ left, top, right, bottom, width, height, area, fit });
+  }
+  if (candidates.length === 0) {
+    return { ...base, width: base.right - base.left, height: base.bottom - base.top };
+  }
+  const bestFit = Math.max(...candidates.map((candidate) => candidate.fit));
+  const centerX = (base.left + base.right) / 2;
+  const centerY = (base.top + base.bottom) / 2;
+  let best = candidates[0]!;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let bestArea = -1;
+  for (const candidate of candidates) {
+    if (candidate.fit < bestFit * NEAR_FIT_RATIO) continue;
+    const distance = Math.hypot(
+      candidate.left + candidate.width / 2 - centerX,
+      candidate.top + candidate.height / 2 - centerY,
+    );
+    if (distance < bestDistance - .5
+      || (Math.abs(distance - bestDistance) <= .5 && candidate.area > bestArea)) {
+      best = candidate;
+      bestDistance = distance;
+      bestArea = candidate.area;
     }
   }
   return best;
