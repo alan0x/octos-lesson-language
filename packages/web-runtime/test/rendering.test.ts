@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, explicitStartupFocusTargets, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, explicitStartupFocusTargets, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
@@ -157,7 +157,7 @@ test("course framing fills the safe viewport instead of reserving teaching conte
   const teaching = planFocusCamera([course], current, viewport, "detail", insets);
   const completedCourse = planFocusCamera([course], current, viewport, "course", insets);
 
-  assert.ok(completedCourse.scale > teaching.scale * 1.5);
+  assert.ok(completedCourse.scale > teaching.scale * 1.25);
   assert.ok(viewport.width / completedCourse.scale < 4_200);
   assert.ok(viewport.height / completedCourse.scale < 2_300);
 });
@@ -230,6 +230,14 @@ test("single-line math scales down to the available card width", () => {
   assert.equal(fitMathScale(800, 600), 0.75);
   assert.equal(fitMathScale(400, 600), 1);
   assert.equal(fitMathScale(0, 600), 1);
+});
+
+test("math cards use rendered KaTeX width plus their horizontal insets", () => {
+  assert.equal(mathCardWidth(304.2, 38), 343);
+  assert.equal(mathCardWidth(900, 38), 680);
+  assert.equal(mathCardWidth(120, 38), 158);
+  assert.equal(mathCardWidth(0, 38), undefined);
+  assert.equal(mathCardWidth(120, -1), undefined);
 });
 
 test("model-authored emphasis prose degrades to a safe focus class", () => {
@@ -689,7 +697,7 @@ test("3D implicit surfaces render three-variable equations and support sections"
 });
 
 test("focus keeps an already composed target steady", () => {
-  const current = { panX: 141.08235294117645, panY: 200.47058823529412, scale: .9976470588235294 };
+  const current = { panX: 40.69411764705876, panY: 156.82352941176467, scale: 1.2158823529411766 };
   assert.strictEqual(
     planFocusCamera(
       [{ x: 120, y: 140, width: 680, height: 120 }],
@@ -710,8 +718,8 @@ test("focus recenters a merely visible target that is outside the teaching cente
     "detail",
   );
   assert.notStrictEqual(focused, current);
-  assert.equal(focused.panX + 240, 600);
-  assert.equal(focused.panY + 200, 400);
+  assert.equal(focused.panX + 240 * focused.scale, 600);
+  assert.equal(focused.panY + 200 * focused.scale, 400);
 });
 
 test("detail focus derives its zoom from target size instead of a fixed camera scale", () => {
@@ -728,7 +736,7 @@ test("detail focus derives its zoom from target size instead of a fixed camera s
     { width: 1200, height: 800 },
     "detail",
   );
-  assert.equal(narrow.scale, 1);
+  assert.equal(narrow.scale, 1.3);
   assert.ok(wide.scale > current.scale && wide.scale < narrow.scale);
 });
 
@@ -739,7 +747,7 @@ test("focus changes scale when the target is too small or the teaching scene is 
     { width: 1200, height: 800 },
     "detail",
   );
-  assert.equal(tiny.scale, 1);
+  assert.equal(tiny.scale, 1.3);
 
   const large = planFocusCamera(
     [{ x: 100, y: 100, width: 1800, height: 1100 }],
@@ -856,7 +864,7 @@ test("focus chooses the unobstructed rectangle that best fits the teaching scene
   assert.ok(Math.abs(focused.scale - .616704805) < .000_001);
 });
 
-test("focus stays centered when a bottom dock and a side column both fit at 1x", () => {
+test("focus stays centered when a bottom dock and a side column both leave room", () => {
   const focused = planFocusCamera(
     [
       { x: 20, y: 20, width: 380, height: 390 },
@@ -878,8 +886,8 @@ test("focus stays centered when a bottom dock and a side column both fit at 1x",
     .55,
   );
 
-  assert.equal(focused.scale, 1);
-  assert.ok(Math.abs(focused.panX - 750) < .001,
+  assert.ok(Math.abs(focused.scale - 1.2705263157894737) < .000_001);
+  assert.ok(Math.abs(focused.panX - 693.189474) < .001,
     "the bottom dock must not push a fully fitting lesson into a side column");
 });
 

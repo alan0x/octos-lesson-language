@@ -5,7 +5,7 @@
 .oll-board-runtime.space-panning { cursor: grab; }
 .oll-board-runtime.space-panning.dragging { cursor: grabbing; }
 @scope (.oll-board-runtime) {
-.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: 3200px; height: 2200px; transition: transform 680ms cubic-bezier(.22,1,.36,1); will-change: transform; }
+.world { position: absolute; left: 0; top: 0; transform-origin: 0 0; width: 3200px; height: 2200px; transition: transform 680ms cubic-bezier(.22,1,.36,1); }
 :scope.dragging .world, :scope.manual-navigation .world { transition: none; }
 .layer, .connection-layer, .connection-label-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .connection-label-layer { pointer-events: none; z-index: 3; }
@@ -18,8 +18,8 @@
 .board-node.emphasis-supporting { background: #fff9dc; }
 .board-node.emphasis-warning { border-color: #d95361; }
 .board-node.emphasis-resolved { opacity: .84; }
-.board-node.kind-math { font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
-.math-render { width: 100%; min-height: 56px; display: grid; align-items: center; overflow: hidden; }
+.board-node.kind-math { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; padding-top: 12px; padding-bottom: 12px; font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
+.math-render { width: 100%; min-height: 0; display: grid; align-items: center; overflow: hidden; }
 .math-render .katex-display { margin: 0; min-width: max-content; text-align: left; }
 .math-render .katex-display.math-fitted { width: 100%; min-width: 0; overflow: hidden; }
 .math-render .katex { font-size: 1.04em; }

@@ -366,17 +366,75 @@ export function fitMathScale(contentWidth: number, availableWidth: number): numb
   return availableWidth / contentWidth;
 }
 
+export function mathCardWidth(
+  renderedContentWidth: number,
+  horizontalInsets: number,
+  maximumWidth = 680,
+): number | undefined {
+  if (!Number.isFinite(renderedContentWidth) || renderedContentWidth <= 0) return undefined;
+  if (!Number.isFinite(horizontalInsets) || horizontalInsets < 0) return undefined;
+  if (!Number.isFinite(maximumWidth) || maximumWidth <= 0) return undefined;
+  return Math.ceil(Math.min(maximumWidth, renderedContentWidth + horizontalInsets));
+}
+
+function resetRenderedMathFit(parent: HTMLElement): void {
+  for (const display of parent.querySelectorAll<HTMLElement>(".katex-display")) {
+    const formula = display.querySelector<HTMLElement>(".katex");
+    display.classList.remove("math-fitted");
+    formula?.style.removeProperty("transform");
+    formula?.style.removeProperty("transform-origin");
+  }
+}
+
+function renderedMathIntrinsicWidth(parent: HTMLElement): number | undefined {
+  const render = parent.querySelector<HTMLElement>(".math-render");
+  if (!render || render.classList.contains("math-plain-text")) return undefined;
+  resetRenderedMathFit(parent);
+  const formulas = [...render.querySelectorAll<HTMLElement>(".katex")];
+  const viewportScale = parent.offsetWidth > 0
+    ? parent.getBoundingClientRect().width / parent.offsetWidth
+    : 1;
+  if (!Number.isFinite(viewportScale) || viewportScale <= 0) return undefined;
+  // A display-mode .katex is a block and stretches to the current card width.
+  // Its scrollWidth therefore measures the provisional card, not the formula.
+  // KaTeX's direct .katex-base children are intrinsic-width inline blocks;
+  // cancel the board camera transform without rounding each fragment to pixels.
+  const widths = formulas.map((formula) => {
+    const bases = formula.querySelectorAll<HTMLElement>(".katex-html > .katex-base");
+    return [...bases].reduce(
+      (width, base) => width + base.getBoundingClientRect().width / viewportScale,
+      0,
+    );
+  }).filter((width) => width > 0);
+  if (!widths.length) return undefined;
+  if (!render.classList.contains("math-fragments")) return Math.max(...widths);
+  const gap = Number.parseFloat(getComputedStyle(render).columnGap);
+  return widths.reduce((total, width) => total + width, 0)
+    + Math.max(0, widths.length - 1) * (Number.isFinite(gap) ? gap : 0);
+}
+
+function renderedMathCardWidth(parent: HTMLElement): number | undefined {
+  const intrinsicWidth = renderedMathIntrinsicWidth(parent);
+  if (!intrinsicWidth) return undefined;
+  const style = getComputedStyle(parent);
+  const horizontalInsets = [
+    style.paddingLeft,
+    style.paddingRight,
+    style.borderLeftWidth,
+    style.borderRightWidth,
+  ].reduce((total, value) => total + (Number.parseFloat(value) || 0), 0);
+  return mathCardWidth(intrinsicWidth, horizontalInsets);
+}
+
 function fitRenderedMath(parent: HTMLElement): void {
   const render = parent.querySelector<HTMLElement>(".math-render");
   if (!render || render.classList.contains("math-fragments") || render.classList.contains("math-plain-text")) return;
+  resetRenderedMathFit(parent);
   const displays = render.querySelectorAll<HTMLElement>(".katex-display");
   for (const display of displays) {
     const formula = display.querySelector<HTMLElement>(".katex");
     const container = display.closest<HTMLElement>(".math-line") ?? render;
     if (!formula) continue;
-    display.classList.remove("math-fitted");
-    formula.style.removeProperty("transform");
-    formula.style.removeProperty("transform-origin");
     const scale = fitMathScale(formula.scrollWidth, container.clientWidth);
     if (scale >= 1) continue;
     display.classList.add("math-fitted");
@@ -1875,12 +1933,18 @@ export class InfiniteBoardView {
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
+      const measuredMathWidth = kind === "math" ? renderedMathCardWidth(element) : undefined;
+      if (measuredMathWidth) element.style.width = `${measuredMathWidth}px`;
       if (kind === "math") fitRenderedMath(element);
       if (!fixedVisualSize) element.style.height = "auto";
       const provisional = layout.nodes[node.id]!;
       measured[node.id] = {
-        width: provisional.width,
-        height: fixedVisualSize ? provisional.height : Math.max(72, Math.ceil(element.scrollHeight + 8)),
+        width: measuredMathWidth ?? provisional.width,
+        height: fixedVisualSize
+          ? provisional.height
+          : kind === "math"
+            ? Math.max(72, element.offsetHeight)
+            : Math.max(72, Math.ceil(element.scrollHeight + 8)),
       };
     }
     return measured;

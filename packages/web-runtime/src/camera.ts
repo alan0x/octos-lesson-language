@@ -114,7 +114,10 @@ const FOCUS_MARGIN = 70;
 const REVEAL_MARGIN = FOCUS_MARGIN;
 const MIN_READABLE_FOCUS_WIDTH = 240;
 const MIN_AUTOMATIC_SCALE = .18;
-const MAX_AUTOMATIC_SCALE = 1;
+// Lesson cards are DOM/SVG rather than fixed-resolution images, so on large
+// viewports the camera may zoom past 1:1. Browsers still rasterize the final
+// transformed scene; avoid assuming every fractional zoom is pixel-crisp.
+const MAX_AUTOMATIC_SCALE = 1.3;
 // An occlusion that enters the usable viewport by less than this on either
 // axis is a sliver (e.g. a collapsed avatar peeking 2px above the bottom
 // inset). Inflating it by the focus margin would amputate a whole strip of
@@ -129,9 +132,9 @@ const MIN_OCCLUSION_OVERLAP = 8;
 const NEAR_FIT_RATIO = .85;
 
 const COMPOSITION_TARGET: Record<AttentionMode, number> = {
-  detail: .64,
-  relationship: .72,
-  overview: .78,
+  detail: .78,
+  relationship: .85,
+  overview: .88,
   // Course framing is a navigation boundary, not a teaching close-up. Keep
   // the complete course visible, but do not reserve the broad surrounding
   // context used while a teacher is explaining one diagram.
