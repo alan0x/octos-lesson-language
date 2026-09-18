@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, explicitStartupFocusTargets, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, viewportInsetsCanReframe, wrapDiagramLabel } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
@@ -157,7 +157,7 @@ test("course framing fills the safe viewport instead of reserving teaching conte
   const teaching = planFocusCamera([course], current, viewport, "detail", insets);
   const completedCourse = planFocusCamera([course], current, viewport, "course", insets);
 
-  assert.ok(completedCourse.scale > teaching.scale * 1.5);
+  assert.ok(completedCourse.scale > teaching.scale * 1.25);
   assert.ok(viewport.width / completedCourse.scale < 4_200);
   assert.ok(viewport.height / completedCourse.scale < 2_300);
 });
@@ -232,6 +232,14 @@ test("single-line math scales down to the available card width", () => {
   assert.equal(fitMathScale(0, 600), 1);
 });
 
+test("math cards use rendered KaTeX width plus their horizontal insets", () => {
+  assert.equal(mathCardWidth(304.2, 38), 343);
+  assert.equal(mathCardWidth(900, 38), 680);
+  assert.equal(mathCardWidth(120, 38), 158);
+  assert.equal(mathCardWidth(0, 38), undefined);
+  assert.equal(mathCardWidth(120, -1), undefined);
+});
+
 test("model-authored emphasis prose degrades to a safe focus class", () => {
   assert.equal(emphasisClassName("supporting"), "emphasis-supporting");
   assert.equal(emphasisClassName("  WARNING  "), "emphasis-warning");
@@ -252,29 +260,7 @@ test("beat boundaries preserve the latest visible teaching target", () => {
   assert.deepEqual(cameraFocusTargets(boundary, ["old-lesson"], []), ["old-lesson"]);
 });
 
-test("explicit camera policy ignores implicit Beat and Step boundary focus", () => {
-  const beatBoundary = {
-    operation_id: "lesson:beat:end",
-    type: "beat.end",
-    lesson_id: "lesson",
-    event_index: 3,
-  } as const;
-  const stepBoundary = {
-    ...beatBoundary,
-    operation_id: "lesson:step:commit",
-    type: "step.commit",
-  } as const;
-  assert.deepEqual(
-    cameraFocusTargets(beatBoundary, ["board-focus"], ["attention"], "explicit"),
-    [],
-  );
-  assert.deepEqual(
-    cameraFocusTargets(stepBoundary, ["board-focus"], ["attention"], "explicit"),
-    [],
-  );
-});
-
-test("explicit camera policy still honors a declared board focus action", () => {
+test("a declared board focus action takes priority over automatic attention", () => {
   const focus = {
     operation_id: "lesson:focus",
     type: "action.apply",
@@ -287,31 +273,9 @@ test("explicit camera policy still honors a declared board focus action", () => 
     },
   } as const;
   assert.deepEqual(
-    cameraFocusTargets(focus as any, ["old"], ["attention"], "explicit"),
+    cameraFocusTargets(focus as any, ["old"], ["attention"]),
     ["declared-target"],
   );
-});
-
-test("explicit camera initializes from the first created node only once", () => {
-  const create = {
-    operation_id: "lesson:create:first",
-    type: "action.apply",
-    lesson_id: "lesson",
-    event_index: 1,
-    action: {
-      action_id: "create-first",
-      op: "board.create",
-      node: { id: "first-visual", kind: "geometry", content: {} },
-    },
-  } as const;
-  assert.deepEqual(explicitStartupFocusTargets(create as any, "explicit", false), ["first-visual"]);
-  assert.deepEqual(explicitStartupFocusTargets(create as any, "explicit", true), []);
-  assert.deepEqual(explicitStartupFocusTargets(create as any, "automatic", false), []);
-});
-
-test("floating chrome cannot reframe an explicit CoursePack camera", () => {
-  assert.equal(viewportInsetsCanReframe("explicit"), false);
-  assert.equal(viewportInsetsCanReframe("automatic"), true);
 });
 
 test("automatic camera targets cannot leak from another course region", () => {
@@ -689,7 +653,7 @@ test("3D implicit surfaces render three-variable equations and support sections"
 });
 
 test("focus keeps an already composed target steady", () => {
-  const current = { panX: 141.08235294117645, panY: 200.47058823529412, scale: .9976470588235294 };
+  const current = { panX: 40.69411764705876, panY: 156.82352941176467, scale: 1.2158823529411766 };
   assert.strictEqual(
     planFocusCamera(
       [{ x: 120, y: 140, width: 680, height: 120 }],
@@ -710,8 +674,8 @@ test("focus recenters a merely visible target that is outside the teaching cente
     "detail",
   );
   assert.notStrictEqual(focused, current);
-  assert.equal(focused.panX + 240, 600);
-  assert.equal(focused.panY + 200, 400);
+  assert.equal(focused.panX + 240 * focused.scale, 600);
+  assert.equal(focused.panY + 200 * focused.scale, 400);
 });
 
 test("detail focus derives its zoom from target size instead of a fixed camera scale", () => {
@@ -728,7 +692,7 @@ test("detail focus derives its zoom from target size instead of a fixed camera s
     { width: 1200, height: 800 },
     "detail",
   );
-  assert.equal(narrow.scale, 1);
+  assert.equal(narrow.scale, 1.3);
   assert.ok(wide.scale > current.scale && wide.scale < narrow.scale);
 });
 
@@ -739,7 +703,7 @@ test("focus changes scale when the target is too small or the teaching scene is 
     { width: 1200, height: 800 },
     "detail",
   );
-  assert.equal(tiny.scale, 1);
+  assert.equal(tiny.scale, 1.3);
 
   const large = planFocusCamera(
     [{ x: 100, y: 100, width: 1800, height: 1100 }],
@@ -851,10 +815,12 @@ test("focus chooses the unobstructed rectangle that best fits the teaching scene
     .55,
   );
 
-  assert.ok(Math.abs(focused.scale - .631578947) < .000_001);
+  // The centered candidate trades ~2% of scale for a placement closer to the
+  // screen center (364 vs 329); both stay above the readable floor.
+  assert.ok(Math.abs(focused.scale - .616704805) < .000_001);
 });
 
-test("focus stays centered when a bottom dock and a side column both fit at 1x", () => {
+test("focus stays centered when a bottom dock and a side column both leave room", () => {
   const focused = planFocusCamera(
     [
       { x: 20, y: 20, width: 380, height: 390 },
@@ -876,9 +842,89 @@ test("focus stays centered when a bottom dock and a side column both fit at 1x",
     .55,
   );
 
-  assert.equal(focused.scale, 1);
-  assert.ok(Math.abs(focused.panX - 717) < .001,
+  assert.ok(Math.abs(focused.scale - 1.2705263157894737) < .000_001);
+  assert.ok(Math.abs(focused.panX - 693.189474) < .001,
     "the bottom dock must not push a fully fitting lesson into a side column");
+});
+
+test("focus ignores a floating control that only sliver-overlaps the usable viewport", () => {
+  // A collapsed teacher avatar sits inside the bottom inset and enters the
+  // usable viewport by only 2px. Inflating that sliver by the focus margin
+  // must not amputate the safe viewport's right edge and shove the lesson
+  // into a narrower column.
+  const focused = planFocusCamera(
+    [
+      { x: 20, y: 20, width: 360, height: 332 },
+      { x: 20, y: 394, width: 360, height: 162 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 1400, height: 900 },
+    "detail",
+    {
+      top: 92, right: 28, bottom: 190, left: 28,
+      occlusions: [{ x: 1282, y: 708, width: 94, height: 94 }],
+    },
+  );
+  // Sliver ignored: the safe viewport is the full inset box
+  // [98..1302]×[162..640] with center (700, 401); scene center is (200, 288).
+  assert.ok(Math.abs(focused.panX - (700 - 200 * focused.scale)) < .001);
+  assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
+});
+
+test("focus prefers the centered candidate when a side column fits only marginally better", () => {
+  // TV viewport trace (960x540, Android insets): the portrait scene fits the
+  // right-of-toolbar column ~11% better than the near-center strip, but the
+  // column centers content at x=605 while the strip centers it at x=482 —
+  // almost the viewport center. Near-ties must hold the screen center.
+  const focused = planFocusCamera(
+    [
+      { x: 20.6, y: 19.7, width: 360, height: 390.9 },
+      { x: 20.6, y: 451, width: 360, height: 161.8 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 960, height: 540 },
+    "detail",
+    {
+      focusMargin: 24,
+      occlusions: [
+        { x: 6, y: 9, width: 65, height: 30 },
+        { x: 74, y: 6, width: 880, height: 36 },
+        { x: 8, y: 48, width: 309, height: 35 },
+        { x: 894, y: 430, width: 56, height: 56 },
+        { x: 220, y: 495, width: 520, height: 37 },
+      ],
+    },
+    .55,
+  );
+  // The centered strip [95..870]x[107..471] centers the scene at x=482.5.
+  const sceneCenterX = 20.6 + 360 / 2;
+  assert.ok(
+    Math.abs(focused.panX + sceneCenterX * focused.scale - 482.5) < .5,
+    `expected the centered strip to win, got scene center ${
+      focused.panX + sceneCenterX * focused.scale
+    } (off-center column would give 605.5)`,
+  );
+});
+
+test("focus still avoids a floating control that meaningfully overlaps the usable viewport", () => {
+  // Same avatar moved up so it overlaps the usable viewport by 80px: the
+  // right edge is genuinely blocked and the narrow full-height column wins.
+  const focused = planFocusCamera(
+    [
+      { x: 20, y: 20, width: 360, height: 332 },
+      { x: 20, y: 394, width: 360, height: 162 },
+    ],
+    { panX: 80, panY: 60, scale: .78 },
+    { width: 1400, height: 900 },
+    "detail",
+    {
+      top: 92, right: 28, bottom: 190, left: 28,
+      occlusions: [{ x: 1282, y: 560, width: 94, height: 94 }],
+    },
+  );
+  // Safe viewport narrows to [98..1212]×[162..640] with center (655, 401).
+  assert.ok(Math.abs(focused.panX - (655 - 200 * focused.scale)) < .001);
+  assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

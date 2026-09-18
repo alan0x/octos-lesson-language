@@ -28,7 +28,6 @@ export {
   type DiagramConnectionGeometry,
   type InfiniteBoardElements,
   type MountedInfiniteBoard,
-  type TeachingCameraPolicy,
   type VariableInputHandler,
 } from "./board-view.js";
 export {
