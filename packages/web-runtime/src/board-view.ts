@@ -1,4 +1,6 @@
 import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
+import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
+import { planAxisTicks } from "./axis-ticks.js";
 import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
@@ -484,17 +486,6 @@ function plotRange(value: unknown, fallback: PlotRange): PlotRange {
   return Number.isFinite(min) && Number.isFinite(max) && max > min ? { min, max } : fallback;
 }
 
-function plotTicks(range: PlotRange, count = 4): number[] {
-  const ticks = Array.from({ length: count + 1 }, (_, index) => range.min + (range.max - range.min) * index / count);
-  if (range.min < 0 && range.max > 0 && !ticks.some(value => Math.abs(value) < 1e-10)) ticks.push(0);
-  return ticks.sort((a,b) => a-b);
-}
-
-function plotTickLabel(value: number): string {
-  const rounded = Math.abs(value) < 1e-10 ? 0 : Number(value.toPrecision(3));
-  return String(rounded);
-}
-
 function appendPlotLine(
   svg: SVGSVGElement,
   className: string,
@@ -508,7 +499,7 @@ function appendPlotLine(
   line.setAttribute("y1", String(y1));
   line.setAttribute("x2", String(x2));
   line.setAttribute("y2", String(y2));
-  line.classList.add(className);
+  line.classList.add(...className.split(/\s+/u).filter(Boolean));
   svg.append(line);
   return line;
 }
@@ -524,6 +515,9 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
 }
 
 let plotClipSequence = 0;
+let geometryClipSequence = 0;
+const plotTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
+const geometryTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
 
 function drawPlot(
   parent: HTMLElement,
@@ -543,15 +537,33 @@ function drawPlot(
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.classList.add("plot-preview");
 
-  for (const value of plotTicks(xRange)) {
+  const previousTickSteps = plotTickSteps.get(parent);
+  const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
+    minMajorPixelSpacing: 46,
+    previousStep: previousTickSteps?.x,
+  });
+  const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
+    minMajorPixelSpacing: 34,
+    previousStep: previousTickSteps?.y,
+  });
+  plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
+  for (const value of xTicks.minor) {
+    const x = mapX(value);
+    appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+  }
+  for (const value of yTicks.minor) {
+    const y = mapY(value);
+    appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
+  }
+  for (const value of xTicks.major) {
     const x = mapX(value);
     appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
-    appendPlotLabel(svg, plotTickLabel(value), x, height-4);
+    appendPlotLabel(svg, xTicks.format(value), x, height-4);
   }
-  for (const value of plotTicks(yRange)) {
+  for (const value of yTicks.major) {
     const y = mapY(value);
     appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
-    appendPlotLabel(svg, plotTickLabel(value), PLOT_LEFT - 5, y + 3, "end");
+    appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
   }
   const xAxisY = zeroAxisPosition(yRange, mapY);
   const yAxisX = zeroAxisPosition(xRange, mapX);
@@ -623,6 +635,8 @@ function drawPlot(
     }
   });
 
+  let measurementText: string | undefined;
+  let controlHint: string | undefined;
   if (content.measurement === "secant" && content.points?.length === 2) {
     const [a,b] = content.points;
     const measurement = secantMeasurement(a,b);
@@ -634,10 +648,12 @@ function drawPlot(
       dx.setAttribute("clip-path", `url(#${clipId})`); dy.setAttribute("clip-path", `url(#${clipId})`);
     }
     const display = (n:number) => Number(n.toPrecision(5)).toString();
-    appendText(parent, measurement
+    measurementText = measurement
       ? `Δx = ${display(measurement.dx)} · Δy = ${display(measurement.dy)} · 割线斜率 ≈ ${display(measurement.slope)}`
-      : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。", "plot-measurement");
-    appendText(parent, content.sample_input === "fixed_x" ? "A、B 的横坐标固定；曲线参数变化时同步观察两点与割线。" : "通过两个滑块分别调整 A、B 的横坐标。", "plot-control-hint");
+      : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。";
+    controlHint = content.sample_input === "fixed_x"
+      ? "A、B 的横坐标固定；曲线参数变化时同步观察两点与割线。"
+      : "通过两个滑块分别调整 A、B 的横坐标。";
   }
 
   for (const point of Array.isArray(content.points) ? content.points : []) {
@@ -666,6 +682,17 @@ function drawPlot(
   }
   parent.append(svg);
 
+  if (measurementText) appendText(parent, measurementText, "plot-measurement");
+  if (controlHint) {
+    const details = document.createElement("details");
+    details.className = "plot-details";
+    const summary = document.createElement("summary");
+    summary.textContent = "说明";
+    details.append(summary);
+    appendText(details, controlHint, "plot-control-hint");
+    parent.append(details);
+  }
+
   if (renderedCurves.length) {
     const legend = document.createElement("div");
     legend.className = "plot-legend";
@@ -680,11 +707,6 @@ function drawPlot(
   }
 }
 
-const GEOMETRY_LEFT = 30;
-const GEOMETRY_RIGHT = 288;
-const GEOMETRY_TOP = 10;
-const GEOMETRY_BOTTOM = 194;
-
 export interface GeometryViewport {
   xRange: PlotRange;
   yRange: PlotRange;
@@ -697,16 +719,17 @@ export interface GeometryViewport {
   mapY(value: number): number;
 }
 
-export function geometryViewport(axes: Record<string, any>): GeometryViewport {
+export function geometryViewport(axes: Record<string, any>, width = 300, height = 210): GeometryViewport {
   const xRange = plotRange(axes?.x, { min: -1.25, max: 1.25 });
   const yRange = plotRange(axes?.y, { min: -1.25, max: 1.25 });
-  const width = GEOMETRY_RIGHT - GEOMETRY_LEFT;
-  const height = GEOMETRY_BOTTOM - GEOMETRY_TOP;
-  const scale = Math.min(width / (xRange.max - xRange.min), height / (yRange.max - yRange.min));
+  const frame = plotFrame(width, height, xRange, yRange, true);
+  const frameWidth = frame.right - frame.left;
+  const frameHeight = frame.bottom - frame.top;
+  const scale = Math.min(frameWidth / (xRange.max - xRange.min), frameHeight / (yRange.max - yRange.min));
   const renderedWidth = (xRange.max - xRange.min) * scale;
   const renderedHeight = (yRange.max - yRange.min) * scale;
-  const left = GEOMETRY_LEFT + (width - renderedWidth) / 2;
-  const top = GEOMETRY_TOP + (height - renderedHeight) / 2;
+  const left = frame.left + (frameWidth - renderedWidth) / 2;
+  const top = frame.top + (frameHeight - renderedHeight) / 2;
   return {
     xRange,
     yRange,
@@ -748,31 +771,63 @@ function appendGeometryLabel(svg: SVGSVGElement, value: unknown, x: number, y: n
   svg.append(label);
 }
 
-function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
+function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 404, height = 280): void {
   const content = node.content ?? {};
-  const viewport = geometryViewport(content.axes ?? {});
+  const viewport = geometryViewport(content.axes ?? {}, width, height);
   const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 300 210");
+  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.classList.add("geometry-preview");
+  const clipId = `geometry-clip-${++geometryClipSequence}`;
+  const defs = document.createElementNS(SVG_NS, "defs");
+  const clip = document.createElementNS(SVG_NS, "clipPath");
+  clip.setAttribute("id", clipId);
+  const clipRect = document.createElementNS(SVG_NS, "rect");
+  for (const [key, value] of Object.entries({
+    x: viewport.left,
+    y: viewport.top,
+    width: viewport.right - viewport.left,
+    height: viewport.bottom - viewport.top,
+  })) clipRect.setAttribute(key, String(value));
+  clip.append(clipRect);
+  defs.append(clip);
+  svg.append(defs);
 
-  for (const value of plotTicks(viewport.xRange)) {
+  const previousTickSteps = geometryTickSteps.get(parent);
+  const xTicks = planAxisTicks(viewport.xRange, viewport.right - viewport.left, {
+    minMajorPixelSpacing: 42,
+    previousStep: previousTickSteps?.x,
+  });
+  const yTicks = planAxisTicks(viewport.yRange, viewport.bottom - viewport.top, {
+    minMajorPixelSpacing: 34,
+    previousStep: previousTickSteps?.y,
+  });
+  geometryTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
+  for (const value of xTicks.minor) {
     const x = viewport.mapX(value);
-    appendPlotLine(svg, "geometry-grid", x, GEOMETRY_TOP, x, GEOMETRY_BOTTOM);
-    appendGeometryLabel(svg, plotTickLabel(value), x, 207, "middle");
+    appendPlotLine(svg, "geometry-grid geometry-grid-minor", x, viewport.top, x, viewport.bottom);
   }
-  for (const value of plotTicks(viewport.yRange)) {
+  for (const value of yTicks.minor) {
     const y = viewport.mapY(value);
-    appendPlotLine(svg, "geometry-grid", GEOMETRY_LEFT, y, GEOMETRY_RIGHT, y);
-    appendGeometryLabel(svg, plotTickLabel(value), GEOMETRY_LEFT - 5, y + 3, "end");
+    appendPlotLine(svg, "geometry-grid geometry-grid-minor", viewport.left, y, viewport.right, y);
+  }
+  for (const value of xTicks.major) {
+    const x = viewport.mapX(value);
+    appendPlotLine(svg, "geometry-grid", x, viewport.top, x, viewport.bottom);
+    appendGeometryLabel(svg, xTicks.format(value), x, height - 4, "middle");
+  }
+  for (const value of yTicks.major) {
+    const y = viewport.mapY(value);
+    appendPlotLine(svg, "geometry-grid", viewport.left, y, viewport.right, y);
+    appendGeometryLabel(svg, yTicks.format(value), viewport.left - 5, y + 3, "end");
   }
   const zeroY = zeroAxisPosition(viewport.yRange, viewport.mapY);
   const zeroX = zeroAxisPosition(viewport.xRange, viewport.mapX);
-  if (zeroY !== undefined) appendPlotLine(svg, "geometry-axis", GEOMETRY_LEFT, zeroY, GEOMETRY_RIGHT, zeroY);
-  if (zeroX !== undefined) appendPlotLine(svg, "geometry-axis", zeroX, GEOMETRY_TOP, zeroX, GEOMETRY_BOTTOM);
-  const xAxisY = zeroY ?? GEOMETRY_BOTTOM;
-  const yAxisX = zeroX ?? GEOMETRY_LEFT;
-  appendGeometryLabel(svg, content.axes?.x?.label ?? "x", GEOMETRY_RIGHT - 2, xAxisY - 5, "end");
-  appendGeometryLabel(svg, content.axes?.y?.label ?? "y", yAxisX + 5, GEOMETRY_TOP + 10);
+  if (zeroY !== undefined) appendPlotLine(svg, "geometry-axis", viewport.left, zeroY, viewport.right, zeroY);
+  if (zeroX !== undefined) appendPlotLine(svg, "geometry-axis", zeroX, viewport.top, zeroX, viewport.bottom);
+  const xAxisY = zeroY ?? viewport.bottom;
+  const yAxisX = zeroX ?? viewport.left;
+  appendGeometryLabel(svg, content.axes?.x?.label ?? "x", viewport.right - 2, xAxisY - 5, "end");
+  appendGeometryLabel(svg, content.axes?.y?.label ?? "y", yAxisX + 5, viewport.top + 10);
 
   const points = new Map<string, Record<string, any>>();
   for (const point of Array.isArray(content.points) ? content.points : []) {
@@ -781,6 +836,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     if (point.id && Number.isFinite(x) && Number.isFinite(y)) points.set(text(point.id), { ...point, x, y });
   }
 
+  let externalLabelIndex = 0;
   for (const polygon of Array.isArray(content.polygons) ? content.polygons : []) {
     const vertices = Array.isArray(polygon.points)
       ? polygon.points.map((point: unknown) => points.get(text(point))).filter(Boolean)
@@ -791,6 +847,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
       `${viewport.mapX(point.x)},${viewport.mapY(point.y)}`
     )).join(" "));
     element.classList.add("geometry-polygon", `geometry-polygon-${text(polygon.tone || "primary")}`);
+    element.setAttribute("clip-path", `url(#${clipId})`);
     element.dataset.id = text(polygon.id);
     applyEmphasisClass(element, latestEmphasis(node, text(polygon.id)));
     svg.append(element);
@@ -799,7 +856,26 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
         x: sum.x + point.x / vertices.length,
         y: sum.y + point.y / vertices.length,
       }), { x: 0, y: 0 });
-      appendGeometryLabel(svg, polygon.label, viewport.mapX(centroid.x), viewport.mapY(centroid.y), "middle");
+      const rendered: Array<{ x: number; y: number }> = vertices.map((point: any) => ({
+        x: viewport.mapX(point.x),
+        y: viewport.mapY(point.y),
+      }));
+      const polygonWidth = Math.max(...rendered.map((point) => point.x)) - Math.min(...rendered.map((point) => point.x));
+      const polygonHeight = Math.max(...rendered.map((point) => point.y)) - Math.min(...rendered.map((point) => point.y));
+      const estimatedLabelWidth = [...text(polygon.label)].reduce((sum, character) =>
+        sum + (/[^\u0000-\u00ff]/u.test(character) ? 10 : 6), 0);
+      const centerX = viewport.mapX(centroid.x);
+      const centerY = viewport.mapY(centroid.y);
+      if (polygonWidth >= estimatedLabelWidth + 10 && polygonHeight >= 18) {
+        appendGeometryLabel(svg, polygon.label, centerX, centerY, "middle");
+      } else {
+        const labelX = viewport.right - 4;
+        const labelY = viewport.top + 18 + externalLabelIndex * 17;
+        const leader = appendPlotLine(svg, "geometry-label-leader", centerX, centerY, labelX - estimatedLabelWidth - 5, labelY - 3);
+        leader.setAttribute("pointer-events", "none");
+        appendGeometryLabel(svg, polygon.label, labelX, labelY, "end");
+        externalLabelIndex += 1;
+      }
     }
   }
 
@@ -811,6 +887,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     element.setAttribute("cx", String(viewport.mapX(center.x)));
     element.setAttribute("cy", String(viewport.mapY(center.y)));
     element.setAttribute("r", String(radius * viewport.scale));
+    element.setAttribute("clip-path", `url(#${clipId})`);
     element.classList.add("geometry-circle");
     element.dataset.id = text(circle.id);
     applyEmphasisClass(element, latestEmphasis(node, text(circle.id)));
@@ -823,6 +900,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     const to = points.get(text(segment.to));
     if (!from || !to) continue;
     const line = appendPlotLine(svg, "geometry-segment", viewport.mapX(from.x), viewport.mapY(from.y), viewport.mapX(to.x), viewport.mapY(to.y));
+    line.setAttribute("clip-path", `url(#${clipId})`);
     line.classList.add(`geometry-segment-${text(segment.style || "solid")}`);
     line.dataset.id = text(segment.id);
     applyEmphasisClass(line, latestEmphasis(node, text(segment.id)));
@@ -840,6 +918,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     path.setAttribute("d", arc.filled ? `${arcPath} L ${viewport.mapX(center.x)} ${viewport.mapY(center.y)} Z` : arcPath);
     if (arc.filled) path.classList.add("geometry-sector");
     path.classList.add("geometry-arc");
+    path.setAttribute("clip-path", `url(#${clipId})`);
     path.dataset.id = text(arc.id);
     applyEmphasisClass(path, latestEmphasis(node, text(arc.id)));
     svg.append(path);
@@ -849,7 +928,12 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     }
   }
 
-  for (const point of points.values()) {
+  const orderedPoints = [...points.values()].sort((left, right) => {
+    const leftIsControl = left.interaction?.kind === "angle_control" ? 1 : 0;
+    const rightIsControl = right.interaction?.kind === "angle_control" ? 1 : 0;
+    return leftIsControl - rightIsControl;
+  });
+  for (const point of orderedPoints) {
     if (point.visible === false) continue;
     const x = viewport.mapX(point.x);
     const y = viewport.mapY(point.y);
@@ -858,6 +942,7 @@ function renderGeometry(parent: HTMLElement, node: Record<string, any>): void {
     dot.setAttribute("cy", String(y));
     dot.setAttribute("r", "4.5");
     dot.classList.add("geometry-point");
+    dot.setAttribute("clip-path", `url(#${clipId})`);
     dot.dataset.id = text(point.id);
     const interaction = point.interaction;
     const interactionCenter = interaction?.kind === "angle_control"
@@ -1192,7 +1277,7 @@ function renderContent(
   const content = node.content ?? {};
   const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
-  if (node.kind === "geometry") { renderGeometry(parent, node); return; }
+  if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot); return; }
   if (node.kind === "scene3d") {
     try {
@@ -1800,7 +1885,7 @@ export class InfiniteBoardView {
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
   dispose(): void {
-    for (const element of this.nodeElements.values()) disposePlotExplorer(element);
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.viewport.removeEventListener("contextmenu", this.handleContextMenu);
@@ -1826,7 +1911,7 @@ export class InfiniteBoardView {
   }
 
   private clearBoard(): void {
-    for (const element of this.nodeElements.values()) disposePlotExplorer(element);
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
     this.lastAttentionTargets = [];
@@ -1842,6 +1927,7 @@ export class InfiniteBoardView {
     for (const [id, element] of this.nodeElements) {
       if (board.nodes[id]) continue;
       disposePlotExplorer(element);
+      disposeGeometryExplorer(element);
       element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id);
     }
     for (const node of Object.values(board.nodes)) {
