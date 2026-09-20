@@ -27,8 +27,10 @@ test("the enlarged plot stays centered in the viewport", () => {
     "utf8",
   );
 
-  assert.match(styles, /\.oll-plot-dialog\s*\{[^}]*position:\s*fixed/);
-  assert.match(styles, /\.oll-plot-dialog\s*\{[^}]*inset:\s*50% auto auto 50%/);
-  assert.match(styles, /\.oll-plot-dialog\s*\{[^}]*transform:\s*translate\(-50%,-50%\)/);
-  assert.match(styles, /\.oll-plot-dialog\s*\{[^}]*overflow:\s*auto/);
+  const dialogRule = /\.oll-plot-dialog,\s*\.oll-coordinate-dialog\s*\{[^}]*\}/;
+  const match = styles.match(dialogRule)?.[0] ?? "";
+  assert.match(match, /position:\s*fixed/);
+  assert.match(match, /inset:\s*50% auto auto 50%/);
+  assert.match(match, /transform:\s*translate\(-50%,-50%\)/);
+  assert.match(match, /overflow:\s*auto/);
 });

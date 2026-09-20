@@ -45,8 +45,9 @@
 .diagram-sequence { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 14px; }
 .diagram-sequence span { padding: 5px 8px; border-radius: 999px; background: #e9f3f0; }
 .diagram-sequence i { color: #7c756b; font-style: normal; }
-.plot-preview { width: 100%; height: 150px; margin-top: 4px; overflow: hidden; }
+.plot-preview { display: block; width: 100%; height: auto; min-height: 0; overflow: hidden; }
 .plot-grid { stroke: #e4ded3; stroke-width: .8; }
+.plot-grid-minor { stroke: #eee9df; stroke-width: .55; }
 .plot-axis { stroke: #8b857b; stroke-width: 1.4; }
 .plot-axis-label { fill: #817a70; font: 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .plot-curve { fill: none; stroke: var(--plot-series-color); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
@@ -68,8 +69,9 @@
 .plot-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 3px; color: #625c53; font-size: 14px; }
 .plot-legend-item { display: flex; align-items: center; gap: 5px; }
 .plot-legend-item::before { content: ""; width: 15px; border-top: 3px solid var(--plot-series-color); border-radius: 999px; }
-.geometry-preview { width: 100%; height: calc(100% - 24px); min-height: 210px; overflow: hidden; }
+.geometry-preview { display: block; width: 100%; height: auto; min-height: 0; overflow: hidden; }
 .geometry-grid { stroke: #e7e1d6; stroke-width: .75; }
+.geometry-grid-minor { stroke: #f0ece3; stroke-width: .5; }
 .geometry-axis { stroke: #777168; stroke-width: 1.5; }
 .geometry-circle { fill: rgba(35,135,124,.035); stroke: #23877c; stroke-width: 2.6; vector-effect: non-scaling-stroke; }
 .geometry-polygon { stroke: #23877c; stroke-width: 2.2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
@@ -87,6 +89,7 @@
 .geometry-control-point:focus-visible { filter: drop-shadow(0 0 4px rgba(16, 119, 136, .48)); outline: none; }
 .geometry-control-point:active { cursor: grabbing; }
 .geometry-label { fill: #374b47; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
+.geometry-label-leader { stroke: #758882; stroke-width: 1; stroke-dasharray: 3 2; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
@@ -194,23 +197,28 @@
 
 .plot-secant { stroke: #b94735; stroke-width: 2; fill: none; }
 .plot-measurement, .plot-control-hint { font-size: 11px; line-height: 1.4; }
+.plot-measurement { margin-top: 5px; color: #3f554f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .plot-control-hint { color: #6b685e; }
+.plot-details { margin-top: 2px; color: #6b685e; font-size: 11px; }
+.plot-details summary { width: max-content; cursor: pointer; color: #42645e; }
+.plot-details .plot-control-hint { margin: 4px 0 0; }
 
 .geometry-arc.geometry-sector { fill: #d5e8ee; fill-opacity: .8; stroke-width: 1; }
 .geometry-sector:nth-of-type(even) { fill: #f4d9a4; }
 
-.plot-toolbar { display:flex; flex-wrap:wrap; gap:4px; margin:4px 0 8px; }
-.plot-toolbar button, .oll-plot-dialog > button { border:1px solid #cec8bd; border-radius:6px; padding:4px 8px; background:#fffdf7; color:#214c48; cursor:pointer; font:12px/1.4 system-ui; }
-.plot-toolbar button[aria-pressed="true"] { background:#d6eee7; }
-.plot-explorer-body { min-width:0; }
+.plot-toolbar, .coordinate-toolbar { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:5px; min-height:28px; margin:-3px 0 5px; padding-right:42px; }
+.plot-toolbar button, .coordinate-toolbar button, .oll-plot-dialog > button, .oll-coordinate-dialog > button { min-width:44px; min-height:28px; border:1px solid #cec8bd; border-radius:7px; padding:4px 8px; background:#fffdf7; color:#214c48; cursor:pointer; font:12px/1.3 system-ui; }
+.plot-toolbar button[aria-pressed="true"], .coordinate-toolbar button[aria-pressed="true"] { background:#d6eee7; border-color:#87bcb4; }
+.plot-explorer-body, .coordinate-explorer-body { min-width:0; }
 .plot-probe-readout { display:block; min-height:16px; font:11px/1.4 system-ui; color:#4d645f; }
-.oll-plot-dialog { position:fixed; inset:50% auto auto 50%; width:min(1100px,94vw); max-height:94vh; margin:0; transform:translate(-50%,-50%); box-sizing:border-box; overflow:auto; border:1px solid #cec8bd; border-radius:16px; padding:20px; background:#fffdf7; color:#214c48; }
-.oll-plot-dialog::backdrop { background:#152c2b88; }
-.oll-plot-dialog h2 { font:18px/1.4 system-ui; }
-.plot-dialog-shell { position:relative; background-image:none; padding:12px; }
-.plot-dialog-shell svg { width:100%; height:auto; }
+.plot-probe-readout[hidden] { display:none; }
+.oll-plot-dialog, .oll-coordinate-dialog { position:fixed; inset:50% auto auto 50%; width:min(1100px,94vw); max-height:94vh; margin:0; transform:translate(-50%,-50%); box-sizing:border-box; overflow:auto; border:1px solid #cec8bd; border-radius:16px; padding:20px; background:#fffdf7; color:#214c48; }
+.oll-plot-dialog::backdrop, .oll-coordinate-dialog::backdrop { background:#152c2b88; }
+.oll-plot-dialog h2, .oll-coordinate-dialog h2 { margin:6px 0; font:18px/1.4 system-ui; }
+.plot-dialog-shell, .coordinate-dialog-shell { position:relative; background-image:none; padding:12px; }
+.plot-dialog-shell svg, .coordinate-dialog-shell svg { width:100%; height:auto; }
 .plot-dialog-shell .plot-legend { display:flex; flex-wrap:wrap; gap:12px; }
 .plot-legend label { cursor:pointer; }
 .plot-probe-readout, .plot-legend-item { overflow-wrap:anywhere; }
 
-.geometry-caption { font:12px/1.5 system-ui; color:#53635c; margin-top:8px; }
+.geometry-caption { max-height:3em; overflow:auto; font:12px/1.5 system-ui; color:#53635c; margin-top:6px; }
