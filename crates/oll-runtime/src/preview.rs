@@ -19,6 +19,8 @@ pub struct Preview {
     pub groups: Vec<Value>,
     /// Presentation cue only; teacher.point does not mutate semantic board state.
     pub last_point: Option<Value>,
+    /// Presentation cue only; teacher.expression does not mutate semantic board state.
+    pub last_expression: Option<String>,
     pub focus: Vec<String>,
     pub narration: String,
     pub cursor: usize,
@@ -105,6 +107,7 @@ impl Preview {
                                 | "board.emphasize"
                                 | "board.revise"
                                 | "teacher.point"
+                                | "teacher.expression"
                                 | "lesson.variable.animate"
                         ) {
                             return Err(format!("Preview does not yet support {op}"));
@@ -151,6 +154,7 @@ impl Preview {
             connections: Vec::new(),
             groups: Vec::new(),
             last_point: None,
+            last_expression: None,
             focus: Vec::new(),
             narration: String::new(),
             cursor: 0,
@@ -322,6 +326,13 @@ impl Preview {
             "teacher.point" => {
                 self.require_target(&a["target"])?;
                 self.last_point = Some(a["target"].clone());
+            }
+            "teacher.expression" => {
+                let expression = string(&a, "expression")?;
+                if expression.is_empty() {
+                    return Err("teacher.expression requires expression".into());
+                }
+                self.last_expression = Some(expression.into());
             }
             "board.revise" => {
                 let id = string(&a["target"], "node_id")?;
