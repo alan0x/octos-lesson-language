@@ -1,7 +1,7 @@
 import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
-import type { CanonicalAction, SemanticBoardState } from "../../core/src/index.js";
+import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
@@ -51,6 +51,8 @@ import {
   referencedPlotVariables,
   sampleImplicitPlotExpression,
   samplePlotExpression,
+  formatPointLabel,
+  formatLinearCurveEquation,
   type PlotRange,
 } from "./plot.js";
 import {
@@ -312,6 +314,12 @@ function plotVariableSignature(node: Record<string, any>, variables: Record<stri
   const expressions = Array.isArray(node.content?.curves)
     ? node.content.curves.map((curve: Record<string, any>) => text(curve.expression)).filter(Boolean)
     : [];
+  if (Array.isArray(node.content?.bindings)) {
+    for (const binding of node.content.bindings) {
+      const expr = text(binding.expression);
+      if (expr) expressions.push(expr);
+    }
+  }
   return JSON.stringify(referencedPlotVariables(expressions, variables));
 }
 
@@ -628,6 +636,10 @@ function drawPlot(
         path.dataset.id = text(curve.id);
         applyEmphasisClass(path, latestEmphasis(node, text(curve.id)));
       }
+      const curveDepVars = Object.keys(referencedPlotVariables([expression], variables));
+      if (curveDepVars.length > 0) {
+        path.dataset.ollDependentVariables = curveDepVars.join(" ");
+      }
       svg.append(path);
       renderedCurves.push({ curve, series });
     } catch {
@@ -651,9 +663,15 @@ function drawPlot(
     measurementText = measurement
       ? `Δx = ${display(measurement.dx)} · Δy = ${display(measurement.dy)} · 割线斜率 ≈ ${display(measurement.slope)}`
       : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。";
-    controlHint = content.sample_input === "fixed_x"
-      ? "A、B 的横坐标固定；曲线参数变化时同步观察两点与割线。"
-      : "通过两个滑块分别调整 A、B 的横坐标。";
+    if (typeof content.hint === "string" && content.hint.trim()) {
+      controlHint = content.hint.trim();
+    } else {
+      const pointNames = content.points.map((p: any) => text(p.label)).filter(Boolean);
+      const pointsRef = pointNames.length === 2 ? `${pointNames[0]}、${pointNames[1]}` : "两点";
+      controlHint = content.sample_input === "fixed_x"
+        ? `${pointsRef}的横坐标固定；曲线参数变化时同步观察两点与割线。`
+        : `通过滑块调整${pointsRef}的横坐标。`;
+    }
   }
 
   for (const point of Array.isArray(content.points) ? content.points : []) {
@@ -670,13 +688,34 @@ function drawPlot(
     dot.classList.add("plot-point");
     dot.dataset.id = text(point.id);
     applyEmphasisClass(dot, latestEmphasis(node, text(point.id)));
+
+    const pointId = text(point.id || point.as);
+    const pointBindings = (Array.isArray(content.bindings) ? content.bindings : []).filter(
+      (b: any) => typeof b.target === "string" && pointId && (b.target.startsWith(`${pointId}.`) || (point.as && b.target.startsWith(`${point.as}.`))),
+    );
+    const pointDepVars = new Set<string>();
+    for (const b of pointBindings) {
+      if (typeof b.expression === "string") {
+        for (const v of referencedMathVariables(b.expression, Object.keys(variables))) {
+          pointDepVars.add(v);
+        }
+      }
+    }
+    if (pointDepVars.size > 0) {
+      dot.dataset.ollDependentVariables = Array.from(pointDepVars).join(" ");
+    }
+
     svg.append(dot);
     if (point.label) {
+      const formattedLabel = formatPointLabel(text(point.label), pointX, pointY);
       const pointLabel = document.createElementNS(SVG_NS, "text");
-      pointLabel.setAttribute("x", String(x + 8));
-      pointLabel.setAttribute("y", String(y - 8));
+      const isNearRight = x > PLOT_RIGHT - 44;
+      const isNearTop = y < PLOT_TOP + 18;
+      pointLabel.setAttribute("x", String(isNearRight ? x - 8 : x + 8));
+      pointLabel.setAttribute("y", String(isNearTop ? y + 16 : y - 8));
+      if (isNearRight) pointLabel.setAttribute("text-anchor", "end");
       pointLabel.classList.add("plot-label");
-      pointLabel.textContent = text(point.label);
+      pointLabel.textContent = formattedLabel;
       svg.append(pointLabel);
     }
   }
@@ -697,9 +736,14 @@ function drawPlot(
     const legend = document.createElement("div");
     legend.className = "plot-legend";
     for (const { curve, series } of renderedCurves) {
+      const baseLabel = text(curve.label || curve.expression);
+      const evaluatedEq = formatLinearCurveEquation(curve.expression, variables);
+      const displayText = evaluatedEq && baseLabel !== evaluatedEq
+        ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
+        : baseLabel;
       appendText(
         legend,
-        text(curve.label || curve.expression),
+        displayText,
         `plot-legend-item plot-series-${series}`,
       );
     }
