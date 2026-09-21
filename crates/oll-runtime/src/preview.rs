@@ -461,6 +461,9 @@ impl Preview {
         }
         Ok(())
     }
+    pub fn variable_declarations(&self) -> &[Value] {
+        &self.declarations
+    }
     pub fn set_variable(&mut self, name: &str, value: f64) -> Result<(), String> {
         self.check_value(name, value)?;
         let mut values = self.variables.clone();
