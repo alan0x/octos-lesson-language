@@ -1,5 +1,13 @@
 # Rust / macOS validation development log
 
+## 2026-09-21：最新交接与文档修订
+
+已更新 crate README，纠正仍写仅表达式/四动作、未实现 checkpoint 与 append 的过期描述。当前是四课覆盖的受限 runtime；真实 WASM 编译和浏览器验证仍等待编译目标安装授权。
+
+用户指出 v6 验证应用与 main 界面差异过大。main 产品界面与完整流程尚未迁移，用户未认可其为最终交付。下一 agent 优先建立 main 页面/交互迁移清单，再接入共享核心，不把技术演示当成产品。Android 安装仍需单独确认，完整语音和外围未完成。
+
+接手先读 [Agent 交接入口](/Users/alan0x/Documents/projects/YY/working/octos-learn/2026-0919-makepad数学渲染与去webview化调研/AGENT_HANDOFF_CURRENT.md)。本轮只改文档，不改变代码、二进制或既有测试结论。下文保留历史阶段记录。
+
 ## 2026-09-21 — first independently testable migration unit
 
 - Branch: `codex/rust-runtime-macos-validation`, based on latest remote main `2b93d67ffc30075edb3d3f34b848f799a46717f2` checked on this date.
