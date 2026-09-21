@@ -112,3 +112,21 @@ fn relative_placement_alignment_and_explicit_overlay() {
     p.nodes[1]["placement"]["anchor"] = "missing".into();
     assert!(spatial::layout(&p, &sizes).is_err());
 }
+
+#[test]
+fn animated_camera_only_follows_nodes_using_that_variable() {
+    let mut p = Preview::load(include_str!(
+        "../../../examples/quadratic/lesson.canonical.jsonl"
+    ))
+    .unwrap();
+    p.nodes = vec![
+        json!({"id":"bound","kind":"geometry","content":{"bindings":[{"expression":"sin(theta)"}]}}),
+        json!({"id":"curve","kind":"plot","content":{"curves":[{"expression":"x+THETA"}]}}),
+        json!({"id":"other","kind":"plot","content":{"bindings":[{"expression":"theta2+mytheta"}]}}),
+    ];
+    assert_eq!(
+        spatial::variable_targets(&p, "theta"),
+        vec!["bound", "curve"]
+    );
+    assert!(spatial::variable_targets(&p, "missing").is_empty());
+}

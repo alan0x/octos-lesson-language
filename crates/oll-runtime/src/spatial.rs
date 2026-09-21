@@ -342,3 +342,34 @@ pub fn focus_camera(
         scale,
     }
 }
+
+/// Match Web variableAnimationFocusTargets: both bindings and plot expressions
+/// can depend on a variable; identifier boundaries avoid x matching max/xx.
+pub fn variable_targets(p: &Preview, variable: &str) -> Vec<String> {
+    if variable.is_empty() {
+        return Vec::new();
+    }
+    let pattern = regex::Regex::new(&format!(
+        r"(?i)(^|[^a-z0-9_]){}([^a-z0-9_]|$)",
+        regex::escape(variable)
+    ))
+    .expect("escaped variable regex");
+    p.nodes
+        .iter()
+        .filter(|n| {
+            let keys = if n["kind"] == "plot" {
+                &["bindings", "curves"][..]
+            } else {
+                &["bindings"][..]
+            };
+            keys.iter().any(|k| {
+                n["content"][k].as_array().into_iter().flatten().any(|b| {
+                    b["expression"]
+                        .as_str()
+                        .is_some_and(|s| pattern.is_match(s))
+                })
+            })
+        })
+        .filter_map(|n| n["id"].as_str().map(str::to_owned))
+        .collect()
+}
