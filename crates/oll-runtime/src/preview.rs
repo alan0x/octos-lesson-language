@@ -47,15 +47,18 @@ fn array<'a>(v: &'a Value, key: &str) -> Result<&'a Vec<Value>, String> {
 }
 impl Preview {
     pub fn load(source: &str) -> Result<Self, String> {
+        Self::load_incremental(source, false)
+    }
+    pub fn load_incremental(source: &str, allow_incomplete: bool) -> Result<Self, String> {
         let events: Vec<Value> = source
             .lines()
             .filter(|l| !l.trim().is_empty())
             .map(serde_json::from_str)
             .collect::<Result<_, _>>()
             .map_err(|e| e.to_string())?;
-        if events.len() < 2
+        if events.is_empty()
             || events[0]["event"] != "lesson.open"
-            || events.last().unwrap()["event"] != "lesson.close"
+            || (!allow_incomplete && events.last().unwrap()["event"] != "lesson.close")
         {
             return Err("Expected a complete canonical lesson".into());
         }
@@ -84,7 +87,8 @@ impl Preview {
         }
         let mut frames = Vec::new();
         let mut ids = BTreeSet::new();
-        for event in &events[1..events.len() - 1] {
+        let end = events.len() - usize::from(events.last().unwrap()["event"] == "lesson.close");
+        for event in &events[1..end] {
             if event["event"] != "lesson.step" {
                 return Err("Expected lesson.step".into());
             }
@@ -156,6 +160,67 @@ impl Preview {
             validation.tick(1000.0)?;
         }
         Ok(result)
+    }
+    pub fn animation_state(&self) -> Option<Value> {
+        self.animation.as_ref().map(|a| serde_json::json!({"variable":a.variable,"from":a.from,"to":a.to,"duration":a.duration,"elapsed":a.elapsed,"easing":a.easing}))
+    }
+    pub fn restore_animation(&mut self, state: &Value) -> Result<(), String> {
+        if state.is_null() {
+            self.animation = None;
+            return Ok(());
+        }
+        let variable = string(state, "variable")?;
+        let from = state["from"].as_f64().ok_or("Invalid animation start")?;
+        let to = state["to"].as_f64().ok_or("Invalid animation end")?;
+        let duration = state["duration"]
+            .as_f64()
+            .ok_or("Invalid animation duration")?;
+        let elapsed = state["elapsed"].as_f64().ok_or("Invalid animation time")?;
+        let easing = string(state, "easing")?;
+        if ![1.8, 3.2, 5.4].contains(&duration)
+            || !elapsed.is_finite()
+            || elapsed < 0.
+            || elapsed >= duration
+            || !matches!(easing, "linear" | "ease_in_out")
+        {
+            return Err("Invalid animation state".into());
+        }
+        self.check_value(variable, from)?;
+        self.check_value(variable, to)?;
+        let action = &self
+            .frames
+            .get(
+                self.cursor
+                    .checked_sub(1)
+                    .ok_or("Animation before action")?,
+            )
+            .ok_or("Invalid animation cursor")?
+            .action;
+        if action["op"] != "lesson.variable.animate"
+            || action["animation"]["variable"] != variable
+            || action["animation"]["to"].as_f64() != Some(to)
+            || action["animation"]["easing"] != easing
+        {
+            return Err("Animation differs from course action".into());
+        }
+        let expected = match action["animation"]["duration_intent"].as_str() {
+            Some("brief") => 1.8,
+            Some("normal") => 3.2,
+            Some("extended") => 5.4,
+            _ => return Err("Invalid animation intent".into()),
+        };
+        if duration != expected {
+            return Err("Animation duration differs from course".into());
+        }
+        self.animation = Some(Animation {
+            variable: variable.into(),
+            from,
+            to,
+            duration,
+            elapsed,
+            easing: easing.into(),
+        });
+        self.tick(0.)
     }
     pub fn action_count(&self) -> usize {
         self.frames.len()
