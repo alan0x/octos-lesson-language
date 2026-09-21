@@ -1,0 +1,5 @@
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),esbuild=require('esbuild');
+const root=path.resolve(__dirname,'../../..'),tmp=fs.mkdtempSync(path.join(os.tmpdir(),'oll-lines-'));
+try{const bundle=path.join(tmp,'ref.cjs');esbuild.buildSync({entryPoints:[path.join(root,'packages/web-runtime/src/connection-layout.ts')],outfile:bundle,bundle:true,platform:'node',format:'cjs',logLevel:'silent'});const ref=require(bundle);const cases=[];
+for(const to of [{x:500,y:20,width:200,height:100},{x:40,y:400,width:200,height:120},{x:20,y:20,width:240,height:120},{x:-300,y:-200,width:200,height:120}])for(const centers of [false,true])for(const occupied of [[],[{x:290,y:0,width:150,height:240}]]){const from={x:20,y:20,width:240,height:120},label='对应关系 θ',labels=[from,to,...occupied];const expected=ref.stackConnectionLabel(ref.computeConnectionRoute(from,to,label,centers,occupied),labels);cases.push({from,to,label,centers,occupied,expected});}
+fs.writeFileSync(path.join(root,'crates/oll-runtime/tests/fixtures/connections-reference.json'),JSON.stringify(cases,null,2)+'\n');}finally{fs.rmSync(tmp,{recursive:true,force:true});}

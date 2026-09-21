@@ -1,0 +1,10 @@
+const fs=require('node:fs'),path=require('node:path'),esbuild=require('esbuild');
+const root=path.resolve(__dirname,'../..'),out=path.join(root,'dist/apps/rust-preview');
+const wasm=path.join(root,'crates/oll-runtime/target/wasm32-unknown-unknown/release/oll_runtime.wasm');
+if(!fs.existsSync(wasm))throw Error('Build the actual wasm32-unknown-unknown release library first; no placeholder is generated');
+fs.mkdirSync(path.join(out,'courses'),{recursive:true});
+esbuild.buildSync({entryPoints:[path.join(__dirname,'app.ts')],outfile:path.join(out,'app.js'),bundle:true,format:'esm',platform:'browser',target:'es2022'});
+fs.copyFileSync(wasm,path.join(out,'oll_runtime.wasm'));fs.copyFileSync(path.join(__dirname,'index.html'),path.join(out,'index.html'));fs.copyFileSync(path.join(root,'packages/web-runtime/styles.css'),path.join(out,'styles.css'));
+const katex=path.dirname(require.resolve('katex/package.json'));fs.cpSync(path.join(katex,'dist'),path.join(out,'katex'),{recursive:true});
+for(const c of ['unit-circle-sine','quadratic','quadratic-v2','english-relative-clause'])fs.copyFileSync(path.join(root,`examples/${c}/lesson.canonical.jsonl`),path.join(out,'courses',`${c}.jsonl`));
+console.log(out);

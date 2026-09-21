@@ -1,0 +1,2366 @@
+[
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {},
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 154,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 648,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 154,
+          "y": 598,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1302,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 154,
+          "y": 776,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 528,
+          "y": 632,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 154,
+          "y": 937,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 528,
+          "y": 865,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 154,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 528,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1676,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1302,
+          "y": 387,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 1123
+        },
+        "two": {
+          "x": 1302,
+          "y": 154,
+          "width": 694,
+          "height": 378
+        }
+      },
+      "bounds": {
+        "x": 20,
+        "y": 20,
+        "width": 2076,
+        "height": 1323
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {},
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 154,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 648,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 154,
+          "y": 598,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1302,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 154,
+          "y": 776,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 528,
+          "y": 632,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 154,
+          "y": 937,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 528,
+          "y": 865,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 154,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 528,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1676,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1302,
+          "y": 387,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 1123
+        },
+        "two": {
+          "x": 1302,
+          "y": 154,
+          "width": 694,
+          "height": 378
+        }
+      },
+      "bounds": {
+        "x": 20,
+        "y": 20,
+        "width": 2076,
+        "height": 1323
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 60,
+          "reservedWidth": 1100,
+          "flow": "semantic",
+          "obstacles": [
+            {
+              "x": 400,
+              "y": 40,
+              "width": 180,
+              "height": 80
+            }
+          ],
+          "attachments": []
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "reservedWidth": 760,
+          "flow": "semantic"
+        }
+      }
+    },
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 608,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 1102,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 608,
+          "y": 504,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1500,
+          "y": 528,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 30,
+          "y": 538,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 404,
+          "y": 682,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 30,
+          "y": 771,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 404,
+          "y": 843,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 30,
+          "y": 1004,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 404,
+          "y": 1004,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1874,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1500,
+          "y": 689,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 574,
+          "y": 26,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 26,
+          "width": 1546,
+          "height": 1123
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "width": 694,
+          "height": 774
+        }
+      },
+      "bounds": {
+        "x": -70,
+        "y": -74,
+        "width": 2364,
+        "height": 1323
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 60,
+          "reservedWidth": 1100,
+          "flow": "semantic",
+          "obstacles": [
+            {
+              "x": 400,
+              "y": 40,
+              "width": 180,
+              "height": 80
+            }
+          ],
+          "attachments": [
+            {
+              "id": "control",
+              "anchorNodeId": "b",
+              "anchorNodeIds": [
+                "a",
+                "b"
+              ],
+              "width": 700,
+              "height": 130
+            }
+          ]
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "reservedWidth": 760,
+          "flow": "semantic"
+        }
+      }
+    },
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 608,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 1102,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 608,
+          "y": 648,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1500,
+          "y": 528,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 30,
+          "y": 538,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 404,
+          "y": 826,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 30,
+          "y": 771,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 404,
+          "y": 987,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 30,
+          "y": 1004,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 404,
+          "y": 1148,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1874,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1500,
+          "y": 689,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 574,
+          "y": 26,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {
+        "control": {
+          "x": 430,
+          "y": 492,
+          "width": 700,
+          "height": 130
+        }
+      },
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 26,
+          "width": 1546,
+          "height": 1267
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "width": 694,
+          "height": 774
+        }
+      },
+      "bounds": {
+        "x": -70,
+        "y": -74,
+        "width": 2364,
+        "height": 1467
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {},
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 154,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 648,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 154,
+          "y": 598,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1302,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 154,
+          "y": 776,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 528,
+          "y": 632,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 154,
+          "y": 937,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 528,
+          "y": 865,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 154,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 528,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1676,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1302,
+          "y": 387,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 1123
+        },
+        "two": {
+          "x": 1302,
+          "y": 154,
+          "width": 694,
+          "height": 378
+        }
+      },
+      "bounds": {
+        "x": 20,
+        "y": 20,
+        "width": 2076,
+        "height": 1323
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {},
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 154,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 648,
+          "y": 154,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 154,
+          "y": 598,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1302,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 154,
+          "y": 776,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 528,
+          "y": 632,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 154,
+          "y": 937,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 528,
+          "y": 865,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 154,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 528,
+          "y": 1098,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1676,
+          "y": 154,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 1302,
+          "y": 387,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 120,
+          "y": 120,
+          "width": 1002,
+          "height": 1123
+        },
+        "two": {
+          "x": 1302,
+          "y": 154,
+          "width": 694,
+          "height": 378
+        }
+      },
+      "bounds": {
+        "x": 20,
+        "y": 20,
+        "width": 2076,
+        "height": 1323
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 60,
+          "reservedWidth": 1100,
+          "flow": "reading",
+          "obstacles": [
+            {
+              "x": 400,
+              "y": 40,
+              "width": 180,
+              "height": 80
+            }
+          ],
+          "attachments": []
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "reservedWidth": 760,
+          "flow": "reading"
+        }
+      }
+    },
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 608,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 1102,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 1596,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1500,
+          "y": 528,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 1596,
+          "y": 233,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 1596,
+          "y": 694,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 1970,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 1970,
+          "y": 233,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 1970,
+          "y": 406,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 1970,
+          "y": 579,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1874,
+          "y": 852,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 2248,
+          "y": 744,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 574,
+          "y": 26,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {},
+      "regions": {
+        "one": {
+          "x": 574,
+          "y": 26,
+          "width": 1716,
+          "height": 813
+        },
+        "two": {
+          "x": 1500,
+          "y": 528,
+          "width": 1068,
+          "height": 469
+        }
+      },
+      "bounds": {
+        "x": 474,
+        "y": -74,
+        "width": 2194,
+        "height": 1171
+      }
+    }
+  },
+  {
+    "state": {
+      "nodes": {
+        "a": {
+          "id": "a",
+          "kind": "geometry",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "intro": {
+          "id": "intro",
+          "kind": "note",
+          "region_id": "one",
+          "placement": {
+            "relation": "below",
+            "anchor": "a"
+          }
+        },
+        "b": {
+          "id": "b",
+          "kind": "plot",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "c": {
+          "id": "c",
+          "kind": "math",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n0": {
+          "id": "n0",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n1": {
+          "id": "n1",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n2": {
+          "id": "n2",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n3": {
+          "id": "n3",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n4": {
+          "id": "n4",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n5": {
+          "id": "n5",
+          "kind": "text",
+          "region_id": "one",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n6": {
+          "id": "n6",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        },
+        "n7": {
+          "id": "n7",
+          "kind": "text",
+          "region_id": "two",
+          "placement": {
+            "relation": "new_region"
+          }
+        }
+      },
+      "groups": {
+        "g": {
+          "id": "g",
+          "members": [
+            "a",
+            "b"
+          ]
+        }
+      },
+      "connections": {
+        "ab": {
+          "id": "ab",
+          "from": {
+            "node_id": "a"
+          },
+          "to": {
+            "node_id": "b"
+          }
+        }
+      }
+    },
+    "sizes": {
+      "a": {
+        "width": 440,
+        "height": 390
+      },
+      "intro": {
+        "width": 320,
+        "height": 145
+      },
+      "b": {
+        "width": 440,
+        "height": 390
+      },
+      "c": {
+        "width": 320,
+        "height": 145
+      },
+      "n0": {
+        "width": 320,
+        "height": 145
+      },
+      "n1": {
+        "width": 320,
+        "height": 145
+      },
+      "n2": {
+        "width": 320,
+        "height": 145
+      },
+      "n3": {
+        "width": 320,
+        "height": 145
+      },
+      "n4": {
+        "width": 320,
+        "height": 145
+      },
+      "n5": {
+        "width": 320,
+        "height": 145
+      },
+      "n6": {
+        "width": 320,
+        "height": 145
+      },
+      "n7": {
+        "width": 320,
+        "height": 145
+      }
+    },
+    "options": {
+      "regions": {
+        "one": {
+          "x": 30,
+          "y": 60,
+          "reservedWidth": 1100,
+          "flow": "reading",
+          "obstacles": [
+            {
+              "x": 400,
+              "y": 40,
+              "width": 180,
+              "height": 80
+            }
+          ],
+          "attachments": [
+            {
+              "id": "control",
+              "anchorNodeId": "b",
+              "anchorNodeIds": [
+                "a",
+                "b"
+              ],
+              "width": 700,
+              "height": 130
+            }
+          ]
+        },
+        "two": {
+          "x": 1500,
+          "y": 60,
+          "reservedWidth": 760,
+          "flow": "reading"
+        }
+      }
+    },
+    "expected": {
+      "nodes": {
+        "a": {
+          "x": 608,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "b": {
+          "x": 1102,
+          "y": 60,
+          "width": 440,
+          "height": 390
+        },
+        "intro": {
+          "x": 1596,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "c": {
+          "x": 1500,
+          "y": 528,
+          "width": 320,
+          "height": 145
+        },
+        "n0": {
+          "x": 1596,
+          "y": 233,
+          "width": 320,
+          "height": 145
+        },
+        "n1": {
+          "x": 1596,
+          "y": 694,
+          "width": 320,
+          "height": 145
+        },
+        "n2": {
+          "x": 1970,
+          "y": 60,
+          "width": 320,
+          "height": 145
+        },
+        "n3": {
+          "x": 1970,
+          "y": 233,
+          "width": 320,
+          "height": 145
+        },
+        "n4": {
+          "x": 1970,
+          "y": 406,
+          "width": 320,
+          "height": 145
+        },
+        "n5": {
+          "x": 1970,
+          "y": 579,
+          "width": 320,
+          "height": 145
+        },
+        "n6": {
+          "x": 1874,
+          "y": 852,
+          "width": 320,
+          "height": 145
+        },
+        "n7": {
+          "x": 2248,
+          "y": 744,
+          "width": 320,
+          "height": 145
+        }
+      },
+      "groups": {
+        "g": {
+          "x": 574,
+          "y": 26,
+          "width": 1002,
+          "height": 458
+        }
+      },
+      "attachments": {
+        "control": {
+          "x": 430,
+          "y": 492,
+          "width": 700,
+          "height": 130
+        }
+      },
+      "regions": {
+        "one": {
+          "x": 430,
+          "y": 26,
+          "width": 1860,
+          "height": 813
+        },
+        "two": {
+          "x": 1500,
+          "y": 528,
+          "width": 1068,
+          "height": 469
+        }
+      },
+      "bounds": {
+        "x": 330,
+        "y": -74,
+        "width": 2338,
+        "height": 1171
+      }
+    }
+  }
+]
