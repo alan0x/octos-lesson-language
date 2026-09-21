@@ -149,3 +149,24 @@ test("equal-unit plotting letterboxes both small and enlarged views", async () =
     assert.ok(frame.top>=10 && frame.bottom<=height-24);
   }
 });
+
+test("formatPointLabel dynamically interpolates coordinates and handles static labels", async () => {
+  const { formatPointLabel } = await import("../src/plot.js");
+  assert.equal(formatPointLabel("截距 (0, {y})", 0, -2), "截距 (0, -2)");
+  assert.equal(formatPointLabel("P({x}, {y})", 1.5, 3), "P(1.5, 3)");
+  assert.equal(formatPointLabel("点 {coords}", 0, 0), "点 (0, 0)");
+  assert.equal(formatPointLabel("A", 0, 1), "A");
+  assert.equal(formatPointLabel("", 0, 0), "");
+});
+
+test("formatLinearCurveEquation formats linear functions and ignores non-linear curves", async () => {
+  const { formatLinearCurveEquation } = await import("../src/plot.js");
+  assert.equal(formatLinearCurveEquation("((m)*(x))+(b)", { m: 2, b: -2 }), "y = 2x - 2");
+  assert.equal(formatLinearCurveEquation("m * x + b", { m: 1, b: 3 }), "y = x + 3");
+  assert.equal(formatLinearCurveEquation("m * x + b", { m: -1, b: 0 }), "y = -x");
+  assert.equal(formatLinearCurveEquation("m * x + b", { m: 0, b: 5 }), "y = 5");
+  assert.equal(formatLinearCurveEquation("m * x + b", { m: 0, b: 0 }), "y = 0");
+  assert.equal(formatLinearCurveEquation("m * x + b", { m: -3, b: -2 }), "y = -3x - 2");
+  assert.equal(formatLinearCurveEquation("x^2", {}), undefined);
+  assert.equal(formatLinearCurveEquation("sin(x)", {}), undefined);
+});

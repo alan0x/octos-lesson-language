@@ -230,3 +230,64 @@ export function plotFrame(width:number,height:number,x:PlotRange,y:PlotRange,equ
   const left=30+(availableWidth-w)/2,top=10+(availableHeight-h)/2;
   return {left,right:left+w,top,bottom:top+h,width:w,height:h};
 }
+
+export function formatPointLabel(rawLabel: string, x: number, y: number): string {
+  if (!rawLabel) return "";
+  const formatNum = (n: number) => {
+    if (!Number.isFinite(n)) return "";
+    const rounded = Math.round(n * 1000) / 1000;
+    return Object.is(rounded, -0) ? "0" : String(rounded);
+  };
+  return rawLabel
+    .replaceAll("{x}", formatNum(x))
+    .replaceAll("{y}", formatNum(y))
+    .replaceAll("{coords}", `(${formatNum(x)}, ${formatNum(y)})`);
+}
+
+export function formatLinearCurveEquation(
+  expression: string,
+  variables: Readonly<Record<string, number>> = {},
+): string | undefined {
+  try {
+    const evaluate = compilePlotExpression(expression, variables);
+    const y0 = evaluate(0);
+    const y1 = evaluate(1);
+    const y2 = evaluate(2);
+    const yNeg1 = evaluate(-1);
+    if (![y0, y1, y2, yNeg1].every(Number.isFinite)) return undefined;
+    const slope = y1 - y0;
+    const intercept = y0;
+    if (Math.abs(y2 - (2 * slope + intercept)) > 1e-5) return undefined;
+    if (Math.abs(yNeg1 - (-slope + intercept)) > 1e-5) return undefined;
+
+    const formatNum = (n: number) => {
+      const rounded = Math.round(n * 100) / 100;
+      return Object.is(rounded, -0) ? "0" : String(rounded);
+    };
+
+    const isZero = (n: number) => Math.abs(n) < 1e-5;
+    const isOne = (n: number) => Math.abs(n - 1) < 1e-5;
+    const isNegOne = (n: number) => Math.abs(n + 1) < 1e-5;
+
+    if (isZero(slope)) {
+      return `y = ${formatNum(intercept)}`;
+    }
+
+    let mStr = "";
+    if (isOne(slope)) mStr = "x";
+    else if (isNegOne(slope)) mStr = "-x";
+    else mStr = `${formatNum(slope)}x`;
+
+    if (isZero(intercept)) {
+      return `y = ${mStr}`;
+    }
+
+    if (intercept > 0) {
+      return `y = ${mStr} + ${formatNum(intercept)}`;
+    } else {
+      return `y = ${mStr} - ${formatNum(Math.abs(intercept))}`;
+    }
+  } catch {
+    return undefined;
+  }
+}

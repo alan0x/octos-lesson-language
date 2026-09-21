@@ -1,4 +1,4 @@
-import { plotFrame, compilePlotExpression, type PlotRange } from "./plot.js";
+import { plotFrame, compilePlotExpression, formatLinearCurveEquation, type PlotRange } from "./plot.js";
 import {
   coordinateWheelZoomFactor,
   panCoordinateRanges,
@@ -105,7 +105,12 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     curves.forEach((c,i)=>{const label=document.createElement('label');label.className=`plot-legend-item plot-series-${i%6}`;
       if(curves.length>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!current.hidden.has(i);
         checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
-      label.append(document.createTextNode(c.label||c.expression));legend.append(label);
+      const baseLabel = c.label || c.expression;
+      const evaluatedEq = formatLinearCurveEquation(c.expression, variables);
+      const displayText = evaluatedEq && baseLabel !== evaluatedEq
+        ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
+        : baseLabel;
+      label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
     const readout=document.createElement('output');readout.className='plot-probe-readout';readout.textContent=current.hidden.size
       ? '部分曲线已隐藏；练习前请恢复课程视图。'
@@ -162,7 +167,17 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
           line.setAttribute('stroke','#7b8d88');line.setAttribute('stroke-dasharray','3 3');line.setAttribute('pointer-events','none');svg.append(line);
         }
       }
-      readout.textContent=hit?`${curves[hit.i].label||curves[hit.i].expression}：x ≈ ${Number(x.toPrecision(5))}，y ≈ ${Number(hit.y.toPrecision(5))}`:'当前位置没有可读曲线';
+      if (hit) {
+        const hitCurve = curves[hit.i];
+        const hitBaseLabel = hitCurve.label || hitCurve.expression;
+        const hitEvaluatedEq = formatLinearCurveEquation(hitCurve.expression, variables);
+        const hitDisplayText = hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
+          ? `${hitBaseLabel}（${hitEvaluatedEq}）`
+          : hitBaseLabel;
+        readout.textContent = `${hitDisplayText}：x ≈ ${Number(x.toPrecision(5))}，y ≈ ${Number(hit.y.toPrecision(5))}`;
+      } else {
+        readout.textContent = '当前位置没有可读曲线';
+      }
       readout.hidden=false;
     };
     host.onpointerup=event=>{current.gesture?.pointers.delete(event.pointerId);if(host.hasPointerCapture(event.pointerId))host.releasePointerCapture(event.pointerId);};host.onpointercancel=host.onpointerup;

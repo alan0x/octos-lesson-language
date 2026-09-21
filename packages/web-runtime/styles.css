@@ -63,8 +63,11 @@
 .plot-series-5 { --plot-series-color: #697a3b; }
 .plot-guide { stroke: #a39b90; stroke-width: 1.5; stroke-dasharray: 5 4; }
 .plot-guide.emphasis-focus { stroke: #e15d45; stroke-width: 3; }
-.plot-point { fill: #e15d45; stroke: #fffdf7; stroke-width: 2; }
-.plot-point.emphasis-focus { r: 7px; }
+.plot-point { fill: #e15d45; stroke: #fffdf7; stroke-width: 2; transition: r .2s ease, filter .2s ease; }
+.plot-point.emphasis-focus,
+.plot-point.is-active-variable { r: 7px; filter: drop-shadow(0 0 4px rgba(225, 93, 69, .6)); }
+.plot-curve.emphasis-focus,
+.plot-curve.is-active-variable { stroke-width: 4.5px; }
 .plot-label { fill: #614039; font: 600 11px/1 ui-sans-serif, system-ui, sans-serif; }
 .plot-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 3px; color: #625c53; font-size: 14px; }
 .plot-legend-item { display: flex; align-items: center; gap: 5px; }
