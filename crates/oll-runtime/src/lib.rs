@@ -6,3 +6,5 @@ pub mod preview;
 
 pub mod session;
 pub mod timing;
+
+pub mod spatial;
