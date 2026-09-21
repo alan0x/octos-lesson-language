@@ -281,8 +281,26 @@ impl Camera {
         }
     }
     pub fn interpolate(self, to: Self, t: f64) -> Self {
-        let t = t.clamp(0., 1.);
-        let t = t * t * (3. - 2. * t);
+        if t <= 0. {
+            return self;
+        }
+        if t >= 1. {
+            return to;
+        }
+        // Web .world uses cubic-bezier(.22,1,.36,1). Invert the x curve
+        // before evaluating y, so supplied t remains elapsed-time progress.
+        let (mut lo, mut hi) = (0.0, 1.0);
+        for _ in 0..40 {
+            let u = (lo + hi) / 2.;
+            let x = 3. * (1. - u) * (1. - u) * u * 0.22 + 3. * (1. - u) * u * u * 0.36 + u * u * u;
+            if x < t {
+                lo = u;
+            } else {
+                hi = u;
+            }
+        }
+        let u = (lo + hi) / 2.;
+        let t = 1. - (1. - u).powi(3);
         Self {
             x: self.x + (to.x - self.x) * t,
             y: self.y + (to.y - self.y) * t,
