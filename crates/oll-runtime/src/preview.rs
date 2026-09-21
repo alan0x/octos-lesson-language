@@ -148,6 +148,12 @@ impl Preview {
     pub fn action_count(&self) -> usize {
         self.frames.len()
     }
+    pub fn animation_remaining(&self) -> f64 {
+        self.animation
+            .as_ref()
+            .map(|a| (a.duration - a.elapsed).max(0.0))
+            .unwrap_or(0.0)
+    }
     pub fn animating(&self) -> bool {
         self.animation.is_some()
     }
@@ -224,6 +230,11 @@ impl Preview {
                 let easing = string(d, "easing")?;
                 if !matches!(easing, "linear" | "ease_in_out") {
                     return Err("Unsupported easing".into());
+                }
+                if from == to {
+                    self.cursor += 1;
+                    self.narration = frame.narration;
+                    return Ok(());
                 }
                 self.animation = Some(Animation {
                     variable,
@@ -305,7 +316,7 @@ fn bind(content: &mut Value, values: &Variables) -> Result<(), String> {
         let value = evaluate(string(&b, "expression")?, values)?;
         let mut found = false;
         for key in ["points", "arcs", "circles"] {
-            if let Some(items) = content[key].as_array_mut() {
+            if let Some(items) = content.get_mut(key).and_then(Value::as_array_mut) {
                 for item in items {
                     if item["id"] == id {
                         item[field] = Value::from(value);

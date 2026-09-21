@@ -6,3 +6,4 @@ license = "MIT"
 
 [dependencies]
 serde_json = { version = "1", features = ["float_roundtrip"] }
+regex = "=1.11.3"
