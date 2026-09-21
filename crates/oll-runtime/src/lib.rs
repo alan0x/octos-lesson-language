@@ -12,3 +12,9 @@ pub mod spatial;
 pub mod connections;
 
 pub mod checkpoint;
+
+pub mod api;
+#[cfg(target_arch = "wasm32")]
+mod wasm;
+
+pub mod ink;

@@ -7,3 +7,6 @@ license = "MIT"
 [dependencies]
 serde_json = { version = "1", features = ["float_roundtrip", "preserve_order"] }
 regex = "=1.11.3"
+
+[lib]
+crate-type = ["rlib", "cdylib"]

@@ -100,6 +100,7 @@ pub struct Session {
     final_focus: Vec<String>,
     source: String,
     closed: bool,
+    incremental: bool,
 }
 impl Session {
     pub fn load(source: &str) -> Result<Self, String> {
@@ -130,6 +131,7 @@ impl Session {
             board: Preview::load_incremental(source, allow_incomplete)?,
             source: source.into(),
             closed: last["event"] == "lesson.close",
+            incremental: allow_incomplete,
             operations,
             cursor: 0,
             playing: false,
@@ -258,10 +260,72 @@ impl Session {
                 .map_err(|e| e.to_string())?,
         ))
     }
+    pub fn projection(&self) -> Result<Value, String> {
+        let events = self.events()?;
+        let open = &events[0];
+        let mut projection = json!({"status":if self.complete(){"completed"}else if self.waiting(){"waiting"}else if self.playing{"playing"}else if self.cursor==0{"ready"}else{"paused"},"cursor":self.cursor,"total_operations":self.operations.len(),"lesson_id":open["lesson_id"],"board":null});
+        if self.cursor == 0 {
+            return Ok(projection);
+        }
+        let map = |objects: &Vec<Value>| {
+            Value::Object(
+                objects
+                    .iter()
+                    .map(|v| (v["id"].as_str().unwrap().to_owned(), v.clone()))
+                    .collect(),
+            )
+        };
+        let mut board = json!({"board_id":open["board"]["board_id"],"revision":open["board"]["base_revision"].as_u64().unwrap_or(0)+self.committed_steps.len() as u64,"nodes":map(&self.board.nodes),"connections":map(&self.board.connections),"groups":map(&self.board.groups),"focus":self.board.focus,"applied_lessons":[open["lesson_id"]],"applied_steps":self.committed_steps,"applied_actions":self.operations[..self.cursor].iter().filter(|o|o["type"]=="action.apply").map(|o|o["action"]["action_id"].clone()).collect::<Vec<_>>()});
+        let mut variables = serde_json::Map::new();
+        for d in open["lesson"]["variables"].as_array().into_iter().flatten() {
+            let alias = d["as"].as_str().ok_or("Invalid variable alias")?;
+            let mut v = json!({"value":self.board.variables[alias],"initial":d["initial"],"min":d["min"],"max":d["max"]});
+            for k in ["label", "unit", "control"] {
+                if let Some(value) = d.get(k) {
+                    v[k] = value.clone();
+                }
+            }
+            variables.insert(alias.into(), v);
+        }
+        if !variables.is_empty() {
+            board["variables"] = Value::Object(variables);
+        }
+        projection["board"] = board;
+        for op in &self.operations[..self.cursor] {
+            match op["type"].as_str().unwrap_or("") {
+                "step.begin" => projection["current_step_id"] = op["step_id"].clone(),
+                "beat.begin" => projection["current_beat_id"] = op["beat_id"].clone(),
+                "narration.begin" => projection["current_narration"] = op["narration"].clone(),
+                "narration.end" => {
+                    projection
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("current_narration");
+                }
+                "beat.end" => {
+                    projection
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("current_beat_id");
+                }
+                "step.commit" => {
+                    projection
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("current_step_id");
+                }
+                _ => (),
+            }
+        }
+        if let Some(phase) = &self.current_phase {
+            projection["current_phase"] = json!(phase);
+        }
+        Ok(projection)
+    }
     pub fn checkpoint(&self) -> Result<Value, String> {
         let events = self.events()?;
         Ok(
-            json!({"profile":"octos.rust.playback.checkpoint","version":"0.1","program_fingerprint":crate::checkpoint::fingerprint(&events),"canonical_events":events,"cursor":self.cursor,"variables":self.board.variables,"animation":self.board.animation_state(),"wait_ms":self.wait_ms,"narration_remaining_ms":self.narration_remaining_ms}),
+            json!({"profile":"octos.rust.playback.checkpoint","version":"0.1","program_fingerprint":crate::checkpoint::fingerprint(&events),"canonical_events":events,"incremental":self.incremental,"cursor":self.cursor,"variables":self.board.variables,"animation":self.board.animation_state(),"wait_ms":self.wait_ms,"narration_remaining_ms":self.narration_remaining_ms}),
         )
     }
     pub fn restore(source: &str, saved: &Value) -> Result<Self, String> {
@@ -276,9 +340,12 @@ impl Session {
         if saved["program_fingerprint"] != crate::checkpoint::fingerprint(&events) {
             return Err("Checkpoint belongs to a different course".into());
         }
-        let cursor = saved["cursor"]
-            .as_u64()
-            .ok_or("Invalid checkpoint cursor")? as usize;
+        let cursor = usize::try_from(
+            saved["cursor"]
+                .as_u64()
+                .ok_or("Invalid checkpoint cursor")?,
+        )
+        .map_err(|_| "Checkpoint cursor overflow")?;
         if cursor > result.operations.len() {
             return Err("Checkpoint cursor out of range".into());
         }
@@ -362,18 +429,29 @@ impl Session {
                 return Err("Saved focus differs from reconstructed course".into());
             }
         }
+        result.incremental = if legacy {
+            saved["canonical_events"].is_array()
+        } else {
+            saved["incremental"].as_bool().unwrap_or(true)
+        };
         result.playing = false;
         Ok(result)
     }
     /// Validate the entire candidate before publishing; duplicate events are idempotent.
     pub fn append(&mut self, incoming: &str) -> Result<usize, String> {
+        if !self.incremental {
+            return Err("Session was not opened for incremental playback".into());
+        }
         let mut events = self.events()?.as_array().unwrap().clone();
         let mut added = 0;
         for line in incoming.lines().filter(|l| !l.trim().is_empty()) {
             let event: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
-            let seq = event["sequence"].as_u64().ok_or("Missing event sequence")? as usize;
+            let seq = usize::try_from(event["sequence"].as_u64().ok_or("Missing event sequence")?)
+                .map_err(|_| "Event sequence overflow")?;
             if seq < events.len() {
-                if events[seq] != event {
+                if crate::checkpoint::stringify(&events[seq])
+                    != crate::checkpoint::stringify(&event)
+                {
                     return Err("Conflicting duplicate event".into());
                 }
                 continue;
