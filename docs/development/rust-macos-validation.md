@@ -29,3 +29,11 @@
 - Found/fixed a genuine state mismatch: mutable JSON indexing inserted absent `arcs`/`circles` arrays as null. Binding now uses non-inserting access. Numeric JSON encoding is compared by exact f64 value, not Rust integer/float enum representation.
 - Preserved existing narration budgeting during animation (animation time is not deducted). No silent teaching-policy change.
 - Scope remains estimated narration at 1x with the supported four actions. This is not full runtime/phase-1 completion. Next: native shell integration and native formula samples.
+
+## 2026-09-21 配方法课程动作扩展
+
+用户已人工验收全部公式样本，继续接入真实课程。远端 main 仍为 2b93d67，继续原特性分支；底层依赖保持项目指定版本。
+
+新增 math/note/text 节点、board.group、board.emphasize、teacher.point、board.revise；focus 与 placement 支持已有组。强调追加到对象的 emphasis 数组，revision 整体替换 content，均依现有 TypeScript reducer。teacher.point 在语义状态中不改变白板；新增 last_point 仅供原生适配器提示“最近指向”。连接/强调/指向目标按旧 reducer 验证所属对象，未宣称替代完整 canonical schema 验证。
+
+原版 quadratic 的全部 25 个动作逐个比较 nodes/connections/groups/focus，操作流与 TypeScript oracle 一致；完成状态和已提交步骤一致。另验证中途暂停、恢复、重新加载、revision 替换、无效组成员拒绝。cargo test --offline --locked 全部 11 项通过。尚未实现完整 checkpoint、WASM、语音与流式输入。

@@ -213,9 +213,7 @@ impl Session {
                     .push(op["step_id"].as_str().unwrap().into()),
                 "lesson.close" => {
                     for target in &self.final_focus {
-                        if !self.board.nodes.iter().any(|n| n["id"] == target.as_str()) {
-                            return Err("Unknown final focus".into());
-                        }
+                        self.board.require_focus(target)?;
                     }
                     self.board.focus = self.final_focus.clone();
                 }

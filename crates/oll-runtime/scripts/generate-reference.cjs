@@ -23,5 +23,12 @@ try {
  } finally {Date.now=saved.now;global.setTimeout=saved.setTimeout;global.clearTimeout=saved.clearTimeout;}
  const output={timeline,source:'TypeScript main 2b93d67',operations:ops,delays_ms:ops.map(o=>ref.operationDelay(o)),narrations:samples.map(([text,delivery])=>({text,delivery,ms:ref.narrationDuration(text,delivery)})),course_narration_ms:ref.narrationDuration(events[1].step.beats[0].narration.text,events[1].step.beats[0].narration.delivery),final_state:player.finalState()};
  fs.writeFileSync(path.join(root,'crates/oll-runtime/tests/fixtures/typescript-reference.json'),JSON.stringify(output,null,2)+'\n');
+ const quadraticEvents=fs.readFileSync(path.join(root,'examples/quadratic/lesson.canonical.jsonl'),'utf8').trim().split('\n').map(JSON.parse);
+ const quadraticPlayer=new ref.HeadlessLessonPlayer(quadraticEvents), states=[];
+ while(quadraticPlayer.status!=='completed'){
+   const frame=quadraticPlayer.advance();
+   if(frame.operation.type==='action.apply')states.push(frame.projection.board);
+ }
+ fs.writeFileSync(path.join(root,'crates/oll-runtime/tests/fixtures/quadratic-reference.json'),JSON.stringify({operations:ref.compilePlaybackOperations(quadraticEvents),states,final_state:quadraticPlayer.finalState()},null,2)+'\n');
  console.log(`Generated ${ops.length} operations and ${samples.length} narration cases`);
 } finally {fs.rmSync(tmp,{recursive:true,force:true});}

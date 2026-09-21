@@ -16,6 +16,9 @@ pub struct Preview {
     pub variables: Variables,
     pub nodes: Vec<Value>,
     pub connections: Vec<Value>,
+    pub groups: Vec<Value>,
+    /// Presentation cue only; teacher.point does not mutate semantic board state.
+    pub last_point: Option<Value>,
     pub focus: Vec<String>,
     pub narration: String,
     pub cursor: usize,
@@ -94,6 +97,10 @@ impl Preview {
                             "board.create"
                                 | "board.connect"
                                 | "board.focus"
+                                | "board.group"
+                                | "board.emphasize"
+                                | "board.revise"
+                                | "teacher.point"
                                 | "lesson.variable.animate"
                         ) {
                             return Err(format!("Preview does not yet support {op}"));
@@ -102,9 +109,12 @@ impl Preview {
                             return Err("Duplicate action id".into());
                         }
                         if op == "board.create"
-                            && !matches!(action["node"]["kind"].as_str(), Some("geometry" | "plot"))
+                            && !matches!(
+                                action["node"]["kind"].as_str(),
+                                Some("geometry" | "plot" | "math" | "note" | "text")
+                            )
                         {
-                            return Err("Preview supports geometry and plot nodes only".into());
+                            return Err("Unsupported preview node kind".into());
                         }
                         frames.push(Frame {
                             narration: if phase == "during_speech" {
@@ -127,6 +137,8 @@ impl Preview {
             variables,
             nodes: Vec::new(),
             connections: Vec::new(),
+            groups: Vec::new(),
+            last_point: None,
             focus: Vec::new(),
             narration: String::new(),
             cursor: 0,
@@ -177,7 +189,7 @@ impl Preview {
                     return Err("Duplicate node".into());
                 }
                 if let Some(anchor) = node["placement"]["anchor"].as_str() {
-                    self.require_node(anchor)?;
+                    self.require_anchor(anchor)?;
                 }
                 let mut node = node.clone();
                 bind(&mut node["content"], &self.variables)?;
@@ -185,32 +197,68 @@ impl Preview {
             }
             "board.connect" => {
                 let c = &a["connection"];
+                if self.connections.iter().any(|v| v["id"] == c["id"]) {
+                    return Err("Duplicate connection".into());
+                }
                 for end in ["from", "to"] {
-                    let n = self.require_node(string(&c[end], "node_id")?)?;
-                    if let Some(fragment) = c[end]["fragment_id"].as_str() {
-                        if !["points", "curves", "circles", "segments", "arcs"]
-                            .iter()
-                            .any(|k| {
-                                n["content"][k]
-                                    .as_array()
-                                    .is_some_and(|xs| xs.iter().any(|x| x["id"] == fragment))
-                            })
-                        {
-                            return Err("Unknown connection fragment".into());
-                        }
-                    }
+                    self.require_target(&c[end])?;
                 }
                 self.connections.push(c.clone());
             }
             "board.focus" => {
                 let targets = array(&a["focus"], "targets")?;
                 for target in targets {
-                    self.require_node(target.as_str().ok_or("Invalid focus")?)?;
+                    self.require_focus(target.as_str().ok_or("Invalid focus")?)?;
                 }
                 self.focus = targets
                     .iter()
                     .map(|v| v.as_str().unwrap().to_owned())
                     .collect();
+            }
+            "board.group" => {
+                let group = &a["group"];
+                let id = string(group, "id")?;
+                if self.groups.iter().any(|v| v["id"] == id) {
+                    return Err("Duplicate group".into());
+                }
+                for member in array(group, "members")? {
+                    self.require_anchor(member.as_str().ok_or("Invalid group member")?)?;
+                }
+                self.groups.push(group.clone());
+            }
+            "board.emphasize" => {
+                let target = &a["target"];
+                self.require_target(target)?;
+                let emphasis = string(a, "emphasis")?;
+                let (key, objects) = if target["node_id"].is_string() {
+                    ("node_id", &mut self.nodes)
+                } else if target["connection_id"].is_string() {
+                    ("connection_id", &mut self.connections)
+                } else {
+                    ("group_id", &mut self.groups)
+                };
+                let object = objects.iter_mut().find(|v| v["id"] == target[key]).unwrap();
+                if object.get("emphasis").is_none() {
+                    object["emphasis"] = serde_json::json!([]);
+                }
+                object["emphasis"]
+                    .as_array_mut()
+                    .ok_or("Invalid emphasis list")?
+                    .push(serde_json::json!({"target": target, "emphasis": emphasis}));
+            }
+            "teacher.point" => {
+                self.require_target(&a["target"])?;
+                self.last_point = Some(a["target"].clone());
+            }
+            "board.revise" => {
+                let id = string(&a["target"], "node_id")?;
+                self.require_node(id)?;
+                let mut content = a["revision"]
+                    .get("content")
+                    .ok_or("Missing revision content")?
+                    .clone();
+                bind(&mut content, &self.variables)?;
+                self.nodes.iter_mut().find(|v| v["id"] == id).unwrap()["content"] = content;
             }
             "lesson.variable.animate" => {
                 let d = &a["animation"];
@@ -271,6 +319,43 @@ impl Preview {
             self.animation = if t == 1.0 { None } else { Some(a) };
         }
         Ok(())
+    }
+    fn require_anchor(&self, id: &str) -> Result<(), String> {
+        if self
+            .nodes
+            .iter()
+            .chain(self.groups.iter())
+            .any(|v| v["id"] == id)
+        {
+            Ok(())
+        } else {
+            Err(format!("Unknown node or group {id}"))
+        }
+    }
+    pub(crate) fn require_focus(&self, id: &str) -> Result<(), String> {
+        if self.connections.iter().any(|v| v["id"] == id) {
+            Ok(())
+        } else {
+            self.require_anchor(id)
+        }
+    }
+    fn require_target(&self, target: &Value) -> Result<(), String> {
+        // Match the existing semantic reducer: target ownership is validated here;
+        // fragment validation belongs to canonical schema validation.
+        for (key, objects) in [
+            ("node_id", &self.nodes),
+            ("connection_id", &self.connections),
+            ("group_id", &self.groups),
+        ] {
+            if let Some(id) = target[key].as_str() {
+                return if objects.iter().any(|v| v["id"] == id) {
+                    Ok(())
+                } else {
+                    Err(format!("Unknown target {id}"))
+                };
+            }
+        }
+        Err("Missing target".into())
     }
     fn require_node(&self, id: &str) -> Result<&Value, String> {
         self.nodes

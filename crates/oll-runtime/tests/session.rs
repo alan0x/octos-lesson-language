@@ -161,3 +161,88 @@ fn timeline_matches_executed_typescript_session_within_one_animation_frame() {
     }
     assert_eq!(seen, expected.len());
 }
+
+const QUADRATIC: &str = include_str!("../../../examples/quadratic/lesson.canonical.jsonl");
+fn compare_board(p: &oll_runtime::preview::Preview, expected: &Value) {
+    for (objects, key) in [
+        (&p.nodes, "nodes"),
+        (&p.connections, "connections"),
+        (&p.groups, "groups"),
+    ] {
+        assert_eq!(objects.len(), expected[key].as_object().unwrap().len());
+        for object in objects {
+            assert_json_numbers(object, &expected[key][object["id"].as_str().unwrap()]);
+        }
+    }
+    assert_eq!(serde_json::json!(p.focus), expected["focus"]);
+}
+#[test]
+fn quadratic_every_action_matches_typescript_and_pauses_without_losing_state() {
+    let r: Value = serde_json::from_str(include_str!("fixtures/quadratic-reference.json")).unwrap();
+    assert_eq!(
+        serde_json::json!(compile_operations(QUADRATIC).unwrap()),
+        r["operations"]
+    );
+    let mut p = oll_runtime::preview::Preview::load(QUADRATIC).unwrap();
+    for expected in r["states"].as_array().unwrap() {
+        p.advance().unwrap();
+        compare_board(&p, expected);
+    }
+    assert!(p.complete());
+    let mut s = Session::load(QUADRATIC).unwrap();
+    s.play().unwrap();
+    while s.board.cursor < 11 {
+        s.tick(0.1).unwrap();
+    }
+    s.pause();
+    let frozen = format!("{s:?}");
+    s.tick(3600.0).unwrap();
+    assert_eq!(format!("{s:?}"), frozen);
+    s.play().unwrap();
+    s.tick(3600.0).unwrap();
+    assert!(s.complete());
+    compare_board(&s.board, &r["final_state"]);
+    assert_eq!(
+        serde_json::json!(s.committed_steps),
+        r["final_state"]["applied_steps"]
+    );
+    let reset = Session::load(QUADRATIC).unwrap();
+    assert!(reset.board.nodes.is_empty() && reset.board.groups.is_empty());
+    assert!(reset.board.last_point.is_none());
+}
+#[test]
+fn revision_replaces_content_and_bad_group_reference_is_rejected() {
+    let mut events: Vec<Value> = QUADRATIC
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    let node_id = events[1]["step"]["beats"][0]["stage"]["during_speech"][0]["node"]["id"].clone();
+    events[1]["step"]["beats"][0]["stage"]["after_speech"] = serde_json::json!([{
+        "action_id":"revision-test", "op":"board.revise", "target":{"node_id":node_id},
+        "revision":{"content":{"fragments":[{"id":"replacement", "latex":"y=x^2"}]}}
+    }]);
+    events.truncate(2);
+    events.push(serde_json::json!({"dsl":"octos.lesson","profile":"canonical","version":"0.1","lesson_id":"lesson-quadratic-001","sequence":2,"event":"lesson.close","result":{}}));
+    let encode = |xs: &Vec<Value>| {
+        xs.iter()
+            .map(Value::to_string)
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    // Remove the second beat which refers to the deliberately replaced target-form node.
+    events[1]["step"]["beats"]
+        .as_array_mut()
+        .unwrap()
+        .truncate(1);
+    let mut p = oll_runtime::preview::Preview::load(&encode(&events)).unwrap();
+    p.advance().unwrap();
+    p.advance().unwrap();
+    assert_eq!(
+        p.nodes[0]["content"],
+        serde_json::json!({"fragments":[{"id":"replacement","latex":"y=x^2"}]})
+    );
+    events[1]["step"]["beats"][0]["stage"]["after_speech"][0] = serde_json::json!({"action_id":"bad-group","op":"board.group","group":{"id":"g","members":["missing"]}});
+    assert!(Session::load(&encode(&events))
+        .unwrap_err()
+        .contains("Unknown node or group"));
+}
