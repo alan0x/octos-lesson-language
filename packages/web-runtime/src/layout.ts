@@ -1,3 +1,4 @@
+import { layoutTeachingRegion } from "./teaching-layout.js";
 import type { SemanticBoardState } from "../../core/src/index.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
@@ -21,10 +22,26 @@ export interface RegionLayoutConstraint {
   /** Space reserved for a progressively delivered course before every node exists. */
   reservedWidth?: number;
   /** Arrange lesson content as a visual lane beside a reading lane. */
-  flow?: "semantic" | "reading";
+  flow?: "semantic" | "reading" | "teaching";
+  /** Stable node creation-step IDs supplied by the host. */
+  nodeSections?: Record<string, string>;
+  /** Planned per-step card counts by column kind, known to the host ahead of
+   *  playback for packaged lessons (and growing for live ones). Lets a row
+   *  reserve its visual cell capacity before every card exists. */
+  plannedSteps?: Record<string, { visual?: number; math?: number; text?: number }>;
+  /** Conservative positions retained for cards with unanchored student ink. */
+  pinned?: { nodes: Record<string, Rect>; attachments: Record<string, Rect> };
+  /** Physical viewport and occlusions; independent of current pan/zoom. */
+  composition?: {
+    width: number;
+    height: number;
+    mode: "progressive" | "overview";
+    insets?: import('./camera.js').ViewportInsets;
+  };
   /** Host-rendered controls or tasks anchored to a lesson node. */
   attachments?: Array<{
     id: string;
+    kind?: "control" | "task";
     anchorNodeId: string;
     /**
      * All semantic visuals controlled by this attachment. When present, the
@@ -383,7 +400,22 @@ export function computeBoardLayout(
     return created;
   };
 
+  const teachingIds = new Set<string>();
+  for (const [regionId, constraint] of Object.entries(options.regions ?? {})) {
+    if (constraint.flow !== "teaching") continue;
+    const ids = Object.values(state.nodes).filter(n => (n.region_id ?? "__legacy__") === regionId).map(n => n.id);
+    // Nested/overlay layouts retain their authored geometry until grouped layout
+    // supports their internal coordinate systems.
+    if (ids.some(id => ["inside", "overlay"].includes(state.nodes[id]!.placement?.relation ?? ""))) continue;
+    if (!ids.length) continue;
+    const sizes = Object.fromEntries(ids.map(id => [id, measuredNodeSizes[id] ?? measureSemanticNode(state.nodes[id]!)]));
+    const result = layoutTeachingRegion(state, ids, sizes, constraint, [...Object.values(nodes), ...Object.values(attachments)]);
+    Object.assign(nodes, result.nodes); Object.assign(attachments, result.attachments);
+    ids.forEach(id => teachingIds.add(id));
+    Object.keys(result.attachments).forEach(id => attachmentRegions[id] = regionId);
+  }
   for (const node of orderedNodes()) {
+    if (teachingIds.has(node.id)) continue;
     let size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
     const placement = node.placement ?? { relation: "new_region" };
     const regionId = typeof node.region_id === "string" && node.region_id

@@ -1,5 +1,6 @@
 import {
   OllError,
+  assertExecutionSupported,
   applyCanonicalAction,
   applyLessonClose,
   assertDeepEqual,
@@ -8,6 +9,7 @@ import {
   createSemanticBoardState,
   reduceCanonicalEvents,
   setLessonVariable,
+  setLessonVariables,
   type ActionPhase,
   type CanonicalEvent,
   type SemanticBoardState,
@@ -56,6 +58,7 @@ export function compilePlaybackOperations(
   events: CanonicalEvent[],
   options: PlaybackCompileOptions = {},
 ): PlaybackOperation[] {
+  assertExecutionSupported(events);
   if (events.length < 1) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open");
   if (!options.allowIncomplete && events.length < 2) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open and lesson.close");
   const lessonId = events[0]!.lesson_id;
@@ -304,18 +307,25 @@ export class HeadlessLessonPlayer {
   advance(): PlaybackFrame | null {
     if (this.projection.status === "completed") return null;
     if (this.projection.status === "waiting" && this.projection.cursor >= this.operations.length) return null;
-    if (this.projection.status === "waiting") this.projection.status = "playing";
     if (this.projection.status === "paused") playbackFail("OLL_PLAYBACK_PAUSED", "player", "Call resume() before advancing a paused player");
-    this.projection.status = "playing";
-    const operation = this.operations[this.projection.cursor]!;
-    this.applyOperation(operation);
-    this.projection.cursor += 1;
-    if (this.projection.cursor === this.operations.length) {
-      this.projection.status = this.isClosed ? "completed" : "waiting";
+    const previous = this.projection;
+    this.projection = structuredClone(previous);
+    try {
+      if (this.projection.status === "waiting") this.projection.status = "playing";
+      this.projection.status = "playing";
+      const operation = this.operations[this.projection.cursor]!;
+      this.applyOperation(operation);
+      this.projection.cursor += 1;
+      if (this.projection.cursor === this.operations.length) {
+        this.projection.status = this.isClosed ? "completed" : "waiting";
+      }
+      const frame = { operation: structuredClone(operation), projection: structuredClone(this.projection) };
+      this.frames.push(frame);
+      return frame;
+    } catch (error) {
+      this.projection = previous;
+      throw error;
     }
-    const frame = { operation: structuredClone(operation), projection: structuredClone(this.projection) };
-    this.frames.push(frame);
-    return frame;
   }
 
   playAll(): PlaybackFrame[] {
@@ -332,25 +342,33 @@ export class HeadlessLessonPlayer {
         `Cursor ${cursor} is outside the operation stream`,
       );
     }
-    this.projection = {
-      status: "ready",
-      cursor: 0,
-      total_operations: this.operations.length,
-      lesson_id: this.events[0]!.lesson_id,
-      board: null,
-    };
-    this.frames = [];
-    while (this.projection.cursor < cursor) {
-      const operation = this.operations[this.projection.cursor]!;
-      this.applyOperation(operation);
-      this.projection.cursor += 1;
+    const previous = this.projection;
+    const previousFrames = this.frames;
+    try {
+      this.projection = {
+        status: "ready",
+        cursor: 0,
+        total_operations: this.operations.length,
+        lesson_id: this.events[0]!.lesson_id,
+        board: null,
+      };
+      this.frames = [];
+      while (this.projection.cursor < cursor) {
+        const operation = this.operations[this.projection.cursor]!;
+        this.applyOperation(operation);
+        this.projection.cursor += 1;
+      }
+      this.projection.status = cursor === 0
+        ? "ready"
+        : cursor === this.operations.length
+          ? this.isClosed ? "completed" : "waiting"
+          : "paused";
+      return this.snapshot;
+    } catch (error) {
+      this.projection = previous;
+      this.frames = previousFrames;
+      throw error;
     }
-    this.projection.status = cursor === 0
-      ? "ready"
-      : cursor === this.operations.length
-        ? this.isClosed ? "completed" : "waiting"
-        : "paused";
-    return this.snapshot;
   }
 
   finalState(): SemanticBoardState {
@@ -361,6 +379,12 @@ export class HeadlessLessonPlayer {
   setVariable(alias: string, value: number): SemanticBoardState {
     if (!this.projection.board) playbackFail("OLL_PLAYBACK_NOT_OPEN", "player", "Cannot set a variable before lesson.open");
     this.projection.board = setLessonVariable(this.projection.board, alias, value);
+    return structuredClone(this.projection.board);
+  }
+
+  setVariables(values: Record<string, number>): SemanticBoardState {
+    if (!this.projection.board) playbackFail("OLL_PLAYBACK_NOT_OPEN", "player", "Cannot set variables before lesson.open");
+    this.projection.board = setLessonVariables(this.projection.board, values);
     return structuredClone(this.projection.board);
   }
 

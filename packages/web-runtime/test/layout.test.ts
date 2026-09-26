@@ -807,3 +807,182 @@ test("a later connection cannot reuse an occupied teaching-scene column", () => 
   const formula = layout.nodes.formula!;
   assert.ok(formula.y >= plot.y + plot.height, "the third node starts a new row");
 });
+
+test("teaching layout keeps comparisons aligned despite earlier notes and isolates practice", () => {
+  const board: SemanticBoardState = { board_id: "teaching", revision: 1, nodes: {
+    intro: {id:"intro",kind:"note",region_id:"r",content:{}},
+    a: {id:"a",kind:"scene3d",region_id:"r",content:{}},
+    b: {id:"b",kind:"geometry",region_id:"r",content:{},placement:{relation:"right_of",anchor:"a"}},
+    formula: {id:"formula",kind:"math",region_id:"r",content:{latex:"r^2=h"},placement:{relation:"below",anchor:"b"}},
+  }, groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[] };
+  const controls = {id:"controls",kind:"control" as const,anchorNodeId:"b",anchorNodeIds:["a","b"],width:360,height:44,gap:24};
+  const region = {x:20,y:20,reservedWidth:1100,flow:"teaching" as const,nodeSections:{intro:"1",a:"1",b:"1",formula:"2"},attachments:[controls]};
+  const first = computeBoardLayout(board,{}, {regions:{r:region}});
+  assert.equal(first.nodes.a!.y,first.nodes.b!.y);
+  assert.ok(first.nodes.a!.y>first.nodes.intro!.y+first.nodes.intro!.height);
+  assert.equal(first.attachments.controls!.y,Math.max(first.nodes.a!.y+first.nodes.a!.height,first.nodes.b!.y+first.nodes.b!.height)+24);
+  assert.equal(first.attachments.controls!.x,20+(460+28+440-360)/2);
+  const practice=computeBoardLayout(board,{}, {regions:{r:{...region,attachments:[controls,{...controls,id:"task",kind:"task",height:180}]}}});
+  assert.deepEqual(practice.nodes,first.nodes);
+  assert.deepEqual(practice.attachments.controls,first.attachments.controls);
+  assert.ok(practice.attachments.task!.y>practice.nodes.formula!.y+practice.nodes.formula!.height);
+  const narrow=computeBoardLayout(board,{}, {regions:{r:{...region,reservedWidth:500}}});
+  assert.equal(narrow.nodes.a!.x,narrow.nodes.b!.x);
+  assert.ok(narrow.nodes.b!.y>narrow.nodes.a!.y+narrow.nodes.a!.height);
+  const obstacle={x:20,y:first.nodes.a!.y,width:500,height:200};
+  const avoided=computeBoardLayout(board,{}, {regions:{r:{...region,obstacles:[obstacle]}}});
+  assert.equal(avoided.nodes.a!.y,avoided.nodes.b!.y);
+  assert.ok(avoided.nodes.a!.y>=obstacle.y+obstacle.height);
+});
+
+test("teaching narrative flow keeps five cards within the reading width", () => {
+  const nodes=Object.fromEntries(Array.from({length:5},(_,i)=>[`n${i}`,{id:`n${i}`,kind:"note",region_id:"r",content:{text:"note"}}]));
+  const board={board_id:"b",revision:1,nodes,groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]} as SemanticBoardState;
+  const result=computeBoardLayout(board,{}, {regions:{r:{x:20,y:20,reservedWidth:600,flow:"teaching"}}});
+  for(const r of Object.values(result.nodes))assert.ok(r.x+r.width<=620);
+  assert.ok(result.nodes.n4!.y>result.nodes.n0!.y);
+  assert.deepEqual(computeBoardLayout(board,{}, {regions:{r:{x:20,y:20,reservedWidth:600,flow:"teaching"}}}),result);
+});
+
+test('viewport-aware overview uses horizontal space, includes tasks and preserves comparison alignment', () => {
+  const board: SemanticBoardState = {board_id:'b',revision:1,nodes:{
+    a:{id:'a',kind:'scene3d',region_id:'r',content:{}},
+    b:{id:'b',kind:'scene3d',region_id:'r',content:{},placement:{relation:'right_of',anchor:'a'}},
+    c:{id:'c',kind:'plot',region_id:'r',content:{}},
+    d:{id:'d',kind:'note',region_id:'r',content:{}},
+    e:{id:'e',kind:'math',region_id:'r',content:{}},
+  },groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]};
+  const region = {x:20,y:20,flow:'teaching' as const,nodeSections:{a:'1',b:'1',c:'2',d:'3',e:'4'},
+    composition:{width:1920,height:1080,mode:'overview' as const,insets:{top:92,bottom:120}},
+    attachments:[{id:'slider',kind:'control' as const,anchorNodeId:'a',width:360,height:44,gap:24},
+      {id:'task',kind:'task' as const,anchorNodeId:'a',width:360,height:240}]};
+  const layout = computeBoardLayout(board,{}, {regions:{r:region}});
+  assert.equal(layout.nodes.a!.y,layout.nodes.b!.y);
+  assert.equal(layout.attachments.slider!.y,layout.nodes.a!.y+layout.nodes.a!.height+24);
+  assert.ok(layout.bounds.width >= 900, 'comparison pair still uses horizontal space');
+  const rects=[...Object.values(layout.nodes),...Object.values(layout.attachments)];
+  for(let i=0;i<rects.length;i++)for(let j=i+1;j<rects.length;j++) {
+    const a=rects[i]!,b=rects[j]!;
+    assert.ok(!(a.x<b.x+b.width&&a.x+a.width>b.x&&a.y<b.y+b.height&&a.y+a.height>b.y),'cards and attachments must not overlap');
+  }
+  assert.deepEqual(computeBoardLayout(board,{}, {regions:{r:region}}),layout);
+  const narrow=computeBoardLayout(board,{}, {regions:{r:{...region,composition:{...region.composition,width:700}}}});
+  assert.equal(narrow.nodes.a!.y,narrow.nodes.b!.y,'dual comparison visuals stay side-by-side in top-banner topology');
+  assert.ok(narrow.nodes.c!.y>narrow.nodes.a!.y+narrow.nodes.a!.height);
+  const obstacle={...layout.bounds};
+  const avoided=computeBoardLayout(board,{}, {regions:{r:{...region,obstacles:[obstacle]}}});
+  assert.ok(Math.min(...Object.values(avoided.nodes).map(r=>r.y))>=obstacle.y+obstacle.height);
+});
+
+test('progressive composition does not relocate existing controls when practice opens', () => {
+  const board={board_id:'b',revision:1,nodes:{a:{id:'a',kind:'scene3d',region_id:'r',content:{}}},groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]} as SemanticBoardState;
+  const control={id:'c',kind:'control' as const,anchorNodeId:'a',width:360,height:44};
+  const region={x:20,y:20,flow:'teaching' as const,composition:{width:1920,height:1080,mode:'progressive' as const},attachments:[control]};
+  const before=computeBoardLayout(board,{}, {regions:{r:region}});
+  const after=computeBoardLayout(board,{}, {regions:{r:{...region,attachments:[control,{...control,id:'t',kind:'task',height:400}]}}});
+  assert.deepEqual(after.nodes,before.nodes);
+  assert.deepEqual(after.attachments.c,before.attachments.c);
+});
+
+
+test("annotated cards retain their positions when an overview is requested", () => {
+  const board={board_id:'b',revision:1,nodes:{a:{id:'a',kind:'scene3d',region_id:'r',content:{}},b:{id:'b',kind:'note',region_id:'r',content:{}}},groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]} as SemanticBoardState;
+  const pinned={x:150,y:200,width:460,height:360};
+  const result=computeBoardLayout(board,{}, {regions:{r:{x:20,y:20,flow:'teaching',composition:{width:1920,height:1080,mode:'overview'},pinned:{nodes:{a:pinned},attachments:{}}}}});
+  assert.deepEqual(result.nodes.a,pinned);
+  assert.ok(result.nodes.b!.y>=pinned.y+pinned.height);
+});
+
+// --- Stage-Anchored Step-Stream teaching layout ---
+
+test("stage-anchored step-stream groups non-visual steps into the active visual stage spine", () => {
+  const mk = (id: string, kind: string) => ({ id, kind, region_id: "r", content: {} });
+  const board = { board_id: "b", revision: 1, nodes: {
+    s1v: mk("s1v", "scene3d"), s1m: mk("s1m", "math"),
+    s2v: mk("s2v", "plot"), s2m: mk("s2m", "math"),
+    s3n: mk("s3n", "note"),
+  }, groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [] } as unknown as SemanticBoardState;
+  const region = { x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { s1v: "1", s1m: "1", s2v: "2", s2m: "2", s3n: "3" },
+    composition: { width: 1920, height: 1080, mode: "overview" as const } };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  const bottom = (ids: string[]) => Math.max(...ids.map(id => layout.nodes[id]!.y + layout.nodes[id]!.height));
+  const top = (ids: string[]) => Math.min(...ids.map(id => layout.nodes[id]!.y));
+  assert.ok(bottom(["s1v", "s1m"]) <= top(["s2v", "s2m"]), "stage 1 sits entirely above stage 2");
+  assert.ok(bottom(["s2m"]) <= top(["s3n"]), "step 3 stacks below step 2 in stage 2's explanation spine");
+  assert.equal(layout.nodes.s3n!.x, layout.nodes.s2m!.x, "step 2 and step 3 share stage 2's explanation spine column");
+  assert.ok(layout.nodes.s1m!.x > layout.nodes.s1v!.x, "explanation spine sits right of visual workbench");
+  assert.ok(Math.abs(layout.nodes.s1v!.y - layout.nodes.s1m!.y) < 1, "opening step shares stage top");
+  assert.ok(layout.nodes.s2m!.x <= 20 + 460 + 48, "a single-visual stage does not reserve a double slot");
+  assert.deepEqual(computeBoardLayout(board, {}, { regions: { r: region } }), layout, "layout is deterministic");
+});
+
+test("appending cards never moves existing cards", () => {
+  const mk = (id: string, kind: string, section: string) => ({ id, kind, region_id: "r", content: {} });
+  const nodeSectionsOf = (keys: string[]) => Object.fromEntries(keys.map(k => [k, { a: "1", b: "1", c: "2", d: "2", e: "3" }[k]!]));
+  const makeBoard = (keys: string[]) => ({ board_id: "b", revision: 1,
+    nodes: Object.fromEntries(keys.map(k => [k, mk(k, { a: "scene3d", b: "math", c: "note", d: "math", e: "plot" }[k]!, "")])),
+    groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [] }) as unknown as SemanticBoardState;
+  const makeRegion = (keys: string[]) => ({ x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: nodeSectionsOf(keys),
+    plannedSteps: { "1": { visual: 1, math: 1 }, "2": { math: 1, text: 1 }, "3": { visual: 1 } },
+    composition: { width: 1920, height: 1080, mode: "overview" as const } });
+  const before = computeBoardLayout(makeBoard(["a", "b", "c"]), {}, { regions: { r: makeRegion(["a", "b", "c"]) } });
+  const after = computeBoardLayout(makeBoard(["a", "b", "c", "d", "e"]), {}, { regions: { r: makeRegion(["a", "b", "c", "d", "e"]) } });
+  for (const id of ["a", "b", "c"]) assert.deepEqual(after.nodes[id], before.nodes[id], `${id} must not move when new cards arrive`);
+});
+
+test("practice cards opening never moves any card or control and docks adjacent to controls", () => {
+  const board = { board_id: "b", revision: 1, nodes: {
+    scene: { id: "scene", kind: "scene3d", region_id: "r", content: {} },
+    m: { id: "m", kind: "math", region_id: "r", content: {} },
+  }, groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [] } as unknown as SemanticBoardState;
+  const control = { id: "slider", kind: "control" as const, anchorNodeId: "scene", width: 360, height: 44, gap: 24 };
+  const region = { x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { scene: "1", m: "2" },
+    composition: { width: 1920, height: 1080, mode: "overview" as const },
+    attachments: [control] };
+  const before = computeBoardLayout(board, {}, { regions: { r: region } });
+  const after = computeBoardLayout(board, {}, { regions: { r: { ...region,
+    attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "scene", width: 360, height: 240 }] } } });
+  assert.deepEqual(after.nodes, before.nodes, "no card moves when practice opens");
+  assert.deepEqual(after.attachments.slider, before.attachments.slider, "no control moves when practice opens");
+  assert.equal(after.attachments.slider!.y, before.nodes.scene!.y + before.nodes.scene!.height + 24, "control sits directly below its visual");
+  assert.equal(after.attachments.task!.x, after.attachments.slider!.x, "task aligns with its control in the visual workbench");
+  assert.equal(after.attachments.task!.y, after.attachments.slider!.y + after.attachments.slider!.height + 16, "task sits immediately below its control");
+});
+
+test("narrow viewport keeps single-visual stage side-by-side and step spine ordered", () => {
+  const mk = (id: string, kind: string) => ({ id, kind, region_id: "r", content: {} });
+  const board = { board_id: "b", revision: 1, nodes: {
+    a: mk("a", "scene3d"), b: mk("b", "math"), c: mk("c", "math"), d: mk("d", "note"),
+  }, groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [] } as unknown as SemanticBoardState;
+  const region = { x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { a: "1", b: "1", c: "2", d: "3" },
+    composition: { width: 700, height: 1000, mode: "overview" as const } };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  assert.equal(layout.nodes.a!.x, 20, "visual starts at left of stage");
+  assert.ok(layout.nodes.b!.x > layout.nodes.a!.x + layout.nodes.a!.width, "explanation spine sits beside single visual");
+  const ys = ["b", "c", "d"].map(id => layout.nodes[id]!.y);
+  for (let i = 1; i < ys.length; i++) assert.ok(ys[i]! > ys[i - 1]!, "steps in spine ordered top to bottom");
+});
+
+test("planned visual capacity reserves the second slot before the card exists", () => {
+  const board = { board_id: "b", revision: 1, nodes: {
+    v1: { id: "v1", kind: "scene3d", region_id: "r", content: {} },
+    f1: { id: "f1", kind: "math", region_id: "r", content: {} },
+  }, groups: {}, connections: {}, focus: [], applied_lessons: [], applied_steps: [], applied_actions: [] } as unknown as SemanticBoardState;
+  const region = { x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { v1: "1", f1: "1" },
+    plannedSteps: { "1": { visual: 2, math: 1 } },
+    composition: { width: 1920, height: 1080, mode: "overview" as const } };
+  const before = computeBoardLayout(board, {}, { regions: { r: region } });
+  assert.ok(before.nodes.f1!.x >= 936 + 28, "math waits behind the reserved double visual slot");
+  const withSecond = { ...board, nodes: { ...board.nodes,
+    v2: { id: "v2", kind: "scene3d", region_id: "r", content: {} } } } as unknown as SemanticBoardState;
+  const after = computeBoardLayout(withSecond, {}, { regions: { r: { ...region,
+    nodeSections: { v1: "1", f1: "1", v2: "1" } } } });
+  assert.deepEqual(after.nodes.v1, before.nodes.v1, "first visual never moves");
+  assert.deepEqual(after.nodes.f1, before.nodes.f1, "formula never moves");
+  assert.ok(after.nodes.v2!.x > after.nodes.v1!.x && after.nodes.v2!.y === after.nodes.v1!.y, "second visual fills the reserved slot beside the first");
+});

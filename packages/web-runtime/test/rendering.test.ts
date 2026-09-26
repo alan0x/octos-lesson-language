@@ -960,3 +960,13 @@ test("reveal pans without changing zoom and stays still for visible nodes", () =
   assert.equal(revealed.scale, current.scale);
   assert.notEqual(revealed.panY, current.panY);
 });
+
+
+test("course overview ignores readability floors when they would crop course content", () => {
+  const rect = {x:0,y:0,width:4000,height:6000};
+  const camera=planFocusCamera([rect],{panX:0,panY:0,scale:1},{width:960,height:540},"course",{top:60,bottom:100},.55);
+  assert.ok(camera.scale<.18);
+  assert.ok(camera.panX>=0 && camera.panY>=60);
+  assert.ok(camera.panX+rect.width*camera.scale<=960);
+  assert.ok(camera.panY+rect.height*camera.scale<=440);
+});

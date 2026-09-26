@@ -2,7 +2,7 @@ import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { normalizeAuthoringLesson, reduceCanonicalEvents } from "../../core/src/index.js";
+import { normalizeAuthoringLesson, reduceCanonicalEvents, type AuthoringLesson } from "../../core/src/index.js";
 import type { PlaybackCheckpoint } from "../../player-core/src/index.js";
 import { computeBoardLayout } from "../src/layout.js";
 import {
@@ -1034,3 +1034,203 @@ test("reduced motion applies the animation end state without intermediate frames
   assert.equal(session.activeVariableAnimation, undefined);
   assert.equal(session.projection.board?.variables?.theta?.value, 2 * Math.PI);
 });
+
+
+test("append rejection stops playback, preserves accepted events and survives refresh", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const prefix = structuredClone(events.slice(0, 2));
+  const session = new BrowserLessonSession(prefix, store, "failed-append", { incremental: true });
+  session.play();
+  const before = session.cursor;
+  const invalid = structuredClone(events[2]!);
+  invalid.sequence += 1;
+  assert.throws(() => session.appendEvents([invalid]), /Expected sequence/);
+  assert.equal(session.failure?.stage, "append");
+  assert.equal(session.isPlaying, false);
+  assert.equal(session.events.length, 2);
+  tickElapsed(context, 5000);
+  session.play();
+  session.advanceBeat();
+  assert.equal(session.cursor, before);
+  const restored = new BrowserLessonSession(structuredClone(events.slice(0, 2)), store, "failed-append", { incremental: true });
+  assert.equal(restored.failure?.stage, "append");
+  restored.play();
+  assert.equal(restored.cursor, before);
+});
+
+test("timer action failure is observable without consuming or skipping its operation", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(events, new MemoryStore(), "failed-apply");
+  session.advance();
+  const before = session.cursor;
+  const implementation = session as unknown as { player: { advance(): never } };
+  implementation.player.advance = () => { throw new Error("injected apply failure"); };
+  assert.doesNotThrow(() => session.play());
+  assert.equal(session.failure?.stage, "playback");
+  assert.equal(session.failure?.message, "injected apply failure");
+  tickElapsed(context, 5000);
+  session.advanceBeat();
+  assert.equal(session.cursor, before);
+});
+
+test("animation failure retains last accepted value and progress and stays blocked after refresh", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(unitCircleEvents, store, "failed-animation");
+  advanceToVariableAnimation(session);
+  const before = session.projection;
+  const animation = session.activeVariableAnimation;
+  const implementation = session as unknown as { player: { setVariable(): never } };
+  implementation.player.setVariable = () => { throw new Error("injected intermediate binding failure"); };
+  session.play();
+  assert.doesNotThrow(() => tickElapsed(context, 100));
+  assert.equal(session.failure?.stage, "animation");
+  assert.equal(session.isPlaying, false);
+  assert.equal(session.activeVariableAnimation?.progress, animation?.progress);
+  assert.deepEqual(session.projection.board, before.board);
+  const restored = new BrowserLessonSession(unitCircleEvents, store, "failed-animation");
+  restored.play();
+  restored.advanceBeat();
+  assert.equal(restored.failure?.stage, "animation");
+  assert.equal(restored.cursor, before.cursor);
+  restored.reset();
+  assert.equal(restored.failure, undefined);
+  assert.equal(restored.cursor, 0);
+});
+
+test("invalid student input never commits a successful gesture or task attempt", () => {
+  const session = new BrowserLessonSession(unitCircleEvents, new MemoryStore(), "failed-input");
+  advanceToVariableAnimation(session);
+  const gesture = session.beginStudentVariableOperation("theta", { control: "slider", input: "mouse" });
+  session.updateStudentVariableOperation(gesture, 1);
+  const before = session.projection.board;
+  session.commitStudentVariableOperation(gesture, NaN);
+  assert.equal(session.failure?.stage, "input");
+  assert.deepEqual(session.projection.board, before);
+  assert.deepEqual(session.studentOperations, []);
+  assert.equal(session.commitStudentVariableOperation(gesture, 2), undefined);
+  assert.deepEqual(session.studentOperations, []);
+});
+
+
+function phaseLesson(kind: "continue" | "replay" = "replay") {
+  const source: AuthoringLesson = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode: "explain", title: "Phase semantics", language: "zh-CN", goals: ["理解起点"],
+      variables: [{ as: "h", initial: 1, min: 0, max: 8, control: { kind: "slider", step: 1 } }],
+      tasks: [{ as: "reach-four", prompt: "调到四", availability: { kind: "after_lesson" },
+        start: { kind: "practice", variables: ["h"] },
+        allowed_operations: [{ kind: "variable_change", variable: "h", controls: ["slider"] }],
+        completion: { kind: "expression_target", expression: "h", value: 4, tolerance: .01 }, hints: ["移动滑块"] }],
+    },
+    steps: [{ key: "demo", purpose: "演示", beats: [
+      { key: "first", actions: [{ do: "write", as: "prompt", kind: "text", role: "problem", content: { text: "观察高度" }, place: { relation: "new_region" } }, { do: "animate", variable: "h", value: 4, easing: "linear", duration_intent: "brief" }] },
+      { key: "second", say: "从一开始", start: kind === "replay" ? { kind, variables: ["h"] } : { kind },
+        actions: [{ do: "animate", variable: "h", value: 4, easing: "linear", duration_intent: "brief" }] },
+    ] }], close: { summary: "练习", focus: ["prompt"] },
+  };
+  return normalizeAuthoringLesson(source, { lessonId: "phase-fixture", boardId: "phase-board", baseRevision: 0 });
+}
+
+function advanceToPhase(session: BrowserLessonSession) {
+  while (!session.activePhaseTransition) assert.ok(session.advance());
+}
+
+test("independent replay uses actual state, blocks narration/input, and resumes one transition after refresh", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const lesson = phaseLesson();
+  const session = new BrowserLessonSession(lesson, store, "phase", { narrationTiming: "external" });
+  const second = session.outline[0]!.beats[1]!;
+  session.seekToBeat(second.id, "start");
+  session.setVariable("h", 7);
+  advanceToPhase(session);
+  assert.equal(session.activePhaseTransition?.from.h, 7);
+  assert.equal(session.activePhaseTransition?.to.h, 1);
+  assert.equal(session.projection.current_narration, undefined);
+  session.setVariable("h", 5);
+  assert.equal(session.projection.board?.variables?.h?.value, 7);
+  session.play();
+  tickElapsed(context, variableAnimationDuration("brief") / 2);
+  session.pause();
+  const halfway = session.projection.board?.variables?.h?.value;
+  assert.ok(halfway! > 1 && halfway! < 7);
+  const restored = new BrowserLessonSession(lesson, store, "phase", { narrationTiming: "external" });
+  assert.equal(restored.projection.board?.variables?.h?.value, halfway);
+  assert.equal(restored.activePhaseTransition?.progress, session.activePhaseTransition?.progress);
+  restored.play();
+  tickElapsed(context, variableAnimationDuration("brief") / 2 + 40);
+  assert.equal(restored.projection.board?.variables?.h?.value, 1);
+  assert.equal(Boolean(restored.activePhaseTransition), false);
+  const oldEpoch = restored.playbackEpoch;
+  restored.seekToBeat(second.id, "start");
+  restored.setVariable("h", 6);
+  advanceToPhase(restored);
+  assert.ok(restored.playbackEpoch > oldEpoch);
+  assert.equal(restored.activePhaseTransition?.from.h, 6);
+  restored.completeNarration(second.id, oldEpoch);
+  assert.ok(restored.activePhaseTransition);
+  restored.pause();
+});
+
+test("continuation never receives an implicit reset action", () => {
+  const session = new BrowserLessonSession(phaseLesson("continue"), new MemoryStore(), "continuation");
+  assert.equal(session.operations.some(operation => operation.action?.op === "lesson.phase.start"), false);
+  session.advanceBeat();
+  assert.equal(session.projection.board?.variables?.h?.value, 4);
+  while (session.currentOperation?.type !== "narration.begin") assert.ok(session.advance());
+  assert.equal(session.projection.board?.variables?.h?.value, 4);
+});
+
+test("practice first activation prepares its start without grading, then accepts a real student operation", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const store = new MemoryStore();
+  const lesson = phaseLesson();
+  const session = new BrowserLessonSession(lesson, store, "practice");
+  while (session.status !== "completed") assert.ok(session.advance());
+  assert.equal(session.activePhaseTransition?.kind, "practice");
+  assert.equal(session.studentTasks[0]?.available, false);
+  assert.equal(session.beginStudentVariableOperation("h", { control: "slider", input: "mouse" }), "");
+  tickElapsed(context, variableAnimationDuration("brief") / 2);
+  session.pause();
+  const restored = new BrowserLessonSession(lesson, store, "practice");
+  const unsubscribe = restored.subscribe(() => {});
+  tickElapsed(context, variableAnimationDuration("brief"));
+  assert.equal(restored.projection.board?.variables?.h?.value, 1);
+  assert.equal(restored.studentTasks[0]?.available, true);
+  assert.deepEqual(restored.studentOperations, []);
+  restored.changeStudentVariable("h", 4, { control: "slider", input: "mouse" });
+  assert.equal(restored.studentTasks[0]?.status, "succeeded");
+  const done = new BrowserLessonSession(lesson, store, "practice");
+  done.subscribe(() => {})();
+  assert.equal(done.projection.board?.variables?.h?.value, 4);
+  assert.equal(done.activePhaseTransition, undefined);
+  unsubscribe();
+});
+
+test("manual advance at lesson completion finishes a practice start transition and notifies subscribers", () => {
+  const store = new MemoryStore();
+  const lesson = phaseLesson();
+  const session = new BrowserLessonSession(lesson, store, "practice-manual-advance");
+  while (session.status !== "completed") assert.ok(session.advance());
+  assert.equal(session.activePhaseTransition?.kind, "practice");
+  assert.equal(session.studentTasks[0]?.available, false);
+
+  let notified = 0;
+  const unsubscribe = session.subscribe(() => {
+    notified += 1;
+  });
+  assert.equal(session.advance(), undefined);
+  assert.equal(session.activePhaseTransition, undefined);
+  assert.equal(session.projection.board?.variables?.h?.value, 1);
+  assert.equal(session.studentTasks[0]?.available, true);
+  assert.equal(notified, 1);
+
+  const restored = new BrowserLessonSession(lesson, store, "practice-manual-advance");
+  assert.equal(restored.activePhaseTransition, undefined);
+  assert.equal(restored.projection.board?.variables?.h?.value, 1);
+  assert.equal(restored.studentTasks[0]?.available, true);
+  unsubscribe();
+});
+

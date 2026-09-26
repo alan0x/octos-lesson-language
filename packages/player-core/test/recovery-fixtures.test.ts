@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   OllError,
+  ExecutionCapabilityError,
   normalizeAuthoringLesson,
   parseAuthoringLessonJson,
   reduceCanonicalEvents,
@@ -115,14 +116,14 @@ for (const fixture of fixtures.filter((item) => item.status === undefined)) {
       const invalid = structuredClone(events[3]!) as CanonicalEvent;
       const action = invalid.step!.beats[0]!.stage.during_speech[0]!;
       action.op = "board.execute-script";
-      player.appendEvents([invalid]);
-      player.resume();
+      const before = structuredClone(player.checkpoint());
+      const accepted = structuredClone(player.canonicalEvents);
       assert.throws(
-        () => player.playAll(),
-        (error) =>
-          error instanceof OllError &&
-          error.code === "OLL_INVALID_OPERATION",
+        () => player.appendEvents([invalid]),
+        (error) => error instanceof ExecutionCapabilityError && error.code === "OLL_UNSUPPORTED_CAPABILITY",
       );
+      assert.deepEqual(player.canonicalEvents, accepted);
+      assert.deepEqual(player.checkpoint(), before);
       assert.deepEqual(player.snapshot.board, committed);
       return;
     }

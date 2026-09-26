@@ -103,6 +103,8 @@ export {
   parseCanonicalJsonl,
   type BrowserLessonSessionOptions,
   type PlaybackStore,
+  type PlaybackFailure,
+  type PhaseTransition,
 } from "./runtime.js";
 export {
   createStudentInkSelectionOperation,

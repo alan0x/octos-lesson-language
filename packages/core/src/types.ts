@@ -100,7 +100,14 @@ export type AuthoringAction =
   | ExpressionAction
   | AnimateVariableAction;
 
+export interface PhaseStartPolicy {
+  kind: "continue" | "replay" | "practice";
+  variables?: string[];
+  values?: Record<string, number>;
+}
+
 export interface AuthoringBeat {
+  start?: PhaseStartPolicy;
   key: Alias;
   say?: string;
   delivery?: Delivery;
@@ -133,6 +140,7 @@ export type StudentTaskScene3dControl = "orbit" | "zoom" | "preset" | "reset";
 export type StudentTaskScene3dViewMatch = "view_direction" | "camera_pose";
 
 interface AuthoringStudentTaskBase {
+  start?: PhaseStartPolicy;
   as: Alias;
   prompt: string;
   availability: {
@@ -259,6 +267,11 @@ export interface CanonicalTarget {
 }
 
 export interface CanonicalAction {
+  transition?: {
+    kind: "replay";
+    values: Record<string, number>;
+    source_path: string;
+  };
   action_id: string;
   op: string;
   node?: JsonObject & { id: string; content: JsonObject };

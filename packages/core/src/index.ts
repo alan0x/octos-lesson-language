@@ -23,6 +23,8 @@ import type {
   JsonObject,
   NormalizationHost,
   Placement,
+  PhaseStartPolicy,
+  AuthoringVariable,
   RegistryEntry,
   RegistryEntryType,
   ResourceContext,
@@ -34,6 +36,8 @@ import type {
 export type * from "./types.js";
 export * from "./math-expression.js";
 export * from "./capabilities.js";
+export * from "./execution-requirements.js";
+export * from "./opening.js";
 
 type UnknownRecord = Record<string, unknown>;
 type Registry = Map<string, RegistryEntry>;
@@ -265,6 +269,38 @@ function validateScene3dStudentTask(
   }
 }
 
+export function resolvePhaseStart(
+  policy: PhaseStartPolicy,
+  variables: readonly AuthoringVariable[],
+  path: string,
+): Record<string, number> {
+  requireObject(policy, path);
+  if (Object.keys(policy).some(key => !["kind", "variables", "values"].includes(key))) {
+    fail("OLL_INVALID_PHASE_START", path, "Unknown phase start field");
+  }
+  if (policy.kind === "continue") {
+    if (policy.variables !== undefined || policy.values !== undefined) fail("OLL_INVALID_PHASE_START", path, "Continuation inherits state without reset targets");
+    return {};
+  }
+  if (policy.kind !== "replay" && policy.kind !== "practice") fail("OLL_INVALID_PHASE_START", path, "Unknown phase kind");
+  if (!Array.isArray(policy.variables) || !policy.variables.length || new Set(policy.variables).size !== policy.variables.length) {
+    fail("OLL_INVALID_PHASE_START", path, "Independent phases require distinct selected variables");
+  }
+  if (policy.values !== undefined) requireObject(policy.values, `${path}/values`);
+  if (Object.keys(policy.values ?? {}).some(alias => !policy.variables!.includes(alias))) {
+    fail("OLL_INVALID_PHASE_START", path, "Start values must belong to selected variables");
+  }
+  return Object.fromEntries(policy.variables.map(alias => {
+    const variable = variables.find(candidate => candidate.as === alias);
+    if (!variable) fail("OLL_INVALID_PHASE_START", path, `Unknown start variable '${alias}'`);
+    const value = policy.values && Object.hasOwn(policy.values, alias) ? policy.values[alias] : variable.initial;
+    if (!Number.isFinite(value) || value < variable.min || value > variable.max) {
+      fail("OLL_INVALID_PHASE_START", path, `Start value for '${alias}' is outside its domain`);
+    }
+    return [alias, value];
+  }));
+}
+
 function validateStudentTasks(
   document: AuthoringLesson,
   variables: Map<string, number>,
@@ -286,6 +322,11 @@ function validateStudentTasks(
       fail("OLL_INVALID_STUDENT_TASK", `${path}/availability/kind`, `Unsupported task availability '${String(task.availability.kind)}'`);
     }
     requireObject(task.completion, `${path}/completion`);
+    if (task.start && (task.start.kind !== "practice" || task.completion.kind !== "expression_target")) {
+      fail("OLL_INVALID_PHASE_START", `${path}/start`, "Practice starts currently require an expression task");
+    }
+    const startValues = task.start ? resolvePhaseStart(task.start, document.lesson.variables ?? [], `${path}/start`) : {};
+
     if (task.completion.kind === "scene3d_view_target") {
       validateScene3dStudentTask(task as AuthoringScene3dStudentTask, path, scene3dCameras);
       continue;
@@ -331,7 +372,10 @@ function validateStudentTasks(
     if (tolerance <= 0) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/tolerance`, "Task tolerance must be greater than zero");
     try {
       const evaluate = compileMathExpression(expressionTask.completion.expression, variables.keys());
-      const initial = evaluate(Object.fromEntries(variables));
+      if (task.start && [...allowedVariables].some(alias => !Object.hasOwn(startValues, alias))) {
+        throw new Error("Practice start must specify all task variables");
+      }
+      const initial = evaluate({ ...Object.fromEntries(variables), ...startValues });
       if (!Number.isFinite(initial) || !Number.isFinite(target)) throw new Error("Task completion result is not finite");
       const referenced = new Set(referencedMathVariables(expressionTask.completion.expression, variables.keys()));
       if (referenced.size === 0) throw new Error("Task completion expression must read an allowed lesson variable");
@@ -440,15 +484,30 @@ function validateValueBindings(action: WriteAction, path: string, variables: Map
   requireArray(action.content.bindings, `${path}/content/bindings`);
   const targets = bindableTargets(action);
   const seen = new Set<string>();
+  const labeled = new Set<string>();
   action.content.bindings.forEach((binding: unknown, index: number) => {
     const bindingPath = `${path}/content/bindings/${index}`;
     requireObject(binding, bindingPath);
     for (const field of Object.keys(binding)) {
-      if (field !== "target" && field !== "expression") fail("OLL_INVALID_BINDING", `${bindingPath}/${field}`, `Unknown binding field '${field}'`);
+      if (!["target", "expression", "label", "allow_zero"].includes(field)) fail("OLL_INVALID_BINDING", `${bindingPath}/${field}`, `Unknown binding field '${field}'`);
     }
     const { alias, property } = splitBindingTarget(binding.target, `${bindingPath}/target`);
     if (!targets.get(alias)?.has(property)) {
       fail("OLL_REFERENCE_NOT_FOUND", `${bindingPath}/target`, `Binding target '${binding.target}' is not a supported numeric field`);
+    }
+    if (binding.allow_zero !== undefined && (binding.allow_zero !== true || property !== "radius")) {
+      fail("OLL_INVALID_BINDING", `${bindingPath}/allow_zero`, "allow_zero is only valid on radius bindings and must be true");
+    }
+    if (binding.label !== undefined) {
+      requireObject(binding.label, `${bindingPath}/label`);
+      const label = binding.label;
+      if (Object.keys(label).some(key => !["prefix", "suffix", "precision"].includes(key))
+        || !Number.isInteger(label.precision) || Number(label.precision) < 0 || Number(label.precision) > 6
+        || [label.prefix, label.suffix].some(value => value !== undefined && (typeof value !== "string" || value.length > 64))) {
+        fail("OLL_INVALID_BINDING", `${bindingPath}/label`, "Label requires precision 0..6 and optional prefix/suffix up to 64 characters");
+      }
+      if (labeled.has(alias)) fail("OLL_INVALID_BINDING", `${bindingPath}/label`, "A fragment may have only one generated label");
+      labeled.add(alias);
     }
     if (seen.has(binding.target as string)) fail("OLL_INVALID_BINDING", `${bindingPath}/target`, `Binding target '${binding.target}' is duplicated`);
     seen.add(binding.target as string);
@@ -630,7 +689,9 @@ function validateGeometryContent(
       for (const reference of references) requirePointReference(item[reference], `${itemPath}/${reference}`);
       if (field === "circles" || field === "arcs") {
         const radius = requireFiniteNumber(item.radius, `${itemPath}/radius`);
-        if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/radius`, "Radius must be greater than zero");
+        const zeroAllowed = radius === 0 && (content.bindings ?? []).some((binding: JsonObject) =>
+          binding.target === `${item.as}.radius` && binding.allow_zero === true);
+        if (radius < 0 || (radius === 0 && !zeroAllowed)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/radius`, "Radius must be positive unless explicitly bound with allow_zero");
       }
       if (field === "arcs") {
         if (item.filled !== undefined && typeof item.filled !== "boolean") fail("OLL_INVALID_OPERATION_PAYLOAD", `${itemPath}/filled`, "Sector fill must be boolean");
@@ -1131,6 +1192,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       if (beatKeys.has(beat.key)) fail("OLL_DUPLICATE_ALIAS", `${beatPath}/key`, `Beat '${beat.key}' is duplicated`);
       beatKeys.add(beat.key);
       requireArray(beat.actions, `${beatPath}/actions`);
+      if (beat.start) {
+        if (beat.start.kind === "practice") fail("OLL_INVALID_PHASE_START", `${beatPath}/start`, "Practice belongs on a student task");
+        resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`);
+      }
 
       beat.actions.forEach((action, actionIndex) => {
         const actionPath = `${beatPath}/actions/${actionIndex}`;
@@ -1287,6 +1352,8 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       return {
         target: `${nodeId}:fragment:${alias}.${property}`,
         expression: binding.expression,
+        ...(binding.label !== undefined ? { label: structuredClone(binding.label) } : {}),
+        ...(binding.allow_zero === true ? { allow_zero: true } : {}),
       };
     });
   }
@@ -1484,6 +1551,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   const registry = buildCanonicalRegistry(document, host);
   const canonicalLesson = structuredClone(document.lesson);
   for (const candidate of canonicalLesson.tasks ?? []) {
+    if (candidate.start) candidate.start.values = resolvePhaseStart(candidate.start, document.lesson.variables ?? [], `/lesson/tasks/${candidate.as}/start`);
     const task = candidate as AuthoringScene3dStudentTask;
     if (task.completion.kind !== "scene3d_view_target") continue;
     task.completion.node = requireRegistryId(registry, task.completion.node);
@@ -1527,6 +1595,17 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
             const phase = action.when ?? "during_speech";
             stage[phase].push(normalizeAction(action, { host, registry, sequence, beatIndex, actionIndex }));
           });
+          if (beat.start?.kind === "replay") {
+            stage.before_speech.unshift({
+              action_id: `${stableId(host, "step", step.key)}:beat:${beat.key}:phase-start`,
+              op: "lesson.phase.start",
+              transition: {
+                kind: "replay",
+                values: resolvePhaseStart(beat.start, document.lesson.variables ?? [], `/steps/${stepIndex}/beats/${beatIndex}/start`),
+                source_path: `/steps/${stepIndex}/beats/${beatIndex}/start`,
+              },
+            });
+          }
           return {
             id: `${stableId(host, "step", step.key)}:beat:${beat.key}`,
             ...(beat.say ? { narration: { text: beat.say, ...(beat.delivery ? { delivery: beat.delivery } : {}) } } : {}),
@@ -1603,13 +1682,25 @@ function bindingTarget(content: JsonObject, target: string): { record: JsonObjec
   fail("OLL_REFERENCE_NOT_FOUND", "content.bindings.target", `Canonical binding target '${target}' was not found`);
 }
 
+/** Locale-independent, fixed precision, trailing-zero trimming, and no negative zero. */
+export function formatBoundNumericLabel(value: number, format: { precision: number; prefix?: string; suffix?: string }): string {
+  if (!Number.isFinite(value) || !Number.isInteger(format.precision) || format.precision < 0 || format.precision > 6) {
+    fail("OLL_INVALID_BINDING", "binding.label", "Cannot format a non-finite value or invalid precision");
+  }
+  const rounded = Number(value.toFixed(format.precision));
+  return `${format.prefix ?? ""}${Object.is(rounded, -0) ? 0 : rounded}${format.suffix ?? ""}`;
+}
+
 export function evaluateContentBindings(content: JsonObject, variables: Record<string, number>): JsonObject {
   const evaluated = structuredClone(content);
   for (const binding of Array.isArray(evaluated.bindings) ? evaluated.bindings : []) {
     const { record, property } = bindingTarget(evaluated, binding.target);
     try {
       record[property] = evaluateMathExpression(binding.expression, variables);
-      if (property === "radius" && record[property] <= 0) throw new Error("Bound radius must be greater than zero");
+      if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {
+        throw new Error("Bound radius must be positive unless explicitly allowed to degenerate to zero");
+      }
+      if (binding.label) record.label = formatBoundNumericLabel(record[property], binding.label);
     } catch (error) {
       const message = error instanceof Error ? error.message : "binding evaluation failed";
       fail("OLL_BINDING_EVALUATION_FAILED", "content.bindings.expression", message);
@@ -1675,6 +1766,9 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
   } else if (action.op === "teacher.expression") {
     if (!action.expression) fail("OLL_INVALID_EVENT", "action.expression", "teacher.expression requires expression");
+  } else if (action.op === "lesson.phase.start") {
+    if (!action.transition) fail("OLL_INVALID_EVENT", "action.transition", "Phase start requires transition targets");
+    Object.assign(state, setLessonVariables(state, action.transition.values));
   } else if (action.op === "lesson.variable.animate") {
     if (!action.animation) fail("OLL_INVALID_EVENT", "action.animation", "lesson.variable.animate requires animation");
     const updated = setLessonVariable(state, action.animation.variable, action.animation.to);
@@ -1687,13 +1781,20 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
 }
 
 export function setLessonVariable(state: SemanticBoardState, alias: string, value: number): SemanticBoardState {
-  const variable = state.variables?.[alias];
-  if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `variables/${alias}`, `Variable '${alias}' is not defined`);
-  if (!Number.isFinite(value) || value < variable.min || value > variable.max) {
-    fail("OLL_INVALID_VARIABLE", `variables/${alias}/value`, `Variable '${alias}' must be between ${variable.min} and ${variable.max}`);
-  }
+  return setLessonVariables(state, { [alias]: value });
+}
+
+/** Evaluate dependent fields only after all values have changed, atomically. */
+export function setLessonVariables(state: SemanticBoardState, changes: Record<string, number>): SemanticBoardState {
   const updated = structuredClone(state);
-  updated.variables![alias]!.value = value;
+  for (const [alias, value] of Object.entries(changes)) {
+    const variable = updated.variables?.[alias];
+    if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `variables/${alias}`, `Variable '${alias}' is not defined`);
+    if (!Number.isFinite(value) || value < variable.min || value > variable.max) {
+      fail("OLL_INVALID_VARIABLE", `variables/${alias}/value`, `Variable '${alias}' must be between ${variable.min} and ${variable.max}`);
+    }
+    variable.value = value;
+  }
   const values = bindingValues(updated);
   for (const node of Object.values(updated.nodes)) {
     node.content = evaluateContentBindings(node.content, values);

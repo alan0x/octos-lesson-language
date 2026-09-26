@@ -926,7 +926,11 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
   for (const circle of Array.isArray(content.circles) ? content.circles : []) {
     const center = points.get(text(circle.center));
     const radius = Number(circle.radius);
-    if (!center || !Number.isFinite(radius) || radius <= 0) continue;
+    if (!center || !Number.isFinite(radius) || radius < 0) continue;
+    if (radius === 0) {
+      if (circle.label) appendGeometryLabel(svg, circle.label, viewport.mapX(center.x) - 4, viewport.mapY(center.y) - 8, "end");
+      continue;
+    }
     const element = document.createElementNS(SVG_NS, "circle");
     element.setAttribute("cx", String(viewport.mapX(center.x)));
     element.setAttribute("cy", String(viewport.mapY(center.y)));
@@ -956,7 +960,11 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     const radius = Number(arc.radius);
     const startAngle = Number(arc.start_angle);
     const endAngle = Number(arc.end_angle);
-    if (!center || ![radius, startAngle, endAngle].every(Number.isFinite) || radius <= 0) continue;
+    if (!center || ![radius, startAngle, endAngle].every(Number.isFinite) || radius < 0) continue;
+    if (radius === 0) {
+      if (arc.label) appendGeometryLabel(svg, arc.label, viewport.mapX(center.x), viewport.mapY(center.y) - 8, "middle");
+      continue;
+    }
     const path = document.createElementNS(SVG_NS, "path");
     const arcPath = geometryArcPath(viewport, { x: center.x, y: center.y }, radius, startAngle, endAngle);
     path.setAttribute("d", arc.filled ? `${arcPath} L ${viewport.mapX(center.x)} ${viewport.mapY(center.y)} Z` : arcPath);
@@ -1460,6 +1468,15 @@ export class InfiniteBoardView {
   private readonly nodeContentSignatures = new Map<string, string>();
   private readonly groupElements = new Map<string, HTMLElement>();
   private nodeInstanceSequence = 0;
+  private disposed = false;
+  private fontReflowFrame?: number;
+  private readonly handleFontsLoaded = (): void => {
+    if (this.disposed || this.fontReflowFrame !== undefined) return;
+    this.fontReflowFrame = this.hostWindow.requestAnimationFrame(() => {
+      this.fontReflowFrame = undefined;
+      if (!this.disposed && this.board) this.render(this.board, this.operation);
+    });
+  };
   private readonly hostWindow: Window;
   private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
   private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
@@ -1484,6 +1501,11 @@ export class InfiniteBoardView {
     const hostWindow = viewport.ownerDocument.defaultView;
     if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
     this.hostWindow = hostWindow;
+    // Font metrics may settle after the last playback operation. Coalesce font
+    // events, and never let a disposed board schedule another render.
+    const fonts = viewport.ownerDocument.fonts;
+    fonts?.addEventListener("loadingdone", this.handleFontsLoaded);
+    void fonts?.ready.then(this.handleFontsLoaded);
     viewport.addEventListener("wheel", this.handleWheel, { passive: false });
     viewport.addEventListener("pointerdown", this.handlePointerDown);
     // Right-button drag pans the board, so the browser context menu would
@@ -1503,6 +1525,8 @@ export class InfiniteBoardView {
       board?.board_id,
       operation?.operation_id,
     );
+    const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
+      ? this.captureReflowAnchor(board) : undefined;
     if (this.board?.board_id !== board?.board_id) this.lastAttentionTargets = [];
     this.board = board ?? undefined;
     this.operation = operation;
@@ -1510,14 +1534,42 @@ export class InfiniteBoardView {
     if (!board) { this.clearBoard(); return; }
     const layoutOptions = { regions: this.regionLayouts };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
-    const measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
-    const layout = this.layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
+    let measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
+    let layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
+    // Reading columns may narrow a card after its intrinsic-width measurement.
+    // Measure at the final width before committing heights and collisions.
+    for (let pass = 0; pass < 3; pass += 1) {
+      const changedWidth = Object.entries(measuredNodeSizes).some(([id, size]) =>
+        Math.abs(size.width - (layout.nodes[id]?.width ?? size.width)) >= .5);
+      if (!changedWidth) break;
+      measuredNodeSizes = this.syncNodes(board, layout, operation?.action, true);
+      layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
+    }
+    this.layout = layout;
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
     this.syncGroups(board, layout, operation?.action);
     this.renderConnections(board, layout);
     this.renderPointer(board, layout, operation);
+    if (stableAnchor) {
+      const current = layout.nodes[stableAnchor.id];
+      if (current) {
+        const dx = (stableAnchor.x - current.x) * stableAnchor.camera.scale;
+        const dy = (stableAnchor.y - current.y) * stableAnchor.camera.scale;
+        if (Math.abs(dx) > .01 || Math.abs(dy) > .01) {
+          this.panX = stableAnchor.camera.panX + dx;
+          this.panY = stableAnchor.camera.panY + dy;
+          this.scale = stableAnchor.camera.scale;
+          const transition = this.world.style.transition;
+          this.world.style.transition = "none";
+          this.transform();
+          // Commit compensation without animating a passive layout change.
+          this.world.getBoundingClientRect();
+          this.world.style.transition = transition;
+        }
+      }
+    }
     const animatedTargets = operation?.action?.animation
       ? variableAnimationFocusTargets(board, operation.action.animation.variable)
       : [];
@@ -1549,6 +1601,30 @@ export class InfiniteBoardView {
         this.requestTeachingFocus(activeId ? [activeId] : [], [activeRect], board);
       }
     }
+  }
+
+  private captureReflowAnchor(board: SemanticBoardState | null): { id: string; x: number; y: number; camera: CameraState } | undefined {
+    if (!board || !this.layout || this.gesture.phase !== "idle") return undefined;
+    const camera = this.getCameraState();
+    const width = this.viewport.clientWidth;
+    const height = this.viewport.clientHeight;
+    const visible = Object.entries(this.layout.nodes).filter(([id, rect]) => {
+      if (!board.nodes[id]) return false;
+      const x = camera.panX + rect.x * camera.scale;
+      const y = camera.panY + rect.y * camera.scale;
+      return x < width && y < height && x + rect.width * camera.scale > 0
+        && y + rect.height * camera.scale > 0;
+    });
+    const focused = new Set(board.focus);
+    visible.sort(([a, ra], [b, rb]) => {
+      const priority = Number(focused.has(b)) - Number(focused.has(a));
+      if (priority) return priority;
+      const distance = (r: Rect) => Math.hypot(camera.panX + (r.x + r.width / 2) * camera.scale - width / 2,
+        camera.panY + (r.y + r.height / 2) * camera.scale - height / 2);
+      return distance(ra) - distance(rb);
+    });
+    const first = visible[0];
+    return first ? { id: first[0], x: first[1].x, y: first[1].y, camera } : undefined;
   }
 
   setViewportInsets(insets: ViewportInsets): void {
@@ -1774,8 +1850,14 @@ export class InfiniteBoardView {
    */
   setRegionLayouts(layouts: Record<string, RegionLayoutConstraint>): void {
     if (JSON.stringify(layouts) === JSON.stringify(this.regionLayouts)) return;
+    const viewportChanged = Object.keys({ ...this.regionLayouts, ...layouts }).some((key) =>
+      this.regionLayouts[key]?.composition?.width !== layouts[key]?.composition?.width
+      || this.regionLayouts[key]?.composition?.height !== layouts[key]?.composition?.height);
     this.regionLayouts = structuredClone(layouts);
-    if (this.board) this.render(this.board, this.operation);
+    if (this.board) {
+      this.render(this.board, this.operation);
+      if (viewportChanged) this.resize();
+    }
   }
 
   /** Limits automatic teaching-camera decisions to the currently playing course. */
@@ -1929,6 +2011,9 @@ export class InfiniteBoardView {
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
   dispose(): void {
+    this.disposed = true;
+    this.viewport.ownerDocument.fonts?.removeEventListener("loadingdone", this.handleFontsLoaded);
+    if (this.fontReflowFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.fontReflowFrame);
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
@@ -1961,7 +2046,7 @@ export class InfiniteBoardView {
     this.lastAttentionTargets = [];
   }
 
-  private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): MeasuredNodeSizes {
+  private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction, constrainWidth = false): MeasuredNodeSizes {
     const activeCreateId = action?.op === "board.create" ? action.node?.id : undefined;
     const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     const variableValues = Object.fromEntries(Object.entries(board.variables ?? {}).map(
@@ -2011,10 +2096,12 @@ export class InfiniteBoardView {
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
-      const measuredMathWidth = kind === "math" ? renderedMathCardWidth(element) : undefined;
+      const intrinsicMathWidth = kind === "math" ? renderedMathCardWidth(element) : undefined;
+      const measuredMathWidth = intrinsicMathWidth === undefined ? undefined
+        : constrainWidth ? Math.min(intrinsicMathWidth, layout.nodes[node.id]!.width) : intrinsicMathWidth;
       if (measuredMathWidth) element.style.width = `${measuredMathWidth}px`;
-      if (kind === "math") fitRenderedMath(element);
       if (!fixedVisualSize) element.style.height = "auto";
+      if (kind === "math") fitRenderedMath(element);
       const provisional = layout.nodes[node.id]!;
       measured[node.id] = {
         width: measuredMathWidth ?? provisional.width,
@@ -2050,6 +2137,28 @@ export class InfiniteBoardView {
     }
     for (const group of Object.values(board.groups)) {
       const rect = layout.groups[group.id]; if (!rect) continue;
+      // A group frame only renders when its members form a contiguous block:
+      // if any unrelated card intrudes into the padded frame, the frame would
+      // paint over that card, so the grouping stays semantic-only.
+      const memberIds = new Set<string>();
+      const collect = (id: string, seen = new Set<string>()) => {
+        if (seen.has(id)) return; seen.add(id);
+        for (const member of board.groups[id]?.members ?? []) {
+          if (board.nodes[member]) memberIds.add(member); else collect(member, seen);
+        }
+      };
+      collect(group.id);
+      const intrudes = Object.entries(layout.nodes).some(([id, card]) => {
+        if (memberIds.has(id)) return false;
+        const overlapX = Math.min(card.x + card.width, rect.x + rect.width) - Math.max(card.x, rect.x);
+        const overlapY = Math.min(card.y + card.height, rect.y + rect.height) - Math.max(card.y, rect.y);
+        return overlapX > 12 && overlapY > 12;
+      }) || Object.values(layout.attachments).some((card) => {
+        const overlapX = Math.min(card.x + card.width, rect.x + rect.width) - Math.max(card.x, rect.x);
+        const overlapY = Math.min(card.y + card.height, rect.y + rect.height) - Math.max(card.y, rect.y);
+        return overlapX > 0 && overlapY > 0;
+      });
+      if (intrudes) continue;
       let element = this.groupElements.get(group.id);
       if (!element) {
         element = document.createElement("div"); element.dataset.id = group.id;
