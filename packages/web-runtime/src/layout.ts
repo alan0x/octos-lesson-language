@@ -59,11 +59,6 @@ export interface RegionLayoutConstraint {
     /** Currently rendered attachment height used by teaching-camera focus. */
     focusHeight?: number;
     gap?: number;
-    /**
-     * Controls only: practice declared for the same visuals but not yet open.
-     * Its space is reserved so opening practice never pushes other content.
-     */
-    reservedTask?: { width: number; height: number };
   }>;
 }
 

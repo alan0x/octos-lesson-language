@@ -945,14 +945,12 @@ test("arriving cards never move existing cards; widths may only grow", () => {
 
 test("a single visual's controls and practice form an operation column on its left", () => {
   const board = emptyBoard({ scene: card("scene", "scene3d"), m: card("m", "math") });
-  const control = { id: "slider", kind: "control" as const, anchorNodeId: "scene", width: 360, height: 44, gap: 24,
-    reservedTask: { width: 330, height: 200 } };
+  const control = { id: "slider", kind: "control" as const, anchorNodeId: "scene", width: 360, height: 44, gap: 24 };
   const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { scene: "1", m: "2" },
     plannedSteps: { "1": { visual: 1 }, "2": { math: 1 } }, composition: wideComposition, attachments: [control] };
   const before = computeBoardLayout(board, {}, { regions: { r: region } });
   const after = computeBoardLayout(board, {}, { regions: { r: { ...region,
     attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "scene", width: 330, height: 190 }] } } });
-  assert.deepEqual(after.nodes, before.nodes, "no card moves when practice opens");
   assert.deepEqual(after.attachments.slider, before.attachments.slider, "the control does not move when practice opens");
   assert.equal(before.attachments.slider!.y, before.nodes.scene!.y, "controls share the visual's top line");
   assert.ok(before.attachments.slider!.x + 360 <= before.nodes.scene!.x, "controls sit left of the visual");
@@ -963,8 +961,7 @@ test("a single visual's controls and practice form an operation column on its le
 
 test("comparison visuals share controls below them and practice beside the controls", () => {
   const board = emptyBoard({ a: card("a", "scene3d"), b: card("b", "geometry", { role: "comparison_visual", placement: { relation: "right_of", anchor: "a" } }) });
-  const control = { id: "slider", kind: "control" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 44,
-    reservedTask: { width: 330, height: 200 } };
+  const control = { id: "slider", kind: "control" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 44 };
   const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "1" },
     plannedSteps: { "1": { visual: 2 } }, composition: wideComposition, attachments: [control] };
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
@@ -973,20 +970,53 @@ test("comparison visuals share controls below them and practice beside the contr
   const opened = computeBoardLayout(board, {}, { regions: { r: { ...region,
     attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 330, height: 190 }] } } });
   assert.equal(opened.attachments.task!.y, opened.attachments.slider!.y, "practice sits beside the shared controls");
+  assert.deepEqual(opened.attachments.slider, layout.attachments.slider, "controls keep their place when practice opens");
   assert.deepEqual(opened.nodes, layout.nodes);
 });
 
-test("an open practice panel shorter than its reservation never moves later rows", () => {
+test("opening practice shifts later content without re-splitting any step", () => {
+  const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot", { role: "comparison_visual", placement: { relation: "right_of", anchor: "a" } }),
+    m1: card("m1", "math"), n1: card("n1", "note"), m2: card("m2", "math"), n2: card("n2", "note") });
+  const measured: MeasuredNodeSizes = { a: { width: 440, height: 380 }, b: { width: 440, height: 360 }, m1: { width: 300, height: 72 },
+    n1: { width: 300, height: 135 }, m2: { width: 590, height: 72 }, n2: { width: 590, height: 135 } };
+  const control = { id: "slider", kind: "control" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 44 };
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "1", m1: "4", n1: "4", m2: "4", n2: "4" },
+    plannedSteps: { "1": { visual: 2 }, "4": { math: 2, text: 2 } }, composition: { ...wideComposition, width: 1440, height: 900 }, attachments: [control] };
+  const before = computeBoardLayout(board, measured, { regions: { r: region } });
+  const after = computeBoardLayout(board, measured, { regions: { r: { ...region,
+    attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 190 }] } } });
+  const dy = after.nodes.m1!.y - before.nodes.m1!.y;
+  for (const id of ["m1", "n1", "m2", "n2"]) {
+    assert.equal(after.nodes[id]!.x, before.nodes[id]!.x, `${id} keeps its column`);
+    assert.equal(after.nodes[id]!.y - before.nodes[id]!.y, dy, `${id} shifts with its row`);
+  }
+});
+
+test("no space is reserved for practice before it opens", () => {
   const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot", { role: "comparison_visual", placement: { relation: "right_of", anchor: "a" } }),
     c: card("c", "plot"), m: card("m", "math") });
-  const control = { id: "slider", kind: "control" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 44,
-    reservedTask: { width: 360, height: 200 } };
+  const control = { id: "slider", kind: "control" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 44 };
   const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "1", c: "2", m: "2" },
     plannedSteps: { "1": { visual: 2 }, "2": { visual: 1, math: 1 } }, composition: wideComposition, attachments: [control] };
-  const before = computeBoardLayout(board, {}, { regions: { r: region } });
-  const after = computeBoardLayout(board, {}, { regions: { r: { ...region,
-    attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 360, height: 150 }] } } });
-  assert.deepEqual(after.nodes, before.nodes, "later rows keep their place when a shorter panel opens");
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  const rowOneBottom = layout.attachments.slider!.y + layout.attachments.slider!.height;
+  assert.equal(layout.nodes.c!.y, rowOneBottom + 72, "the next row starts right after the controls");
+});
+
+test("a later comparison visual declared right_of an earlier visual joins that row", () => {
+  const board = emptyBoard({ circle: card("circle", "geometry"), cos: card("cos", "plot"),
+    compare: card("compare", "plot", { role: "comparison_visual", placement: { relation: "right_of", anchor: "pair" } }),
+    f: card("f", "math") });
+  (board.groups as Record<string, unknown>).pair = { id: "pair", members: ["circle", "cos"] };
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { circle: "1", cos: "1", compare: "3", f: "3" },
+    plannedSteps: { "1": { visual: 2 }, "3": { visual: 1, math: 1 } }, composition: wideComposition };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  assert.equal(layout.nodes.compare!.y, layout.nodes.circle!.y, "the comparison view shares the earlier row's top line");
+  assert.ok(layout.nodes.compare!.x > layout.nodes.cos!.x + layout.nodes.cos!.width, "and sits to the right of the compared figures");
+  assert.ok(layout.nodes.f!.x > layout.nodes.compare!.x + layout.nodes.compare!.width, "the step's text follows it on the same row");
+  const plainBoard = emptyBoard({ circle: card("circle", "geometry"), cos: card("cos", "plot"), other: card("other", "plot"), f: card("f", "math") });
+  const plain = computeBoardLayout(plainBoard, {}, { regions: { r: { ...region, nodeSections: { circle: "1", cos: "1", other: "3", f: "3" } } } });
+  assert.ok(plain.nodes.other!.y > plain.nodes.circle!.y + plain.nodes.circle!.height, "an undeclared new visual still opens a new row");
 });
 
 test("a lead-in column never splits a comparison pair that fits the reading width", () => {
@@ -1084,4 +1114,12 @@ test("planned visual capacity reserves the second slot before the card exists", 
   assert.deepEqual(after.nodes.v1, before.nodes.v1, "first visual never moves");
   assert.deepEqual(after.nodes.f1, before.nodes.f1, "formula never moves");
   assert.ok(after.nodes.v2!.x > after.nodes.v1!.x && after.nodes.v2!.y === after.nodes.v1!.y, "second visual fills the reserved slot beside the first");
+});
+
+test("animation camera frames the Beat target with the animated visuals only when readable", async () => {
+  const { animationFocusTargets } = await import("../src/board-view.js");
+  assert.deepEqual(animationFocusTargets(["circle", "cos"], ["circle"], () => false), ["circle", "cos"], "a Beat target among the animated visuals changes nothing");
+  assert.deepEqual(animationFocusTargets(["circle", "cos"], ["compare"], () => true), ["circle", "cos", "compare"], "frame both when readable");
+  assert.deepEqual(animationFocusTargets(["circle", "cos"], ["compare"], () => false), ["compare"], "otherwise keep the Beat target");
+  assert.deepEqual(animationFocusTargets(["circle", "cos"], [], () => false), ["circle", "cos"], "without a Beat target follow the animation");
 });

@@ -229,6 +229,27 @@ export function variableAnimationFocusTargets(
     .map((node) => node.id);
 }
 
+/**
+ * Chooses what the camera frames while a variable animation plays. The
+ * animated visuals normally win, but when the current Beat's own targets (what
+ * the narration and pointer are about) are not among them, the camera frames
+ * both when that stays readable, and otherwise keeps the Beat's targets.
+ */
+export function animationFocusTargets(
+  animatedTargets: string[],
+  beatTargets: string[],
+  readableTogether: (targets: string[]) => boolean,
+): string[] {
+  const outside = beatTargets.filter((id) => !animatedTargets.includes(id));
+  if (!animatedTargets.length) return [...beatTargets];
+  if (!outside.length) return [...animatedTargets];
+  const union = [...animatedTargets, ...outside];
+  return readableTogether(union) ? union : [...beatTargets];
+}
+
+/** Lowest camera scale at which an animation is framed together with the Beat target. */
+export const ANIMATION_CONTEXT_MIN_SCALE = .75;
+
 const PRIMARY_TEACHING_VISUAL_KINDS = new Set([
   "geometry",
   "plot",
@@ -1435,6 +1456,7 @@ export class InfiniteBoardView {
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
+  private beatTargets: string[] = [];
   private activeRegionId?: string;
   private readonly gesture = new BoardGestureRecognizer();
   /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
@@ -1579,7 +1601,11 @@ export class InfiniteBoardView {
       this.lastAttentionTargets,
     );
     const requestedFocusTargets = animatedTargets.length
-      ? animatedTargets
+      ? animationFocusTargets(
+          focusTargetsInRegion(board, animatedTargets, this.activeRegionId),
+          focusTargetsInRegion(board, this.beatTargets, this.activeRegionId),
+          (targets) => this.readableTogether(targets, board, layout),
+        )
       : declaredFocusTargets;
     const focusTargets = focusTargetsInRegion(board, requestedFocusTargets, this.activeRegionId);
     const focusRects = this.resolveFocusRects(focusTargets, board, layout);
@@ -1865,6 +1891,11 @@ export class InfiniteBoardView {
     if (regionId === this.activeRegionId) return;
     this.activeRegionId = regionId;
     this.lastAttentionTargets = [];
+  }
+
+  /** The current Beat's own targets (focus, pointer, created cards), supplied by the host. */
+  setBeatTargets(targetIds: string[]): void {
+    this.beatTargets = [...targetIds];
   }
 
   /** Sets a readability floor for ordinary automatic teaching-camera moves. */
@@ -2307,6 +2338,20 @@ export class InfiniteBoardView {
    * and replayed when the last pointer lifts. The manual-navigation flag is
    * re-asserted meanwhile so gesture transforms stay transition-free.
    */
+  private readableTogether(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): boolean {
+    const rects = this.resolveFocusRects(targetIds, board, layout);
+    if (!rects.length) return false;
+    const camera = planFocusCamera(
+      rects,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      this.viewport.getBoundingClientRect(),
+      "relationship",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+    );
+    return camera.scale >= ANIMATION_CONTEXT_MIN_SCALE;
+  }
+
   private requestTeachingFocus(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
     if (this.gesture.isActive()) {
       this.pendingCameraFocus = { targetIds, rects, board };

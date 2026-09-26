@@ -95,7 +95,7 @@ function layoutLegacyTeachingRegion(state: SemanticBoardState, ids: string[], si
 type AttachmentSpec = NonNullable<RegionLayoutConstraint['attachments']>[number];
 
 interface Item { id: string; section: string; kind: string; visual: boolean; w: number; h: number }
-interface Cluster { visualIds: string[]; controls?: AttachmentSpec; tasks?: AttachmentSpec; reservedTask?: { width: number; height: number } }
+interface Cluster { visualIds: string[]; controls?: AttachmentSpec; tasks?: AttachmentSpec }
 interface Slot { x: number; w: number; y: number }
 interface SideColumn { x: number; width: number; frozenWidth: number; ids: string[]; spans: string[] }
 interface StageBox { top: number; bottom: number; slots: Record<string, Slot> | null; slotOf: Record<string, Slot> }
@@ -188,13 +188,34 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     if (!cluster) { cluster = { visualIds: [] }; clusters.push(cluster); }
     cluster.visualIds = [...new Set([...cluster.visualIds, ...visualIds])];
     if (attachment.kind === 'task') cluster.tasks = attachment;
-    else { cluster.controls = attachment; if (attachment.reservedTask) cluster.reservedTask = attachment.reservedTask; }
+    else cluster.controls = attachment;
   }
 
+  // A visual the lesson declares as a comparison/supporting view right_of a
+  // visual from an earlier step joins that visual's row instead of opening a
+  // new stage, so the compared figures stay side by side.
+  const anchorVisuals = (id: string): Item[] => {
+    const direct = byId.get(id);
+    if (direct) return direct.visual ? [direct] : [];
+    return members(id).map(member => byId.get(member)!).filter(item => item?.visual);
+  };
+  const joinsEarlierRow = (item: Item, stageSections: string[]) => {
+    const node = state.nodes[item.id]!;
+    if (!item.visual || node.placement?.relation !== 'right_of'
+      || !['comparison_visual', 'supporting_visual'].includes(String(node.role ?? ''))) return false;
+    const anchors = anchorVisuals(node.placement?.anchor ?? '');
+    return anchors.length > 0 && anchors.every(anchor => anchor.section !== item.section && stageSections.includes(anchor.section));
+  };
+  const joiners = new Set<string>();
   const stages: Array<{ open: string; sections: string[] }> = [];
   for (const section of sections) {
-    if (!stages.length || plannedVisuals(section) > 0) stages.push({ open: section, sections: [section] });
-    else stages[stages.length - 1]!.sections.push(section);
+    const current = stages[stages.length - 1];
+    const sectionVisuals = items.filter(item => item.section === section && item.visual);
+    const joining = current !== undefined && sectionVisuals.length > 0
+      && sectionVisuals.every(item => joinsEarlierRow(item, current.sections));
+    if (joining) sectionVisuals.forEach(item => joiners.add(item.id));
+    if (!stages.length || (plannedVisuals(section) > 0 && !joining)) stages.push({ open: section, sections: [section] });
+    else current!.sections.push(section);
   }
   const widestVisual = Math.max(0, ...items.filter(item => item.visual).map(item => item.w));
   const wide = readingWidth >= Math.max(DEFAULT_VISUAL_WIDTH, widestVisual) + WORKBENCH_GAP + MIN_WIDE_COLUMN;
@@ -305,24 +326,23 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
 
     // 2. Workbench: operation column (single-visual stages), visuals, controls.
     let referenceHeight = columnHeight;
+    let referenceBottom = top;
     if (visuals.length || plannedVisuals(stage.open) > 0) {
       const planCount = plannedVisuals(stage.open);
       const cluster = clusters.find(c => c.controls && c.visualIds.some(id => visuals.some(v => v.id === id)));
       const besideShape = planCount <= 1;
-      // Practice space: the larger of the reservation and the open panel, so an
-      // open panel shorter than its reservation never pulls later rows upward.
-      const reservedTask = cluster?.tasks || cluster?.reservedTask ? {
-        width: Math.max(cluster.tasks?.width ?? 0, cluster.reservedTask?.width ?? 0),
-        height: Math.max(cluster.tasks?.height ?? 0, cluster.reservedTask?.height ?? 0),
-      } : undefined;
+      // Practice takes space only once it is open; no space is reserved for it,
+      // so opening practice may move later content once.
+      const openTask = cluster?.tasks;
       let x0 = x;
       if (cluster?.controls && besideShape) {
-        const operationWidth = Math.max(cluster.controls.width, reservedTask?.width ?? 0);
+        const operationWidth = Math.max(cluster.controls.width, openTask?.width ?? 0);
         placeAttachment(cluster.controls, x0, top);
         let operationBottom = top + cluster.controls.height;
-        if (reservedTask) {
-          if (cluster.tasks) placeAttachment(cluster.tasks, x0, operationBottom + CARD_GAP);
-          operationBottom += CARD_GAP + reservedTask.height;
+        referenceBottom = Math.max(referenceBottom, operationBottom);
+        if (openTask) {
+          placeAttachment(openTask, x0, operationBottom + CARD_GAP);
+          operationBottom += CARD_GAP + openTask.height;
         }
         box.bottom = Math.max(box.bottom, operationBottom);
         x0 += operationWidth + WORKBENCH_GAP;
@@ -345,22 +365,24 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         right = Math.max(right, x0 + (visuals.length + missing) * (width + CARD_GAP) - CARD_GAP);
       }
       let visualBottom = visuals.length ? vy + lineHeight : top + 360;
+      referenceBottom = Math.max(referenceBottom, visualBottom);
       box.bottom = Math.max(box.bottom, visualBottom);
       if (cluster?.controls && !besideShape) {
         const bound = cluster.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
         const left = bound.length ? Math.min(...bound.map(r => r.x)) : x0;
         const spanRight = bound.length ? Math.max(...bound.map(r => r.x + r.width)) : right;
         const y = Math.max(visualBottom, ...bound.map(r => r.y + r.height)) + CONTROL_GAP;
-        const besideControls = reservedTask && spanRight - left >= cluster.controls.width + CARD_GAP + reservedTask.width;
-        const cx = reservedTask ? left : left + Math.max(0, (spanRight - left - cluster.controls.width) / 2);
+        const besideControls = openTask && spanRight - left >= cluster.controls.width + CARD_GAP + openTask.width;
+        // Controls keep the left edge of their visuals whether or not practice is open.
+        const cx = left;
         placeAttachment(cluster.controls, cx, y);
         let bottom = y + cluster.controls.height;
-        if (reservedTask) {
+        referenceBottom = Math.max(referenceBottom, bottom);
+        if (openTask) {
           const tx = besideControls ? cx + cluster.controls.width + CARD_GAP : cx;
           const ty = besideControls ? y : y + cluster.controls.height + CARD_GAP;
-          if (cluster.tasks) placeAttachment(cluster.tasks, tx, ty);
-          bottom = Math.max(bottom, ty + reservedTask.height);
-          right = Math.max(right, tx + reservedTask.width);
+          placeAttachment(openTask, tx, ty);
+          bottom = Math.max(bottom, ty + openTask.height);
         }
         visualBottom = Math.max(visualBottom, bottom);
         box.bottom = Math.max(box.bottom, bottom);
@@ -375,7 +397,9 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         visualBottom = Math.max(visualBottom, y + c.tasks.height);
         box.bottom = Math.max(box.bottom, visualBottom);
       }
-      referenceHeight = Math.max(visualBottom, box.bottom) - top;
+      // The row height that guides column splitting ignores open practice, so
+      // opening practice shifts later content but never re-splits a step.
+      referenceHeight = referenceBottom - top;
       if (Object.keys(relations).length && visuals.length) {
         box.slots = {};
         for (const visual of visuals.filter(v => nodes[v.id]!.y === top)) {
@@ -391,6 +415,19 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     colTop = top; colWidth = 0; colY = top; colCount = 0; colIds = []; side = null;
     let first = true;
     for (const section of stage.sections) {
+      // Joining visuals open this step's group on the row's top line.
+      const joining = own.filter(item => item.section === section && joiners.has(item.id));
+      if (joining.length) {
+        if (!first) openColumn(STEP_GAP);
+        first = false;
+        for (const visual of joining) {
+          if (x > 0 && x + visual.w > readingWidth) wrapToBand();
+          place(visual.id, x, colTop, visual.w, visual.h);
+          x += visual.w + CARD_GAP;
+          box.bottom = Math.max(box.bottom, colTop + visual.h);
+        }
+        x += WORKBENCH_GAP - CARD_GAP;
+      }
       const cards = own.filter(item => item.section === section && !item.visual && !leadIn.includes(item) && !slotted.has(item.id));
       const flow: Item[] = [];
       for (const item of cards) {
@@ -400,7 +437,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         flow.push(item);
       }
       if (!flow.length) continue;
-      if (!first) openColumn(STEP_GAP);
+      if (!first && !joining.length) openColumn(STEP_GAP);
       first = false;
       plan = null;
       const counts = planned[section];
@@ -467,10 +504,12 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     if (visuals.length) y += STEP_GAP - CARD_GAP;
     let first = true;
     for (const section of stage.sections) {
+      const joining = own.filter(item => item.section === section && joiners.has(item.id));
       const cards = own.filter(item => item.section === section && !item.visual && !leadIn.includes(item));
-      if (!cards.length) continue;
+      if (!cards.length && !joining.length) continue;
       if (!first) y += STEP_GAP - CARD_GAP;
       first = false;
+      for (const visual of joining) { place(visual.id, 0, y, visual.w, visual.h); y += visual.h + CARD_GAP; }
       for (const item of cards) { place(item.id, 0, y, width, item.h); y += item.h + CARD_GAP; }
     }
     return { top, bottom: Math.max(top, y - CARD_GAP), slots: null, slotOf: {} };
