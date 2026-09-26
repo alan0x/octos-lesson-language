@@ -94,364 +94,393 @@ function layoutLegacyTeachingRegion(state: SemanticBoardState, ids: string[], si
 
 type AttachmentSpec = NonNullable<RegionLayoutConstraint['attachments']>[number];
 
-interface StageGroup {
-  openingSection: string;
-  sections: string[];
-  visualIds: string[];
-  plannedVisuals: number;
-  plannedExplainCount: number;
-  plannedExplainSteps: number;
-  hasNextStage: boolean;
-  stepBlocks: Array<{ section: string; explainIds: string[] }>;
-  controls: AttachmentSpec[];
-  tasks: AttachmentSpec[];
-}
+interface Item { id: string; section: string; kind: string; visual: boolean; w: number; h: number }
+interface Cluster { visualIds: string[]; controls?: AttachmentSpec; tasks?: AttachmentSpec; reservedTask?: { width: number; height: number } }
+interface Slot { x: number; w: number; y: number }
+interface SideColumn { x: number; width: number; frozenWidth: number; ids: string[]; spans: string[] }
+interface StageBox { top: number; bottom: number; slots: Record<string, Slot> | null; slotOf: Record<string, Slot> }
+
+const CARD_GAP = 16, WORKBENCH_GAP = 28, SUBCOLUMN_GAP = 20, STEP_GAP = 40, STAGE_GAP = 72, BAND_GAP = 36, CONTROL_GAP = 24;
+const MIN_COLUMN_HEIGHT = 260, MIN_WIDE_COLUMN = 300, SAFE_MARGIN = 80, READING_SCALE = 0.9;
+const DEFAULT_HEIGHT: Record<string, number> = { math: 90, note: 150, text: 120 };
+const DEFAULT_WIDTH: Record<string, number> = { math: 320, note: 330, text: 320 };
+const DEFAULT_VISUAL_WIDTH = 460;
 
 /**
- * Stage-Anchored Step-Stream teaching layout (通用语义锚点 × 步骤连续流布局).
+ * Stage Rows × Step Columns teaching layout (阶段行 × 步骤列).
  *
- * 1. Steps are grouped into Visual Stages: a new stage opens at the first step
- *    or whenever a step introduces new visual anchor card(s) (geometry, plot,
- *    scene3d, image, diagram). Subsequent non-visual steps attach to the active
- *    stage's right-hand explanation spine in strict step order.
- * 2. Interactive attachments (variable controls and student practice tasks) bind
- *    to the stage owning their anchored visual(s) and form a cohesive dock
- *    adjacent to the visual and controls (<28px gap), never exiled to a distant
- *    text column.
- * 3. Each stage adapts its internal topology to the available horizontal budget:
- *    - Topology A (Left Visual Workbench + Right Step-Ordered Spine) when the
- *      stage has >= 380px of horizontal room beside the visual block.
- *    - Topology B (Top Visual Banner + Bottom Interactive Dock & Step Spine)
- *      when dual comparison visuals occupy a narrow viewport (< 380px remaining
- *      beside the dual visuals), preserving side-by-side visual comparison
- *      without forcing extreme horizontal zoom-out.
- * 4. Inside each step of the explanation spine, cards flow horizontally in
- *    creation order and wrap cleanly within the spine width; if a later multi-card
- *    summary step exceeds the visual workbench height, it reclaims the full stage
- *    width below the visual workbench.
+ * - A stage is a step that introduces a visual (present or planned) plus the
+ *   following steps that add none. Each stage is one row; rows stack downwards.
+ * - Inside a row everything reads left to right in narration order: text written
+ *   before the stage's first visual, the operation column (controls + practice)
+ *   for a single-visual stage, the visual(s), then one column group per step.
+ * - Columns fill top-down up to the window's readable height; a new step opens a
+ *   new column; a step that would pass the readable width starts the next band.
+ * - Planned step contents (plannedSteps) split a step into balanced columns when
+ *   it starts, using sizes of cards created earlier; nothing is revisited later.
+ * - Optional explicit relations place a card under the visual it explains, or
+ *   beside/below the card it explains. Without relations those rules are inert.
+ * - Placement is append-only: a card's position depends only on content created
+ *   before it, so arriving cards and opening practice never move existing cards.
  */
 function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: MeasuredNodeSizes,
   region: RegionLayoutConstraint, external: Rect[]) {
-  const composition = region.composition;
-  if (!composition) return layoutLegacyTeachingRegion(state, ids, sizes, region, external);
+  const composition = region.composition!;
+  const insets = composition.insets ?? {};
+  const safeWidth = composition.width - (insets.left ?? 0) - (insets.right ?? 0) - SAFE_MARGIN;
+  const safeHeight = composition.height - (insets.top ?? 0) - (insets.bottom ?? 0) - SAFE_MARGIN;
+  const readingWidth = Math.max(320, safeWidth / READING_SCALE);
+  const columnHeight = Math.max(MIN_COLUMN_HEIGHT, safeHeight / READING_SCALE);
+  const relations = region.relations ?? {};
+  const targetsOf = (id: string) => relations[id] ?? [];
 
-  const cardGap = 16, stepGap = 24, colGap = 28, stageGap = 36;
-  const vpWidth = composition.width;
-  const targetBoardW = vpWidth >= 1600 ? 1600 : vpWidth >= 1100 ? 1320 : 928;
-  const sectionOf = (id: string) => region.nodeSections?.[id] ?? 'legacy';
-  const isVisual = (kind: string) => visualKinds.has(kind);
-
-  // Pre-compute planned stage summaries from region.plannedSteps so progressive
-  // playback knows from Beat 1 whether a stage has 2 visuals or a subsequent stage.
-  const plannedStageMap = new Map<string, { visuals: number; explainCount: number; explainSteps: number; hasNextStage: boolean }>();
-  if (region.plannedSteps) {
-    const pStages: Array<{ opening: string; visuals: number; explainCount: number; explainSteps: number }> = [];
-    for (const [sec, counts] of Object.entries(region.plannedSteps)) {
-      const v = counts.visual ?? 0;
-      const e = (counts.math ?? 0) + (counts.text ?? 0);
-      if (v === 0 && e === 0) continue;
-      if (pStages.length === 0 || v > 0) {
-        pStages.push({ opening: sec, visuals: v, explainCount: e, explainSteps: e > 0 ? 1 : 0 });
-      } else {
-        const cur = pStages[pStages.length - 1]!;
-        cur.explainCount += e;
-        if (e > 0) cur.explainSteps += 1;
-      }
-    }
-    pStages.forEach((ps, idx) => {
-      plannedStageMap.set(ps.opening, {
-        visuals: ps.visuals,
-        explainCount: ps.explainCount,
-        explainSteps: ps.explainSteps,
-        hasNextStage: idx < pStages.length - 1,
-      });
+  const creationOrder = new Map(Object.keys(region.nodeSections ?? {}).map((id, index) => [id, index]));
+  const items: Item[] = [...ids]
+    .sort((a, b) => (creationOrder.get(a) ?? 1e9) - (creationOrder.get(b) ?? 1e9))
+    .map(id => {
+      const kind = String(state.nodes[id]!.kind ?? 'text');
+      return { id, section: region.nodeSections?.[id] ?? 'legacy', kind, visual: visualKinds.has(kind),
+        w: sizes[id]!.width, h: sizes[id]!.height };
     });
-  }
-
-  const creationOrder = new Map(Object.keys(region.nodeSections ?? {}).map((id, idx) => [id, idx]));
-  const orderedIds = [...ids].sort((a, b) => (creationOrder.get(a) ?? 1e9) - (creationOrder.get(b) ?? 1e9));
-  const rowKeys: string[] = [];
-  const rows = new Map<string, string[]>();
-  for (const id of orderedIds) {
-    const section = sectionOf(id);
-    if (!rows.has(section)) { rows.set(section, []); rowKeys.push(section); }
-    rows.get(section)!.push(id);
-  }
+  const byId = new Map(items.map(item => [item.id, item]));
+  const planned = region.plannedSteps ?? {};
+  const sections = [...new Set(items.map(item => item.section))];
   if (region.plannedSteps) {
-    const stepOrder = new Map(Object.keys(region.plannedSteps).map((sec, idx) => [sec, idx]));
-    rowKeys.sort((a, b) => (stepOrder.get(a) ?? 1e9) - (stepOrder.get(b) ?? 1e9));
+    const order = new Map(Object.keys(region.plannedSteps).map((section, index) => [section, index]));
+    sections.sort((a, b) => (order.get(a) ?? 1e9) - (order.get(b) ?? 1e9));
+  }
+  const plannedVisuals = (section: string) => Math.max(planned[section]?.visual ?? 0,
+    items.filter(item => item.section === section && item.visual).length);
+
+  // Comparison sets: explicit groups/connections, or a comparison/supporting
+  // visual placed right_of another visual of the same step.
+  const pairs: string[][] = [];
+  const members = (id: string, seen = new Set<string>()): string[] => {
+    if (byId.has(id)) return [id];
+    if (seen.has(id)) return [];
+    seen.add(id);
+    return (state.groups[id]?.members ?? []).flatMap((member: string) => members(member, seen));
+  };
+  for (const group of Object.values(state.groups)) {
+    const visuals = members(group.id).filter(id => byId.get(id)?.visual);
+    if (visuals.length > 1) pairs.push(visuals);
+  }
+  const endpoint = (value: any) => typeof value === 'string' ? value : value?.node_id;
+  for (const connection of Object.values(state.connections)) {
+    const a = byId.get(endpoint(connection.from)), b = byId.get(endpoint(connection.to));
+    if (a?.visual && b?.visual) pairs.push([a.id, b.id]);
+  }
+  for (const item of items) {
+    const node = state.nodes[item.id]!;
+    const anchor = byId.get(node.placement?.anchor ?? '');
+    if (item.visual && node.placement?.relation === 'right_of' && anchor?.visual && anchor.section === item.section
+      && ['comparison_visual', 'supporting_visual'].includes(String(node.role ?? ''))) pairs.push([anchor.id, item.id]);
+  }
+  const paired = (a: string, b: string) => pairs.some(pair => pair.includes(a) && pair.includes(b));
+
+  // Controls and practice, grouped by the visuals they control.
+  const clusters: Cluster[] = [];
+  for (const attachment of region.attachments ?? []) {
+    const visualIds = (attachment.anchorNodeIds?.length ? attachment.anchorNodeIds : [attachment.anchorNodeId])
+      .filter(id => byId.get(id)?.visual);
+    if (!visualIds.length) continue;
+    let cluster = clusters.find(c => c.visualIds.some(id => visualIds.includes(id)));
+    if (!cluster) { cluster = { visualIds: [] }; clusters.push(cluster); }
+    cluster.visualIds = [...new Set([...cluster.visualIds, ...visualIds])];
+    if (attachment.kind === 'task') cluster.tasks = attachment;
+    else { cluster.controls = attachment; if (attachment.reservedTask) cluster.reservedTask = attachment.reservedTask; }
   }
 
-  const stages: StageGroup[] = [];
-  for (const section of rowKeys) {
-    const rowIds = rows.get(section)!;
-    const visIds = rowIds.filter(id => isVisual(String(state.nodes[id]!.kind ?? '')));
-    const explainIds = rowIds.filter(id => !isVisual(String(state.nodes[id]!.kind ?? '')));
-    const stepPlan = region.plannedSteps?.[section];
-    const hasVisual = visIds.length > 0 || (stepPlan?.visual ?? 0) > 0;
-    if (stages.length === 0 || hasVisual) {
-      const ps = plannedStageMap.get(section);
-      stages.push({
-        openingSection: section,
-        sections: [section],
-        visualIds: [...visIds],
-        plannedVisuals: Math.max(visIds.length, stepPlan?.visual ?? 0, ps?.visuals ?? 0),
-        plannedExplainCount: Math.max(explainIds.length, ps?.explainCount ?? 0),
-        plannedExplainSteps: Math.max(explainIds.length ? 1 : 0, ps?.explainSteps ?? 0),
-        hasNextStage: ps?.hasNextStage ?? false,
-        stepBlocks: explainIds.length ? [{ section, explainIds }] : [],
-        controls: [],
-        tasks: [],
-      });
-    } else {
-      const cur = stages[stages.length - 1]!;
-      cur.sections.push(section);
-      if (explainIds.length) {
-        cur.stepBlocks.push({ section, explainIds });
-        cur.plannedExplainCount = Math.max(cur.plannedExplainCount,
-          cur.stepBlocks.reduce((acc, b) => acc + b.explainIds.length, 0));
-        cur.plannedExplainSteps = Math.max(cur.plannedExplainSteps, cur.stepBlocks.length);
-      }
-    }
+  const stages: Array<{ open: string; sections: string[] }> = [];
+  for (const section of sections) {
+    if (!stages.length || plannedVisuals(section) > 0) stages.push({ open: section, sections: [section] });
+    else stages[stages.length - 1]!.sections.push(section);
   }
-  stages.forEach((sg, idx) => {
-    if (idx < stages.length - 1) sg.hasNextStage = true;
-  });
-
-  // Bind controls and practice tasks to the stage owning their anchored visual(s).
-  for (const a of region.attachments ?? []) {
-    const anchors = (a.anchorNodeIds?.length ? a.anchorNodeIds : [a.anchorNodeId]).filter(id => ids.includes(id));
-    if (!anchors.length || !stages.length) continue;
-    const targetStage = stages.find(sg => sg.visualIds.includes(a.anchorNodeId))
-      ?? stages.find(sg => anchors.some(id => sg.visualIds.includes(id)))
-      ?? stages.find(sg => anchors.some(id => sg.sections.includes(sectionOf(id))))
-      ?? stages[stages.length - 1]!;
-    if (a.kind === 'task') targetStage.tasks.push(a);
-    else targetStage.controls.push(a);
-  }
+  const widestVisual = Math.max(0, ...items.filter(item => item.visual).map(item => item.w));
+  const wide = readingWidth >= Math.max(DEFAULT_VISUAL_WIDTH, widestVisual) + WORKBENCH_GAP + MIN_WIDE_COLUMN;
 
   const nodes: Record<string, Rect> = {}, attachments: Record<string, Rect> = {};
-  let stageY = 0;
-
-  const layoutFlowBlock = (cardIds: string[], startX: number, startY: number, maxW: number): number => {
-    let cx = 0, cy = 0, lineH = 0;
-    for (const id of cardIds) {
-      const size = sizes[id]!;
-      const w = Math.min(maxW, size.width);
-      if (cx > 0 && cx + w > maxW) {
-        cy += lineH + cardGap;
-        cx = 0;
-        lineH = 0;
-      }
-      nodes[id] = { x: startX + cx, y: startY + cy, width: w, height: size.height };
-      cx += w + cardGap;
-      lineH = Math.max(lineH, size.height);
-    }
-    return cy + lineH;
+  const slotted = new Set<string>();
+  const place = (id: string, x: number, y: number, width: number, height: number) => { nodes[id] = { x, y, width, height }; };
+  const placeAttachment = (spec: AttachmentSpec, x: number, y: number) => {
+    attachments[spec.id] = { x, y, width: spec.width, height: spec.height };
+  };
+  const allBottom = () => Math.max(0, ...[...Object.values(nodes), ...Object.values(attachments)].map(r => r.y + r.height));
+  // Size estimates come only from cards created before a step starts, so a
+  // step's plan never changes while its own cards arrive.
+  const estimate = (kind: string, dimension: 'w' | 'h', before: number) => {
+    const seen = items.slice(0, before).filter(item => !item.visual && item.kind === kind);
+    if (seen.length) return seen.reduce((sum, item) => sum + item[dimension], 0) / seen.length;
+    return (dimension === 'h' ? DEFAULT_HEIGHT : DEFAULT_WIDTH)[kind] ?? (dimension === 'h' ? 120 : 320);
   };
 
-  const estimateFlowBlockHeight = (cardIds: string[], maxW: number): { height: number; maxCardW: number } => {
-    let cx = 0, cy = 0, lineH = 0, maxCardW = 0;
-    for (const id of cardIds) {
-      const size = sizes[id]!;
-      maxCardW = Math.max(maxCardW, size.width);
-      const w = Math.min(maxW, size.width);
-      if (cx > 0 && cx + w > maxW) {
-        cy += lineH + cardGap;
-        cx = 0;
-        lineH = 0;
-      }
-      cx += w + cardGap;
-      lineH = Math.max(lineH, size.height);
-    }
-    return { height: cy + lineH, maxCardW };
+  const placeInSlot = (slot: Slot, item: Item, box: StageBox) => {
+    if (item.w > slot.w + 1 || slot.y + item.h > box.top + columnHeight) return false;
+    place(item.id, slot.x, slot.y, slot.w, item.h);
+    slot.y += item.h + CARD_GAP;
+    box.bottom = Math.max(box.bottom, slot.y - CARD_GAP);
+    box.slotOf[item.id] = slot;
+    slotted.add(item.id);
+    return true;
   };
 
-  for (const sg of stages) {
-    // 1. Place visual anchor cards (up to 2 side-by-side per row)
-    const perRow = 2;
-    let vx = 0, vy = 0, vRowH = 0, vUsed = 0, maxVisRight = 0;
-    for (const vid of sg.visualIds) {
-      const size = sizes[vid]!;
-      if (vUsed === perRow) {
-        vy += vRowH + cardGap;
-        vx = 0;
-        vRowH = 0;
-        vUsed = 0;
+  const wideStage = (stage: { open: string; sections: string[] }, top: number, previous: StageBox | null): StageBox => {
+    const own = items.filter(item => stage.sections.includes(item.section) && !slotted.has(item.id));
+    const opening = own.filter(item => item.section === stage.open);
+    const firstVisual = opening.findIndex(item => item.visual);
+    let leadIn = firstVisual === -1
+      ? (plannedVisuals(stage.open) > 0 ? opening : [])
+      : opening.slice(0, firstVisual).filter(item => !item.visual);
+    // A lead-in card that explains one visual of the previous row's comparison
+    // set is written under that visual instead.
+    if (previous?.slots) {
+      for (const item of leadIn) {
+        const targets = targetsOf(item.id);
+        if (targets.length === 1 && previous.slots[targets[0]!]) placeInSlot(previous.slots[targets[0]!]!, item, previous);
       }
-      nodes[vid] = { x: vx, y: stageY + vy, width: size.width, height: size.height };
-      vx += size.width + cardGap;
-      vRowH = Math.max(vRowH, size.height);
-      vUsed += 1;
-      maxVisRight = Math.max(maxVisRight, nodes[vid]!.x + nodes[vid]!.width);
+      leadIn = leadIn.filter(item => !slotted.has(item.id));
+      top = Math.max(top, previous.bottom + STAGE_GAP);
     }
-    const visH = sg.visualIds.length ? vy + vRowH : 0;
-    const firstVisW = sg.visualIds.length ? sizes[sg.visualIds[0]!]!.width : 460;
-    const reservedVisW = sg.visualIds.length >= 2
-      ? maxVisRight
-      : sg.plannedVisuals >= 2
-        ? Math.max(maxVisRight, firstVisW * 2 + cardGap)
-        : sg.plannedVisuals === 1
-          ? Math.max(maxVisRight, firstVisW)
-          : maxVisRight;
+    const visuals = opening.filter(item => item.visual);
+    const box: StageBox = { top, bottom: top, slots: null, slotOf: {} };
 
-    const remRightW = targetBoardW - (reservedVisW + colGap);
+    let x = 0, colTop = top, colWidth = 0, colY = top, colCount = 0;
+    let colIds: string[] = [];
+    let side: SideColumn | null = null;
+    let plan: { counts: number[]; index: number; placed: number[] } | null = null;
+    const columns: Array<{ x: number; width: number; ids: string[]; side: SideColumn | null }> = [];
+    const columnRight = () => Math.max(x + colWidth, side ? side.x + side.width : 0);
+    const closeColumn = () => {
+      if (colCount) columns.push({ x, width: side ? side.frozenWidth : colWidth, ids: [...colIds], side: side && { ...side } });
+    };
+    const openColumn = (gap: number) => {
+      if (colCount) { const right = columnRight(); closeColumn(); x = right + gap; }
+      colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null;
+    };
+    const wrapToBand = () => {
+      closeColumn();
+      box.slots = null; // the band occupies the space under the workbench
+      colTop = Math.max(box.bottom, allBottom()) + BAND_GAP;
+      x = 0; colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null;
+    };
+    const addPrimary = (item: Item) => {
+      const overflow = colCount > 0 && colY + CARD_GAP + item.h > colTop + columnHeight;
+      const planBreak = plan !== null && colCount > 0 && plan.placed[plan.index]! >= plan.counts[plan.index]!
+        && plan.index < plan.counts.length - 1;
+      // After an explained pair, a wider card spans below the pair when it fits
+      // the pair's total width; only a card wider than that opens a new column.
+      const tooWide = side !== null && item.w > side.x + side.width - x;
+      if (overflow || planBreak || tooWide) {
+        openColumn(SUBCOLUMN_GAP);
+        if (plan && (planBreak || overflow)) plan.index = Math.min(plan.index + 1, plan.counts.length - 1);
+      }
+      if (!colCount && x > 0 && x + item.w > readingWidth) wrapToBand();
+      const y = colCount ? colY + CARD_GAP : colY;
+      place(item.id, x, y, item.w, item.h);
+      colIds.push(item.id);
+      if (side && item.w > side.frozenWidth) side.spans.push(item.id);
+      colY = y + item.h; colCount += 1;
+      if (!side) colWidth = Math.max(colWidth, item.w);
+      if (plan) plan.placed[plan.index]! += 1;
+      box.bottom = Math.max(box.bottom, colY);
+    };
+    // A card that explains the card just placed in this column sits to its right.
+    const tryBeside = (item: Item) => {
+      const targets = targetsOf(item.id);
+      if (targets.length !== 1 || !colCount || colIds[colIds.length - 1] !== targets[0]) return false;
+      if (side?.spans.includes(targets[0]!)) return false;
+      const target = nodes[targets[0]!]!;
+      const next = side ?? { x: x + colWidth + CARD_GAP, width: 0, frozenWidth: colWidth, ids: [], spans: [] };
+      if (next.x + item.w > readingWidth + 1) return false;
+      side = next;
+      place(item.id, side.x, target.y, item.w, item.h);
+      side.ids.push(item.id); side.width = Math.max(side.width, item.w);
+      colY = Math.max(colY, target.y + item.h);
+      box.bottom = Math.max(box.bottom, colY);
+      return true;
+    };
 
-    // 2. Topology B (Top-Banner Dual Visuals + Bottom Dock & Spine on Narrow Viewport)
-    if (reservedVisW > 0 && remRightW < 380) {
-      const ctrlGap = sg.controls[0]?.gap ?? 24;
-      const belowY = stageY + visH + ctrlGap;
-      let dockBottom = stageY + visH;
-      let dockMaxW = 0;
+    // 1. Lead-in text, left of the stage's first visual.
+    if (leadIn.length) { for (const item of leadIn) addPrimary(item); openColumn(WORKBENCH_GAP); }
 
-      if (sg.stepBlocks.length === 0 && sg.plannedExplainCount === 0) {
-        // Pure visual + interactive stage: place controls on left, tasks side-by-side on right
-        let cy = belowY;
-        for (const ctrl of sg.controls) {
-          attachments[ctrl.id] = { x: 0, y: cy, width: ctrl.width, height: ctrl.height };
-          cy += ctrl.height + (ctrl.gap ?? cardGap);
-          dockMaxW = Math.max(dockMaxW, ctrl.width);
-          dockBottom = Math.max(dockBottom, attachments[ctrl.id]!.y + ctrl.height);
+    // 2. Workbench: operation column (single-visual stages), visuals, controls.
+    let referenceHeight = columnHeight;
+    if (visuals.length || plannedVisuals(stage.open) > 0) {
+      const planCount = plannedVisuals(stage.open);
+      const cluster = clusters.find(c => c.controls && c.visualIds.some(id => visuals.some(v => v.id === id)));
+      const besideShape = planCount <= 1;
+      // Practice space: the larger of the reservation and the open panel, so an
+      // open panel shorter than its reservation never pulls later rows upward.
+      const reservedTask = cluster?.tasks || cluster?.reservedTask ? {
+        width: Math.max(cluster.tasks?.width ?? 0, cluster.reservedTask?.width ?? 0),
+        height: Math.max(cluster.tasks?.height ?? 0, cluster.reservedTask?.height ?? 0),
+      } : undefined;
+      let x0 = x;
+      if (cluster?.controls && besideShape) {
+        const operationWidth = Math.max(cluster.controls.width, reservedTask?.width ?? 0);
+        placeAttachment(cluster.controls, x0, top);
+        let operationBottom = top + cluster.controls.height;
+        if (reservedTask) {
+          if (cluster.tasks) placeAttachment(cluster.tasks, x0, operationBottom + CARD_GAP);
+          operationBottom += CARD_GAP + reservedTask.height;
         }
-        const taskX = dockMaxW > 0 ? dockMaxW + cardGap : 0;
-        let ty = belowY;
-        for (const task of sg.tasks) {
-          const tw = Math.min(360, task.width);
-          attachments[task.id] = { x: taskX, y: ty, width: tw, height: task.height };
-          ty += task.height + cardGap;
-          dockBottom = Math.max(dockBottom, attachments[task.id]!.y + task.height);
+        box.bottom = Math.max(box.bottom, operationBottom);
+        x0 += operationWidth + WORKBENCH_GAP;
+      }
+      // Visuals: comparison sets share a top line; planned visuals that have
+      // not arrived yet keep their slot so later text never has to move.
+      let vx = x0, vy = top, lineHeight = 0, right = x0;
+      visuals.forEach((visual, index) => {
+        const prior = visuals[index - 1];
+        // A comparison set stays on one line whenever it fits the reading width
+        // by itself; a lead-in column may push the row past that width instead.
+        const together = prior && (paired(prior.id, visual.id) || planCount > 1) && vx - x0 + visual.w <= readingWidth;
+        if (index > 0 && !together) { vy += lineHeight + CARD_GAP; vx = x0; lineHeight = 0; }
+        place(visual.id, vx, vy, visual.w, visual.h);
+        right = Math.max(right, vx + visual.w); vx += visual.w + CARD_GAP; lineHeight = Math.max(lineHeight, visual.h);
+      });
+      const missing = Math.max(0, planCount - visuals.length);
+      if (missing) {
+        const width = visuals.at(-1)?.w ?? DEFAULT_VISUAL_WIDTH;
+        right = Math.max(right, x0 + (visuals.length + missing) * (width + CARD_GAP) - CARD_GAP);
+      }
+      let visualBottom = visuals.length ? vy + lineHeight : top + 360;
+      box.bottom = Math.max(box.bottom, visualBottom);
+      if (cluster?.controls && !besideShape) {
+        const bound = cluster.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
+        const left = bound.length ? Math.min(...bound.map(r => r.x)) : x0;
+        const spanRight = bound.length ? Math.max(...bound.map(r => r.x + r.width)) : right;
+        const y = Math.max(visualBottom, ...bound.map(r => r.y + r.height)) + CONTROL_GAP;
+        const besideControls = reservedTask && spanRight - left >= cluster.controls.width + CARD_GAP + reservedTask.width;
+        const cx = reservedTask ? left : left + Math.max(0, (spanRight - left - cluster.controls.width) / 2);
+        placeAttachment(cluster.controls, cx, y);
+        let bottom = y + cluster.controls.height;
+        if (reservedTask) {
+          const tx = besideControls ? cx + cluster.controls.width + CARD_GAP : cx;
+          const ty = besideControls ? y : y + cluster.controls.height + CARD_GAP;
+          if (cluster.tasks) placeAttachment(cluster.tasks, tx, ty);
+          bottom = Math.max(bottom, ty + reservedTask.height);
+          right = Math.max(right, tx + reservedTask.width);
         }
-        stageY = dockBottom + stageGap;
-        continue;
+        visualBottom = Math.max(visualBottom, bottom);
+        box.bottom = Math.max(box.bottom, bottom);
       }
-
-      let dy = belowY;
-      for (const ctrl of sg.controls) {
-        attachments[ctrl.id] = { x: 0, y: dy, width: ctrl.width, height: ctrl.height };
-        dy += ctrl.height + cardGap;
-        dockMaxW = Math.max(dockMaxW, ctrl.width);
-        dockBottom = Math.max(dockBottom, attachments[ctrl.id]!.y + ctrl.height);
+      // Task-only clusters (no controls) sit directly under their visuals.
+      for (const c of clusters) {
+        if (c.controls || !c.tasks || attachments[c.tasks.id]) continue;
+        const bound = c.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
+        if (!bound.length) continue;
+        const y = Math.max(...bound.map(r => r.y + r.height)) + CONTROL_GAP;
+        placeAttachment(c.tasks, Math.min(...bound.map(r => r.x)), y);
+        visualBottom = Math.max(visualBottom, y + c.tasks.height);
+        box.bottom = Math.max(box.bottom, visualBottom);
       }
-      for (const task of sg.tasks) {
-        const tw = Math.min(360, task.width);
-        attachments[task.id] = { x: 0, y: dy, width: tw, height: task.height };
-        dy += task.height + cardGap;
-        dockMaxW = Math.max(dockMaxW, tw);
-        dockBottom = Math.max(dockBottom, attachments[task.id]!.y + task.height);
-      }
-
-      const hasDock = sg.controls.length > 0 || sg.tasks.length > 0;
-      const spineX = hasDock ? dockMaxW + colGap : 0;
-      const maxSpineW = Math.max(440, Math.max(targetBoardW, reservedVisW) - spineX);
-      let spineY = stageY + visH + 20;
-      let spineBottom = stageY + visH;
-      for (const sb of sg.stepBlocks) {
-        const bh = layoutFlowBlock(sb.explainIds, spineX, spineY, maxSpineW);
-        spineBottom = spineY + bh;
-        spineY = spineBottom + stepGap;
-      }
-      stageY = Math.max(stageY + visH, dockBottom, spineBottom) + stageGap;
-      continue;
-    }
-
-    // 3. Topology A (Left Visual Workbench + Right Step-Ordered Explanation Spine)
-    const sideBySideDock = reservedVisW >= 706;
-    const pocketInRightSpine = !sideBySideDock
-      && reservedVisW > 0
-      && sg.hasNextStage
-      && sg.plannedExplainSteps <= 1
-      && sg.stepBlocks.length <= 1
-      && sg.controls.length > 0;
-
-    const ctrlGap = sg.controls[0]?.gap ?? 24;
-    let ctrlY = stageY + visH + ctrlGap;
-    let ctrlBottom = stageY + visH;
-    let ctrlMaxW = 0;
-    for (const ctrl of sg.controls) {
-      const cw = Math.min(reservedVisW || ctrl.width, ctrl.width);
-      const cx = pocketInRightSpine ? Math.max(0, reservedVisW - cw) : 0;
-      attachments[ctrl.id] = { x: cx, y: ctrlY, width: cw, height: ctrl.height };
-      ctrlBottom = ctrlY + ctrl.height;
-      ctrlY = ctrlBottom + (ctrl.gap ?? cardGap);
-      ctrlMaxW = Math.max(ctrlMaxW, cx + cw);
-    }
-
-    const spineX = reservedVisW > 0 ? reservedVisW + colGap : 0;
-    const firstBlockMaxW = sg.stepBlocks.length > 0
-      ? Math.max(0, ...sg.stepBlocks[0]!.explainIds.map(id => sizes[id]!.width))
-      : 0;
-    const maxSpineW = reservedVisW > 0
-      ? Math.max(440, targetBoardW - spineX, firstBlockMaxW)
-      : targetBoardW;
-
-    const leftRefH = Math.max(visH, sg.controls.length ? ctrlBottom - stageY : 0);
-    let spineY = stageY;
-    let spineBottom = stageY;
-    const trailingBlocks: Array<{ section: string; explainIds: string[] }> = [];
-
-    for (let bi = 0; bi < sg.stepBlocks.length; bi++) {
-      const sb = sg.stepBlocks[bi]!;
-      const { height: estH, maxCardW } = estimateFlowBlockHeight(sb.explainIds, maxSpineW);
-      const spineH = spineBottom - stageY;
-      if (
-        reservedVisW > 0
-        && bi > 0
-        && (maxCardW > maxSpineW || (spineH >= leftRefH * 0.75 && spineH + estH > leftRefH + 80 && sb.explainIds.length >= 3))
-      ) {
-        trailingBlocks.push(...sg.stepBlocks.slice(bi));
-        break;
-      }
-      const bh = layoutFlowBlock(sb.explainIds, spineX, spineY, maxSpineW);
-      spineBottom = spineY + bh;
-      spineY = spineBottom + stepGap;
-    }
-
-    // Place practice tasks in the Stage's interactive dock:
-    // - Dual-visual workbench (reservedVisW >= 706): side-by-side to the right of controls
-    // - Multi-stage single-step opening stage (e.g. partial derivative Stage 1): pocket in right spine below Step 1
-    // - Standard single-visual workbench: directly below controls (16px gap)
-    let taskBottom = ctrlBottom;
-    if (sg.tasks.length > 0) {
-      if (sideBySideDock) {
-        const tx = sg.controls.length > 0 ? ctrlMaxW + cardGap : 0;
-        let ty = stageY + visH + ctrlGap;
-        for (const task of sg.tasks) {
-          const tw = Math.min(360, task.width);
-          attachments[task.id] = { x: tx, y: ty, width: tw, height: task.height };
-          taskBottom = Math.max(taskBottom, ty + task.height);
-          ty += task.height + cardGap;
-        }
-      } else if (pocketInRightSpine) {
-        let ty = Math.max(stageY, spineBottom + cardGap, ctrlBottom - sg.tasks[0]!.height);
-        for (const task of sg.tasks) {
-          const tw = Math.min(maxSpineW, task.width);
-          attachments[task.id] = { x: spineX, y: ty, width: tw, height: task.height };
-          taskBottom = Math.max(taskBottom, ty + task.height);
-          ty += task.height + cardGap;
-        }
-      } else {
-        let ty = sg.controls.length > 0 ? ctrlBottom + cardGap : stageY + visH + ctrlGap;
-        for (const task of sg.tasks) {
-          const tw = Math.min(reservedVisW || task.width, task.width);
-          attachments[task.id] = { x: 0, y: ty, width: tw, height: task.height };
-          taskBottom = Math.max(taskBottom, ty + task.height);
-          ty += task.height + cardGap;
+      referenceHeight = Math.max(visualBottom, box.bottom) - top;
+      if (Object.keys(relations).length && visuals.length) {
+        box.slots = {};
+        for (const visual of visuals.filter(v => nodes[v.id]!.y === top)) {
+          const r = nodes[visual.id]!;
+          box.slots[visual.id] = { x: r.x, w: r.width, y: (besideShape ? r.y + r.height : visualBottom) + CARD_GAP };
         }
       }
+      x = right + WORKBENCH_GAP;
     }
+    const target = Math.min(columnHeight, Math.max(MIN_COLUMN_HEIGHT, referenceHeight));
 
-    let stageBottom = Math.max(stageY + visH, ctrlBottom, taskBottom, spineBottom);
-    if (trailingBlocks.length > 0) {
-      const fullStageW = Math.max(targetBoardW, spineX + maxSpineW);
-      let trailY = stageBottom + stepGap;
-      for (const tb of trailingBlocks) {
-        const bh = layoutFlowBlock(tb.explainIds, 0, trailY, fullStageW);
-        stageBottom = trailY + bh;
-        trailY = stageBottom + stepGap;
+    // 3. Explanation: one column group per step.
+    colTop = top; colWidth = 0; colY = top; colCount = 0; colIds = []; side = null;
+    let first = true;
+    for (const section of stage.sections) {
+      const cards = own.filter(item => item.section === section && !item.visual && !leadIn.includes(item) && !slotted.has(item.id));
+      const flow: Item[] = [];
+      for (const item of cards) {
+        const targets = targetsOf(item.id);
+        const slot = targets.length === 1 ? box.slots?.[targets[0]!] ?? (box.slots ? box.slotOf[targets[0]!] : undefined) : undefined;
+        if (slot && placeInSlot(slot, item, box)) continue;
+        flow.push(item);
       }
+      if (!flow.length) continue;
+      if (!first) openColumn(STEP_GAP);
+      first = false;
+      plan = null;
+      const counts = planned[section];
+      if (counts) {
+        const before = items.indexOf(flow[0]!);
+        const leadCount = section === stage.open ? leadIn.length : 0;
+        const kinds = [...Array(counts.math ?? 0).fill('math'), ...Array(counts.text ?? 0).fill('note')].slice(leadCount);
+        if (kinds.length) {
+          const heights = kinds.map(kind => estimate(kind, 'h', before));
+          const widths = kinds.map(kind => estimate(kind, 'w', before));
+          const total = heights.reduce((sum, h) => sum + h, 0) + CARD_GAP * (heights.length - 1);
+          const k = Math.min(heights.length, Math.max(1, Math.ceil(total / target)));
+          const split = balancedCounts(heights, k);
+          let offset = 0;
+          const estimatedWidth = split.reduce((sum, n) => {
+            const width = Math.max(...widths.slice(offset, offset + n)); offset += n; return sum + width;
+          }, 0) + SUBCOLUMN_GAP * (split.length - 1);
+          if (x > 0 && x + estimatedWidth > readingWidth) wrapToBand();
+          plan = { counts: split, index: 0, placed: split.map(() => 0) };
+        }
+      }
+      if (!plan && x > 0 && x + flow[0]!.w > readingWidth) wrapToBand();
+      for (const item of flow) if (!tryBeside(item)) addPrimary(item);
     }
+    closeColumn();
+    // Neat columns: text cards take their column's width; visuals keep theirs.
+    for (const column of columns) {
+      const spanTo = column.side ? column.side.x + column.side.width - column.x : column.width;
+      for (const id of column.ids) nodes[id]!.width = column.side?.spans.includes(id) ? spanTo : column.width;
+      if (column.side) for (const id of column.side.ids) nodes[id]!.width = column.side.width;
+    }
+    box.bottom = Math.max(box.bottom, allBottom());
+    return box;
+  };
 
-    stageY = stageBottom + stageGap;
+  // Narrow windows: one readable stream. Comparison visuals stay side by side
+  // only when they fit; controls follow the first visual they control; text
+  // cards take the stream width. Opening practice pushes the rest down once.
+  const narrowStage = (stage: { open: string; sections: string[] }, top: number): StageBox => {
+    const own = items.filter(item => stage.sections.includes(item.section));
+    const width = Math.min(readingWidth, Math.max(0, ...own.map(item => item.w)));
+    let y = top;
+    const opening = own.filter(item => item.section === stage.open);
+    const firstVisual = opening.findIndex(item => item.visual);
+    const leadIn = firstVisual > 0 ? opening.slice(0, firstVisual) : [];
+    for (const item of leadIn) { place(item.id, 0, y, width, item.h); y += item.h + CARD_GAP; }
+    const visuals = opening.filter(item => item.visual);
+    const done = new Set<Cluster>();
+    for (let i = 0; i < visuals.length; i++) {
+      const visual = visuals[i]!, next = visuals[i + 1];
+      const row = next && paired(visual.id, next.id) && visual.w + CARD_GAP + next.w <= readingWidth ? [visual, next] : [visual];
+      let x = 0, height = 0;
+      for (const item of row) { place(item.id, x, y, item.w, item.h); x += item.w + CARD_GAP; height = Math.max(height, item.h); }
+      y += height;
+      if (row.length > 1) i += 1;
+      for (const cluster of clusters) {
+        if (done.has(cluster) || !row.some(item => cluster.visualIds.includes(item.id))) continue;
+        done.add(cluster);
+        if (cluster.controls) { y += CONTROL_GAP; placeAttachment(cluster.controls, 0, y); y += cluster.controls.height; }
+        if (cluster.tasks) { y += CARD_GAP; placeAttachment(cluster.tasks, 0, y); y += cluster.tasks.height; }
+      }
+      y += CARD_GAP;
+    }
+    if (visuals.length) y += STEP_GAP - CARD_GAP;
+    let first = true;
+    for (const section of stage.sections) {
+      const cards = own.filter(item => item.section === section && !item.visual && !leadIn.includes(item));
+      if (!cards.length) continue;
+      if (!first) y += STEP_GAP - CARD_GAP;
+      first = false;
+      for (const item of cards) { place(item.id, 0, y, width, item.h); y += item.h + CARD_GAP; }
+    }
+    return { top, bottom: Math.max(top, y - CARD_GAP), slots: null, slotOf: {} };
+  };
+
+  let previous: StageBox | null = null;
+  for (const stage of stages) {
+    const top = previous ? previous.bottom + STAGE_GAP : 0;
+    const box: StageBox = wide ? wideStage(stage, top, previous) : narrowStage(stage, top);
+    previous = box;
   }
 
   const placed = [...Object.values(nodes), ...Object.values(attachments)];
@@ -484,11 +513,31 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   return result;
 }
 
+/** Split ordered heights into k contiguous groups minimising the tallest group. */
+function balancedCounts(heights: number[], k: number): number[] {
+  const n = heights.length;
+  if (k <= 1 || n <= 1) return [n];
+  const prefix = [0];
+  for (const h of heights) prefix.push(prefix[prefix.length - 1]! + h);
+  const cost = (i: number, j: number) => prefix[j]! - prefix[i]! + CARD_GAP * (j - i - 1);
+  const best = Array.from({ length: k + 1 }, () => Array<number>(n + 1).fill(Infinity));
+  const cut = Array.from({ length: k + 1 }, () => Array<number>(n + 1).fill(0));
+  best[0]![0] = 0;
+  for (let g = 1; g <= k; g++) for (let j = 1; j <= n; j++) for (let i = g - 1; i < j; i++) {
+    const value = Math.max(best[g - 1]![i]!, cost(i, j));
+    if (value < best[g]![j]!) { best[g]![j] = value; cut[g]![j] = i; }
+  }
+  const counts: number[] = [];
+  let j = n;
+  for (let g = k; g >= 1; g--) { const i = cut[g]![j]!; counts.unshift(j - i); j = i; }
+  return counts.filter(count => count > 0);
+}
+
 const compositionCache = new Map<string, ReturnType<typeof computeTeachingRegion>>();
 export function layoutTeachingRegion(state: SemanticBoardState, ids: string[], sizes: MeasuredNodeSizes,
   region: RegionLayoutConstraint, external: Rect[]) {
   if (!region.composition) return layoutLegacyTeachingRegion(state,ids,sizes,region,external);
-  const key=JSON.stringify([ids.map(id=>[id,state.nodes[id]!.kind,state.nodes[id]!.placement]),state.groups,state.connections,sizes,region,external]);
+  const key=JSON.stringify([ids.map(id=>[id,state.nodes[id]!.kind,state.nodes[id]!.role,state.nodes[id]!.placement]),state.groups,state.connections,sizes,region,external]);
   const cached=compositionCache.get(key);
   if(cached)return structuredClone(cached);
   const result=computeTeachingRegion(state,ids,sizes,region,external);

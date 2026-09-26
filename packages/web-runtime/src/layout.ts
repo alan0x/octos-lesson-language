@@ -29,6 +29,11 @@ export interface RegionLayoutConstraint {
    *  playback for packaged lessons (and growing for live ones). Lets a row
    *  reserve its visual cell capacity before every card exists. */
   plannedSteps?: Record<string, { visual?: number; math?: number; text?: number }>;
+  /**
+   * Optional explicit "explains" relations: card id -> ids of the visual or
+   * earlier card it explains. Absent relations leave layout in narration order.
+   */
+  relations?: Record<string, string[]>;
   /** Conservative positions retained for cards with unanchored student ink. */
   pinned?: { nodes: Record<string, Rect>; attachments: Record<string, Rect> };
   /** Physical viewport and occlusions; independent of current pan/zoom. */
@@ -54,6 +59,11 @@ export interface RegionLayoutConstraint {
     /** Currently rendered attachment height used by teaching-camera focus. */
     focusHeight?: number;
     gap?: number;
+    /**
+     * Controls only: practice declared for the same visuals but not yet open.
+     * Its space is reserved so opening practice never pushes other content.
+     */
+    reservedTask?: { width: number; height: number };
   }>;
 }
 
