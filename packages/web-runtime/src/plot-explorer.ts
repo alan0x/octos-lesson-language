@@ -37,6 +37,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   const valid=(r:any):PlotRange=>validCoordinateRange(r,{min:-5,max:5});
   const recommended={x:valid(axes.x),y:valid(axes.y)};
   const curves:any[]=node.content?.curves??[];
+  const xLabel=String(axes.x?.label||"x"),yLabel=String(axes.y?.label||"y");
+  const defaultAxisNames=xLabel==="x"&&yLabel==="y";
   const signature=JSON.stringify({axes,curves:curves.map(c=>[c.id,c.expression])});
   const storageKey=parent.dataset.plotViewScope?`oll.plot.view.v1:${parent.dataset.plotViewScope}:${node.id}`:undefined;
   let state=states.get(parent);
@@ -98,7 +100,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
     const width=large?Math.max(360,Math.min(1000,window.innerWidth-80)):404, height=large?Math.max(260,Math.min(520,window.innerHeight-220)):235;
     const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
-    const content={...node.content,axes:{...axes,...current.ranges},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
+    const content={...node.content,axes:{...axes,x:{...axes.x,...current.ranges.x},y:{...axes.y,...current.ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
     draw(host,{...node,content},variables,width,height);
     host.querySelector('.plot-legend')?.remove();
     const legend=document.createElement('div');legend.className='plot-legend';legend.dataset.ollBoardInput='ignore';legend.dataset.ollInkInput='ignore';
@@ -106,7 +108,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       if(curves.length>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!current.hidden.has(i);
         checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
       const baseLabel = c.label || c.expression;
-      const evaluatedEq = formatLinearCurveEquation(c.expression, variables);
+      const evaluatedEq = defaultAxisNames ? formatLinearCurveEquation(c.expression, variables) : undefined;
       const displayText = evaluatedEq && baseLabel !== evaluatedEq
         ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
         : baseLabel;
@@ -170,11 +172,11 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       if (hit) {
         const hitCurve = curves[hit.i];
         const hitBaseLabel = hitCurve.label || hitCurve.expression;
-        const hitEvaluatedEq = formatLinearCurveEquation(hitCurve.expression, variables);
+        const hitEvaluatedEq = defaultAxisNames ? formatLinearCurveEquation(hitCurve.expression, variables) : undefined;
         const hitDisplayText = hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
           ? `${hitBaseLabel}（${hitEvaluatedEq}）`
           : hitBaseLabel;
-        readout.textContent = `${hitDisplayText}：x ≈ ${Number(x.toPrecision(5))}，y ≈ ${Number(hit.y.toPrecision(5))}`;
+        readout.textContent = `${hitDisplayText}：${xLabel} ≈ ${Number(x.toPrecision(5))}，${yLabel} ≈ ${Number(hit.y.toPrecision(5))}`;
       } else {
         readout.textContent = '当前位置没有可读曲线';
       }
