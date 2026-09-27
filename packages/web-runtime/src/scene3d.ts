@@ -830,6 +830,32 @@ function renderScene(
       svg.append(label);
     }
   }
+  const baseView = { ...view, zoom: 1 };
+  let minX = CENTER_X, maxX = CENTER_X, minY = CENTER_Y, maxY = CENTER_Y;
+  const include = (point: Point3d) => {
+    const projected = projectScene3dPoint(point, baseView);
+    if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
+    minX = Math.min(minX, projected.x); maxX = Math.max(maxX, projected.x);
+    minY = Math.min(minY, projected.y); maxY = Math.max(maxY, projected.y);
+  };
+  for (const mesh of meshes) for (const triangle of mesh.triangles) for (const point of triangle.points) include(point);
+  if (content.axes !== false) {
+    include({ x: 2.7, y: 0, z: 0 }); include({ x: 0, y: 2.7, z: 0 }); include({ x: 0, y: 0, z: 2.7 });
+  }
+  const margin = 20;
+  if (minX < margin || maxX > WIDTH - margin || minY < margin || maxY > HEIGHT - margin) {
+    const fit = Math.min(1, (WIDTH - margin * 2) / Math.max(1, maxX - minX),
+      (HEIGHT - margin * 2) / Math.max(1, maxY - minY));
+    const centerX = CENTER_X + ((minX + maxX) / 2 - CENTER_X) * view.zoom;
+    const centerY = CENTER_Y + ((minY + maxY) / 2 - CENTER_Y) * view.zoom;
+    const frame = svgElement("g", {
+      class: "scene3d-fitted-frame",
+      transform: `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`,
+    });
+    frame.append(...Array.from(svg.childNodes));
+    svg.append(frame);
+  }
+
 }
 
 function inputMethod(pointerType: string | undefined): StudentInputMethod {

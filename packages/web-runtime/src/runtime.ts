@@ -34,6 +34,34 @@ import {
   type StudentTaskSnapshot,
 } from "./student-tasks.js";
 
+export interface PlaybackFailure {
+  stage: "append" | "playback" | "animation" | "seek" | "input";
+  code: string;
+  path?: string;
+  message: string;
+  cursor: number;
+  eventIndex?: number;
+}
+
+export interface PhaseTransition {
+  key: string;
+  kind: "replay" | "practice";
+  from: Record<string, number>;
+  to: Record<string, number>;
+  progress: number;
+}
+
+type PhaseCheckpoint = {
+  epoch: number;
+  practiceEpochs: Record<string, number>;
+  ready: string[];
+  transition?: PhaseTransition;
+};
+type BrowserCheckpoint = PlaybackCheckpoint & {
+  runtime_failure?: PlaybackFailure;
+  phase_state?: PhaseCheckpoint;
+};
+
 export interface PlaybackStore {
   load(key: string): PlaybackCheckpoint | undefined;
   save(key: string, checkpoint: PlaybackCheckpoint): void;
@@ -272,6 +300,13 @@ export interface BrowserLessonSessionOptions {
 
 export class BrowserLessonSession {
   private player: HeadlessLessonPlayer;
+  private failureState?: PlaybackFailure;
+  private phaseState: PhaseCheckpoint = { epoch: 1, practiceEpochs: {}, ready: [] };
+  private phaseTimer?: ReturnType<typeof setTimeout>;
+  private phaseStartedAt?: number;
+  private phaseStartProgress = 0;
+  private phaseLastPersistAt = 0;
+  private readonly invalidatedStudentOperations = new Set<string>();
   private timer?: ReturnType<typeof setTimeout>;
   private timerStartedAt?: number;
   private scheduledBaseDelay?: number;
@@ -343,6 +378,44 @@ export class BrowserLessonSession {
     }
   }
 
+  get playbackEpoch(): number { return this.phaseState.epoch; }
+
+  get activePhaseTransition(): PhaseTransition | undefined {
+    return this.phaseState.transition ? structuredClone(this.phaseState.transition) : undefined;
+  }
+
+  get failure(): PlaybackFailure | undefined {
+    return this.failureState ? structuredClone(this.failureState) : undefined;
+  }
+
+  /** Stop at the last accepted state. Recovery is explicit (reset/new source). */
+  reportFailure(stage: PlaybackFailure["stage"], error: unknown): void {
+    if (this.failureState) return;
+    const detail = error instanceof Error ? error : new Error(String(error));
+    const fields = detail as Error & { code?: unknown; path?: unknown };
+    this.failureState = {
+      stage,
+      code: typeof fields.code === "string" ? fields.code : "OLL_RUNTIME_FAILURE",
+      ...(typeof fields.path === "string" ? { path: fields.path } : {}),
+      message: detail.message,
+      cursor: this.player.cursor,
+      eventIndex: this.player.operations[this.player.cursor]?.event_index,
+    };
+    // Do not freeze by evaluating another animation frame: that can fail again.
+    this.discardScheduledDelay();
+    this.stopPhaseTimer();
+    if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
+    this.variableAnimationTimer = undefined;
+    this.variableAnimationStartedAt = undefined;
+    this.playing = false;
+    this.followAppends = false;
+    this.pendingStudentVariableOperations.clear();
+    this.pendingStudentScene3dOperations.clear();
+    if (this.player.cursor > 0 && this.player.status !== "completed") this.player.pause();
+    this.persist();
+    this.emit();
+  }
+
   get operations(): PlaybackOperation[] { return this.player.operations; }
   get cursor(): number { return this.player.cursor; }
   get projection(): PlaybackProjection { return this.player.snapshot; }
@@ -388,7 +461,12 @@ export class BrowserLessonSession {
   get activeVariableAnimation(): PlaybackVariableAnimation | undefined { return this.variableAnimation ? structuredClone(this.variableAnimation) : undefined; }
   get status(): PlaybackProjection["status"] { return this.player.status === "playing" && !this.playing ? "paused" : this.player.status; }
 
-  subscribe(listener: () => void): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    this.activatePractice();
+    if (this.phaseState.transition?.kind === "practice" && !this.failureState) this.schedulePhaseTransition();
+    return () => this.listeners.delete(listener);
+  }
   /**
    * Tell an incremental Runtime that every event currently promised by the
    * host has arrived. The classroom may remain open for a future turn, but
@@ -397,14 +475,18 @@ export class BrowserLessonSession {
   setDeliverySettled(settled: boolean): void {
     if (!this.options.incremental || this.deliverySettled === settled) return;
     this.deliverySettled = settled;
+    this.activatePractice();
     this.emit();
   }
   setSpeed(speed: number): void {
+    if (this.failureState) return;
     const nextSpeed = normalizedSpeed(speed);
     if (nextSpeed === this.speed) return;
     this.freezeScheduledDelay();
     this.freezeVariableAnimation();
+    this.freezePhaseTransition();
     this.speed = nextSpeed;
+    if (this.phaseState.transition && !this.failureState) this.schedulePhaseTransition();
     if (this.playing && this.variableAnimation) this.scheduleVariableAnimation();
     if (this.playing && this.scheduledBaseDelay !== undefined) {
       this.schedulePendingDelay();
@@ -412,7 +494,12 @@ export class BrowserLessonSession {
   }
 
   play(): void {
-    if (this.player.status === "completed" || this.playing) return;
+    if (this.failureState) return;
+    if (this.phaseState.transition?.kind === "practice") {
+      this.schedulePhaseTransition();
+      return;
+    }
+    if (this.failureState || this.player.status === "completed" || this.playing) return;
     this.followAppends = true;
     if (this.player.status === "waiting") {
       this.emit();
@@ -421,6 +508,10 @@ export class BrowserLessonSession {
     if (this.player.status === "paused") this.player.resume();
     this.playing = true;
     this.emit();
+    if (this.phaseState.transition) {
+      this.schedulePhaseTransition();
+      return;
+    }
     if (this.variableAnimation) {
       this.scheduleVariableAnimation();
       return;
@@ -430,6 +521,8 @@ export class BrowserLessonSession {
   }
 
   pause(): void {
+    if (this.failureState) return;
+    this.freezePhaseTransition();
     this.freezeScheduledDelay();
     this.freezeVariableAnimation();
     this.playing = false;
@@ -440,55 +533,77 @@ export class BrowserLessonSession {
   }
 
   advance(): PlaybackFrame | undefined {
-    if (this.player.status === "completed") return undefined;
-    if (this.variableAnimation) this.completeVariableAnimation();
-    if (this.player.status === "paused") this.player.resume();
-    const nextOperation = this.player.operations[this.player.cursor];
-    const animation = nextOperation?.action?.op === "lesson.variable.animate"
-      ? nextOperation.action.animation
-      : undefined;
-    const from = animation
-      ? this.player.snapshot.board?.variables?.[animation.variable]?.value
-      : undefined;
-    const frame = this.player.advance() ?? undefined;
-    this.seekAttentionTargets = [];
-    this.currentFrame = frame;
-    if (frame?.operation.type === "narration.begin" && frame.operation.narration) {
-      this.startedExternalNarrationBeatId = undefined;
-      this.completedExternalNarrationBeatId = undefined;
-      this.narrationRemainingBaseMs = this.options.narrationTiming === "external"
-        ? undefined
-        : narrationDuration(
-            frame.operation.narration.text,
-            frame.operation.narration.delivery,
-          );
-    } else if (frame?.operation.type === "narration.end") {
-      this.narrationRemainingBaseMs = undefined;
-      this.startedExternalNarrationBeatId = undefined;
-      this.completedExternalNarrationBeatId = undefined;
+    if (this.failureState) return undefined;
+    try {
+      const completedPhase = Boolean(this.phaseState.transition);
+      if (this.phaseState.transition) this.completePhaseTransition();
+      if (this.player.status === "completed") {
+        if (completedPhase) {
+          this.persist();
+          this.emit();
+        }
+        return undefined;
+      }
+      if (this.variableAnimation) this.completeVariableAnimation();
+      if (this.player.status === "paused") this.player.resume();
+      const nextOperation = this.player.operations[this.player.cursor];
+      const phase = nextOperation?.action?.transition;
+      const phaseFrom = phase ? Object.fromEntries(Object.keys(phase.values).map(alias =>
+        [alias, this.player.snapshot.board?.variables?.[alias]?.value as number])) : undefined;
+      const animation = nextOperation?.action?.op === "lesson.variable.animate"
+        ? nextOperation.action.animation
+        : undefined;
+      const from = animation
+        ? this.player.snapshot.board?.variables?.[animation.variable]?.value
+        : undefined;
+      const frame = this.player.advance() ?? undefined;
+      this.seekAttentionTargets = [];
+      this.currentFrame = frame;
+      if (frame?.operation.type === "narration.begin" && frame.operation.narration) {
+        this.startedExternalNarrationBeatId = undefined;
+        this.completedExternalNarrationBeatId = undefined;
+        this.narrationRemainingBaseMs = this.options.narrationTiming === "external"
+          ? undefined
+          : narrationDuration(
+              frame.operation.narration.text,
+              frame.operation.narration.delivery,
+            );
+      } else if (frame?.operation.type === "narration.end") {
+        this.narrationRemainingBaseMs = undefined;
+        this.startedExternalNarrationBeatId = undefined;
+        this.completedExternalNarrationBeatId = undefined;
+      }
+      if (
+        frame?.operation.type === "action.apply"
+        && frame.operation.action?.animation
+        && from !== undefined
+        && from !== frame.operation.action.animation.to
+        && !this.options.reducedMotion
+      ) {
+        const declaration = frame.operation.action.animation;
+        this.player.setVariable(declaration.variable, from);
+        this.variableAnimation = {
+          action_id: frame.operation.action.action_id,
+          variable: declaration.variable,
+          from,
+          to: declaration.to,
+          progress: 0,
+          easing: declaration.easing,
+          duration_intent: declaration.duration_intent,
+        };
+      }
+      if (phase && frame) {
+        const key = `playback:${this.phaseState.epoch}:${frame.operation.action!.action_id}`;
+        this.beginPhaseTransition(key, "replay", phase.values, phaseFrom);
+      }
+      this.activatePractice();
+      this.persist();
+      this.emit();
+      return frame;
+    } catch (error) {
+      this.reportFailure("playback", error);
+      return undefined;
     }
-    if (
-      frame?.operation.type === "action.apply"
-      && frame.operation.action?.animation
-      && from !== undefined
-      && from !== frame.operation.action.animation.to
-      && !this.options.reducedMotion
-    ) {
-      const declaration = frame.operation.action.animation;
-      this.player.setVariable(declaration.variable, from);
-      this.variableAnimation = {
-        action_id: frame.operation.action.action_id,
-        variable: declaration.variable,
-        from,
-        to: declaration.to,
-        progress: 0,
-        easing: declaration.easing,
-        duration_intent: declaration.duration_intent,
-      };
-    }
-    this.persist();
-    this.emit();
-    return frame;
   }
 
   step(): PlaybackFrame | undefined {
@@ -512,7 +627,8 @@ export class BrowserLessonSession {
    * Stale starts are ignored so a late audio decode from an interrupted Beat
    * cannot release the current Beat.
    */
-  startNarration(beatId: string): void {
+  startNarration(beatId: string, epoch = this.phaseState.epoch): void {
+    if (epoch !== this.phaseState.epoch || this.phaseState.transition || this.failureState) return;
     if (this.options.narrationTiming !== "external") return;
     if (
       !this.player.snapshot.current_narration ||
@@ -541,7 +657,8 @@ export class BrowserLessonSession {
    * current lesson. Completion also releases the start boundary so disabled
    * or failed audio can fall back to visible narration without deadlocking.
    */
-  completeNarration(beatId: string): void {
+  completeNarration(beatId: string, epoch = this.phaseState.epoch): void {
+    if (epoch !== this.phaseState.epoch || this.phaseState.transition || this.failureState) return;
     if (this.options.narrationTiming !== "external") return;
     if (
       !this.player.snapshot.current_narration ||
@@ -566,34 +683,47 @@ export class BrowserLessonSession {
     }
   }
 
-  seek(cursor: number, attentionTargets: string[] = []): void {
-    this.freezeScheduledDelay();
-    this.discardScheduledDelay();
-    this.playing = false;
-    this.followAppends = false;
-    this.narrationRemainingBaseMs = undefined;
-    this.startedExternalNarrationBeatId = undefined;
-    this.completedExternalNarrationBeatId = undefined;
-    this.discardVariableAnimation();
-    this.pendingStudentVariableOperations.clear();
-    this.seekAttentionTargets = [...attentionTargets];
-    const projection = this.player.seek(cursor);
-    this.currentFrame = cursor > 0
-      ? {
-          operation: this.player.operations[cursor - 1]!,
-          projection,
-        }
-      : undefined;
-    const narration = projection.current_narration;
-    if (narration && this.options.narrationTiming !== "external") {
-      this.narrationRemainingBaseMs = narrationDuration(
-        narration.text,
-        narration.delivery,
-      );
+  seek(cursor: number, attentionTargets: string[] = [], newEpoch = true): void {
+    if (this.failureState) return;
+    try {
+      const projection = this.player.seek(cursor);
+      this.stopPhaseTimer();
+      this.phaseState.transition = undefined;
+      if (newEpoch) {
+        this.phaseState.epoch += 1;
+        this.phaseState.ready = this.phaseState.ready.filter(key => !key.startsWith("playback:"));
+      }
+      this.freezeScheduledDelay();
+      this.discardScheduledDelay();
+      this.playing = false;
+      this.followAppends = false;
+      this.narrationRemainingBaseMs = undefined;
+      this.startedExternalNarrationBeatId = undefined;
+      this.completedExternalNarrationBeatId = undefined;
+      this.discardVariableAnimation();
+      this.pendingStudentVariableOperations.clear();
+      this.seekAttentionTargets = [...attentionTargets];
+      this.currentFrame = cursor > 0
+        ? {
+            operation: this.player.operations[cursor - 1]!,
+            projection,
+          }
+        : undefined;
+      const narration = projection.current_narration;
+      if (narration && this.options.narrationTiming !== "external") {
+        this.narrationRemainingBaseMs = narrationDuration(
+          narration.text,
+          narration.delivery,
+        );
+      }
+      this.activatePractice();
+      if (cursor === 0) this.store.remove(this.storageKey);
+      else this.persist();
+      this.emit();
+    } catch (error) {
+      this.reportFailure("seek", error);
+      return;
     }
-    if (cursor === 0) this.store.remove(this.storageKey);
-    else this.persist();
-    this.emit();
   }
 
   seekToStep(
@@ -605,6 +735,7 @@ export class BrowserLessonSession {
     this.seek(
       boundary === "start" ? step.start_cursor : step.end_cursor,
       step.focus_targets,
+      boundary === "start",
     );
   }
 
@@ -619,27 +750,36 @@ export class BrowserLessonSession {
     this.seek(
       boundary === "start" ? beat.start_cursor : beat.end_cursor,
       beat.focus_targets,
+      boundary === "start",
     );
   }
 
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult {
-    const result = this.player.appendEvents(events);
-    if (result.accepted > 0) {
-      this.events.splice(0, this.events.length, ...this.player.canonicalEvents);
-      this.persist();
-      this.emit();
-      if (this.followAppends && !this.playing && this.player.status !== "completed") {
-        if (this.player.status === "paused") this.player.resume();
-        this.playing = true;
+    if (this.failureState) throw new Error(this.failureState.message);
+    try {
+      const result = this.player.appendEvents(events);
+      if (result.accepted > 0) {
+        this.events.splice(0, this.events.length, ...this.player.canonicalEvents);
+        this.persist();
         this.emit();
-        this.tick();
+        if (this.followAppends && !this.playing && this.player.status !== "completed") {
+          if (this.player.status === "paused") this.player.resume();
+          this.playing = true;
+          this.emit();
+          this.tick();
+        }
       }
+      return result;
+    } catch (error) {
+      this.reportFailure("append", error);
+      throw error;
     }
-    return result;
   }
 
   reset(): void {
     this.pause();
+    this.stopPhaseTimer();
+    this.phaseState = { epoch: this.phaseState.epoch + 1, practiceEpochs: {}, ready: [] };
     this.discardScheduledDelay();
     this.narrationRemainingBaseMs = undefined;
     this.startedExternalNarrationBeatId = undefined;
@@ -650,11 +790,12 @@ export class BrowserLessonSession {
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;
+    this.failureState = undefined;
     this.emit();
   }
 
   private tick(): void {
-    if (!this.playing) return;
+    if (!this.playing || this.failureState) return;
     const nextOperation = this.player.operations[this.player.cursor];
     if (
       this.options.narrationTiming === "external" &&
@@ -689,6 +830,10 @@ export class BrowserLessonSession {
       this.emit();
       return;
     }
+    if (this.phaseState.transition) {
+      this.schedulePhaseTransition();
+      return;
+    }
     if (this.variableAnimation) {
       this.scheduleVariableAnimation();
       return;
@@ -708,6 +853,8 @@ export class BrowserLessonSession {
     alias: string,
     context: StudentVariableOperationContext,
   ): string {
+    if (this.failureState) throw new Error(this.failureState.message);
+    if (this.phaseState.transition) return "";
     const variable = this.player.snapshot.board?.variables?.[alias];
     if (!variable) throw new Error(`Unknown lesson variable '${alias}'`);
     if (!Number.isFinite(variable.value)) throw new Error(`Lesson variable '${alias}' has no finite value`);
@@ -763,6 +910,7 @@ export class BrowserLessonSession {
   }
 
   updateStudentVariableOperation(operationId: string, value: number): void {
+    if (this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return;
     if (this.studentOperationLog.operations.some((operation) => operation.id === operationId)) return;
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
@@ -773,6 +921,7 @@ export class BrowserLessonSession {
     operationId: string,
     value?: number,
   ): StudentVariableOperation | undefined {
+    if (this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return undefined;
     const completed = this.studentOperationLog.operations.find((operation) => operation.id === operationId);
     if (completed) {
       if (completed.kind !== "variable_change") {
@@ -783,6 +932,7 @@ export class BrowserLessonSession {
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
     if (value !== undefined) pending.accepted = this.applyManualVariable(pending.alias, value) || pending.accepted;
+    if (this.failureState) return undefined;
     const after = this.player.snapshot.board?.variables?.[pending.alias]?.value;
     this.pendingStudentVariableOperations.delete(operationId);
     if (!pending.accepted) return undefined;
@@ -801,10 +951,19 @@ export class BrowserLessonSession {
       control: pending.control,
       input: pending.input,
     };
+    const previousProgress = structuredClone(this.studentTaskProgressLog);
+    try {
+      this.evaluateStudentTasks(operation);
+    } catch (error) {
+      this.studentTaskProgressLog = previousProgress;
+      this.reportFailure("input", error);
+      return undefined;
+    }
     this.studentOperationLog.operations.push(operation);
     this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
     this.persistStudentOperations();
-    this.evaluateStudentTasks(operation);
+    this.persistStudentTaskProgress();
+    this.activatePractice();
     this.emit();
     return structuredClone(operation);
   }
@@ -866,6 +1025,7 @@ export class BrowserLessonSession {
       operation_id?: string;
     },
   ): string | StudentScene3dViewOperation | undefined {
+    if (this.failureState || this.phaseState.transition) return undefined;
     const node = this.player.snapshot.board?.nodes?.[nodeId];
     if (node?.kind !== "scene3d") throw new Error(`Unknown 3D scene '${nodeId}'`);
     if (![view.yaw, view.pitch, view.zoom].every(Number.isFinite)
@@ -925,10 +1085,19 @@ export class BrowserLessonSession {
       input: pending.input,
       operationId: id,
     });
+    const previousProgress = structuredClone(this.studentTaskProgressLog);
+    try {
+      this.evaluateStudentTasks(operation);
+    } catch (error) {
+      this.studentTaskProgressLog = previousProgress;
+      this.reportFailure("input", error);
+      return undefined;
+    }
     this.studentOperationLog.operations.push(operation);
     this.studentOperationLog.operations.sort((left, right) => left.sequence - right.sequence);
     this.persistStudentOperations();
-    this.evaluateStudentTasks(operation);
+    this.persistStudentTaskProgress();
+    this.activatePractice();
     this.emit();
     return structuredClone(operation);
   }
@@ -960,6 +1129,14 @@ export class BrowserLessonSession {
     if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
     if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
       throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    if (definition.start) {
+      progress.status = "not_started";
+      this.phaseState.practiceEpochs[taskId] = (this.phaseState.practiceEpochs[taskId] ?? 0) + 1;
+      this.activatePractice();
+      this.persistStudentTaskProgress();
+      this.emit();
+      return this.studentTasks.find(task => task.task_id === taskId)!;
     }
     this.suppressStudentTaskEvaluation = true;
     try {
@@ -996,12 +1173,117 @@ export class BrowserLessonSession {
   }
 
   private applyManualVariable(alias: string, value: number): boolean {
+    if (this.failureState || this.phaseState.transition) return false;
     if (this.playing && this.variableAnimation?.variable === alias) return false;
     if (!this.playing && this.variableAnimation?.variable === alias) this.discardVariableAnimation();
-    this.player.setVariable(alias, value);
+    try {
+      this.player.setVariable(alias, value);
+    } catch (error) {
+      this.reportFailure("input", error);
+      return false;
+    }
     this.persist();
     this.emit();
     return true;
+  }
+
+  private practiceKey(taskId: string): string {
+    return `practice:${taskId}:${this.phaseState.practiceEpochs[taskId] ?? 0}`;
+  }
+
+  private activatePractice(): void {
+    if (!this.baseStudentTaskWindowOpen || this.phaseState.transition) return;
+    const active = this.studentTaskProgressLog.tasks.find(task => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find(task => task.as === active?.task_id);
+    if (!definition?.start) return;
+    const values = Object.fromEntries((definition.start.variables ?? []).map(alias => [
+      alias, definition.start!.values?.[alias] ?? this.player.snapshot.board?.variables?.[alias]?.initial as number,
+    ]));
+    try {
+      this.beginPhaseTransition(this.practiceKey(definition.as), "practice", values);
+      if (this.phaseState.transition) this.schedulePhaseTransition();
+    } catch (error) {
+      this.reportFailure("animation", error);
+    }
+  }
+
+  private beginPhaseTransition(key: string, kind: PhaseTransition["kind"], to: Record<string, number>, from?: Record<string, number>): void {
+    if (this.phaseState.ready.includes(key)) return;
+    const initial = from ?? Object.fromEntries(Object.keys(to).map(alias =>
+      [alias, this.player.snapshot.board?.variables?.[alias]?.value as number]));
+    if (this.options.reducedMotion || Object.entries(to).every(([alias, value]) => initial[alias] === value)) {
+      this.player.setVariables(to);
+      this.phaseState.ready.push(key);
+      return;
+    }
+    this.player.setVariables(initial);
+    for (const id of this.pendingStudentVariableOperations.keys()) this.invalidatedStudentOperations.add(id);
+    this.pendingStudentVariableOperations.clear();
+    this.pendingStudentScene3dOperations.clear();
+    this.phaseState.transition = { key, kind, from: initial, to: structuredClone(to), progress: 0 };
+  }
+
+  private stopPhaseTimer(): void {
+    if (this.phaseTimer !== undefined) clearTimeout(this.phaseTimer);
+    this.phaseTimer = undefined;
+    this.phaseStartedAt = undefined;
+  }
+
+  private applyPhaseProgress(progress: number): void {
+    const transition = this.phaseState.transition;
+    if (!transition) return;
+    const bounded = Math.max(0, Math.min(1, progress));
+    const eased = bounded < .5 ? 2 * bounded * bounded : 1 - (-2 * bounded + 2) ** 2 / 2;
+    this.player.setVariables(Object.fromEntries(Object.entries(transition.to).map(([alias, to]) =>
+      [alias, transition.from[alias]! + (to - transition.from[alias]!) * eased])));
+    transition.progress = bounded;
+  }
+
+  private completePhaseTransition(): void {
+    const transition = this.phaseState.transition;
+    if (!transition) return;
+    this.applyPhaseProgress(1);
+    this.phaseState.ready.push(transition.key);
+    this.phaseState.transition = undefined;
+    this.stopPhaseTimer();
+  }
+
+  private freezePhaseTransition(): void {
+    if (!this.phaseState.transition || this.phaseStartedAt === undefined) return;
+    const progress = this.phaseStartProgress + (Date.now() - this.phaseStartedAt) / variableAnimationDuration("brief", this.speed);
+    try { this.applyPhaseProgress(progress); }
+    catch (error) { this.reportFailure("animation", error); }
+    this.stopPhaseTimer();
+  }
+
+  private schedulePhaseTransition(): void {
+    const transition = this.phaseState.transition;
+    if (!transition || this.failureState || (transition.kind === "replay" && !this.playing)) return;
+    this.stopPhaseTimer();
+    this.phaseStartedAt = Date.now();
+    this.phaseStartProgress = transition.progress;
+    const update = () => {
+      if (this.phaseState.transition !== transition || this.failureState || this.phaseStartedAt === undefined) return;
+      try {
+        const progress = this.phaseStartProgress + (Date.now() - this.phaseStartedAt) / variableAnimationDuration("brief", this.speed);
+        this.applyPhaseProgress(progress);
+        if (progress >= 1) {
+          this.completePhaseTransition();
+          this.persist();
+          this.emit();
+          if (this.playing) this.tick();
+          return;
+        }
+        if (Date.now() - this.phaseLastPersistAt >= 200) {
+          this.persist();
+          this.phaseLastPersistAt = Date.now();
+        }
+        this.emit();
+        this.phaseTimer = setTimeout(update, 16);
+      } catch (error) { this.reportFailure("animation", error); }
+    };
+    this.phaseTimer = setTimeout(update, 16);
+    this.persist();
   }
 
   private easedVariableProgress(animation: PlaybackVariableAnimation): number {
@@ -1016,9 +1298,10 @@ export class BrowserLessonSession {
   private applyVariableAnimationProgress(progress: number): void {
     const animation = this.variableAnimation;
     if (!animation) return;
-    animation.progress = Math.max(0, Math.min(1, progress));
-    const eased = this.easedVariableProgress(animation);
+    const next = { ...animation, progress: Math.max(0, Math.min(1, progress)) };
+    const eased = this.easedVariableProgress(next);
     this.player.setVariable(animation.variable, animation.from + (animation.to - animation.from) * eased);
+    animation.progress = next.progress;
   }
 
   private scheduleVariableAnimation(): void {
@@ -1035,7 +1318,12 @@ export class BrowserLessonSession {
       const elapsed = Math.max(0, Date.now() - this.variableAnimationStartedAt);
       const progress = this.variableAnimationStartProgress
         + (1 - this.variableAnimationStartProgress) * Math.min(1, elapsed / Math.max(1, remainingDuration));
-      this.applyVariableAnimationProgress(progress);
+      try {
+        this.applyVariableAnimationProgress(progress);
+      } catch (error) {
+        this.reportFailure("animation", error);
+        return;
+      }
       this.emit();
       if (progress >= 1) {
         this.variableAnimation = undefined;
@@ -1057,7 +1345,12 @@ export class BrowserLessonSession {
     const elapsed = Math.max(0, Date.now() - this.variableAnimationStartedAt);
     const progress = this.variableAnimationStartProgress
       + (1 - this.variableAnimationStartProgress) * Math.min(1, elapsed / Math.max(1, remainingDuration));
-    this.applyVariableAnimationProgress(progress);
+    try {
+      this.applyVariableAnimationProgress(progress);
+    } catch (error) {
+      this.reportFailure("animation", error);
+      return;
+    }
     if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
     this.variableAnimationTimer = undefined;
     this.variableAnimationStartedAt = undefined;
@@ -1189,6 +1482,18 @@ export class BrowserLessonSession {
         options,
       );
       this.variableAnimation = checkpoint.variable_animation ? structuredClone(checkpoint.variable_animation) : undefined;
+      const savedPhases = (checkpoint as BrowserCheckpoint).phase_state;
+      if (savedPhases) {
+        if (!Number.isSafeInteger(savedPhases.epoch) || !Array.isArray(savedPhases.ready)
+          || !savedPhases.practiceEpochs || (savedPhases.transition && (
+            !Number.isFinite(savedPhases.transition.progress) || savedPhases.transition.progress < 0 || savedPhases.transition.progress > 1
+          ))) throw new Error("Invalid phase checkpoint");
+        this.phaseState = structuredClone(savedPhases);
+      }
+      const savedFailure = (checkpoint as BrowserCheckpoint).runtime_failure;
+      if (savedFailure && typeof savedFailure.message === "string" && typeof savedFailure.code === "string") {
+        this.failureState = structuredClone(savedFailure);
+      }
       this.events.splice(0, this.events.length, ...player.canonicalEvents);
       return player;
     }
@@ -1237,18 +1542,23 @@ export class BrowserLessonSession {
     const activeProgress = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
     if (!activeProgress) return;
     const definition = this.studentTaskDefinitions.find((task) => task.as === activeProgress.task_id);
-    if (definition && evaluateStudentTaskOperation(definition, activeProgress, operation, board)) {
-      this.persistStudentTaskProgress();
-    }
+    if (definition) evaluateStudentTaskOperation(definition, activeProgress, operation, board);
   }
 
   private get studentTaskWindowOpen(): boolean {
-    return this.player.status === "completed"
+    if (this.phaseState.transition || !this.baseStudentTaskWindowOpen) return false;
+    const active = this.studentTaskProgressLog.tasks.find(task => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find(task => task.as === active?.task_id);
+    return !definition?.start || this.phaseState.ready.includes(this.practiceKey(definition.as));
+  }
+
+  private get baseStudentTaskWindowOpen(): boolean {
+    return !this.failureState && (this.player.status === "completed"
       || (
         Boolean(this.options.incremental)
         && this.deliverySettled
         && this.player.cursor === this.player.operations.length
-      );
+      ));
   }
 
   private persistStudentOperations(): void {
@@ -1272,7 +1582,9 @@ export class BrowserLessonSession {
   private persist(): void {
     if (this.player.cursor === 0) return;
     try {
-      const checkpoint = this.player.checkpoint();
+      const checkpoint: BrowserCheckpoint = this.player.checkpoint();
+      if (this.failureState) checkpoint.runtime_failure = structuredClone(this.failureState);
+      checkpoint.phase_state = structuredClone(this.phaseState);
       if (this.variableAnimation) checkpoint.variable_animation = structuredClone(this.variableAnimation);
       this.store.save(this.storageKey, checkpoint);
     } catch {}

@@ -182,6 +182,7 @@ function safeViewport(
   insets: ViewportInsets,
   margin: number,
   content?: Rect,
+  nearFitRatio = NEAR_FIT_RATIO,
 ): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
   const base = {
     left: inset(insets.left) + margin,
@@ -246,7 +247,7 @@ function safeViewport(
   let bestDistance = Number.POSITIVE_INFINITY;
   let bestArea = -1;
   for (const candidate of candidates) {
-    if (candidate.fit < bestFit * NEAR_FIT_RATIO) continue;
+    if (candidate.fit + .000001 < bestFit * nearFitRatio) continue;
     const distance = Math.hypot(
       candidate.left + candidate.width / 2 - centerX,
       candidate.top + candidate.height / 2 - centerY,
@@ -266,8 +267,9 @@ function centeredCamera(
   scale: number,
   viewport: ViewportSize,
   insets: ViewportInsets,
+  nearFitRatio = NEAR_FIT_RATIO,
 ): CameraState {
-  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, nearFitRatio);
   return {
     scale,
     panX: safe.left + safe.width / 2 - (rect.x + rect.width / 2) * scale,
@@ -302,15 +304,18 @@ export function planFocusCamera(
   automaticScaleFloor = MIN_AUTOMATIC_SCALE,
 ): CameraState {
   if (!targets.length) return current;
+  // Overview already includes all course content. Keep a small safety margin,
+  // rather than reserving the broad context used during teaching close-ups.
+  if (mode === "course") insets = {...insets, focusMargin: insets.focusMargin ?? 24};
   const scene = unionRects(targets);
   const margin = configuredFocusMargin(insets);
-  const safe = safeViewport(viewport, insets, margin, scene);
+  const safe = safeViewport(viewport, insets, margin, scene, mode === "course" ? 1 : NEAR_FIT_RATIO);
   const safeWidth = safe.width;
   const safeHeight = safe.height;
   // A relationship is only intelligible when every related target stays in
   // frame. Device readability floors remain appropriate for a single card,
   // but must not crop a multi-card comparison or shared-variable animation.
-  const scaleFloor = mode === "relationship"
+  const scaleFloor = mode === "course" ? 0 : mode === "relationship"
     ? MIN_AUTOMATIC_SCALE
     : Math.min(MAX_AUTOMATIC_SCALE, Math.max(MIN_AUTOMATIC_SCALE, automaticScaleFloor));
   const fitScale = Math.min(
@@ -331,7 +336,7 @@ export function planFocusCamera(
     && visibleAt(scene, current, viewport, margin, insets)
     && composedAt(scene, current, viewport, insets)
   ) return current;
-  return centeredCamera(scene, scale, viewport, insets);
+  return centeredCamera(scene, scale, viewport, insets, mode === "course" ? 1 : NEAR_FIT_RATIO);
 }
 
 export function planRevealCamera(

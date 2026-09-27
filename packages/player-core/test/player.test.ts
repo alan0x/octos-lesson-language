@@ -4,6 +4,9 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   applyCanonicalAction,
+  assertExecutionSupported,
+  deriveExecutionRequirements,
+  assertExecutionDeclaration,
   createSemanticBoardState,
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
@@ -466,4 +469,64 @@ test("incremental append is idempotent and rejects gaps or conflicting retries a
     (error) => error instanceof PlaybackError && error.code === "OLL_PLAYBACK_SEQUENCE",
   );
   assert.deepEqual(player.canonicalEvents, before);
+});
+
+
+test("failed action rolls back partial board changes and preserves the operation cursor", () => {
+  const player = new HeadlessLessonPlayer(quadratic.events);
+  player.advance();
+  const before = player.snapshot;
+  const implementation = player as unknown as {
+    projection: typeof before;
+    applyOperation: () => void;
+  };
+  implementation.applyOperation = () => {
+    implementation.projection.board!.revision += 100;
+    throw new Error("injected action failure after mutation");
+  };
+  assert.throws(() => player.advance(), /injected action failure/);
+  assert.deepEqual(player.snapshot, before);
+});
+
+test("failed seek preserves the previous board, cursor and frame history", () => {
+  const player = new HeadlessLessonPlayer(quadratic.events);
+  while (player.cursor < 10) player.advance();
+  const before = player.snapshot;
+  const implementation = player as unknown as {
+    applyOperation: (operation: unknown) => void;
+    frames: unknown[];
+  };
+  const priorFrames = structuredClone(implementation.frames);
+  const original = implementation.applyOperation.bind(player);
+  let count = 0;
+  implementation.applyOperation = (operation) => {
+    original(operation);
+    if (++count === 3) throw new Error("injected seek failure");
+  };
+  assert.throws(() => player.seek(8), /injected seek failure/);
+  assert.deepEqual(player.snapshot, before);
+  assert.deepEqual(implementation.frames, priorFrames);
+});
+
+
+test("capabilities derive from content, with deterministic ordering and legacy compatibility", () => {
+  const requirements = deriveExecutionRequirements(geometryV2.events);
+  assert.equal(requirements.minimumPlayerVersion, "0.1.0");
+  assert.ok(requirements.requiredCapabilities.includes("node:diagram"));
+  assert.deepEqual(requirements.requiredCapabilities, [...requirements.requiredCapabilities].sort());
+  assert.doesNotThrow(() => assertExecutionDeclaration(geometryV2.events, { minimumPlayerVersion: "0.1.0" }));
+  assert.throws(() => assertExecutionDeclaration(geometryV2.events, {
+    minimumPlayerVersion: "0.1.0", requiredCapabilities: ["canonical:0.1"],
+  }), /omits/);
+  assert.throws(() => assertExecutionSupported(geometryV2.events, "0.1.0", ["canonical:0.1"]), /does not support/);
+});
+
+test("unknown executable features are rejected before an incremental append is accepted", () => {
+  const player = new HeadlessLessonPlayer([quadratic.events[0]!], { allowIncomplete: true });
+  const next = structuredClone(quadratic.events[1]!);
+  const action = next.step!.beats.flatMap(beat => Object.values(beat.stage).flat())[0]!;
+  action.op = "lesson.future.operation";
+  assert.throws(() => player.appendEvents([next]), /Unsupported executable capability/);
+  assert.equal(player.canonicalEvents.length, 1);
+  assert.equal(player.cursor, 0);
 });
