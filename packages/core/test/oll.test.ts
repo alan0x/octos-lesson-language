@@ -4,6 +4,10 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   assertAuthoringSchema,
+  formatBoundNumericLabel,
+  assertExecutionDeclaration,
+  assertExecutionSupported,
+  deriveExecutionRequirements,
   OLL_ACTION_NAMES,
   OLL_BINDING_CAPABILITIES,
   OLL_EXECUTION_CAPABILITIES,
@@ -402,6 +406,8 @@ test("publishes only the executable node, action, binding, control, and task cap
     node_kinds: OLL_NODE_KINDS,
     action_names: OLL_ACTION_NAMES,
     value_bindings: OLL_BINDING_CAPABILITIES,
+    binding_labels: { precision: { min: 0, max: 6 }, prefix: true, suffix: true },
+    bound_radius: { allow_zero: true, default: "positive" },
     variable_expressions: OLL_EXPRESSION_CAPABILITIES,
     student_controls: {
       variable: ["slider", "geometry_point"],
@@ -948,4 +954,43 @@ test("rejects invalid variable animation declarations", () => {
     () => validateAuthoringLesson(invalidDuration),
     (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD" && error.path.endsWith("/duration_intent"),
   );
+});
+
+
+test("bound radius labels share the numerical binding and explicitly support zero", () => {
+  const lesson = unitCircleLesson();
+  lesson.lesson.variables = [{ as: "h", initial: 1, min: 0, max: 8, control: { kind: "slider", step: .04 } }];
+  const geometry = lesson.steps[0]!.beats[0]!.actions[0]!;
+  assert.equal(geometry.do, "write");
+  if (geometry.do !== "write") return;
+  geometry.content.bindings = [{ target: "circle.radius", expression: "sqrt(h)", allow_zero: true,
+    label: { prefix: "r = ", precision: 2 } }];
+  assertAuthoringSchema(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const requirements = deriveExecutionRequirements(events);
+  assert.equal(requirements.minimumPlayerVersion, "0.2.0");
+  assert.ok(requirements.requiredCapabilities.includes("binding-labels"));
+  assert.throws(() => assertExecutionSupported(events, "0.1.0"), /requires player/);
+  assert.throws(() => assertExecutionDeclaration(events, { minimumPlayerVersion: "0.2.0" }), /require a capability declaration/);
+  const original = reduceCanonicalEvents(events);
+  for (const [h, expected] of [[0, "r = 0"], [1, "r = 1"], [4, "r = 2"], [8, "r = 2.83"]] as const) {
+    const board = setLessonVariable(original, "h", h);
+    const circle = board.nodes[`${host.lessonId}:node:unit-circle`]!.content.circles[0];
+    assert.equal(circle.radius, Math.sqrt(h));
+    assert.equal(circle.label, expected);
+  }
+  delete geometry.content.bindings[0].allow_zero;
+  const legacy = reduceCanonicalEvents(normalizeAuthoringLesson(lesson, host));
+  assert.throws(() => setLessonVariable(legacy, "h", 0), /Bound radius/);
+  assert.equal(legacy.variables!.h!.value, 1);
+  geometry.content.bindings[0].expression = "-h";
+  geometry.content.bindings[0].allow_zero = true;
+  assert.throws(() => reduceCanonicalEvents(normalizeAuthoringLesson(lesson, host)), /Bound radius/);
+});
+
+test("numeric labels trim trailing zeros, remove negative zero, and reject invalid precision", () => {
+  assert.equal(formatBoundNumericLabel(-.0001, { precision: 2 }), "0");
+  assert.equal(formatBoundNumericLabel(2, { precision: 6, suffix: " cm" }), "2 cm");
+  assert.throws(() => formatBoundNumericLabel(Infinity, { precision: 2 }), /non-finite/);
+  assert.throws(() => formatBoundNumericLabel(2, { precision: 7 }), /precision/);
 });
