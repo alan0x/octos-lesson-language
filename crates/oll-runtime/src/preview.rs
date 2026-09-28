@@ -118,7 +118,15 @@ impl Preview {
                         if op == "board.create"
                             && !matches!(
                                 action["node"]["kind"].as_str(),
-                                Some("geometry" | "plot" | "math" | "note" | "text" | "diagram")
+                                Some(
+                                    "geometry"
+                                        | "plot"
+                                        | "math"
+                                        | "note"
+                                        | "text"
+                                        | "diagram"
+                                        | "scene3d"
+                                )
                             )
                         {
                             return Err("Unsupported preview node kind".into());
@@ -270,6 +278,9 @@ impl Preview {
                 }
                 let mut node = node.clone();
                 bind(&mut node["content"], &self.variables)?;
+                if node["kind"] == "scene3d" {
+                    crate::scene3d::validate(&node["content"], &self.variables)?;
+                }
                 self.nodes.push(node);
             }
             "board.connect" => {
@@ -342,7 +353,11 @@ impl Preview {
                     .ok_or("Missing revision content")?
                     .clone();
                 bind(&mut content, &self.variables)?;
-                self.nodes.iter_mut().find(|v| v["id"] == id).unwrap()["content"] = content;
+                let node = self.nodes.iter_mut().find(|v| v["id"] == id).unwrap();
+                if node["kind"] == "scene3d" {
+                    crate::scene3d::validate(&content, &self.variables)?;
+                }
+                node["content"] = content;
             }
             "lesson.variable.animate" => {
                 let d = &a["animation"];
@@ -482,15 +497,23 @@ fn bind(content: &mut Value, values: &Variables) -> Result<(), String> {
     for b in bindings {
         let target = string(&b, "target")?;
         let (id, field) = target.rsplit_once('.').ok_or("Invalid binding target")?;
-        if !matches!(field, "x" | "y" | "end_angle" | "start_angle" | "radius") {
-            return Err(format!("Unsupported binding field {field}"));
-        }
         let value = evaluate(string(&b, "expression")?, values)?;
         let mut found = false;
-        for key in ["points", "arcs", "circles"] {
+        // Union of the web OLL_BINDING_CAPABILITIES collections; the canonical
+        // validator already restricts each collection to its node kind.
+        for (key, fields) in [
+            ("points", &["x", "y"][..]),
+            ("circles", &["radius"][..]),
+            ("arcs", &["radius", "start_angle", "end_angle"][..]),
+            ("guides", &["value"][..]),
+            ("sections", &["value"][..]),
+        ] {
             if let Some(items) = content.get_mut(key).and_then(Value::as_array_mut) {
                 for item in items {
                     if item["id"] == id {
+                        if !fields.contains(&field) {
+                            return Err(format!("Property '{field}' cannot be bound on '{key}'"));
+                        }
                         item[field] = Value::from(value);
                         found = true;
                     }

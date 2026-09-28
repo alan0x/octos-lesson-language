@@ -9,6 +9,8 @@ pub mod timing;
 
 pub mod spatial;
 
+pub mod scene3d;
+
 pub mod connections;
 
 pub mod checkpoint;
