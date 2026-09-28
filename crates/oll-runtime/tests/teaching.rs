@@ -151,3 +151,53 @@ fn focus_camera_matches_web_plan_focus_camera() {
         }
     }
 }
+
+#[test]
+fn control_panels_cluster_like_the_web_host() {
+    let r = reference();
+    let mut checked = 0;
+    for course in r["courses"].as_array().unwrap() {
+        let course_nodes: Vec<String> = course["nodeSections"]
+            .as_object()
+            .unwrap()
+            .keys()
+            .cloned()
+            .collect();
+        let declarations = course["variables"].as_array().unwrap();
+        for frame in course["frames"].as_array().unwrap() {
+            let Some(board) = frame.get("board") else {
+                continue;
+            };
+            if frame["action_id"] == "practice" {
+                continue;
+            }
+            let mut nodes = board["nodes"].as_array().unwrap().clone();
+            for n in &mut nodes {
+                let content = course["visualContent"][n["id"].as_str().unwrap()].clone();
+                if !content.is_null() {
+                    n["content"] = content;
+                }
+            }
+            let region = nodes[0]["region_id"]
+                .as_str()
+                .unwrap_or("__legacy__")
+                .to_owned();
+            let p = Preview::from_board(nodes, vec![], vec![]);
+            let got = oll_runtime::teaching::control_attachments(
+                &p,
+                &region,
+                &course_nodes,
+                declarations,
+            );
+            let web: Vec<oll_runtime::teaching::Attachment> = frame["attachments"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|a| oll_runtime::teaching::Attachment::from_json(a).unwrap())
+                .collect();
+            assert_eq!(got, web, "{} {}", course["pack"], frame["action_id"]);
+            checked += 1;
+        }
+    }
+    assert!(checked > 300);
+}

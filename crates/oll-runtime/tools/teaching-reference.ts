@@ -81,6 +81,7 @@ for (const pack of readdirSync(packRoot).sort()) {
     for (const width of [1440, 700]) {
       const state = createSemanticBoardState(events[0]);
       const frames: any[] = [];
+      const visualContent: Record<string, any> = {};
       const composition = { width, height: 868, mode: "progressive", insets: INSETS };
       const record = (actionId: string, practice: boolean) => {
         const nodes = Object.values<any>(state.nodes);
@@ -103,11 +104,15 @@ for (const pack of readdirSync(packRoot).sort()) {
       };
       for (const operation of operations) {
         if (!operation.action) continue;
+        // Visual content (variable references) is structural: keep it once.
+        if (operation.action.op === "board.create" && visualKinds.includes(String(operation.action.node?.kind)))
+          visualContent[operation.action.node.id] = operation.action.node.content;
         applyCanonicalAction(state, operation.action);
         record(operation.action.action_id, false);
       }
       record("practice", true);
-      courses.push({ pack, version, nodeSections, plannedSteps, composition, frames });
+      courses.push({ pack, version, nodeSections, plannedSteps, composition,
+        variables: events[0].lesson?.variables ?? [], visualContent, frames });
     }
   }
 }

@@ -1123,3 +1123,145 @@ mod tests {
         assert_eq!(balanced_counts(&[90.], 3), vec![1]);
     }
 }
+
+/// Identifiers of a math expression (lower-cased), like core tokenize.
+fn identifiers(expression: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    let mut in_number = false;
+    for ch in expression.chars().chain(std::iter::once(' ')) {
+        if ch.is_ascii_alphanumeric() || ch == '_' {
+            if current.is_empty() && ch.is_ascii_digit() {
+                in_number = true;
+            }
+            current.push(ch);
+        } else {
+            if !current.is_empty() && !in_number {
+                out.push(current.to_ascii_lowercase());
+            }
+            current.clear();
+            in_number = false;
+        }
+        if in_number && !(ch.is_ascii_digit() || ch == '.') {
+            in_number = false;
+        }
+    }
+    out
+}
+fn referenced_variables(value: &Value, allowed: &[String], out: &mut Vec<String>) {
+    let mut add = |alias: &str, out: &mut Vec<String>| {
+        if allowed.iter().any(|a| a == alias) && !out.iter().any(|o| o == alias) {
+            out.push(alias.to_owned());
+        }
+    };
+    match value {
+        Value::Array(items) => items
+            .iter()
+            .for_each(|v| referenced_variables(v, allowed, out)),
+        Value::Object(map) => {
+            for (key, child) in map {
+                if key == "variable" {
+                    if let Some(s) = child.as_str() {
+                        add(s, out);
+                    }
+                }
+                if key == "expression" {
+                    if let Some(s) = child.as_str() {
+                        for id in identifiers(s) {
+                            if let Some(alias) =
+                                allowed.iter().find(|a| a.to_ascii_lowercase() == id)
+                            {
+                                let alias = alias.clone();
+                                add(&alias, out);
+                            }
+                        }
+                    }
+                }
+                referenced_variables(child, allowed, out);
+            }
+        }
+        _ => {}
+    }
+}
+
+/// octos-learn buildInteractionClusters (controls only) plus the host's
+/// control panel sizing: one 360-wide panel per group of sliders that drive
+/// the same visuals, anchored at the group's last delivered visual.
+/// `course_node_ids` is the course's planned node order (topic.nodeIds).
+pub fn control_attachments(
+    p: &Preview,
+    region_id: &str,
+    course_node_ids: &[String],
+    declarations: &[Value],
+) -> Vec<Attachment> {
+    let aliases: Vec<String> = declarations
+        .iter()
+        .filter_map(|d| d["as"].as_str().map(str::to_owned))
+        .collect();
+    let controls: Vec<String> = declarations
+        .iter()
+        .filter(|d| d["control"]["kind"] == "slider")
+        .filter_map(|d| d["as"].as_str().map(str::to_owned))
+        .collect();
+    let topic_nodes: Vec<&String> = course_node_ids
+        .iter()
+        .filter(|id| p.nodes.iter().any(|n| n["id"] == id.as_str()))
+        .collect();
+    let mut variables_by_node: Vec<(String, Vec<String>)> = Vec::new();
+    for id in &topic_nodes {
+        let node = p.nodes.iter().find(|n| n["id"] == id.as_str()).unwrap();
+        if !is_visual(node["kind"].as_str().unwrap_or("")) {
+            continue;
+        }
+        let mut vars = Vec::new();
+        referenced_variables(&node["content"], &aliases, &mut vars);
+        variables_by_node.push(((*id).clone(), vars));
+    }
+    let active: Vec<&String> = controls.iter().filter(|c| aliases.contains(c)).collect();
+    let mut visited: Vec<String> = Vec::new();
+    let mut out = Vec::new();
+    for initial in &active {
+        if visited.contains(initial) {
+            continue;
+        }
+        let mut group_aliases: Vec<String> = Vec::new();
+        let mut node_ids: BTreeSet<String> = BTreeSet::new();
+        let mut queue = vec![(*initial).clone()];
+        while !queue.is_empty() {
+            let alias = queue.remove(0);
+            if visited.contains(&alias) {
+                continue;
+            }
+            visited.push(alias.clone());
+            group_aliases.push(alias.clone());
+            for (node, vars) in variables_by_node.iter().filter(|(_, v)| v.contains(&alias)) {
+                node_ids.insert(node.clone());
+                for peer in vars {
+                    if active.contains(&peer) && !visited.contains(peer) {
+                        queue.push(peer.clone());
+                    }
+                }
+            }
+        }
+        if node_ids.is_empty() {
+            continue;
+        }
+        let ordered: Vec<String> = topic_nodes
+            .iter()
+            .filter(|id| node_ids.contains(id.as_str()))
+            .map(|id| (*id).clone())
+            .collect();
+        let n = group_aliases
+            .iter()
+            .filter(|a| controls.contains(a))
+            .count() as f64;
+        out.push(Attachment {
+            id: format!("{region_id}:interaction:{}", out.len() + 1),
+            task: false,
+            anchor_node_ids: ordered,
+            width: 360.,
+            height: 20. + n * 24. + (n - 1.).max(0.) * 6.,
+        });
+    }
+    out
+}
