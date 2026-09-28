@@ -1149,7 +1149,7 @@ fn identifiers(expression: &str) -> Vec<String> {
     out
 }
 fn referenced_variables(value: &Value, allowed: &[String], out: &mut Vec<String>) {
-    let mut add = |alias: &str, out: &mut Vec<String>| {
+    let add = |alias: &str, out: &mut Vec<String>| {
         if allowed.iter().any(|a| a == alias) && !out.iter().any(|o| o == alias) {
             out.push(alias.to_owned());
         }
@@ -1184,16 +1184,29 @@ fn referenced_variables(value: &Value, allowed: &[String], out: &mut Vec<String>
     }
 }
 
-/// octos-learn buildInteractionClusters (controls only) plus the host's
-/// control panel sizing: one 360-wide panel per group of sliders that drive
-/// the same visuals, anchored at the group's last delivered visual.
-/// `course_node_ids` is the course's planned node order (topic.nodeIds).
+/// The control panels of `control_clusters` without their slider aliases.
 pub fn control_attachments(
     p: &Preview,
     region_id: &str,
     course_node_ids: &[String],
     declarations: &[Value],
 ) -> Vec<Attachment> {
+    control_clusters(p, region_id, course_node_ids, declarations)
+        .into_iter()
+        .map(|(a, _)| a)
+        .collect()
+}
+
+/// octos-learn buildInteractionClusters (controls only) plus the host's
+/// control panel sizing: one 360-wide panel per group of sliders that drive
+/// the same visuals, anchored at the group's last delivered visual.
+/// `course_node_ids` is the course's planned node order (topic.nodeIds).
+pub fn control_clusters(
+    p: &Preview,
+    region_id: &str,
+    course_node_ids: &[String],
+    declarations: &[Value],
+) -> Vec<(Attachment, Vec<String>)> {
     let aliases: Vec<String> = declarations
         .iter()
         .filter_map(|d| d["as"].as_str().map(str::to_owned))
@@ -1251,17 +1264,21 @@ pub fn control_attachments(
             .filter(|id| node_ids.contains(id.as_str()))
             .map(|id| (*id).clone())
             .collect();
-        let n = group_aliases
-            .iter()
+        let sliders: Vec<String> = group_aliases
+            .into_iter()
             .filter(|a| controls.contains(a))
-            .count() as f64;
-        out.push(Attachment {
-            id: format!("{region_id}:interaction:{}", out.len() + 1),
-            task: false,
-            anchor_node_ids: ordered,
-            width: 360.,
-            height: 20. + n * 24. + (n - 1.).max(0.) * 6.,
-        });
+            .collect();
+        let n = sliders.len() as f64;
+        out.push((
+            Attachment {
+                id: format!("{region_id}:interaction:{}", out.len() + 1),
+                task: false,
+                anchor_node_ids: ordered,
+                width: 360.,
+                height: 20. + n * 24. + (n - 1.).max(0.) * 6.,
+            },
+            sliders,
+        ));
     }
     out
 }

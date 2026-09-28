@@ -247,6 +247,31 @@ impl Session {
             }
         }
     }
+    /// Web advanceBeat: pause, then apply operations through the current
+    /// Beat's `beat.end` (animations finish instantly), and stay paused.
+    pub fn advance_beat(&mut self) -> Result<(), String> {
+        self.playing = false;
+        let finish = |board: &mut Preview| -> Result<(), String> {
+            if board.animating() {
+                let remaining = board.animation_remaining();
+                board.tick(remaining)?;
+            }
+            Ok(())
+        };
+        finish(&mut self.board)?;
+        while self.cursor < self.operations.len() {
+            let op = self.operations[self.cursor].clone();
+            self.apply_operation(&op)?;
+            self.cursor += 1;
+            finish(&mut self.board)?;
+            if op["type"] == "beat.end" {
+                break;
+            }
+        }
+        self.wait_ms = 0.0;
+        self.narration_remaining_ms = 0.0;
+        Ok(())
+    }
     pub fn waiting(&self) -> bool {
         !self.closed && self.cursor == self.operations.len()
     }

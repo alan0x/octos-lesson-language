@@ -246,3 +246,19 @@ fn revision_replaces_content_and_bad_group_reference_is_rejected() {
         .unwrap_err()
         .contains("Unknown node or group"));
 }
+
+#[test]
+fn advance_beat_stops_after_each_beat_end_and_finishes_animations() {
+    let source = include_str!("../../../examples/unit-circle-sine/lesson.canonical.jsonl");
+    let mut s = oll_runtime::session::Session::load(source).unwrap();
+    let mut beats = 0;
+    while !s.complete() {
+        s.advance_beat().unwrap();
+        assert!(!s.playing && !s.board.animating());
+        let last = &s.operations[s.cursor - 1]["type"];
+        assert!(last == "beat.end" || s.cursor == s.operations.len(), "{last}");
+        beats += 1;
+        assert!(beats < 200);
+    }
+    assert!(beats > 1);
+}

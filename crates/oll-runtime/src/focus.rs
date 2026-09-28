@@ -51,6 +51,10 @@ impl Policy {
     pub fn reset(&mut self) {
         *self = Self::default();
     }
+    /// The targets the camera last framed (web lastAttentionTargets).
+    pub fn last_attention(&self) -> &[String] {
+        &self.last_attention
+    }
 
     /// Web targetRect + resolveFocusRects: targets, group members, connection
     /// endpoints, the supporting visual of each target, and the rendered
@@ -115,7 +119,7 @@ impl Policy {
     }
 
     /// Web focusRects: the attention mode follows what is framed.
-    fn plan(
+    pub fn plan(
         p: &Preview,
         targets: &[String],
         rects: &[Rect],
@@ -174,14 +178,24 @@ impl Policy {
     /// would leave the camera where it is. `automatic` is false while the
     /// learner has taken manual control (pan/zoom) and no new teaching
     /// operation has arrived.
+    ///
+    /// `boundary`: the host's current playback operation is a `beat.end` or
+    /// `step.commit` (e.g. after advancing a whole Beat) rather than the last
+    /// applied action; the Web then refocuses the last attention targets
+    /// (cameraFocusTargets) instead of the action's own targets.
     pub fn render(
         &mut self,
         p: &Preview,
         layout: &BoardLayout,
         current: Camera,
         view: &View,
+        boundary: bool,
     ) -> Option<Camera> {
-        let operation = p.cursor.checked_sub(1).and_then(|i| p.frame_action(i));
+        let operation = if boundary {
+            None
+        } else {
+            p.cursor.checked_sub(1).and_then(|i| p.frame_action(i))
+        };
         let new_operation = self.rendered_cursor != Some(p.cursor);
         let animating = p.animating();
         let beat = p.current_beat().map(str::to_owned).unwrap_or_default();
@@ -209,6 +223,18 @@ impl Policy {
         // 1. Board view render (only a new teaching operation moves it).
         let mut camera = current;
         let mut moved = false;
+        if new_operation && boundary {
+            let targets = if self.last_attention.is_empty() {
+                p.focus.clone()
+            } else {
+                self.last_attention.clone()
+            };
+            let rects = Self::focus_rects(p, layout, &targets, view);
+            if !rects.is_empty() {
+                camera = Self::plan(p, &targets, &rects, camera, view);
+                moved = true;
+            }
+        }
         if new_operation {
             if let Some(action) = operation {
                 let animated = if action["op"] == "lesson.variable.animate" {
