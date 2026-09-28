@@ -8,6 +8,8 @@ use std::collections::BTreeSet;
 pub struct Frame {
     pub narration: String,
     pub action: Value,
+    pub step_id: String,
+    pub beat_id: String,
 }
 #[derive(Clone, Debug)]
 pub struct Preview {
@@ -50,6 +52,26 @@ fn array<'a>(v: &'a Value, key: &str) -> Result<&'a Vec<Value>, String> {
 impl Preview {
     pub fn load(source: &str) -> Result<Self, String> {
         Self::load_incremental(source, false)
+    }
+    /// A board-only snapshot (no playable frames) for layout replays, e.g.
+    /// Web reference fixtures that record nodes, groups and connections.
+    pub fn from_board(nodes: Vec<Value>, groups: Vec<Value>, connections: Vec<Value>) -> Self {
+        Self {
+            title: String::new(),
+            summary: String::new(),
+            variables: Variables::new(),
+            nodes,
+            connections,
+            groups,
+            last_point: None,
+            last_expression: None,
+            focus: Vec::new(),
+            narration: String::new(),
+            cursor: 0,
+            frames: Vec::new(),
+            declarations: Vec::new(),
+            animation: None,
+        }
     }
     pub fn load_incremental(source: &str, allow_incomplete: bool) -> Result<Self, String> {
         let events: Vec<Value> = source
@@ -146,6 +168,8 @@ impl Preview {
                                 String::new()
                             },
                             action: action.clone(),
+                            step_id: string(&event["step"], "id")?.into(),
+                            beat_id: string(beat, "id")?.into(),
                         });
                     }
                 }
@@ -244,6 +268,86 @@ impl Preview {
     }
     pub fn action_count(&self) -> usize {
         self.frames.len()
+    }
+    /// The canonical action of frame `index` (applied or not).
+    pub fn frame_action(&self, index: usize) -> Option<&Value> {
+        self.frames.get(index).map(|f| &f.action)
+    }
+    /// The Beat of the most recently applied action (web current_beat_id).
+    pub fn current_beat(&self) -> Option<&str> {
+        self.cursor
+            .checked_sub(1)
+            .and_then(|i| self.frames.get(i))
+            .map(|f| f.beat_id.as_str())
+    }
+    /// Web player-core outline focus_targets of a Beat: its board.focus
+    /// targets, otherwise every action target, first occurrence order.
+    pub fn beat_focus_targets(&self, beat: &str) -> Vec<String> {
+        let actions: Vec<&Value> = self
+            .frames
+            .iter()
+            .filter(|f| f.beat_id == beat)
+            .map(|f| &f.action)
+            .collect();
+        let focus: Vec<&str> = actions
+            .iter()
+            .filter(|a| a["op"] == "board.focus")
+            .flat_map(|a| a["focus"]["targets"].as_array().into_iter().flatten())
+            .filter_map(Value::as_str)
+            .collect();
+        let candidates: Vec<&str> = if !focus.is_empty() {
+            focus
+        } else {
+            actions
+                .iter()
+                .flat_map(|a| {
+                    let t = &a["target"];
+                    [
+                        a["node"]["id"].as_str(),
+                        a["connection"]["id"].as_str(),
+                        a["group"]["id"].as_str(),
+                        t["node_id"].as_str(),
+                        t["group_id"].as_str(),
+                        t["connection_id"].as_str(),
+                    ]
+                })
+                .flatten()
+                .collect()
+        };
+        let mut out: Vec<String> = Vec::new();
+        for id in candidates {
+            if !out.iter().any(|o| o == id) {
+                out.push(id.into());
+            }
+        }
+        out
+    }
+    /// Host teaching-layout inputs (octos-learn oll-artifacts): node -> step
+    /// in creation order, and per-step planned card counts in step order.
+    pub fn node_sections(&self) -> Vec<(String, String)> {
+        self.frames
+            .iter()
+            .filter(|f| f.action["op"] == "board.create")
+            .filter_map(|f| f.action["node"]["id"].as_str().map(|id| (id.to_owned(), f.step_id.clone())))
+            .collect()
+    }
+    pub fn planned_steps(&self) -> Vec<(String, crate::teaching::Planned)> {
+        let mut out: Vec<(String, crate::teaching::Planned)> = Vec::new();
+        for f in &self.frames {
+            if !out.iter().any(|(s, _)| s == &f.step_id) {
+                out.push((f.step_id.clone(), Default::default()));
+            }
+            if f.action["op"] != "board.create" {
+                continue;
+            }
+            let counts = &mut out.iter_mut().find(|(s, _)| s == &f.step_id).unwrap().1;
+            match f.action["node"]["kind"].as_str().unwrap_or("") {
+                k if crate::teaching::is_visual(k) => counts.visual += 1,
+                "math" => counts.math += 1,
+                _ => counts.text += 1,
+            }
+        }
+        out
     }
     pub fn animation_remaining(&self) -> f64 {
         self.animation

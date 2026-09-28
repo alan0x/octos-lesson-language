@@ -11,6 +11,12 @@ pub mod spatial;
 
 pub mod scene3d;
 
+pub mod teaching;
+
+pub mod camera;
+
+pub mod focus;
+
 pub mod connections;
 
 pub mod checkpoint;

@@ -236,9 +236,49 @@ pub fn layout_with_options(
     let mut result = BoardLayout::default();
     let mut cursors: BTreeMap<String, Cursor> = BTreeMap::new();
     let mut attachment_regions = BTreeMap::new();
+    // Teaching regions (Web flow "teaching" with a composition) use the stage
+    // rows layout; their nodes skip the generic placement below.
+    let mut teaching_ids = BTreeSet::new();
+    if let Some(regions) = options["regions"].as_object() {
+        for (region_id, constraint) in regions {
+            if constraint["flow"] != "teaching" || !constraint["composition"].is_object() {
+                continue;
+            }
+            let ids: Vec<String> = p
+                .nodes
+                .iter()
+                .filter(|n| region(n) == region_id)
+                .map(|n| string(n, "id").to_owned())
+                .collect();
+            let nested = p.nodes.iter().any(|n| {
+                region(n) == region_id
+                    && matches!(string(&n["placement"], "relation"), "inside" | "overlay")
+            });
+            if ids.is_empty() || nested {
+                continue;
+            }
+            let external: Vec<Rect> = result
+                .nodes
+                .values()
+                .chain(result.attachments.values())
+                .copied()
+                .collect();
+            let spec = crate::teaching::Region::from_json(constraint)?;
+            let placed = crate::teaching::layout_region(p, &ids, sizes, &spec, &external)?;
+            for (id, r) in placed.attachments {
+                attachment_regions.insert(id.clone(), region_id.clone());
+                result.attachments.insert(id, r);
+            }
+            result.nodes.extend(placed.nodes);
+            teaching_ids.extend(ids);
+        }
+    }
     for i in ordered(p) {
         let node = &p.nodes[i];
         let id = string(node, "id");
+        if teaching_ids.contains(id) {
+            continue;
+        }
         let region_id = region(node);
         let constraint = &options["regions"][region_id];
         let &(mut width, height) = sizes
