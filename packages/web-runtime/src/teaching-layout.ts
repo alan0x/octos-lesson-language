@@ -102,6 +102,10 @@ interface StageBox { top: number; bottom: number; slots: Record<string, Slot> | 
 
 const CARD_GAP = 16, WORKBENCH_GAP = 28, SUBCOLUMN_GAP = 20, STEP_GAP = 40, STAGE_GAP = 72, BAND_GAP = 36, CONTROL_GAP = 24;
 const MIN_COLUMN_HEIGHT = 260, MIN_WIDE_COLUMN = 300, SAFE_MARGIN = 80, READING_SCALE = 0.9;
+/** A short step (at most this many cards) may continue under the previous step's column. */
+const STACK_STEP_MAX_CARDS = 2;
+/** How much a stacked step may widen the column it joins. */
+const STACK_WIDTH_RATIO = 1.7;
 const DEFAULT_HEIGHT: Record<string, number> = { math: 90, note: 150, text: 120 };
 const DEFAULT_WIDTH: Record<string, number> = { math: 320, note: 330, text: 320 };
 const DEFAULT_VISUAL_WIDTH = 460;
@@ -183,6 +187,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   // Controls and practice, grouped by the visuals they control.
   const clusters: Cluster[] = [];
   for (const attachment of region.attachments ?? []) {
+    if (attachment.kind === 'reflection') continue;
     const visualIds = (attachment.anchorNodeIds?.length ? attachment.anchorNodeIds : [attachment.anchorNodeId])
       .filter(id => byId.get(id)?.visual);
     if (!visualIds.length) continue;
@@ -269,22 +274,50 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
 
     let x = 0, colTop = top, colWidth = 0, colY = top, colCount = 0;
     let colIds: string[] = [];
+    // Right edge of the current band and whether the open column was
+    // reopened below earlier content (it then must not widen).
+    let rowRight = 0, reopened = false;
     let side: SideColumn | null = null;
     let plan: { counts: number[]; index: number; placed: number[] } | null = null;
     const columns: Array<{ x: number; width: number; ids: string[]; side: SideColumn | null }> = [];
     const columnRight = () => Math.max(x + colWidth, side ? side.x + side.width : 0);
     const closeColumn = () => {
       if (colCount) columns.push({ x, width: side ? side.frozenWidth : colWidth, ids: [...colIds], side: side && { ...side } });
+      rowRight = Math.max(rowRight, columnRight());
     };
     const openColumn = (gap: number) => {
-      if (colCount) { const right = columnRight(); closeColumn(); x = right + gap; }
-      colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null;
+      if (colCount) { closeColumn(); x = rowRight + gap; }
+      colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null; reopened = false;
     };
     const wrapToBand = () => {
       closeColumn();
       box.slots = null; // the band occupies the space under the workbench
       colTop = Math.max(box.bottom, allBottom()) + BAND_GAP;
-      x = 0; colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null;
+      x = 0; colWidth = 0; colY = colTop; colCount = 0; colIds = []; side = null; rowRight = 0; reopened = false;
+    };
+    // A card that does not fit to the right of the row continues under an
+    // earlier column of the same band when that column is wide enough and
+    // has room, instead of opening a new band below everything.
+    const reopenColumnFor = (item: Item): boolean => {
+      for (const [index, column] of columns.entries()) {
+        if (column.side || item.w > column.width + 1) continue;
+        const rects = column.ids.map(id => nodes[id]!);
+        if (Math.min(...rects.map(r => r.y)) < colTop - 1) continue;
+        const bottom = Math.max(...rects.map(r => r.y + r.height));
+        const lastSection = byId.get(column.ids[column.ids.length - 1]!)?.section;
+        const gapBefore = lastSection === item.section ? CARD_GAP : STEP_GAP;
+        const probe = { x: column.x, y: bottom + gapBefore, width: column.width, height: item.h };
+        if (probe.y + probe.height > colTop + columnHeight) continue;
+        const occupied = [...Object.entries(nodes).filter(([id]) => !column.ids.includes(id)).map(([, r]) => r),
+          ...Object.values(attachments)];
+        if (occupied.some(r => overlaps(probe, r))) continue;
+        closeColumn();
+        columns.splice(index, 1);
+        x = column.x; colWidth = column.width; colY = bottom + gapBefore - CARD_GAP;
+        colCount = column.ids.length; colIds = [...column.ids]; side = null; reopened = true;
+        return true;
+      }
+      return false;
     };
     const addPrimary = (item: Item) => {
       const overflow = colCount > 0 && colY + CARD_GAP + item.h > colTop + columnHeight;
@@ -297,13 +330,13 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         openColumn(SUBCOLUMN_GAP);
         if (plan && (planBreak || overflow)) plan.index = Math.min(plan.index + 1, plan.counts.length - 1);
       }
-      if (!colCount && x > 0 && x + item.w > readingWidth) wrapToBand();
+      if (!colCount && x > 0 && x + item.w > readingWidth && !reopenColumnFor(item)) wrapToBand();
       const y = colCount ? colY + CARD_GAP : colY;
       place(item.id, x, y, item.w, item.h);
       colIds.push(item.id);
       if (side && item.w > side.frozenWidth) side.spans.push(item.id);
       colY = y + item.h; colCount += 1;
-      if (!side) colWidth = Math.max(colWidth, item.w);
+      if (!side && !reopened) colWidth = Math.max(colWidth, item.w);
       if (plan) plan.placed[plan.index]! += 1;
       box.bottom = Math.max(box.bottom, colY);
     };
@@ -410,6 +443,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         }
       }
       x = right + WORKBENCH_GAP;
+      rowRight = Math.max(rowRight, right);
     }
     const target = Math.min(columnHeight, Math.max(MIN_COLUMN_HEIGHT, referenceHeight));
 
@@ -425,6 +459,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         for (const visual of joining) {
           if (x > 0 && x + visual.w > readingWidth) wrapToBand();
           place(visual.id, x, colTop, visual.w, visual.h);
+          rowRight = Math.max(rowRight, x + visual.w);
           x += visual.w + CARD_GAP;
           box.bottom = Math.max(box.bottom, colTop + visual.h);
         }
@@ -439,11 +474,30 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         flow.push(item);
       }
       if (!flow.length) continue;
-      if (!first && !joining.length) openColumn(STEP_GAP);
-      first = false;
       plan = null;
       const counts = planned[section];
-      if (counts) {
+      // A short step continues under the previous step's column when its
+      // planned cards fit there, instead of opening a column at the row's end.
+      const stepKinds = counts
+        ? [...Array(counts.math ?? 0).fill('math'), ...Array(counts.text ?? 0).fill('note')]
+          .slice(section === stage.open ? leadIn.length : 0)
+        : flow.map(item => item.kind);
+      const stepBefore = items.indexOf(flow[0]!);
+      const stepHeight = counts
+        ? stepKinds.reduce((sum, kind) => sum + estimate(kind, 'h', stepBefore), 0) + CARD_GAP * (stepKinds.length - 1)
+        : flow.reduce((sum, item) => sum + item.h, 0) + CARD_GAP * (flow.length - 1);
+      const stepWidth = counts
+        ? Math.max(flow[0]!.w, ...stepKinds.map(kind => estimate(kind, 'w', stepBefore)))
+        : Math.max(...flow.map(item => item.w));
+      const stack = !first && !joining.length && colCount > 0 && side === null
+        && stepKinds.length <= STACK_STEP_MAX_CARDS
+        && stepWidth <= colWidth * (reopened ? 1 : STACK_WIDTH_RATIO)
+        && x + stepWidth <= readingWidth
+        && colY + STEP_GAP + stepHeight <= colTop + columnHeight;
+      if (stack) colY += STEP_GAP - CARD_GAP;
+      else if (!first && !joining.length) openColumn(STEP_GAP);
+      first = false;
+      if (counts && !stack) {
         const before = items.indexOf(flow[0]!);
         const leadCount = section === stage.open ? leadIn.length : 0;
         const kinds = [...Array(counts.math ?? 0).fill('math'), ...Array(counts.text ?? 0).fill('note')].slice(leadCount);
@@ -457,11 +511,14 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
           const estimatedWidth = split.reduce((sum, n) => {
             const width = Math.max(...widths.slice(offset, offset + n)); offset += n; return sum + width;
           }, 0) + SUBCOLUMN_GAP * (split.length - 1);
-          if (x > 0 && x + estimatedWidth > readingWidth) wrapToBand();
+          if (x > 0 && x + estimatedWidth > readingWidth) {
+            if (!reopenColumnFor(flow[0]!)) wrapToBand();
+            else split.splice(0, split.length, flow.length);
+          }
           plan = { counts: split, index: 0, placed: split.map(() => 0) };
         }
       }
-      if (!plan && x > 0 && x + flow[0]!.w > readingWidth) wrapToBand();
+      if (!plan && !stack && !colCount && x > 0 && x + flow[0]!.w > readingWidth && !reopenColumnFor(flow[0]!)) wrapToBand();
       for (const item of flow) if (!tryBeside(item)) addPrimary(item);
     }
     closeColumn();
@@ -522,6 +579,28 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     const top = previous ? previous.bottom + STAGE_GAP : 0;
     const box: StageBox = wide ? wideStage(stage, top, previous) : narrowStage(stage, top);
     previous = box;
+  }
+
+  // A thinking-question card opens after the lesson directly under the card
+  // that poses it, at that card's width. Content below it in the same
+  // columns moves down once, like opening practice.
+  for (const spec of region.attachments ?? []) {
+    if (spec.kind !== 'reflection') continue;
+    const anchor = nodes[spec.anchorNodeId];
+    if (!anchor) continue;
+    const anchorBottom = anchor.y + anchor.height;
+    const card = { x: anchor.x, y: anchorBottom + CARD_GAP, width: anchor.width, height: spec.height };
+    const shift = card.height + CARD_GAP;
+    const moved: Rect[] = [card];
+    const below = [...Object.values(nodes), ...Object.values(attachments)]
+      .filter(rect => rect !== anchor && rect.y >= anchorBottom - 1)
+      .sort((a, b) => a.y - b.y);
+    for (const rect of below) {
+      if (!moved.some(m => rect.x < m.x + m.width && rect.x + rect.width > m.x)) continue;
+      rect.y += shift;
+      moved.push(rect);
+    }
+    attachments[spec.id] = card;
   }
 
   const placed = [...Object.values(nodes), ...Object.values(attachments)];

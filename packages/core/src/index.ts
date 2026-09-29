@@ -301,6 +301,33 @@ export function resolvePhaseStart(
   }));
 }
 
+function validateReflections(document: AuthoringLesson, registry: Registry): void {
+  const reflections = document.lesson.reflections;
+  if (reflections === undefined) return;
+  requireArray(reflections, "/lesson/reflections");
+  const taskAliases = new Set((document.lesson.tasks ?? []).map((task) => task.as));
+  const aliases = new Set<string>();
+  reflections.forEach((reflection, index) => {
+    const path = `/lesson/reflections/${index}`;
+    requireObject(reflection, path);
+    requireAlias(reflection.as, `${path}/as`);
+    if (aliases.has(reflection.as) || taskAliases.has(reflection.as)) {
+      fail("OLL_DUPLICATE_ALIAS", `${path}/as`, `Reflection '${reflection.as}' is duplicated`);
+    }
+    aliases.add(reflection.as);
+    for (const field of ["prompt", "answer"] as const) {
+      if (typeof reflection[field] !== "string" || !reflection[field].trim()) {
+        fail("OLL_INVALID_REFLECTION", `${path}/${field}`, `Reflection ${field} must not be empty`);
+      }
+    }
+    requireObject(reflection.availability, `${path}/availability`);
+    if (reflection.availability.kind !== "after_lesson") {
+      fail("OLL_INVALID_REFLECTION", `${path}/availability/kind`, `Unsupported reflection availability '${String(reflection.availability.kind)}'`);
+    }
+    resolveLocal(registry, reflection.anchor, `${path}/anchor`, ["node"]);
+  });
+}
+
 function validateStudentTasks(
   document: AuthoringLesson,
   variables: Map<string, number>,
@@ -1292,6 +1319,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   });
 
   validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras);
+  validateReflections(document, registry);
 
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
@@ -1550,6 +1578,9 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   }
   const registry = buildCanonicalRegistry(document, host);
   const canonicalLesson = structuredClone(document.lesson);
+  for (const reflection of canonicalLesson.reflections ?? []) {
+    reflection.anchor = requireRegistryId(registry, reflection.anchor);
+  }
   for (const candidate of canonicalLesson.tasks ?? []) {
     if (candidate.start) candidate.start.values = resolvePhaseStart(candidate.start, document.lesson.variables ?? [], `/lesson/tasks/${candidate.as}/start`);
     const task = candidate as AuthoringScene3dStudentTask;

@@ -994,3 +994,30 @@ test("numeric labels trim trailing zeros, remove negative zero, and reject inval
   assert.throws(() => formatBoundNumericLabel(Infinity, { precision: 2 }), /non-finite/);
   assert.throws(() => formatBoundNumericLabel(2, { precision: 7 }), /precision/);
 });
+
+test("reflections anchor to a written card, normalize to its canonical ID and require the newer player", () => {
+  const lesson = unitCircleLesson();
+  lesson.lesson.reflections = [{
+    as: "think-radius",
+    prompt: "半径变为原来的几倍？",
+    answer: "两倍。",
+    anchor: "unit-circle",
+    availability: { kind: "after_lesson" },
+  }];
+  assertAuthoringSchema(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  assert.equal(events[0]!.lesson!.reflections![0]!.anchor, `${host.lessonId}:node:unit-circle`);
+  const requirements = deriveExecutionRequirements(events);
+  assert.equal(requirements.minimumPlayerVersion, "0.3.0");
+  assert.ok(requirements.requiredCapabilities.includes("reflections"));
+  assert.throws(() => assertExecutionSupported(events, "0.2.0"), /requires player/);
+
+  const missingAnchor = structuredClone(lesson);
+  missingAnchor.lesson.reflections![0]!.anchor = "not-written";
+  assert.throws(() => normalizeAuthoringLesson(missingAnchor, host), (error) => error instanceof OllError
+    && error.path === "/lesson/reflections/0/anchor");
+  const emptyAnswer = structuredClone(lesson);
+  emptyAnswer.lesson.reflections![0]!.answer = " ";
+  assert.throws(() => normalizeAuthoringLesson(emptyAnswer, host), (error) => error instanceof OllError
+    && error.code === "OLL_INVALID_REFLECTION");
+});

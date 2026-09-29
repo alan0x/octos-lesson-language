@@ -52,7 +52,8 @@ export interface RegionLayoutConstraint {
   /** Host-rendered controls or tasks anchored to a lesson node. */
   attachments?: Array<{
     id: string;
-    kind?: "control" | "task";
+    /** `reflection`: a thinking-question card placed directly under its anchor card. */
+    kind?: "control" | "task" | "reflection";
     anchorNodeId: string;
     /**
      * All semantic visuals controlled by this attachment. When present, the

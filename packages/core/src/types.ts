@@ -185,6 +185,22 @@ export interface AuthoringScene3dStudentTask extends AuthoringStudentTaskBase {
 
 export type AuthoringStudentTask = AuthoringVariableStudentTask | AuthoringScene3dStudentTask;
 
+/**
+ * A thinking question the learner answers alone. It appears after the lesson
+ * as its own card beside the board card that poses it; the reference answer
+ * stays collapsed until the learner opens it. Nothing is graded.
+ */
+export interface AuthoringReflection {
+  as: Alias;
+  prompt: string;
+  answer: string;
+  /** Board card (node alias; a canonical node ID after normalization) the card sits by. */
+  anchor: Alias;
+  availability: {
+    kind: "after_lesson";
+  };
+}
+
 export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
@@ -197,6 +213,7 @@ export interface AuthoringLesson {
     goals: string[];
     variables?: AuthoringVariable[];
     tasks?: AuthoringStudentTask[];
+    reflections?: AuthoringReflection[];
     adaptation?: {
       strategies?: string[];
       context_refs?: string[];

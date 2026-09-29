@@ -1504,6 +1504,8 @@ export class InfiniteBoardView {
   private automaticCameraMaximumScale = 1.3;
   /** Scene the teaching camera last composed; subsets of it may be held off-centre. */
   private lastFramedScene?: Rect;
+  /** Beat whose request last composed or confirmed `lastFramedScene`. */
+  private lastFramedBeat?: string;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
@@ -2522,14 +2524,19 @@ export class InfiniteBoardView {
       && scene.x + scene.width <= framed.x + framed.width + 1
       && scene.y + scene.height <= framed.y + framed.height + 1);
     const centerShare = withinFrame ? HOLD_CENTER_SHARE_FRAMED : HOLD_CENTER_SHARE_NEW;
-    // The composed frame already chose its scale; a request inside it never
-    // needs to zoom in. New content must reach its planned scale.
-    const readable = withinFrame ? 0 : Number.POSITIVE_INFINITY;
+    // Within one Beat the composed frame already chose its scale, so a
+    // request inside it never zooms in. A new Beat whose subject sits inside
+    // a wider earlier frame is re-framed when it can be shown clearly larger.
+    const beat = this.operation?.beat_id;
+    const sameBeat = beat !== undefined && beat === this.lastFramedBeat;
+    const readable = withinFrame && sameBeat ? 0 : Number.POSITIVE_INFINITY;
     if (holdsTeachingFrame(rects, current, camera, viewport, this.viewportInsets, centerShare, readable)) {
       if (!withinFrame) this.lastFramedScene = scene;
+      this.lastFramedBeat = beat;
       return;
     }
     this.lastFramedScene = scene;
+    this.lastFramedBeat = beat;
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;

@@ -4,6 +4,7 @@
 
 ### Added
 
+- `lesson.reflections` (Authoring schema, validator, Canonical normalization, `reflections` execution capability, player version 0.3.0): thinking questions whose reference answer opens after the lesson in a collapsed card under the anchoring board card. The web session exposes `reflections`, and teaching layout places `reflection` attachments under their anchor.
 - 建立 OLL 独立仓库。
 - 从 Octos Learn 产品文档迁入需求、规范和一致性测试基线。
 - 定义 Authoring Profile 与 Canonical Profile 的边界。
@@ -17,6 +18,9 @@
 - 增加 `mountInfiniteBoard()` 宿主 API、独立 Runtime 测试命令、testing 子路径和可安装 tarball 清单。
 
 ### Fixed
+
+- Teaching camera: the lenient "inside the composed frame" hold applies only within one Beat; a new Beat whose subject sits inside a wider earlier frame is re-framed when it can be shown clearly larger.
+- Teaching layout: a card that no longer fits to the right of its row continues under an earlier column of the same band when that column has room, and a short step (at most two cards) continues under the previous step's column instead of opening a column at the far end of the row.
 
 - Teaching camera (web-runtime): every automatic request composes the Beat's own targets (declared focus plus the cards the Beat writes) and, while readable, the cards the Step wrote earlier; a request is held when its scene is already visible, near the planned scale and centred (subsets of the composed frame are always held), so pointers and focus boundaries no longer slide the board back and forth. Hosts can cap automatic zoom with `setAutomaticCameraMaximumScale()` and pass Step context through `setBeatTargets(targets, stepContext)`; the session exposes `stepContextTargets`.
 - Teaching layout: `composition.readingScale` sizes rows and columns for the scale the host camera reads them at (default 0.9); non-math cards keep their natural width as layout input, so a card stretched to its column no longer jumps to a new band when a later card widens that column.

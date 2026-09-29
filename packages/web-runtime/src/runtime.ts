@@ -281,6 +281,16 @@ export function variableAnimationDuration(
   return Math.max(32, duration / normalizedSpeed(speed));
 }
 
+export interface ReflectionSnapshot {
+  id: string;
+  prompt: string;
+  answer: string;
+  /** Canonical node ID of the board card that poses the question. */
+  anchor: string;
+  /** True once the after-lesson window is open. */
+  available: boolean;
+}
+
 export interface BrowserLessonSessionOptions {
   incremental?: boolean;
   /**
@@ -481,6 +491,20 @@ export class BrowserLessonSession {
       this.studentTaskProgressLog,
       this.studentTaskWindowOpen,
     );
+  }
+  /**
+   * Thinking questions of this lesson. They become available with the
+   * after-lesson window; the host shows each as its own card beside its
+   * anchor, with the answer collapsed.
+   */
+  get reflections(): ReflectionSnapshot[] {
+    return (this.events[0]?.lesson?.reflections ?? []).map((reflection) => ({
+      id: reflection.as,
+      prompt: reflection.prompt,
+      answer: reflection.answer,
+      anchor: reflection.anchor,
+      available: this.studentTaskWindowOpen,
+    }));
   }
   get isDeliverySettled(): boolean { return this.studentTaskWindowOpen; }
   get isPlaying(): boolean { return this.playing; }

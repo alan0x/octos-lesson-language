@@ -902,9 +902,9 @@ const wideComposition = { width: 1920, height: 1080, mode: "progressive" as cons
 
 test("each stage is one row and each step opens its own column in narration order", () => {
   const board = emptyBoard({ s1v: card("s1v", "scene3d"), s1m: card("s1m", "math"),
-    s2v: card("s2v", "plot"), s2m: card("s2m", "math"), s3n: card("s3n", "note") });
+    s2v: card("s2v", "plot"), s2m: card("s2m", "math"), s3n: card("s3n", "note"), s3o: card("s3o", "note"), s3p: card("s3p", "note") });
   const region = { x: 20, y: 20, flow: "teaching" as const,
-    nodeSections: { s1v: "1", s1m: "1", s2v: "2", s2m: "2", s3n: "3" }, composition: wideComposition };
+    nodeSections: { s1v: "1", s1m: "1", s2v: "2", s2m: "2", s3n: "3", s3o: "3", s3p: "3" }, composition: wideComposition };
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
   const n = layout.nodes;
   assert.ok(Math.max(n.s1v!.y + n.s1v!.height, n.s1m!.y + n.s1m!.height) <= Math.min(n.s2v!.y, n.s2m!.y), "stage 1 row is above stage 2 row");
@@ -1061,6 +1061,11 @@ test("a step that does not fit the reading width starts the next band at the row
     nodes[`m${step}`] = card(`m${step}`, "math");
     nodeSections[`m${step}`] = String(step);
     measured[`m${step}`] = { width: 420, height: 80 };
+    for (const extra of ["b", "c"]) {
+      nodes[`m${step}${extra}`] = card(`m${step}${extra}`, "math");
+      nodeSections[`m${step}${extra}`] = String(step);
+      measured[`m${step}${extra}`] = { width: 420, height: 200 };
+    }
   }
   const layout = computeBoardLayout(emptyBoard(nodes), measured, { regions: { r: { x: 20, y: 20, flow: "teaching", nodeSections,
     composition: { ...wideComposition, width: 1440, height: 900 } } } });
@@ -1127,13 +1132,55 @@ test("animation camera frames the Beat target with the animated visuals only whe
 test("the host reading scale sizes teaching rows for the camera that will read them", () => {
   // A meeting display reads rows at a smaller scale than the 0.9 default, so
   // the same step fits beside its visual instead of wrapping below it.
-  const board = emptyBoard({ v: card("v", "plot"), m: card("m", "math"), n: card("n", "note") });
-  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, m: { width: 300, height: 90 }, n: { width: 430, height: 150 } };
+  const board = emptyBoard({ v: card("v", "plot"), m: card("m", "math"), n: card("n", "note"), n2: card("n2", "note"), n3: card("n3", "note") });
+  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, m: { width: 300, height: 90 },
+    n: { width: 430, height: 100 }, n2: { width: 430, height: 100 }, n3: { width: 430, height: 100 } };
   const tv = { width: 960, height: 540, mode: "progressive" as const, insets: { top: 83, bottom: 45 } };
   const region = (readingScale?: number) => ({ x: 20, y: 20, flow: "teaching" as const,
-    nodeSections: { v: "1", m: "1", n: "2" }, composition: { ...tv, ...(readingScale ? { readingScale } : {}) } });
+    nodeSections: { v: "1", m: "1", n: "2", n2: "2", n3: "2" }, composition: { ...tv, ...(readingScale ? { readingScale } : {}) } });
   const defaultScale = computeBoardLayout(board, sizes, { regions: { r: region() } }).nodes;
   const meetingScale = computeBoardLayout(board, sizes, { regions: { r: region(.6) } }).nodes;
   assert.ok(defaultScale.n!.y > defaultScale.v!.y + defaultScale.v!.height, "at 0.9 the second step wraps below the row");
   assert.equal(meetingScale.n!.y, meetingScale.v!.y, "at the host scale the second step stays on the row");
+});
+
+test("a short step continues under the previous step's column instead of opening one at the row's end", () => {
+  // Quadrants: two interval formulas in step 2, one more in step 3. The third
+  // interval belongs under the first two, not at the far right of the row.
+  const board = emptyBoard({ v: card("v", "plot"), n: card("n", "note"), a: card("a", "math"), b: card("b", "math"), c: card("c", "math") });
+  const sizes: MeasuredNodeSizes = { v: { width: 900, height: 380 }, n: { width: 430, height: 156 },
+    a: { width: 244, height: 107 }, b: { width: 244, height: 113 }, c: { width: 329, height: 86 } };
+  const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching",
+    nodeSections: { v: "1", n: "1", a: "2", b: "2", c: "3" },
+    plannedSteps: { "1": { visual: 1, text: 1 }, "2": { math: 2 }, "3": { math: 1 } }, composition: wideComposition } } }).nodes;
+  assert.equal(layout.c!.x, layout.a!.x, "step 3 shares step 2's column");
+  assert.ok(layout.c!.y >= layout.b!.y + layout.b!.height + 40, "a step gap separates the two steps");
+  assert.ok(layout.a!.width >= 329, "the column widens to the stacked card");
+});
+
+test("a card that does not fit the row back-fills an earlier column before starting a band", () => {
+  // Partial derivative on a meeting display: lead-in formula, 3D scene, then
+  // a note that no longer fits to the right. It goes under the formula.
+  const board = emptyBoard({ m: card("m", "math"), s: card("s", "scene3d"), n: card("n", "note") });
+  const sizes: MeasuredNodeSizes = { m: { width: 382, height: 72 }, s: { width: 820, height: 360 }, n: { width: 302, height: 135 } };
+  const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching",
+    nodeSections: { m: "1", s: "1", n: "1" }, plannedSteps: { "1": { visual: 1, math: 1, text: 1 } },
+    composition: { width: 960, height: 540, mode: "progressive", insets: { top: 83, bottom: 45 }, readingScale: .68 } } } }).nodes;
+  assert.equal(layout.n!.x, layout.m!.x, "the note joins the lead-in column");
+  assert.ok(layout.n!.y < layout.s!.y + layout.s!.height, "it stays beside the scene instead of a band below");
+});
+
+test("a thinking-question card opens under its anchor and moves only the content below it", () => {
+  const board = emptyBoard({ v: card("v", "plot"), q: card("q", "note"), z: card("z", "math") });
+  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, q: { width: 330, height: 120 }, z: { width: 330, height: 80 } };
+  const region = (withCard: boolean) => ({ x: 20, y: 20, flow: "teaching" as const, nodeSections: { v: "1", q: "1", z: "1" },
+    composition: wideComposition,
+    ...(withCard ? { attachments: [{ id: "think", kind: "reflection" as const, anchorNodeId: "q", width: 330, height: 90 }] } : {}) });
+  const before = computeBoardLayout(board, sizes, { regions: { r: region(false) } });
+  const after = computeBoardLayout(board, sizes, { regions: { r: region(true) } });
+  const think = after.attachments.think!;
+  assert.equal(think.x, after.nodes.q!.x);
+  assert.equal(think.y, after.nodes.q!.y + after.nodes.q!.height + 16);
+  assert.equal(after.nodes.z!.y, before.nodes.z!.y + 90 + 16, "the card below moves down once");
+  assert.deepEqual(after.nodes.v, before.nodes.v, "the visual beside it stays");
 });
