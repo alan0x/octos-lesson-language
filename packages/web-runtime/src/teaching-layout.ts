@@ -100,6 +100,8 @@ interface Slot { x: number; w: number; y: number }
 interface SideColumn { x: number; width: number; frozenWidth: number; ids: string[]; spans: string[] }
 interface StageBox { top: number; bottom: number; slots: Record<string, Slot> | null; slotOf: Record<string, Slot> }
 
+/** Gap between a visual and the variable controls docked under it. */
+const DOCK_GAP = 8;
 const CARD_GAP = 16, WORKBENCH_GAP = 28, SUBCOLUMN_GAP = 20, STEP_GAP = 40, STAGE_GAP = 72, BAND_GAP = 36, CONTROL_GAP = 24;
 const MIN_COLUMN_HEIGHT = 260, MIN_WIDE_COLUMN = 300, SAFE_MARGIN = 80, READING_SCALE = 0.9;
 /** A short step (at most this many cards) may continue under the previous step's column. */
@@ -370,17 +372,13 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       // so opening practice may move later content once.
       const openTask = cluster?.tasks;
       let x0 = x;
-      if (cluster?.controls && besideShape) {
-        const operationWidth = Math.max(cluster.controls.width, openTask?.width ?? 0);
-        placeAttachment(cluster.controls, x0, top);
-        let operationBottom = top + cluster.controls.height;
-        referenceBottom = Math.max(referenceBottom, operationBottom);
-        if (openTask) {
-          placeAttachment(openTask, x0, operationBottom + CARD_GAP);
-          operationBottom += CARD_GAP + openTask.height;
-        }
-        box.bottom = Math.max(box.bottom, operationBottom);
-        x0 += operationWidth + WORKBENCH_GAP;
+      // A single visual's controls dock directly under it at its width (see
+      // below), so they cost no row width. Practice keeps its place left of
+      // the visual; it opens after the lesson and may move the row once.
+      if (cluster?.controls && besideShape && openTask) {
+        placeAttachment(openTask, x0, top);
+        box.bottom = Math.max(box.bottom, top + openTask.height);
+        x0 += openTask.width + WORKBENCH_GAP;
       }
       // Visuals: comparison sets share a top line; planned visuals that have
       // not arrived yet keep their slot so later text never has to move.
@@ -402,6 +400,16 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       let visualBottom = visuals.length ? vy + lineHeight : top + 360;
       referenceBottom = Math.max(referenceBottom, visualBottom);
       box.bottom = Math.max(box.bottom, visualBottom);
+      if (cluster?.controls && besideShape) {
+        const anchor = cluster.visualIds.map(id => nodes[id]).find((r): r is Rect => Boolean(r))
+          ?? (visuals[0] ? nodes[visuals[0].id] : undefined);
+        const dockX = anchor?.x ?? x0;
+        const dockY = (anchor ? anchor.y + anchor.height : visualBottom) + DOCK_GAP;
+        attachments[cluster.controls.id] = { x: dockX, y: dockY, width: anchor?.width ?? cluster.controls.width, height: cluster.controls.height };
+        visualBottom = Math.max(visualBottom, dockY + cluster.controls.height);
+        referenceBottom = Math.max(referenceBottom, visualBottom);
+        box.bottom = Math.max(box.bottom, visualBottom);
+      }
       if (cluster?.controls && !besideShape) {
         const bound = cluster.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
         const left = bound.length ? Math.min(...bound.map(r => r.x)) : x0;

@@ -19,6 +19,7 @@
 
 ### Fixed
 
+- Teaching layout: a single visual's variable controls dock directly under it at its width instead of forming a column on its left, so they cost no row width; practice still opens left of the visual after the lesson.
 - Teaching camera: the lenient "inside the composed frame" hold applies only within one Beat; a new Beat whose subject sits inside a wider earlier frame is re-framed when it can be shown clearly larger.
 - Teaching layout: a card that no longer fits to the right of its row continues under an earlier column of the same band when that column has room, and a short step (at most two cards) continues under the previous step's column instead of opening a column at the far end of the row.
 
