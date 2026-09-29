@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
-import { boardToViewportPoint, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
+import { boardToViewportPoint, HOLD_CENTER_SHARE_NEW, holdsTeachingFrame, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
   boardInputTargetsInteractiveUi,
   boardWheelTargetsInteractiveUi,
@@ -969,4 +969,44 @@ test("course overview ignores readability floors when they would crop course con
   assert.ok(camera.panX>=0 && camera.panY>=60);
   assert.ok(camera.panX+rect.width*camera.scale<=960);
   assert.ok(camera.panY+rect.height*camera.scale<=440);
+});
+
+test("a teaching frame is held while its scene is visible, readable and near the centre", () => {
+  const viewport = { width: 1600, height: 900 };
+  const scene = { x: 0, y: 0, width: 600, height: 400 };
+  const planned = planFocusCamera([scene], { panX: 0, panY: 0, scale: .5 }, viewport, "detail", {});
+  assert.equal(holdsTeachingFrame([scene], planned, planned, viewport), true);
+  const nudged = { ...planned, panX: planned.panX + 40 };
+  assert.equal(holdsTeachingFrame([scene], nudged, planned, viewport), true, "a small offset does not re-centre");
+  const offCentre = { ...planned, panX: planned.panX + 420 };
+  assert.equal(holdsTeachingFrame([scene], offCentre, planned, viewport, {}, HOLD_CENTER_SHARE_NEW), false,
+    "new content is centred properly");
+  const tooSmall = { ...planned, scale: planned.scale * .6 };
+  assert.equal(holdsTeachingFrame([scene], tooSmall, planned, viewport), false, "a much smaller view zooms in");
+  assert.equal(holdsTeachingFrame([scene], tooSmall, planned, viewport, {}, Number.POSITIVE_INFINITY, 0), true,
+    "inside an already composed frame, zooming in is not required");
+  const clipped = { ...planned, panX: planned.panX + 1200 };
+  assert.equal(holdsTeachingFrame([scene], clipped, planned, viewport, {}, Number.POSITIVE_INFINITY, 0), false,
+    "a scene that is not fully visible always moves the camera");
+});
+
+test("the automatic zoom ceiling keeps a single diagram near the reading scale", () => {
+  const viewport = { width: 1984, height: 1286 };
+  const plot = { x: 0, y: 0, width: 440, height: 400 };
+  const insets = { top: 136, bottom: 120, left: 28, right: 28 };
+  assert.equal(planFocusCamera([plot], { panX: 0, panY: 0, scale: 1 }, viewport, "detail", insets).scale, 1.3);
+  assert.equal(planFocusCamera([plot], { panX: 0, panY: 0, scale: 1 }, viewport, "detail", insets, .18, 1.1).scale, 1.1);
+});
+
+test("course framing prefers the centred clear area among near-equal fits", () => {
+  // Beside the toolbar the course fits ~10% larger but sits far off-centre;
+  // below it the fit is nearly as good and horizontally centred. (A strict
+  // best fit picked the side area and pushed the finished course aside.)
+  const viewport = { width: 1600, height: 900 };
+  const course = { x: 0, y: 0, width: 400, height: 1200 };
+  const camera = planFocusCamera([course], { panX: 0, panY: 0, scale: 1 }, viewport, "course",
+    { focusMargin: 24, occlusions: [{ x: 8, y: 48, width: 309, height: 35 }] });
+  const left = camera.panX;
+  const right = viewport.width - (camera.panX + course.width * camera.scale);
+  assert.ok(Math.abs(left - right) < 2, `course sits centred (left ${left.toFixed(1)}, right ${right.toFixed(1)})`);
 });

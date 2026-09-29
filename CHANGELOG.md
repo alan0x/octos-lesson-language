@@ -18,6 +18,10 @@
 
 ### Fixed
 
+- Teaching camera (web-runtime): every automatic request composes the Beat's own targets (declared focus plus the cards the Beat writes) and, while readable, the cards the Step wrote earlier; a request is held when its scene is already visible, near the planned scale and centred (subsets of the composed frame are always held), so pointers and focus boundaries no longer slide the board back and forth. Hosts can cap automatic zoom with `setAutomaticCameraMaximumScale()` and pass Step context through `setBeatTargets(targets, stepContext)`; the session exposes `stepContextTargets`.
+- Teaching layout: `composition.readingScale` sizes rows and columns for the scale the host camera reads them at (default 0.9); non-math cards keep their natural width as layout input, so a card stretched to its column no longer jumps to a new band when a later card widens that column.
+- A note's supporting visual joins its camera frame only while both stay readable; course framing uses the same centred near-fit choice as teaching.
+
 - Align the Authoring Schema action payload requirements with the reference validator. In particular, `connect` now declares its stable local alias as required.
 - Document reference types and the required Session resource-to-local-fragment mapping in the model Authoring contract.
 - Align `close.focus` with the validator: it is a non-empty list of existing visual-object aliases, not free-form summary text.

@@ -42,6 +42,12 @@ export interface RegionLayoutConstraint {
     height: number;
     mode: "progressive" | "overview";
     insets?: import('./camera.js').ViewportInsets;
+    /**
+     * Camera scale at which the host reads a teaching row. Rows and columns
+     * are sized so the row stays readable at this scale; hosts should keep
+     * their automatic camera near it. Defaults to 0.9.
+     */
+    readingScale?: number;
   };
   /** Host-rendered controls or tasks anchored to a lesson node. */
   attachments?: Array<{

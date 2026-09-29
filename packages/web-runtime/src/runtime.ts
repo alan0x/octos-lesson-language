@@ -432,7 +432,33 @@ export class BrowserLessonSession {
     if (!beatId) return [];
     for (const step of this.player.outline) {
       const beat = step.beats.find((candidate) => candidate.id === beatId);
-      if (beat) return [...beat.focus_targets];
+      if (!beat) continue;
+      // Cards this Beat writes belong to what the narration is about, even
+      // when its declared focus names only the diagram being discussed.
+      const created = this.player.operations
+        .slice(beat.start_cursor, Math.min(beat.end_cursor, this.player.cursor) + 1)
+        .flatMap((operation) => operation.action?.op === "board.create" && operation.action.node?.id
+          ? [operation.action.node.id as string] : []);
+      return [...new Set([...beat.focus_targets, ...created])];
+    }
+    return [];
+  }
+  /**
+   * Cards the current Step wrote before the current Beat. The camera keeps
+   * them in frame beside the Beat's own targets while both stay readable, so
+   * a formula written a moment ago does not drop off screen when the next
+   * Beat of the same Step points back at the diagram.
+   */
+  get stepContextTargets(): string[] {
+    const beatId = this.currentOperation?.beat_id ?? this.player.snapshot.current_beat_id;
+    if (!beatId) return [];
+    for (const step of this.player.outline) {
+      const beat = step.beats.find((candidate) => candidate.id === beatId);
+      if (!beat) continue;
+      return [...new Set(this.player.operations
+        .slice(step.start_cursor, beat.start_cursor)
+        .flatMap((operation) => operation.action?.op === "board.create" && operation.action.node?.id
+          ? [operation.action.node.id as string] : []))];
     }
     return [];
   }

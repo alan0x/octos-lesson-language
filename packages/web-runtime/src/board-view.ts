@@ -14,7 +14,11 @@ import {
 } from "./board-targets.js";
 import {
   boardToViewportPoint,
+  HOLD_CENTER_SHARE_FRAMED,
+  HOLD_CENTER_SHARE_NEW,
+  holdsTeachingFrame,
   planFocusCamera,
+  unionRects,
   viewportToBoardPoint,
   type AttentionMode,
   TeachingCameraAuthority,
@@ -37,6 +41,7 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
+  measureSemanticNode,
   targetRect,
   type BoardLayout,
   type MeasuredNodeSizes,
@@ -246,6 +251,16 @@ export function animationFocusTargets(
   const union = [...animatedTargets, ...outside];
   return readableTogether(union) ? union : [...beatTargets];
 }
+
+/** The Beat's own targets join a narrower request only if the frame keeps this share of its scale. */
+const BEAT_CONTEXT_MIN_SCALE_SHARE = .8;
+/** A Beat's composed frame at or above this scale is readable on any host. */
+const CONTEXT_READABLE_SCALE = .55;
+/** Earlier cards of the Step join only if the frame stays nearly as close. */
+const STEP_CONTEXT_MIN_SCALE_SHARE = .92;
+
+/** A supporting visual joins a note's frame only if the frame keeps this share of its scale. */
+const SUPPORTING_VISUAL_MIN_SCALE_SHARE = .85;
 
 /** Lowest camera scale at which an animation is framed together with the Beat target. */
 export const ANIMATION_CONTEXT_MIN_SCALE = .75;
@@ -1457,6 +1472,7 @@ export class InfiniteBoardView {
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
   private beatTargets: string[] = [];
+  private stepContextTargets: string[] = [];
   private activeRegionId?: string;
   private readonly gesture = new BoardGestureRecognizer();
   /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
@@ -1485,6 +1501,9 @@ export class InfiniteBoardView {
   private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
   private automaticCameraMinimumScale = .18;
+  private automaticCameraMaximumScale = 1.3;
+  /** Scene the teaching camera last composed; subsets of it may be held off-centre. */
+  private lastFramedScene?: Rect;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
@@ -1549,22 +1568,42 @@ export class InfiniteBoardView {
     );
     const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
       ? this.captureReflowAnchor(board) : undefined;
-    if (this.board?.board_id !== board?.board_id) this.lastAttentionTargets = [];
+    if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; }
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
     if (!board) { this.clearBoard(); return; }
     const layoutOptions = { regions: this.regionLayouts };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
-    let measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
+    // Non-math cards report the width they were rendered at, which in a
+    // teaching row may already be stretched to their column. Their layout
+    // input width is their natural width instead.
+    const intrinsicSizes = Object.fromEntries(Object.entries(
+      this.syncNodes(board, provisionalLayout, operation?.action),
+    ).map(([id, size]) => {
+      const node = board.nodes[id];
+      return [id, node && node.kind !== "math"
+        ? { width: measureSemanticNode(node).width, height: size.height }
+        : size];
+    }));
+    let measuredNodeSizes = intrinsicSizes;
     let layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
-    // Reading columns may narrow a card after its intrinsic-width measurement.
-    // Measure at the final width before committing heights and collisions.
+    // Reading columns may narrow or stretch a card after its intrinsic-width
+    // measurement. Measure heights at the final width, but keep each card's
+    // intrinsic width as the layout input: feeding a stretched width back in
+    // made a card look wider than its column and jump to a new band when a
+    // later card widened that column.
+    let measuredAt = Object.fromEntries(Object.entries(intrinsicSizes).map(([id, size]) => [id, size.width]));
     for (let pass = 0; pass < 3; pass += 1) {
-      const changedWidth = Object.entries(measuredNodeSizes).some(([id, size]) =>
-        Math.abs(size.width - (layout.nodes[id]?.width ?? size.width)) >= .5);
+      const changedWidth = Object.entries(measuredAt).some(([id, width]) =>
+        Math.abs(width - (layout.nodes[id]?.width ?? width)) >= .5);
       if (!changedWidth) break;
-      measuredNodeSizes = this.syncNodes(board, layout, operation?.action, true);
+      const remeasured = this.syncNodes(board, layout, operation?.action, true);
+      measuredAt = Object.fromEntries(Object.entries(remeasured).map(([id, size]) => [id, size.width]));
+      measuredNodeSizes = Object.fromEntries(Object.entries(remeasured).map(([id, size]) => [id, {
+        width: intrinsicSizes[id]?.width ?? size.width,
+        height: size.height,
+      }]));
       layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
     }
     this.layout = layout;
@@ -1620,11 +1659,17 @@ export class InfiniteBoardView {
         : operation?.action?.target?.node_id
           ?? operation?.action?.target?.group_id
           ?? operation?.action?.target?.connection_id;
-      const activeRect = activeId && focusTargetsInRegion(board, [activeId], this.activeRegionId).length
-        ? targetRect(board, layout, activeTarget)
-        : undefined;
-      if (activeRect && this.resumeAutomaticCamera()) {
-        this.requestTeachingFocus(activeId ? [activeId] : [], [activeRect], board);
+      // Resolve the card exactly as an explicit focus would (including its
+      // controls), so pointing at a visual never frames it differently from
+      // the Beat that focused it a moment earlier.
+      const activeInRegion = Boolean(activeId && focusTargetsInRegion(board, [activeId], this.activeRegionId).length);
+      const activeRects = activeInRegion ? this.resolveFocusRects([activeId!], board, layout) : [];
+      if (!activeRects.length && activeInRegion && activeTarget) {
+        const rect = targetRect(board, layout, activeTarget);
+        if (rect) activeRects.push(rect);
+      }
+      if (activeRects.length && this.resumeAutomaticCamera()) {
+        this.requestTeachingFocus(activeId ? [activeId] : [], activeRects, board);
       }
     }
   }
@@ -1891,17 +1936,29 @@ export class InfiniteBoardView {
     if (regionId === this.activeRegionId) return;
     this.activeRegionId = regionId;
     this.lastAttentionTargets = [];
+    this.lastFramedScene = undefined;
   }
 
   /** The current Beat's own targets (focus, pointer, created cards), supplied by the host. */
-  setBeatTargets(targetIds: string[]): void {
+  setBeatTargets(targetIds: string[], stepContext: string[] = []): void {
     this.beatTargets = [...targetIds];
+    this.stepContextTargets = [...stepContext];
   }
 
   /** Sets a readability floor for ordinary automatic teaching-camera moves. */
   setAutomaticCameraMinimumScale(scale: number): void {
     if (!Number.isFinite(scale)) return;
     this.automaticCameraMinimumScale = Math.min(1, Math.max(.18, scale));
+  }
+
+  /**
+   * Sets the zoom ceiling for automatic teaching-camera moves. Hosts pass a
+   * value near their teaching layout's reading scale so a single diagram is
+   * not magnified until its neighbours in the same row fall off screen.
+   */
+  setAutomaticCameraMaximumScale(scale: number): void {
+    if (!Number.isFinite(scale)) return;
+    this.automaticCameraMaximumScale = Math.min(1.3, Math.max(.18, scale));
   }
 
   getRegionBounds(regionId: string): Rect | undefined {
@@ -1967,8 +2024,10 @@ export class InfiniteBoardView {
       options.framing === "course" ? "course" : "detail",
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
     );
     this.cameraAuthority.holdHostCamera(options.exclusive === true);
+    this.lastFramedScene = undefined;
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
@@ -2006,11 +2065,14 @@ export class InfiniteBoardView {
       : this.operation?.action?.target?.node_id
         ?? this.operation?.action?.target?.group_id
         ?? this.operation?.action?.target?.connection_id;
-    const activeRect = activeId && focusTargetsInRegion(this.board, [activeId], this.activeRegionId).length
-      ? targetRect(this.board, this.layout, activeTarget)
-      : undefined;
-    if (activeRect) {
-      this.focusRects(activeId ? [activeId] : [], [activeRect], this.board);
+    const activeInRegion = Boolean(activeId && focusTargetsInRegion(this.board, [activeId], this.activeRegionId).length);
+    const activeRects = activeInRegion ? this.resolveFocusRects([activeId!], this.board, this.layout) : [];
+    if (!activeRects.length && activeInRegion && activeTarget) {
+      const rect = targetRect(this.board, this.layout, activeTarget);
+      if (rect) activeRects.push(rect);
+    }
+    if (activeRects.length) {
+      this.focusRects(activeId ? [activeId] : [], activeRects, this.board);
       return;
     }
     const priorTargets = focusTargetsInRegion(this.board, this.lastAttentionTargets, this.activeRegionId);
@@ -2075,6 +2137,7 @@ export class InfiniteBoardView {
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
     this.lastAttentionTargets = [];
+    this.lastFramedScene = undefined;
   }
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction, constrainWidth = false): MeasuredNodeSizes {
@@ -2293,6 +2356,27 @@ export class InfiniteBoardView {
     this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
   }
   private resolveFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
+    const own = this.collectFocusRects(targetIds, board, layout);
+    const supporting = supportingVisualFocusTargets(targetIds, board, layout)
+      .filter((id) => !targetIds.includes(id));
+    if (!own.length || !supporting.length) return own;
+    const withSupport = this.collectFocusRects([...targetIds, ...supporting], board, layout);
+    // The visual a note explains joins the frame only while both stay
+    // readable together; otherwise a note far below its diagram would shrink
+    // the camera a little more with every card added to the row.
+    const viewport = this.viewport.getBoundingClientRect();
+    const plan = (rects: Rect[]) => planFocusCamera(
+      rects,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      rects.length > 1 ? "relationship" : "detail",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
+    ).scale;
+    return plan(withSupport) >= plan(own) * SUPPORTING_VISUAL_MIN_SCALE_SHARE ? withSupport : own;
+  }
+  private collectFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
     const rects: Rect[] = [];
     const visited = new Set<string>();
     const visit = (id: string): void => {
@@ -2309,7 +2393,6 @@ export class InfiniteBoardView {
       }
     };
     for (const id of targetIds) visit(id);
-    for (const id of supportingVisualFocusTargets(targetIds, board, layout)) visit(id);
     // Course controls and tasks are laid out as attachments beneath their
     // semantic anchor nodes. They share the same teaching scene, so a camera
     // focused on an anchor must reserve room for the visible attachment too.
@@ -2348,6 +2431,7 @@ export class InfiniteBoardView {
       "relationship",
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
     );
     return camera.scale >= ANIMATION_CONTEXT_MIN_SCALE;
   }
@@ -2367,22 +2451,85 @@ export class InfiniteBoardView {
     if (!pending) return;
     if (this.resumeAutomaticCamera()) this.focusRects(pending.targetIds, pending.rects, pending.board);
   }
-  private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
+  /**
+   * Adds the current Beat's own targets, then cards the Step wrote earlier,
+   * to an automatic request while the frame stays readable. Pointing at a
+   * diagram therefore keeps the formula being explained beside it instead of
+   * sliding it off screen, and every request inside one Beat composes the
+   * same scene.
+   */
+  private withTeachingContext(targetIds: string[], rects: Rect[], board: SemanticBoardState): Rect[] {
+    const layout = this.layout;
+    if (!layout || !rects.length) return rects;
+    const viewport = this.viewport.getBoundingClientRect();
+    const plan = (candidate: Rect[]) => planFocusCamera(
+      candidate,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      candidate.length > 1 ? "relationship" : "detail",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
+    ).scale;
+    // A composed frame is kept when it costs little zoom, or when it is still
+    // comfortably readable on this device even if it costs more.
+    const readable = Math.max(this.automaticCameraMinimumScale, CONTEXT_READABLE_SCALE);
+    const extend = (current: Rect[], ids: string[], share: number, allowReadable: boolean): Rect[] => {
+      const extra = this.resolveFocusRects(ids, board, layout);
+      if (!extra.length) return current;
+      const candidate = [...current, ...extra];
+      const scale = plan(candidate);
+      return scale >= plan(current) * share || (allowReadable && scale >= readable) ? candidate : current;
+    };
+    const known = new Set(targetIds);
+    const beat = focusTargetsInRegion(board, this.beatTargets, this.activeRegionId).filter((id) => !known.has(id));
+    beat.forEach((id) => known.add(id));
+    let result = beat.length ? extend(rects, beat, BEAT_CONTEXT_MIN_SCALE_SHARE, true) : rects;
+    const step = focusTargetsInRegion(board, this.stepContextTargets, this.activeRegionId)
+      .filter((id) => !known.has(id) && board.nodes[id]);
+    if (step.length) result = extend(result, step, STEP_CONTEXT_MIN_SCALE_SHARE, false);
+    return result;
+  }
+  private focusRects(targetIds: string[], requestedRects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
+    const rects = this.withTeachingContext(targetIds, requestedRects, board);
     const viewport = this.viewport.getBoundingClientRect();
     const mode: AttentionMode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
       ? "relationship"
       : targetIds.some((id) => Boolean(board.groups[id]))
         ? "overview"
         : "detail";
+    const current = { panX: this.panX, panY: this.panY, scale: this.scale };
     const camera = planFocusCamera(
       rects,
-      { panX: this.panX, panY: this.panY, scale: this.scale },
+      current,
       viewport,
       mode,
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
     );
+    // Every automatic teaching request passes through here. When the scene
+    // is already fully visible, close to the planned scale and near the
+    // centre, keep the camera still instead of re-centring on each pointer,
+    // focus or Beat boundary.
+    // A request for part of the scene already on screen may stay a little
+    // off-centre; a scene that adds content is centred properly.
+    const scene = unionRects(rects);
+    const framed = this.lastFramedScene;
+    const withinFrame = Boolean(framed
+      && scene.x >= framed.x - 1 && scene.y >= framed.y - 1
+      && scene.x + scene.width <= framed.x + framed.width + 1
+      && scene.y + scene.height <= framed.y + framed.height + 1);
+    const centerShare = withinFrame ? HOLD_CENTER_SHARE_FRAMED : HOLD_CENTER_SHARE_NEW;
+    // The composed frame already chose its scale; a request inside it never
+    // needs to zoom in. New content must reach its planned scale.
+    const readable = withinFrame ? 0 : Number.POSITIVE_INFINITY;
+    if (holdsTeachingFrame(rects, current, camera, viewport, this.viewportInsets, centerShare, readable)) {
+      if (!withinFrame) this.lastFramedScene = scene;
+      return;
+    }
+    this.lastFramedScene = scene;
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
@@ -2409,6 +2556,7 @@ export class InfiniteBoardView {
   }
   private beginManualNavigation(): void {
     this.cameraAuthority.beginManualNavigation();
+    this.lastFramedScene = undefined;
     this.viewport.classList.add("manual-navigation");
   }
   private resumeAutomaticCamera(): boolean {

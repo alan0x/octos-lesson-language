@@ -129,8 +129,10 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   const insets = composition.insets ?? {};
   const safeWidth = composition.width - (insets.left ?? 0) - (insets.right ?? 0) - SAFE_MARGIN;
   const safeHeight = composition.height - (insets.top ?? 0) - (insets.bottom ?? 0) - SAFE_MARGIN;
-  const readingWidth = Math.max(320, safeWidth / READING_SCALE);
-  const columnHeight = Math.max(MIN_COLUMN_HEIGHT, safeHeight / READING_SCALE);
+  const readingScale = Number.isFinite(composition.readingScale) && composition.readingScale! > 0
+    ? Math.min(1.5, Math.max(.3, composition.readingScale!)) : READING_SCALE;
+  const readingWidth = Math.max(320, safeWidth / readingScale);
+  const columnHeight = Math.max(MIN_COLUMN_HEIGHT, safeHeight / readingScale);
   const relations = region.relations ?? {};
   const targetsOf = (id: string) => relations[id] ?? [];
 

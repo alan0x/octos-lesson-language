@@ -1123,3 +1123,17 @@ test("animation camera frames the Beat target with the animated visuals only whe
   assert.deepEqual(animationFocusTargets(["circle", "cos"], ["compare"], () => false), ["compare"], "otherwise keep the Beat target");
   assert.deepEqual(animationFocusTargets(["circle", "cos"], [], () => false), ["circle", "cos"], "without a Beat target follow the animation");
 });
+
+test("the host reading scale sizes teaching rows for the camera that will read them", () => {
+  // A meeting display reads rows at a smaller scale than the 0.9 default, so
+  // the same step fits beside its visual instead of wrapping below it.
+  const board = emptyBoard({ v: card("v", "plot"), m: card("m", "math"), n: card("n", "note") });
+  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, m: { width: 300, height: 90 }, n: { width: 430, height: 150 } };
+  const tv = { width: 960, height: 540, mode: "progressive" as const, insets: { top: 83, bottom: 45 } };
+  const region = (readingScale?: number) => ({ x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { v: "1", m: "1", n: "2" }, composition: { ...tv, ...(readingScale ? { readingScale } : {}) } });
+  const defaultScale = computeBoardLayout(board, sizes, { regions: { r: region() } }).nodes;
+  const meetingScale = computeBoardLayout(board, sizes, { regions: { r: region(.6) } }).nodes;
+  assert.ok(defaultScale.n!.y > defaultScale.v!.y + defaultScale.v!.height, "at 0.9 the second step wraps below the row");
+  assert.equal(meetingScale.n!.y, meetingScale.v!.y, "at the host scale the second step stays on the row");
+});
