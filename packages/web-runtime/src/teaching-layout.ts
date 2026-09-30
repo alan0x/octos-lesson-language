@@ -414,16 +414,29 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         const bound = cluster.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
         const left = bound.length ? Math.min(...bound.map(r => r.x)) : x0;
         const spanRight = bound.length ? Math.max(...bound.map(r => r.x + r.width)) : right;
-        const y = Math.max(visualBottom, ...bound.map(r => r.y + r.height)) + CONTROL_GAP;
-        const besideControls = openTask && spanRight - left >= cluster.controls.width + CARD_GAP + openTask.width;
-        // Controls keep the left edge of their visuals whether or not practice is open.
-        const cx = left;
-        placeAttachment(cluster.controls, cx, y);
-        let bottom = y + cluster.controls.height;
+        // Controls shared by several visuals dock under the first of them at
+        // its width, like a single visual's controls, unless another visual
+        // sits under it (a wrapped comparison); then they go below all of them.
+        const primary = bound[0];
+        const docked = primary && {
+          x: primary.x, y: primary.y + primary.height + DOCK_GAP, width: primary.width, height: cluster.controls.height,
+        };
+        const collides = docked && visuals.some(v => nodes[v.id] !== primary && overlaps(docked, nodes[v.id]!));
+        const controls = docked && !collides ? docked : {
+          x: left, y: Math.max(visualBottom, ...bound.map(r => r.y + r.height)) + CONTROL_GAP,
+          width: cluster.controls.width, height: cluster.controls.height,
+        };
+        attachments[cluster.controls.id] = controls;
+        let bottom = controls.y + controls.height;
         referenceBottom = Math.max(referenceBottom, bottom);
         if (openTask) {
-          const tx = besideControls ? cx + cluster.controls.width + CARD_GAP : cx;
-          const ty = besideControls ? y : y + cluster.controls.height + CARD_GAP;
+          const besideControls = spanRight - controls.x >= controls.width + CARD_GAP + openTask.width;
+          const tx = besideControls ? controls.x + controls.width + CARD_GAP : controls.x;
+          // Beside the controls, practice still starts below any visual above it.
+          const above = [...bound, ...visuals.map(v => nodes[v.id]!)].filter(r => r.x < tx + openTask.width && r.x + r.width > tx);
+          const ty = besideControls
+            ? Math.max(controls.y, ...above.map(r => r.y + r.height + DOCK_GAP))
+            : controls.y + controls.height + CARD_GAP;
           placeAttachment(openTask, tx, ty);
           bottom = Math.max(bottom, ty + openTask.height);
         }

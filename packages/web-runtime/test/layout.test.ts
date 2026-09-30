@@ -858,7 +858,7 @@ test('viewport-aware overview uses horizontal space, includes tasks and preserve
       {id:'task',kind:'task' as const,anchorNodeId:'a',width:360,height:240}]};
   const layout = computeBoardLayout(board,{}, {regions:{r:region}});
   assert.equal(layout.nodes.a!.y,layout.nodes.b!.y);
-  assert.equal(layout.attachments.slider!.y,layout.nodes.a!.y+layout.nodes.a!.height+24);
+  assert.equal(layout.attachments.slider!.y,layout.nodes.a!.y+layout.nodes.a!.height+8,'shared controls dock under the first visual');
   assert.ok(layout.bounds.width >= 900, 'comparison pair still uses horizontal space');
   const rects=[...Object.values(layout.nodes),...Object.values(layout.attachments)];
   for(let i=0;i<rects.length;i++)for(let j=i+1;j<rects.length;j++) {
@@ -970,10 +970,13 @@ test("comparison visuals share controls below them and practice beside the contr
     plannedSteps: { "1": { visual: 2 } }, composition: wideComposition, attachments: [control] };
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
   assert.equal(layout.nodes.a!.y, layout.nodes.b!.y, "comparison visuals share a top line");
-  assert.equal(layout.attachments.slider!.y, Math.max(layout.nodes.a!.y + layout.nodes.a!.height, layout.nodes.b!.y + layout.nodes.b!.height) + 24);
+  assert.deepEqual(layout.attachments.slider, { x: layout.nodes.a!.x, y: layout.nodes.a!.y + layout.nodes.a!.height + 8,
+    width: layout.nodes.a!.width, height: 44 }, "shared controls dock under the first visual at its width");
   const opened = computeBoardLayout(board, {}, { regions: { r: { ...region,
     attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 330, height: 190 }] } } });
-  assert.equal(opened.attachments.task!.y, opened.attachments.slider!.y, "practice sits beside the shared controls");
+  const slider = opened.attachments.slider!, task = opened.attachments.task!;
+  assert.equal(task.x, slider.x + slider.width + 16, "practice sits beside the shared controls");
+  assert.ok(task.y >= Math.max(slider.y, opened.nodes.b!.y + opened.nodes.b!.height), "practice starts below the visual above it");
   assert.deepEqual(opened.attachments.slider, layout.attachments.slider, "controls keep their place when practice opens");
   assert.deepEqual(opened.nodes, layout.nodes);
 });

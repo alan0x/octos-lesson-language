@@ -19,6 +19,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:expression_target": "0.1.0",
   "student-tasks:scene3d_view_target": "0.1.0",
   "reflections": "0.3.0",
+  "binding-hide-undefined": "0.3.0",
 });
 
 export interface ExecutionRequirements {
@@ -62,6 +63,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
       for (const [index, binding] of bindings.entries()) {
         if ((binding as { label?: unknown }).label !== undefined) add("binding-labels", `${path}/bindings/${index}`);
         if ((binding as { allow_zero?: unknown }).allow_zero !== undefined) add("bound-zero-radius", `${path}/bindings/${index}`);
+        if ((binding as { hide_when_undefined?: unknown }).hide_when_undefined !== undefined) add("binding-hide-undefined", `${path}/bindings/${index}`);
         const property = { property: (binding as { target?: string }).target?.split(".").at(-1) };
         // Full reference and numerical validation remains owned by the core validator.
         if (property.property && !Object.values(OLL_CANONICAL_BINDING_CAPABILITIES)

@@ -711,6 +711,7 @@ function drawPlot(
   }
 
   for (const point of Array.isArray(content.points) ? content.points : []) {
+    if (point.binding_undefined === true) continue;
     const pointX = Number(point.x);
     const pointY = Number(point.y);
     if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) continue;
@@ -1022,7 +1023,7 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     return leftIsControl - rightIsControl;
   });
   for (const point of orderedPoints) {
-    if (point.visible === false) continue;
+    if (point.visible === false || point.binding_undefined === true) continue;
     const x = viewport.mapX(point.x);
     const y = viewport.mapY(point.y);
     const dot = document.createElementNS(SVG_NS, "circle");
@@ -1509,6 +1510,13 @@ export class InfiniteBoardView {
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
+  /**
+   * Last measured size of each card for its content signature and layout
+   * width. A variable change re-renders only the visuals bound to it; reusing
+   * the other cards' sizes avoids forcing a browser layout per card on every
+   * animation frame (which made sliders and their values stutter).
+   */
+  private readonly nodeMeasurements = new Map<string, { key: string; size: { width: number; height: number } }>();
   private readonly groupElements = new Map<string, HTMLElement>();
   private nodeInstanceSequence = 0;
   private disposed = false;
@@ -1517,6 +1525,7 @@ export class InfiniteBoardView {
     if (this.disposed || this.fontReflowFrame !== undefined) return;
     this.fontReflowFrame = this.hostWindow.requestAnimationFrame(() => {
       this.fontReflowFrame = undefined;
+      this.nodeMeasurements.clear();
       if (!this.disposed && this.board) this.render(this.board, this.operation);
     });
   };
@@ -2137,7 +2146,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2153,7 +2162,7 @@ export class InfiniteBoardView {
       if (board.nodes[id]) continue;
       disposePlotExplorer(element);
       disposeGeometryExplorer(element);
-      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id);
+      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id); this.nodeMeasurements.delete(id);
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
@@ -2192,6 +2201,12 @@ export class InfiniteBoardView {
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
+      const measureKey = `${signature}\u0000${layout.nodes[node.id]!.width}\u0000${constrainWidth}`;
+      const cachedMeasurement = this.nodeMeasurements.get(node.id);
+      if (!created && cachedMeasurement?.key === measureKey) {
+        measured[node.id] = { ...cachedMeasurement.size };
+        continue;
+      }
       const intrinsicMathWidth = kind === "math" ? renderedMathCardWidth(element) : undefined;
       const measuredMathWidth = intrinsicMathWidth === undefined ? undefined
         : constrainWidth ? Math.min(intrinsicMathWidth, layout.nodes[node.id]!.width) : intrinsicMathWidth;
@@ -2207,6 +2222,7 @@ export class InfiniteBoardView {
             ? Math.max(72, element.offsetHeight)
             : Math.max(72, Math.ceil(element.scrollHeight + 8)),
       };
+      this.nodeMeasurements.set(node.id, { key: measureKey, size: { ...measured[node.id]! } });
     }
     return measured;
   }

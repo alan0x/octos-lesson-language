@@ -8,6 +8,7 @@ import {
   assertExecutionDeclaration,
   assertExecutionSupported,
   deriveExecutionRequirements,
+  evaluateContentBindings,
   OLL_ACTION_NAMES,
   OLL_BINDING_CAPABILITIES,
   OLL_EXECUTION_CAPABILITIES,
@@ -1020,4 +1021,23 @@ test("reflections anchor to a written card, normalize to its canonical ID and re
   emptyAnswer.lesson.reflections![0]!.answer = " ";
   assert.throws(() => normalizeAuthoringLesson(emptyAnswer, host), (error) => error instanceof OllError
     && error.code === "OLL_INVALID_REFLECTION");
+});
+
+test("a point bound with hide_when_undefined disappears while undefined and returns afterwards", () => {
+  const content = {
+    points: [{ id: "cross", x: 0, y: 0, label: "交点 ({x}, {y})" }],
+    bindings: [
+      { target: "cross.x", expression: "(b2-b1)/(k1-k2)", hide_when_undefined: true },
+      { target: "cross.y", expression: "k1*((b2-b1)/(k1-k2))+b1", hide_when_undefined: true },
+    ],
+  };
+  const crossing = evaluateContentBindings(content, { k1: 1, b1: 1, k2: -1, b2: 3 });
+  assert.deepEqual([crossing.points[0].x, crossing.points[0].y, crossing.points[0].binding_undefined], [1, 2, undefined]);
+  const parallel = evaluateContentBindings(crossing, { k1: 1, b1: 1, k2: 1, b2: -2 });
+  assert.equal(parallel.points[0].binding_undefined, true, "parallel lines hide the intersection instead of failing");
+  const again = evaluateContentBindings(parallel, { k1: 1, b1: 1, k2: -1, b2: 3 });
+  assert.equal(again.points[0].binding_undefined, undefined, "the point returns once it is defined again");
+  assert.throws(() => evaluateContentBindings({ points: content.points, bindings: [{ target: "cross.x", expression: "1/(k1-k2)" }] },
+    { k1: 1, k2: 1 }), (error) => error instanceof OllError && error.code === "OLL_BINDING_EVALUATION_FAILED",
+  "without the option an undefined value still fails");
 });
