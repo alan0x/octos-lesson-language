@@ -2019,11 +2019,13 @@ export class InfiniteBoardView {
    * Moves the teaching camera to host-owned content mounted in board/world
    * coordinates, such as a pending learner question and its loading card.
    * This is an explicit one-shot request from the host; ordinary renders and
-   * elapsed time never call it automatically.
+   * elapsed time never call it automatically. `parts` optionally lists the
+   * cards inside `rect`, so floating UI beside an empty corner of it does not
+   * push the frame aside.
    */
   focusWorldRect(
     rect: Rect,
-    options: { exclusive?: boolean; framing?: "content" | "course" } = {},
+    options: { exclusive?: boolean; framing?: "content" | "course"; parts?: Rect[] } = {},
   ): Rect | undefined {
     if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
       || rect.width <= 0 || rect.height <= 0) return undefined;
@@ -2036,6 +2038,7 @@ export class InfiniteBoardView {
       this.viewportInsets,
       this.automaticCameraMinimumScale,
       this.automaticCameraMaximumScale,
+      options.parts?.length ? options.parts : undefined,
     );
     this.cameraAuthority.holdHostCamera(options.exclusive === true);
     this.lastFramedScene = undefined;

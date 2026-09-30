@@ -130,6 +130,8 @@ const MIN_OCCLUSION_OVERLAP = 8;
 // the viewer. Candidates within this ratio of the best fit compete on
 // distance to the usable area's center instead.
 const NEAR_FIT_RATIO = .85;
+// Clearance kept between centred content and floating UI it does not overlap.
+const OCCLUSION_CLEARANCE = 8;
 
 const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   detail: .78,
@@ -155,8 +157,9 @@ function visibleAt(
   viewport: ViewportSize,
   margin: number,
   insets: ViewportInsets,
+  parts?: Rect[],
 ): boolean {
-  const safe = safeViewport(viewport, insets, margin, rect);
+  const safe = safeViewport(viewport, insets, margin, rect, NEAR_FIT_RATIO, MAX_AUTOMATIC_SCALE, parts);
   const left = camera.panX + rect.x * camera.scale;
   const right = left + rect.width * camera.scale;
   const top = camera.panY + rect.y * camera.scale;
@@ -184,6 +187,7 @@ function safeViewport(
   content?: Rect,
   nearFitRatio = NEAR_FIT_RATIO,
   scaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts: Rect[] = content ? [content] : [],
 ): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
   const base = {
     left: inset(insets.left) + margin,
@@ -209,6 +213,27 @@ function safeViewport(
   });
   if (occlusions.length === 0) {
     return { ...base, width: base.right - base.left, height: base.bottom - base.top };
+  }
+  // Floating UI only matters where the content would actually be. If every
+  // part of the content, fitted and centred in the whole safe area, stays
+  // clear of every occlusion (e.g. a small avatar beside an empty corner of
+  // the course), keep the whole area rather than a smaller rectangle beside
+  // the occlusion that shifts the scene.
+  if (content) {
+    const width = base.right - base.left, height = base.bottom - base.top;
+    const scale = Math.min(scaleCeiling, width / Math.max(1, content.width), height / Math.max(1, content.height));
+    const originX = base.left + width / 2 - (content.x + content.width / 2) * scale;
+    const originY = base.top + height / 2 - (content.y + content.height / 2) * scale;
+    const clear = parts.every((part) => {
+      const left = originX + part.x * scale - OCCLUSION_CLEARANCE;
+      const top = originY + part.y * scale - OCCLUSION_CLEARANCE;
+      const right = originX + (part.x + part.width) * scale + OCCLUSION_CLEARANCE;
+      const bottom = originY + (part.y + part.height) * scale + OCCLUSION_CLEARANCE;
+      return (insets.occlusions ?? []).every((occlusion) => !(
+        left < occlusion.x + occlusion.width && right > occlusion.x
+        && top < occlusion.y + occlusion.height && bottom > occlusion.y));
+    });
+    if (clear) return { ...base, width, height };
   }
   const xs = [...new Set([base.left, base.right, ...occlusions.flatMap((item) => [item.left, item.right])])];
   const ys = [...new Set([base.top, base.bottom, ...occlusions.flatMap((item) => [item.top, item.bottom])])];
@@ -270,8 +295,9 @@ function centeredCamera(
   insets: ViewportInsets,
   nearFitRatio = NEAR_FIT_RATIO,
   scaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts?: Rect[],
 ): CameraState {
-  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, nearFitRatio, scaleCeiling);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, nearFitRatio, scaleCeiling, parts);
   return {
     scale,
     panX: safe.left + safe.width / 2 - (rect.x + rect.width / 2) * scale,
@@ -284,8 +310,9 @@ function composedAt(
   camera: CameraState,
   viewport: ViewportSize,
   insets: ViewportInsets,
+  parts?: Rect[],
 ): boolean {
-  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, NEAR_FIT_RATIO, MAX_AUTOMATIC_SCALE, parts);
   const sceneCenterX = camera.panX + (rect.x + rect.width / 2) * camera.scale;
   const sceneCenterY = camera.panY + (rect.y + rect.height / 2) * camera.scale;
   return Math.abs(sceneCenterX - (safe.left + safe.width / 2)) < 1
@@ -296,6 +323,8 @@ function composedAt(
  * Compose an explicit teaching focus. The resulting scale is not a camera preset:
  * it is derived from the target geometry and current viewport so the complete
  * teaching scene stays readable and occupies a deliberate share of the view.
+ * `parts` are the cards inside the targets that floating UI must not cover;
+ * by default the whole target area counts.
  */
 export function planFocusCamera(
   targets: Rect[],
@@ -305,6 +334,7 @@ export function planFocusCamera(
   insets: ViewportInsets = {},
   automaticScaleFloor = MIN_AUTOMATIC_SCALE,
   automaticScaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts?: Rect[],
 ): CameraState {
   if (!targets.length) return current;
   const ceiling = Math.max(MIN_AUTOMATIC_SCALE, Math.min(MAX_AUTOMATIC_SCALE, automaticScaleCeiling));
@@ -315,7 +345,7 @@ export function planFocusCamera(
   const margin = configuredFocusMargin(insets);
   // Course framing uses the same centred near-fit choice as teaching: a
   // strict best fit let a small corner toolbar push the whole course aside.
-  const safe = safeViewport(viewport, insets, margin, scene, NEAR_FIT_RATIO, ceiling);
+  const safe = safeViewport(viewport, insets, margin, scene, NEAR_FIT_RATIO, ceiling, parts);
   const safeWidth = safe.width;
   const safeHeight = safe.height;
   // A relationship is only intelligible when every related target stays in
@@ -339,10 +369,10 @@ export function planFocusCamera(
 
   if (
     Math.abs(scale - current.scale) < .000_001
-    && visibleAt(scene, current, viewport, margin, insets)
-    && composedAt(scene, current, viewport, insets)
+    && visibleAt(scene, current, viewport, margin, insets, parts)
+    && composedAt(scene, current, viewport, insets, parts)
   ) return current;
-  return centeredCamera(scene, scale, viewport, insets, NEAR_FIT_RATIO, ceiling);
+  return centeredCamera(scene, scale, viewport, insets, NEAR_FIT_RATIO, ceiling, parts);
 }
 
 // A planned teaching move is skipped when the current camera already shows

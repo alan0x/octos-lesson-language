@@ -778,19 +778,16 @@ test("focus centers teaching content inside the host's unobstructed viewport", (
 });
 
 test("focus avoids the actual floating UI rectangle instead of reserving an entire edge", () => {
-  const focused = planFocusCamera(
-    [{ x: 1000, y: 800, width: 420, height: 160 }],
-    { panX: 0, panY: 0, scale: .78 },
-    { width: 1200, height: 800 },
-    "detail",
-    { occlusions: [{ x: 900, y: 120, width: 260, height: 400 }] },
-  );
-  const targetCenterX = 1_210;
-  const targetCenterY = 880;
-  const clearRight = 900 - 70;
-  const safeCenterX = (70 + clearRight) / 2;
-  assert.ok(Math.abs(focused.panX + targetCenterX * focused.scale - safeCenterX) < .001);
-  assert.ok(Math.abs(focused.panY + targetCenterY * focused.scale - 400) < .001);
+  // Centred in the whole area the wide scene would run under the panel on the
+  // right, so the camera uses the clear area left of it (not a whole edge band).
+  const scene = { x: 1000, y: 800, width: 900, height: 160 };
+  const occlusion = { x: 900, y: 120, width: 260, height: 400 };
+  const focused = planFocusCamera([scene], { panX: 0, panY: 0, scale: .78 }, { width: 1200, height: 800 }, "detail",
+    { occlusions: [occlusion] });
+  const left = focused.panX + scene.x * focused.scale, right = left + scene.width * focused.scale;
+  const top = focused.panY + scene.y * focused.scale, bottom = top + scene.height * focused.scale;
+  assert.ok(right <= occlusion.x || bottom <= occlusion.y || top >= occlusion.y + occlusion.height, "the scene clears the panel");
+  assert.ok(Math.abs((left + right) / 2 - (70 + 830) / 2) < .001, "centred in the clear area left of the panel");
 });
 
 test("focus chooses the unobstructed rectangle that best fits the teaching scene", () => {
@@ -821,30 +818,25 @@ test("focus chooses the unobstructed rectangle that best fits the teaching scene
 });
 
 test("focus stays centered when a bottom dock and a side column both leave room", () => {
-  const focused = planFocusCamera(
-    [
-      { x: 20, y: 20, width: 380, height: 390 },
-      { x: 20, y: 452, width: 360, height: 162 },
-    ],
-    { panX: 80, panY: 60, scale: .78 },
-    { width: 1920, height: 1080 },
-    "relationship",
-    {
-      focusMargin: 24,
-      occlusions: [
-        { x: 6, y: 9, width: 65, height: 30 },
-        { x: 74, y: 6, width: 1840, height: 36 },
-        { x: 8, y: 48, width: 308.640625, height: 35 },
-        { x: 1854, y: 970, width: 56, height: 56 },
-        { x: 700, y: 1035, width: 520, height: 37 },
-      ],
-    },
-    .55,
-  );
-
-  assert.ok(Math.abs(focused.scale - 1.2705263157894737) < .000_001);
-  assert.ok(Math.abs(focused.panX - 693.189474) < .001,
-    "the bottom dock must not push a fully fitting lesson into a side column");
+  const scene = [
+    { x: 20, y: 20, width: 380, height: 390 },
+    { x: 20, y: 452, width: 360, height: 162 },
+  ];
+  const occlusions = [
+    { x: 6, y: 9, width: 65, height: 30 },
+    { x: 74, y: 6, width: 1840, height: 36 },
+    { x: 8, y: 48, width: 308.640625, height: 35 },
+    { x: 1854, y: 970, width: 56, height: 56 },
+    { x: 700, y: 1035, width: 520, height: 37 },
+  ];
+  const focused = planFocusCamera(scene, { panX: 80, panY: 60, scale: .78 }, { width: 1920, height: 1080 }, "relationship",
+    { focusMargin: 24, occlusions }, .55);
+  const left = focused.panX + 20 * focused.scale, right = focused.panX + 400 * focused.scale;
+  const top = focused.panY + 20 * focused.scale, bottom = focused.panY + 614 * focused.scale;
+  assert.ok(Math.abs((left + right) / 2 - 960) < .001, "the bottom dock must not push a fully fitting lesson into a side column");
+  for (const o of occlusions) {
+    assert.ok(right <= o.x || left >= o.x + o.width || bottom <= o.y || top >= o.y + o.height, "the lesson clears every piece of chrome");
+  }
 });
 
 test("focus ignores a floating control that only sliver-overlaps the usable viewport", () => {
@@ -907,8 +899,9 @@ test("focus prefers the centered candidate when a side column fits only marginal
 });
 
 test("focus still avoids a floating control that meaningfully overlaps the usable viewport", () => {
-  // Same avatar moved up so it overlaps the usable viewport by 80px: the
-  // right edge is genuinely blocked and the narrow full-height column wins.
+  // The control sits where the centred scene would be, so the scene moves to
+  // the clear column beside it.
+  const occlusion = { x: 640, y: 420, width: 94, height: 94 };
   const focused = planFocusCamera(
     [
       { x: 20, y: 20, width: 360, height: 332 },
@@ -917,14 +910,40 @@ test("focus still avoids a floating control that meaningfully overlaps the usabl
     { panX: 80, panY: 60, scale: .78 },
     { width: 1400, height: 900 },
     "detail",
-    {
-      top: 92, right: 28, bottom: 190, left: 28,
-      occlusions: [{ x: 1282, y: 560, width: 94, height: 94 }],
-    },
+    { top: 92, right: 28, bottom: 190, left: 28, occlusions: [occlusion] },
   );
-  // Safe viewport narrows to [98..1212]×[162..640] with center (655, 401).
-  assert.ok(Math.abs(focused.panX - (655 - 200 * focused.scale)) < .001);
-  assert.ok(Math.abs(focused.panY - (401 - 288 * focused.scale)) < .001);
+  const left = focused.panX + 20 * focused.scale, right = focused.panX + 380 * focused.scale;
+  const top = focused.panY + 20 * focused.scale, bottom = focused.panY + 556 * focused.scale;
+  assert.ok(right <= occlusion.x || left >= occlusion.x + occlusion.width || bottom <= occlusion.y || top >= occlusion.y + occlusion.height,
+    "the scene clears the control");
+});
+
+test("course framing checks the avatar against the course cards, not the empty corner of their bounds", () => {
+  // Meeting display: a wide course whose bounds would reach the avatar only in
+  // the empty space under its right-hand note.
+  const cards = [
+    { x: 0, y: 0, width: 300, height: 120 },
+    { x: 340, y: 0, width: 420, height: 420 },
+    { x: 800, y: 0, width: 250, height: 200 },
+  ];
+  const course = { x: 0, y: 0, width: 1050, height: 420 };
+  const insets = { top: 83, bottom: 45, focusMargin: 24, occlusions: [{ x: 894, y: 430, width: 56, height: 56 }] };
+  const bounded = planFocusCamera([course], { panX: 0, panY: 0, scale: 1 }, { width: 960, height: 540 }, "course", insets, .55, .8);
+  const carded = planFocusCamera([course], { panX: 0, panY: 0, scale: 1 }, { width: 960, height: 540 }, "course", insets, .55, .8, cards);
+  const offset = (camera: { panX: number; scale: number }) =>
+    camera.panX - (960 - (camera.panX + course.width * camera.scale));
+  assert.ok(offset(bounded) < -1, "the bounds alone overlap the avatar and are moved aside");
+  assert.ok(Math.abs(offset(carded)) < .001, `the cards clear the avatar, so the course stays centred (offset ${offset(carded).toFixed(1)})`);
+});
+
+test("a small corner avatar does not shift a centred course overview", () => {
+  // Meeting display: the finished course is tall and fits centred without
+  // touching the teacher avatar in the bottom-right corner.
+  const course = { x: 0, y: 0, width: 1200, height: 1400 };
+  const camera = planFocusCamera([course], { panX: 0, panY: 0, scale: 1 }, { width: 960, height: 540 }, "course",
+    { top: 83, bottom: 45, focusMargin: 24, occlusions: [{ x: 894, y: 430, width: 56, height: 56 }] });
+  const left = camera.panX, right = 960 - (camera.panX + course.width * camera.scale);
+  assert.ok(Math.abs(left - right) < .001, `course sits centred (left ${left.toFixed(1)}, right ${right.toFixed(1)})`);
 });
 
 test("overview focus keeps small member cards readable inside a larger group", () => {

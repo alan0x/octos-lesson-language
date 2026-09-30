@@ -20,6 +20,7 @@
 
 ### Fixed
 
+- Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
 - Teaching layout: controls shared by several visuals dock under the first of them at its width (8 units below), like a single visual's controls; practice stays beside them, below any visual above it.
 - Board view: a card's measured size is reused while its content signature and width are unchanged, so a variable change re-measures only the visuals it drives instead of forcing a browser layout per card on every animation frame.
 - Teaching layout: a single visual's variable controls dock directly under it at its width instead of forming a column on its left, so they cost no row width; practice still opens left of the visual after the lesson.
