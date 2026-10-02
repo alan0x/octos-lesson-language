@@ -269,8 +269,9 @@ export class InkRuntime {
         : this.host.ownerDocument.defaultView?.navigator.languages;
     return new Editor(this.host, {
       wheelEventsEnabled: false,
-      minZoom: .15,
-      maxZoom: 2.2,
+      // The host board owns zoom, including small whole-course overviews.
+      // Clamping its transform here makes ViewportChanged fight the board
+      // camera recursively and aborts subsequent camera notifications.
       localization: getLocalizationTable(userLocales),
       appInfo: { name: "Octos student ink" },
     });
