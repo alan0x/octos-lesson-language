@@ -70,6 +70,8 @@ import {
   type SelectionToolAccess,
 } from "./selection-lock.js";
 import { planInkVectorUpdate } from "./vector-update.js";
+import { collectNativeInkExclusionRects } from "./native-ink-exclusion.js";
+import { smoothedInkPathData } from "./native-ink-path.js";
 import { InkContentGeometryCache } from "./content-geometry-cache.js";
 
 import { readAiWritingRecords, writeAiWritingRecords, type AiWritingRecord } from "./ai-writing-record.js";
@@ -158,7 +160,12 @@ interface NativeInkBridge {
   ): void;
   cancel(pointerId: number): void;
   acknowledge(pointerId: number): void;
+  /** JSON array of flattened CSS-px rectangles; absent on older APKs. */
+  setExclusionRects?(rects: string): void;
 }
+
+/** Throttle for re-measuring controls that native ink must not draw over. */
+const NATIVE_INK_EXCLUSION_REFRESH_MS = 120;
 
 type NativeInkWindow = Window & {
   OctosNativeInk?: NativeInkBridge;
@@ -201,6 +208,9 @@ export class InkRuntime {
   private nativeInkBridge: NativeInkBridge | null = null;
   private readonly nativeInkPointers = new Map<number, NativeInkPointer>();
   private readonly nativeDomPointers = new Set<number>();
+  private nativeInkExclusionTimer?: ReturnType<typeof setTimeout>;
+  private nativeInkExclusionObserver?: MutationObserver;
+  private nativeInkExclusionKey = "";
   /** Timestamp of the most recent pen down/move, for palm rejection. */
   private lastPenActiveAt?: number;
   private selectionGesture: InkSelectionPoint[] = [];
@@ -378,6 +388,59 @@ export class InkRuntime {
     } catch {
       /* The Android bridge may disappear while the Activity closes. */
     }
+    this.syncNativeInkExclusions();
+  }
+
+  /**
+   * Keep the APK's list of controls over the board current while drawing.
+   * DOM changes and camera moves both reach here; measuring is throttled
+   * because camera transitions call syncNativeInkCapture every frame.
+   */
+  private syncNativeInkExclusions(): void {
+    const bridge = this.nativeInkBridge;
+    const document = this.options.viewport.ownerDocument;
+    const hostWindow = document.defaultView;
+    if (
+      !bridge
+      || typeof bridge.setExclusionRects !== "function"
+      || !hostWindow
+      || this.modeValue !== "draw"
+    ) {
+      this.stopNativeInkExclusions();
+      return;
+    }
+    if (!this.nativeInkExclusionObserver && typeof hostWindow.MutationObserver === "function") {
+      this.nativeInkExclusionObserver = new hostWindow.MutationObserver(() =>
+        this.syncNativeInkExclusions());
+      this.nativeInkExclusionObserver.observe(document.body ?? document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ["class", "hidden", "disabled", "contenteditable", "data-oll-ink-input"],
+      });
+    }
+    if (this.nativeInkExclusionTimer !== undefined) return;
+    this.nativeInkExclusionTimer = setTimeout(() => {
+      this.nativeInkExclusionTimer = undefined;
+      if (this.modeValue !== "draw" || this.nativeInkBridge !== bridge) return;
+      const rect = this.options.viewport.getBoundingClientRect();
+      const key = JSON.stringify(collectNativeInkExclusionRects(document, rect));
+      if (key === this.nativeInkExclusionKey) return;
+      this.nativeInkExclusionKey = key;
+      try { bridge.setExclusionRects?.(key); } catch { /* Activity may be closing. */ }
+    }, NATIVE_INK_EXCLUSION_REFRESH_MS);
+  }
+
+  private stopNativeInkExclusions(): void {
+    this.nativeInkExclusionObserver?.disconnect();
+    this.nativeInkExclusionObserver = undefined;
+    if (this.nativeInkExclusionTimer !== undefined) clearTimeout(this.nativeInkExclusionTimer);
+    this.nativeInkExclusionTimer = undefined;
+    if (this.nativeInkExclusionKey === "" || this.nativeInkExclusionKey === "[]") return;
+    // Outside draw mode the APK does not capture; clear so a stale list never
+    // outlives the controls it described.
+    this.nativeInkExclusionKey = "[]";
+    try { this.nativeInkBridge?.setExclusionRects?.("[]"); } catch { /* Activity may be closing. */ }
   }
 
   private nativeInputPathAt(x: number, y: number): EventTarget[] {
@@ -469,9 +532,8 @@ export class InkRuntime {
       const pathPoints = points.length === 1
         ? [points[0]!, { x: points[0]!.x + .01, y: points[0]!.y }]
         : points;
-      const path = pathPoints.map((point, index) =>
-        `${index === 0 ? "M" : "L"}${point.x.toFixed(3)} ${point.y.toFixed(3)}`
-      ).join(" ");
+      // Same midpoint curve the native overlay drew, so the handoff is still.
+      const path = smoothedInkPathData(pathPoints);
       // Vendor touch pressure is noisy. Keep native preview and committed ink
       // at the same stable thickness.
       const pressure = .5;
@@ -795,6 +857,7 @@ export class InkRuntime {
           .defaultView as NativeInkWindow | null;
         if (nativeWindow) delete nativeWindow.__octosNativeInkBatch;
       }
+      this.stopNativeInkExclusions();
       this.nativeInkPointers.clear();
       this.nativeDomPointers.clear();
       this.activePointers.clear();
