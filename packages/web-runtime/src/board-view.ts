@@ -1738,7 +1738,16 @@ export class InfiniteBoardView {
 
   subscribeCamera(listener: CameraListener): () => void {
     this.cameraListeners.add(listener);
-    listener(this.getCameraState());
+    const camera = this.getCameraState();
+    listener(camera);
+    // The initial transform can start before the first listener exists. Its
+    // replay may still be an early CSS-transition frame, so follow the camera
+    // until it settles instead of leaving ink at that subscribe-time snapshot.
+    if (Math.abs(camera.panX - this.panX) >= .01
+        || Math.abs(camera.panY - this.panY) >= .01
+        || Math.abs(camera.scale - this.scale) >= .0001) {
+      this.scheduleCameraNotifications();
+    }
     return () => this.cameraListeners.delete(listener);
   }
 
