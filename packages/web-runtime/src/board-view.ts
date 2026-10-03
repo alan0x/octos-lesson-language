@@ -1,4 +1,4 @@
-import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
+import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
 import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
@@ -67,6 +67,9 @@ import {
 } from "./student-operations.js";
 import {
   renderScene3d,
+  disposeScene3d,
+  updateScene3d,
+  scene3dVariableSignature,
   type Scene3dViewInputHandler,
   type Scene3dViewState,
 } from "./scene3d.js";
@@ -561,6 +564,9 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
 let plotClipSequence = 0;
 let geometryClipSequence = 0;
 const plotTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
+const plotFrames = new WeakMap<HTMLElement, {
+  svg: SVGSVGElement; staticKey: string; clipId: string; staticCount: number;
+}>();
 const geometryTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
 
 function drawPlot(
@@ -577,51 +583,61 @@ function drawPlot(
   const {left:PLOT_LEFT,right:PLOT_RIGHT,top:PLOT_TOP,bottom:PLOT_BOTTOM}=plotFrame(width,height,xRange,yRange,axes.equal_scale===true);
   const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
   const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.classList.add("plot-preview");
+  const priorFrame = plotFrames.get(parent);
+  const staticKey = JSON.stringify([width, height, axes]);
+  const reuseFrame = priorFrame?.staticKey === staticKey && priorFrame.svg.parentNode === parent;
+  const svg = reuseFrame ? priorFrame.svg : document.createElementNS(SVG_NS, "svg");
+  if (!reuseFrame) {
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.classList.add("plot-preview");
+  } else {
+    while (svg.childNodes.length > priorFrame.staticCount) svg.lastChild!.remove();
+  }
+  const clipId = reuseFrame ? priorFrame.clipId : `plot-clip-${++plotClipSequence}`;
+  if (!reuseFrame) {
+    const previousTickSteps = plotTickSteps.get(parent);
+    const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
+      minMajorPixelSpacing: 46,
+      previousStep: previousTickSteps?.x,
+    });
+    const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
+      minMajorPixelSpacing: 34,
+      previousStep: previousTickSteps?.y,
+    });
+    plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
+    for (const value of xTicks.minor) {
+      const x = mapX(value);
+      appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+    }
+    for (const value of yTicks.minor) {
+      const y = mapY(value);
+      appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
+    }
+    for (const value of xTicks.major) {
+      const x = mapX(value);
+      appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
+      appendPlotLabel(svg, xTicks.format(value), x, height-4);
+    }
+    for (const value of yTicks.major) {
+      const y = mapY(value);
+      appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
+      appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
+    }
+    const xAxisY = zeroAxisPosition(yRange, mapY);
+    const yAxisX = zeroAxisPosition(xRange, mapX);
+    if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
+    if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+    appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
+    appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
 
-  const previousTickSteps = plotTickSteps.get(parent);
-  const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
-    minMajorPixelSpacing: 46,
-    previousStep: previousTickSteps?.x,
-  });
-  const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
-    minMajorPixelSpacing: 34,
-    previousStep: previousTickSteps?.y,
-  });
-  plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
-  for (const value of xTicks.minor) {
-    const x = mapX(value);
-    appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+    const defs = document.createElementNS(SVG_NS, "defs");
+    const clip = document.createElementNS(SVG_NS, "clipPath");
+    clip.setAttribute("id", clipId);
+    const clipRect = document.createElementNS(SVG_NS, "rect");
+    for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
+    clip.append(clipRect); defs.append(clip); svg.append(defs);
+    plotFrames.set(parent, { svg, staticKey, clipId, staticCount: svg.childNodes.length });
   }
-  for (const value of yTicks.minor) {
-    const y = mapY(value);
-    appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
-  }
-  for (const value of xTicks.major) {
-    const x = mapX(value);
-    appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
-    appendPlotLabel(svg, xTicks.format(value), x, height-4);
-  }
-  for (const value of yTicks.major) {
-    const y = mapY(value);
-    appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
-    appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
-  }
-  const xAxisY = zeroAxisPosition(yRange, mapY);
-  const yAxisX = zeroAxisPosition(xRange, mapX);
-  if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
-  if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
-  appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
-  appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
-  const clipId = `plot-clip-${++plotClipSequence}`;
-  const defs = document.createElementNS(SVG_NS, "defs");
-  const clip = document.createElementNS(SVG_NS, "clipPath");
-  clip.setAttribute("id", clipId);
-  const clipRect = document.createElementNS(SVG_NS, "rect");
-  for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
-  clip.append(clipRect); defs.append(clip); svg.append(defs);
 
   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
     const value = Number(guide.value);
@@ -756,7 +772,7 @@ function drawPlot(
       svg.append(pointLabel);
     }
   }
-  parent.append(svg);
+  if (!reuseFrame) parent.append(svg);
 
   if (measurementText) appendText(parent, measurementText, "plot-measurement");
   if (controlHint) {
@@ -1469,6 +1485,8 @@ export class InfiniteBoardView {
   private panY = 60;
   private scale = .78;
   private layout?: BoardLayout;
+  private layoutMeasuredSizes?: MeasuredNodeSizes;
+  private layoutSemanticSizes?: string;
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
@@ -1577,6 +1595,34 @@ export class InfiniteBoardView {
       board?.board_id,
       operation?.operation_id,
     );
+    // Parameter updates usually keep card dimensions and placement unchanged.
+    // Try the current widths first; only reflow if semantic or measured sizes
+    // changed. Avoid alternating intrinsic/final-width DOM measurements on
+    // every slider frame, which also forced layout for unrelated math cards.
+    const semanticSizes = board ? JSON.stringify(Object.values(board.nodes).map(node =>
+      [node.id, node.kind, measureSemanticNode(node)])) : undefined;
+    if (!teachingCameraChanged && board && this.board?.board_id === board.board_id
+      && this.layout && this.layoutMeasuredSizes && semanticSizes === this.layoutSemanticSizes) {
+      const candidate = computeBoardLayout(board, this.layoutMeasuredSizes, { regions: this.regionLayouts });
+      if (JSON.stringify(candidate) === JSON.stringify(this.layout)) {
+        const priorSizes = new Map([...this.nodeMeasurements].map(([id, measurement]) => [id, measurement.size]));
+        const sizes = this.syncNodes(board, this.layout, operation?.action, true);
+        const unchanged = Object.keys(sizes).length === priorSizes.size && Object.entries(sizes).every(([id, size]) => {
+          const prior = priorSizes.get(id);
+          return prior && Math.abs(prior.width - size.width) < .5 && Math.abs(prior.height - size.height) < .5;
+        });
+        if (unchanged) {
+          this.board = board;
+          this.operation = operation;
+          this.pointer.hidden = true;
+          this.positionNodes(this.layout);
+          this.syncGroups(board, this.layout, operation?.action);
+          this.renderConnections(board, this.layout);
+          this.renderPointer(board, this.layout, operation);
+          return;
+        }
+      }
+    }
     const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
       ? this.captureReflowAnchor(board) : undefined;
     if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; }
@@ -1618,6 +1664,8 @@ export class InfiniteBoardView {
       layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
     }
     this.layout = layout;
+    this.layoutMeasuredSizes = measuredNodeSizes;
+    this.layoutSemanticSizes = semanticSizes;
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
@@ -2130,7 +2178,7 @@ export class InfiniteBoardView {
     this.disposed = true;
     this.viewport.ownerDocument.fonts?.removeEventListener("loadingdone", this.handleFontsLoaded);
     if (this.fontReflowFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.fontReflowFrame);
-    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.viewport.removeEventListener("contextmenu", this.handleContextMenu);
@@ -2156,9 +2204,9 @@ export class InfiniteBoardView {
   }
 
   private clearBoard(): void {
-    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2174,6 +2222,7 @@ export class InfiniteBoardView {
       if (board.nodes[id]) continue;
       disposePlotExplorer(element);
       disposeGeometryExplorer(element);
+      disposeScene3d(element);
       element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id); this.nodeMeasurements.delete(id);
     }
     for (const node of Object.values(board.nodes)) {
@@ -2198,17 +2247,28 @@ export class InfiniteBoardView {
       applyEmphasisClass(element, latestEmphasis(node));
       const signature = nodeContentSignature(node)
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
-        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "");
+        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "")
+        + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
-        element.replaceChildren();
-        renderContent(
-          element,
-          node,
-          this.resolveAsset,
-          this.scene3dViews[node.id],
-          this.scene3dInputHandler,
-          variableValues,
-        );
+        let updated = false;
+        if (kind === "plot") {
+          try { updated = updatePlotExplorer(element, node, variableValues); }
+          catch { /* Recreate the plot if an incremental update cannot render. */ }
+        }
+        if (kind === "scene3d") {
+          try {
+            updated = updateScene3d(element, node, this.scene3dViews[node.id],
+              variableValues, this.scene3dInputHandler);
+          } catch { /* Recreate through the existing static fallback on failure. */ }
+        }
+        if (!updated) {
+          disposeScene3d(element);
+          element.replaceChildren();
+          renderContent(
+            element, node, this.resolveAsset,
+            this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
+          );
+        }
         this.nodeContentSignatures.set(node.id, signature);
       }
       this.syncNodeFragmentEmphasis(element, node);

@@ -35,6 +35,7 @@ interface SceneMesh {
   target: string;
   solid: boolean;
   triangles: Triangle3d[];
+  surfaceFaces?: Point3d[][];
 }
 
 const MAX_IMPLICIT_SURFACE_TRIANGLES = 20_000;
@@ -60,25 +61,36 @@ export function normalizeScene3dView(view: Scene3dViewState): Scene3dViewState {
   };
 }
 
-export function projectScene3dPoint(
-  point: Point3d,
-  view: Scene3dViewState,
-  scale = 54,
-): ProjectedPoint {
+type Projector = (point: Point3d) => ProjectedPoint;
+const viewProjectors = new WeakMap<Scene3dViewState, Projector>();
+
+function createProjector(view: Scene3dViewState, scale: number): Projector {
   const normalized = normalizeScene3dView(view);
   const cosYaw = Math.cos(normalized.yaw);
   const sinYaw = Math.sin(normalized.yaw);
   const cosPitch = Math.cos(normalized.pitch);
   const sinPitch = Math.sin(normalized.pitch);
-  const horizontal = cosYaw * point.x - sinYaw * point.y;
-  const depthBeforePitch = sinYaw * point.x + cosYaw * point.y;
-  const vertical = cosPitch * point.z - sinPitch * depthBeforePitch;
-  const depth = sinPitch * point.z + cosPitch * depthBeforePitch;
-  return {
-    x: CENTER_X + horizontal * scale * normalized.zoom,
-    y: CENTER_Y - vertical * scale * normalized.zoom,
-    depth,
+  return (point) => {
+    const horizontal = cosYaw * point.x - sinYaw * point.y;
+    const depthBeforePitch = sinYaw * point.x + cosYaw * point.y;
+    const vertical = cosPitch * point.z - sinPitch * depthBeforePitch;
+    const depth = sinPitch * point.z + cosPitch * depthBeforePitch;
+    return {
+      x: CENTER_X + horizontal * scale * normalized.zoom,
+      y: CENTER_Y - vertical * scale * normalized.zoom,
+      depth,
+    };
   };
+}
+
+export function projectScene3dPoint(
+  point: Point3d,
+  view: Scene3dViewState,
+  scale = 54,
+): ProjectedPoint {
+  // Public callers may mutate a view object; only render-owned projectors are cached.
+  return ((scale === 54 ? viewProjectors.get(view) : undefined)
+    ?? createProjector(view, scale))(point);
 }
 
 function svgElement<K extends keyof SVGElementTagNameMap>(
@@ -92,6 +104,35 @@ function svgElement<K extends keyof SVGElementTagNameMap>(
   return element;
 }
 
+// Slots follow painter order, retaining the existing transparency semantics.
+const layerCursors = new WeakMap<SVGElement, number>();
+function beginLayer(layer: SVGElement, reuse: boolean): void {
+  if (!reuse) layer.replaceChildren();
+  layerCursors.set(layer, 0);
+}
+function layerElement<K extends keyof SVGElementTagNameMap>(
+  layer: SVGElement, name: K, attributes: Record<string, string | number> = {},
+): SVGElementTagNameMap[K] {
+  const index = layerCursors.get(layer) ?? 0;
+  layerCursors.set(layer, index + 1);
+  let element = layer.children[index] as SVGElementTagNameMap[K] | undefined;
+  if (!element || element.localName !== name) {
+    const replacement = svgElement(name);
+    if (element) element.replaceWith(replacement);
+    else layer.append(replacement);
+    element = replacement;
+  }
+  for (const [key, value] of Object.entries(attributes)) {
+    const text = String(value);
+    if (element.getAttribute(key) !== text) element.setAttribute(key, text);
+  }
+  return element;
+}
+function endLayer(layer: SVGElement): void {
+  const count = layerCursors.get(layer) ?? 0;
+  while (layer.children.length > count) layer.lastElementChild!.remove();
+}
+
 function safeColor(value: unknown, fallback = "#277c75"): string {
   return typeof value === "string"
     && /^(#[0-9a-fA-F]{6}|teal|blue|purple|orange|red|gray)$/.test(value)
@@ -100,7 +141,7 @@ function safeColor(value: unknown, fallback = "#277c75"): string {
 }
 
 function line(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   from: Point3d,
   to: Point3d,
   view: Scene3dViewState,
@@ -109,14 +150,14 @@ function line(
 ): void {
   const a = projectScene3dPoint(from, view);
   const b = projectScene3dPoint(to, view);
-  const element = svgElement("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y });
+  const element = layerElement(svg, "line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y });
   element.setAttribute("class", className);
   if (color) element.setAttribute("stroke", color);
-  svg.append(element);
+
 }
 
 function polygon(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   points: Point3d[],
   view: Scene3dViewState,
   color: string,
@@ -124,14 +165,14 @@ function polygon(
   className: string,
 ): SVGPolygonElement {
   const projected = points.map((point) => projectScene3dPoint(point, view));
-  const element = svgElement("polygon", {
+  const element = layerElement(svg, "polygon", {
     points: projected.map((point) => `${point.x},${point.y}`).join(" "),
     fill: color,
     "fill-opacity": opacity,
     stroke: color,
   });
   element.setAttribute("class", className);
-  svg.append(element);
+
   return element;
 }
 
@@ -184,6 +225,7 @@ function surfaceMesh(
     points.push(column);
   }
   const triangles: Triangle3d[] = [];
+  const surfaceFaces: Point3d[][] = [];
   for (let xIndex = 0; xIndex < samples; xIndex += 1) {
     for (let yIndex = 0; yIndex < samples; yIndex += 1) {
       const a = points[xIndex]![yIndex]!;
@@ -191,9 +233,10 @@ function surfaceMesh(
       const c = points[xIndex + 1]![yIndex + 1]!;
       const d = points[xIndex]![yIndex + 1]!;
       triangles.push({ points: [a, b, c] }, { points: [a, c, d] });
+      surfaceFaces.push([a, b, c, d]);
     }
   }
-  return { target: objectTarget(object), solid: false, triangles };
+  return { target: objectTarget(object), solid: false, triangles, surfaceFaces };
 }
 
 function interpolateLevel(
@@ -607,14 +650,14 @@ function sectionPlanePoints(
 }
 
 function renderSectionIntersection(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   section: Record<string, any>,
   intersection: Scene3dSectionPath,
   view: Scene3dViewState,
 ): void {
   const projected = intersection.points.map((point) => projectScene3dPoint(point, view));
   if (projected.length < 2) return;
-  const path = svgElement("path", {
+  const path = layerElement(svg, "path", {
     d: `${projected.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ")}${intersection.closed ? " Z" : ""}`,
     fill: intersection.solid && intersection.closed ? safeColor(section.color, "#d28a31") : "none",
     "fill-opacity": intersection.solid && intersection.closed ? .38 : 0,
@@ -624,215 +667,304 @@ function renderSectionIntersection(
   path.dataset.sectionId = String(section.id ?? section.as ?? "");
   path.dataset.id = String(section.id ?? section.as ?? "");
   path.dataset.targetId = intersection.target;
-  svg.append(path);
+
 }
 
 function renderSurface(
-  svg: SVGSVGElement,
-  object: Record<string, any>,
-  view: Scene3dViewState,
-  variables: Record<string, number>,
-): void {
-  const samples = Math.max(4, Math.min(24, Number(object.samples) || 12));
-  const evaluate = compileMathExpression(object.expression, ["x", "y", ...Object.keys(variables)]);
-  const color = safeColor(object.color, "#3479a8");
-  const point = (xIndex: number, yIndex: number): Point3d => {
-    const x = object.x_range.min
-      + (object.x_range.max - object.x_range.min) * xIndex / samples;
-    const y = object.y_range.min
-      + (object.y_range.max - object.y_range.min) * yIndex / samples;
-    return { x, y, z: evaluate({ ...variables, x, y }) };
-  };
-  const faces: Array<{ points: Point3d[]; depth: number }> = [];
-  for (let x = 0; x < samples; x += 1) {
-    for (let y = 0; y < samples; y += 1) {
-      const points = [point(x, y), point(x + 1, y), point(x + 1, y + 1), point(x, y + 1)];
-      const depth = points.reduce((sum, candidate) =>
-        sum + projectScene3dPoint(candidate, view).depth, 0) / 4;
-      faces.push({ points, depth });
-    }
-  }
-  faces.sort((left, right) => left.depth - right.depth);
-  for (const face of faces) {
-    const element = polygon(svg, face.points, view, color, .22, "scene3d-surface-cell");
-    element.dataset.id = String(object.id ?? object.as ?? "");
-  }
-}
-
-function renderImplicitSurface(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   object: Record<string, any>,
   mesh: SceneMesh,
   view: Scene3dViewState,
 ): void {
   const color = safeColor(object.color, "#3479a8");
-  const faces = mesh.triangles.map((triangle) => ({
-    points: triangle.points,
-    depth: triangle.points.reduce((sum, point) =>
-      sum + projectScene3dPoint(point, view).depth, 0) / 3,
-  })).sort((left, right) => left.depth - right.depth);
+  // Shared mesh vertices are evaluated once per mesh and projected once per view.
+  const projected = new Map<Point3d, ProjectedPoint>();
+  const project = (point: Point3d) => {
+    let value = projected.get(point);
+    if (!value) {
+      value = projectScene3dPoint(point, view);
+      projected.set(point, value);
+    }
+    return value;
+  };
+  const faces = (mesh.surfaceFaces ?? []).map(points => {
+    const vertices = points.map(project);
+    return { vertices, depth: vertices.reduce((sum, point) => sum + point.depth, 0) / 4 };
+  }).sort((left, right) => left.depth - right.depth);
   for (const face of faces) {
-    const element = polygon(
-      svg,
-      face.points,
-      view,
-      color,
-      .24,
-      "scene3d-implicit-surface-cell",
-    );
+    const element = layerElement(svg, "polygon", {
+      points: face.vertices.map(point => `${point.x},${point.y}`).join(" "),
+      fill: color, "fill-opacity": .22, stroke: color,
+      class: "scene3d-surface-cell",
+    });
+    element.dataset.id = objectTarget(object);
+
+  }
+}
+
+function renderImplicitSurface(
+  svg: SVGElement,
+  object: Record<string, any>,
+  mesh: SceneMesh,
+  view: Scene3dViewState,
+): void {
+  const color = safeColor(object.color, "#3479a8");
+  const projected = new Map<Point3d, ProjectedPoint>();
+  const project = (point: Point3d) => {
+    let value = projected.get(point);
+    if (!value) {
+      value = projectScene3dPoint(point, view);
+      projected.set(point, value);
+    }
+    return value;
+  };
+  const faces = mesh.triangles.map((triangle) => {
+    const vertices = triangle.points.map(project);
+    return { vertices, depth: vertices.reduce((sum, point) => sum + point.depth, 0) / 3 };
+  }).sort((left, right) => left.depth - right.depth);
+  for (const face of faces) {
+    const element = layerElement(svg, "polygon", {
+      points: face.vertices.map(point => `${point.x},${point.y}`).join(" "),
+      fill: color, "fill-opacity": .24, stroke: color,
+      class: "scene3d-implicit-surface-cell",
+    });
     element.dataset.id = String(object.id ?? object.as ?? "");
   }
 }
 
+interface SceneRenderState {
+  frame: SVGGElement;
+  base: SVGGElement;
+  sections: SVGGElement;
+  highlights: SVGGElement;
+  baseGeometryKey?: string;
+  sectionGeometryKey?: string;
+  highlightGeometryKey?: string;
+  sectionGeometry?: Array<{ section: Record<string, any>; plane?: Point3d[]; paths: Scene3dSectionPath[] }>;
+  baseKey?: string;
+  sectionKey?: string;
+  highlightKey?: string;
+  fitKey?: string;
+}
+const sceneRenderStates = new WeakMap<SVGElement, SceneRenderState>();
+
+export function scene3dVariableSignature(
+  node: Record<string, any>, variables: Record<string, number>,
+): string {
+  return JSON.stringify(expressionVariables(node.content?.objects ?? [], variables));
+}
+
+interface PreparedScene {
+  meshKey: string;
+  baseKey: string;
+  sectionKey: string;
+  highlightKey: string;
+  meshes: SceneMesh[];
+}
+function prepareScene(content: Record<string, any>, variables: Record<string, number>, prior?: PreparedScene): PreparedScene {
+  const objects = content.objects ?? [];
+  const meshKey = JSON.stringify([objects, expressionVariables(objects, variables)]);
+  return {
+    meshKey,
+    baseKey: JSON.stringify([content.axes, meshKey]),
+    sectionKey: JSON.stringify([content.sections, meshKey]),
+    highlightKey: JSON.stringify(content.highlights),
+    meshes: prior?.meshKey === meshKey ? prior.meshes : sceneMeshes(content, variables),
+  };
+}
+
 function renderScene(
-  svg: SVGSVGElement,
+  svg: SVGElement,
   content: Record<string, any>,
   view: Scene3dViewState,
   variables: Record<string, number>,
+  prepared: PreparedScene,
 ): void {
-  svg.replaceChildren();
-  const meshes = sceneMeshes(content, variables);
-  if (content.axes !== false) {
-    for (const [axis, end, color] of [
-      ["x", { x: 2.7, y: 0, z: 0 }, "#c75b52"],
-      ["y", { x: 0, y: 2.7, z: 0 }, "#377fa4"],
-      ["z", { x: 0, y: 0, z: 2.7 }, "#377568"],
-    ] as const) {
-      line(svg, { x: 0, y: 0, z: 0 }, end, view, "scene3d-axis", color);
-      const labelPoint = projectScene3dPoint(end, view);
-      const label = svgElement("text", { x: labelPoint.x + 5, y: labelPoint.y - 4 });
-      label.textContent = axis;
-      label.setAttribute("class", "scene3d-axis-label");
-      svg.append(label);
-    }
+  let state = sceneRenderStates.get(svg);
+  if (!state || state.frame.parentNode !== svg) {
+    state = {
+      frame: svgElement("g"), base: svgElement("g"),
+      sections: svgElement("g"), highlights: svgElement("g"),
+    };
+    state.frame.append(state.base, state.sections, state.highlights);
+    svg.replaceChildren(state.frame);
+    sceneRenderStates.set(svg, state);
   }
-  const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
-  for (const object of content.objects ?? []) {
-    const color = safeColor(object.color);
-    if (object.kind === "surface") {
-      renderSurface(svg, object, view, variables);
-      continue;
-    }
-    if (object.kind === "implicit_surface") {
-      const mesh = meshes.find((candidate) =>
-        candidate.target === objectTarget(object));
-      if (mesh) renderImplicitSurface(svg, object, mesh, view);
-      continue;
-    }
-    if (object.kind === "box") {
-      for (const points of boxFaces(object)) {
-        const depth = points.reduce((sum, point) =>
-          sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-        faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
+  const viewKey = JSON.stringify(view);
+  const baseGeometryKey = prepared.baseKey;
+  const baseKey = `${baseGeometryKey}\0${viewKey}`;
+  viewProjectors.set(view, createProjector(view, 54));
+  const meshes = prepared.meshes;
+  if (state.baseKey !== baseKey) {
+    beginLayer(state.base, state.baseGeometryKey === baseGeometryKey);
+    const svg = state.base;
+    if (content.axes !== false) {
+      for (const [axis, end, color] of [
+        ["x", { x: 2.7, y: 0, z: 0 }, "#c75b52"],
+        ["y", { x: 0, y: 2.7, z: 0 }, "#377fa4"],
+        ["z", { x: 0, y: 0, z: 2.7 }, "#377568"],
+      ] as const) {
+        line(svg, { x: 0, y: 0, z: 0 }, end, view, "scene3d-axis", color);
+        const labelPoint = projectScene3dPoint(end, view);
+        const label = layerElement(svg, "text", { x: labelPoint.x + 5, y: labelPoint.y - 4 });
+        if (label.textContent !== axis) label.textContent = axis;
+        label.setAttribute("class", "scene3d-axis-label");
       }
-      continue;
     }
-    const center = object.center as Point3d;
-    const projected = projectScene3dPoint(center, view);
-    if (object.kind === "sphere") {
-      const radius = object.radius * 54 * view.zoom;
-      const sphere = svgElement("ellipse", {
-        cx: projected.x, cy: projected.y, rx: radius, ry: radius * .74,
-        fill: color, "fill-opacity": .28, stroke: color,
-      });
-      sphere.setAttribute("class", "scene3d-solid");
-      sphere.dataset.id = String(object.id ?? object.as ?? "");
-      svg.append(sphere);
-    } else {
-      const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
-      const bottom = projectScene3dPoint({ ...center, z: center.z - object.height / 2 }, view);
-      const radius = object.radius * 54 * view.zoom;
-      if (object.kind === "cone") {
-        const cone = svgElement("path", {
-          d: `M ${top.x} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} Z`,
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
+    for (const object of content.objects ?? []) {
+      const color = safeColor(object.color);
+      if (object.kind === "surface") {
+        const mesh = meshes.find(candidate => candidate.target === objectTarget(object));
+        if (mesh) renderSurface(svg, object, mesh, view);
+        continue;
+      }
+      if (object.kind === "implicit_surface") {
+        const mesh = meshes.find((candidate) =>
+          candidate.target === objectTarget(object));
+        if (mesh) renderImplicitSurface(svg, object, mesh, view);
+        continue;
+      }
+      if (object.kind === "box") {
+        for (const points of boxFaces(object)) {
+          const depth = points.reduce((sum, point) =>
+            sum + projectScene3dPoint(point, view).depth, 0) / points.length;
+          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
+        }
+        continue;
+      }
+      const center = object.center as Point3d;
+      const projected = projectScene3dPoint(center, view);
+      if (object.kind === "sphere") {
+        const radius = object.radius * 54 * view.zoom;
+        const sphere = layerElement(svg, "ellipse", {
+          cx: projected.x, cy: projected.y, rx: radius, ry: radius * .74,
           fill: color, "fill-opacity": .28, stroke: color,
         });
-        cone.setAttribute("class", "scene3d-solid");
-        cone.dataset.id = String(object.id ?? object.as ?? "");
-        svg.append(cone);
+        sphere.setAttribute("class", "scene3d-solid");
+        sphere.dataset.id = String(object.id ?? object.as ?? "");
+
       } else {
-        const cylinder = svgElement("path", {
-          d: `M ${top.x - radius} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} L ${top.x + radius} ${top.y} A ${radius} ${radius * .3} 0 0 0 ${top.x - radius} ${top.y} Z`,
-          fill: color, "fill-opacity": .25, stroke: color,
-        });
-        cylinder.setAttribute("class", "scene3d-solid");
-        cylinder.dataset.id = String(object.id ?? object.as ?? "");
-        svg.append(cylinder);
+        const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
+        const bottom = projectScene3dPoint({ ...center, z: center.z - object.height / 2 }, view);
+        const radius = object.radius * 54 * view.zoom;
+        if (object.kind === "cone") {
+          const cone = layerElement(svg, "path", {
+            d: `M ${top.x} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} Z`,
+            fill: color, "fill-opacity": .28, stroke: color,
+          });
+          cone.setAttribute("class", "scene3d-solid");
+          cone.dataset.id = String(object.id ?? object.as ?? "");
+
+        } else {
+          const cylinder = layerElement(svg, "path", {
+            d: `M ${top.x - radius} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} L ${top.x + radius} ${top.y} A ${radius} ${radius * .3} 0 0 0 ${top.x - radius} ${top.y} Z`,
+            fill: color, "fill-opacity": .25, stroke: color,
+          });
+          cylinder.setAttribute("class", "scene3d-solid");
+          cylinder.dataset.id = String(object.id ?? object.as ?? "");
+
+        }
       }
     }
-  }
-  faces.sort((left, right) => left.depth - right.depth);
-  for (const face of faces) {
-    const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
-    element.dataset.id = face.objectId;
-  }
-  for (const section of content.sections ?? []) {
-    const display = (section.display ?? "plane") as SectionDisplay;
-    if (display !== "intersection") {
-      const plane = polygon(
-        svg,
-        sectionPlanePoints(section, meshes),
-        view,
-        safeColor(section.color, "#d28a31"),
-        .12,
-        "scene3d-section",
-      );
-      plane.dataset.sectionId = String(section.id ?? section.as ?? "");
-      plane.dataset.id = String(section.id ?? section.as ?? "");
+    faces.sort((left, right) => left.depth - right.depth);
+    for (const face of faces) {
+      const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+      element.dataset.id = face.objectId;
     }
-    for (const intersection of scene3dSectionIntersections(content, section, variables)) {
-      renderSectionIntersection(svg, section, intersection, view);
-    }
+    endLayer(state.base);
+    state.baseGeometryKey = baseGeometryKey;
+    state.baseKey = baseKey;
   }
-  for (const highlight of content.highlights ?? []) {
-    const points = highlight.points as Point3d[];
-    const color = safeColor(highlight.color, "#d04f45");
-    const id = String(highlight.id ?? highlight.as ?? "");
-    let labelPoint: ProjectedPoint | undefined;
-    if (highlight.kind === "point") {
-      labelPoint = projectScene3dPoint(points[0]!, view);
-      const point = svgElement("circle", {
-        cx: labelPoint.x,
-        cy: labelPoint.y,
-        r: 7,
-        fill: color,
-        stroke: "#fff",
-        "stroke-width": 2,
-      });
-      point.setAttribute("class", "scene3d-highlight scene3d-highlight-point");
-      point.dataset.id = id;
-      svg.append(point);
-    } else if (highlight.kind === "edge") {
-      const from = projectScene3dPoint(points[0]!, view);
-      const to = projectScene3dPoint(points[1]!, view);
-      labelPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, depth: 0 };
-      const edge = svgElement("line", {
-        x1: from.x, y1: from.y, x2: to.x, y2: to.y,
-        stroke: color, "stroke-width": 5, "stroke-linecap": "round",
-      });
-      edge.setAttribute("class", "scene3d-highlight scene3d-highlight-edge");
-      edge.dataset.id = id;
-      svg.append(edge);
-    } else {
-      const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
-      face.dataset.id = id;
-      const projected = points.map((point) => projectScene3dPoint(point, view));
-      labelPoint = {
-        x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
-        y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
-        depth: 0,
-      };
+  const sectionGeometryKey = prepared.sectionKey;
+  const sectionKey = `${sectionGeometryKey}\0${viewKey}`;
+  if (state.sectionKey !== sectionKey) {
+    const reuse = state.sectionGeometryKey === sectionGeometryKey;
+    if (!reuse) {
+      state.sectionGeometry = (content.sections ?? []).map((section: Record<string, any>) => ({
+        section,
+        plane: section.display === "intersection" ? undefined : sectionPlanePoints(section, meshes),
+        paths: scene3dSectionIntersections(content, section, variables),
+      }));
     }
-    if (highlight.label && labelPoint) {
-      const label = svgElement("text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
-      label.textContent = String(highlight.label);
-      label.setAttribute("class", "scene3d-highlight-label");
-      svg.append(label);
+    beginLayer(state.sections, reuse);
+    const svg = state.sections;
+    for (const { section, plane: points, paths } of state.sectionGeometry ?? []) {
+      if (points) {
+        const plane = polygon(svg, points, view, safeColor(section.color, "#d28a31"), .12, "scene3d-section");
+        plane.dataset.sectionId = String(section.id ?? section.as ?? "");
+        plane.dataset.id = String(section.id ?? section.as ?? "");
+      }
+      for (const intersection of paths) renderSectionIntersection(svg, section, intersection, view);
     }
+    endLayer(state.sections);
+    state.sectionGeometryKey = sectionGeometryKey;
+    state.sectionKey = sectionKey;
   }
+  const highlightGeometryKey = prepared.highlightKey;
+  const highlightKey = `${highlightGeometryKey}\0${viewKey}`;
+  if (state.highlightKey !== highlightKey) {
+    beginLayer(state.highlights, state.highlightGeometryKey === highlightGeometryKey);
+    const svg = state.highlights;
+    for (const highlight of content.highlights ?? []) {
+      const points = highlight.points as Point3d[];
+      const color = safeColor(highlight.color, "#d04f45");
+      const id = String(highlight.id ?? highlight.as ?? "");
+      let labelPoint: ProjectedPoint | undefined;
+      if (highlight.kind === "point") {
+        labelPoint = projectScene3dPoint(points[0]!, view);
+        const point = layerElement(svg, "circle", {
+          cx: labelPoint.x,
+          cy: labelPoint.y,
+          r: 7,
+          fill: color,
+          stroke: "#fff",
+          "stroke-width": 2,
+        });
+        point.setAttribute("class", "scene3d-highlight scene3d-highlight-point");
+        point.dataset.id = id;
+
+      } else if (highlight.kind === "edge") {
+        const from = projectScene3dPoint(points[0]!, view);
+        const to = projectScene3dPoint(points[1]!, view);
+        labelPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, depth: 0 };
+        const edge = layerElement(svg, "line", {
+          x1: from.x, y1: from.y, x2: to.x, y2: to.y,
+          stroke: color, "stroke-width": 5, "stroke-linecap": "round",
+        });
+        edge.setAttribute("class", "scene3d-highlight scene3d-highlight-edge");
+        edge.dataset.id = id;
+
+      } else {
+        const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
+        face.dataset.id = id;
+        const projected = points.map((point) => projectScene3dPoint(point, view));
+        labelPoint = {
+          x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
+          y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
+          depth: 0,
+        };
+      }
+      if (highlight.label && labelPoint) {
+        const label = layerElement(svg, "text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
+        if (label.textContent !== String(highlight.label)) label.textContent = String(highlight.label);
+        label.setAttribute("class", "scene3d-highlight-label");
+
+      }
+    }
+    endLayer(state.highlights);
+    state.highlightGeometryKey = highlightGeometryKey;
+    state.highlightKey = highlightKey;
+  }
+  // Section-only updates retain the mesh projection and fit transform.
+  if (state.fitKey === baseKey) return;
   const baseView = { ...view, zoom: 1 };
+  viewProjectors.set(baseView, createProjector(baseView, 54));
+  const included = new Set<Point3d>();
   let minX = CENTER_X, maxX = CENTER_X, minY = CENTER_Y, maxY = CENTER_Y;
   const include = (point: Point3d) => {
+    if (included.has(point)) return;
+    included.add(point);
     const projected = projectScene3dPoint(point, baseView);
     if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
     minX = Math.min(minX, projected.x); maxX = Math.max(maxX, projected.x);
@@ -848,19 +980,48 @@ function renderScene(
       (HEIGHT - margin * 2) / Math.max(1, maxY - minY));
     const centerX = CENTER_X + ((minX + maxX) / 2 - CENTER_X) * view.zoom;
     const centerY = CENTER_Y + ((minY + maxY) / 2 - CENTER_Y) * view.zoom;
-    const frame = svgElement("g", {
-      class: "scene3d-fitted-frame",
-      transform: `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`,
-    });
-    frame.append(...Array.from(svg.childNodes));
-    svg.append(frame);
+    state.frame.setAttribute("class", "scene3d-fitted-frame");
+    state.frame.setAttribute("transform",
+      `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`);
+  } else {
+    state.frame.removeAttribute("class");
+    state.frame.removeAttribute("transform");
   }
+  state.fitKey = baseKey;
 
 }
 
 function inputMethod(pointerType: string | undefined): StudentInputMethod {
   if (pointerType === "touch" || pointerType === "pen") return pointerType;
   return pointerType === "mouse" || !pointerType ? "mouse" : "unknown";
+}
+
+interface SceneController {
+  shell: HTMLElement;
+  titleKey: string;
+  dispose: () => void;
+  update: (node: Record<string, any>, storedView: Scene3dViewState | undefined,
+    variables: Record<string, number>, onInput?: Scene3dViewInputHandler) => void;
+}
+const sceneControllers = new WeakMap<HTMLElement, SceneController>();
+function sceneTitleKey(node: Record<string, any>): string {
+  return JSON.stringify([node.role, node.content?.title, node.content?.label]);
+}
+
+export function disposeScene3d(parent: HTMLElement): void {
+  sceneControllers.get(parent)?.dispose();
+  sceneControllers.delete(parent);
+}
+
+export function updateScene3d(
+  parent: HTMLElement, node: Record<string, any>, storedView: Scene3dViewState | undefined,
+  variables: Record<string, number>, onInput?: Scene3dViewInputHandler,
+): boolean {
+  const controller = sceneControllers.get(parent);
+  if (!controller || controller.shell.parentNode !== parent
+    || controller.titleKey !== sceneTitleKey(node)) return false;
+  controller.update(node, storedView, variables, onInput);
+  return true;
 }
 
 export function renderScene3d(
@@ -870,9 +1031,11 @@ export function renderScene3d(
   variables: Record<string, number>,
   onInput?: Scene3dViewInputHandler,
 ): void {
-  const content = node.content ?? {};
+  disposeScene3d(parent);
+  let content = node.content ?? {};
   let view = normalizeScene3dView(storedView ?? content.camera ?? { yaw: .65, pitch: .5, zoom: 1 });
-  const initial = normalizeScene3dView(content.camera ?? view);
+  let initial = normalizeScene3dView(content.camera ?? view);
+  let prepared = prepareScene(content, variables);
   const shell = document.createElement("div");
   shell.className = "scene3d-runtime";
   shell.dataset.ollScene3d = node.id;
@@ -886,9 +1049,11 @@ export function renderScene3d(
     control: Scene3dViewControl,
     input: StudentInputMethod,
   ) => {
+    finishOrbit();
+    finishWheel();
     const operationId = onInput?.(node.id, view, { phase: "start", control, input });
     view = normalizeScene3dView(next);
-    renderScene(svg, content, view, variables);
+    renderScene(svg, content, view, variables, prepared);
     onInput?.(node.id, view, {
       phase: "commit", control, input,
       ...(typeof operationId === "string" ? { operation_id: operationId } : {}),
@@ -918,18 +1083,26 @@ export function renderScene3d(
     event.detail === 0 ? "keyboard" : "mouse",
   ));
   controls.append(reset);
-  let drag: { x: number; y: number; start: Scene3dViewState; input: StudentInputMethod; operationId?: string } | undefined;
+  const hostWindow = parent.ownerDocument.defaultView!;
+  let orbitFrame: number | undefined;
+  const cancelOrbitFrame = () => {
+    if (orbitFrame !== undefined) hostWindow.cancelAnimationFrame(orbitFrame);
+    orbitFrame = undefined;
+  };
+  let drag: { pointerId: number; x: number; y: number; start: Scene3dViewState; input: StudentInputMethod; operationId?: string } | undefined;
   svg.addEventListener("pointerdown", (event) => {
+    if (drag) return;
+    finishWheel();
     event.preventDefault();
     event.stopPropagation();
     svg.setPointerCapture(event.pointerId);
     const input = inputMethod(event.pointerType);
     const operationId = onInput?.(node.id, view, { phase: "start", control: "orbit", input });
-    drag = { x: event.clientX, y: event.clientY, start: { ...view }, input,
+    drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, start: { ...view }, input,
       ...(typeof operationId === "string" ? { operationId } : {}) };
   });
   svg.addEventListener("pointermove", (event) => {
-    if (!drag) return;
+    if (!drag || event.pointerId !== drag.pointerId) return;
     event.preventDefault();
     event.stopPropagation();
     view = normalizeScene3dView({
@@ -937,26 +1110,56 @@ export function renderScene3d(
       yaw: drag.start.yaw + (event.clientX - drag.x) * .012,
       pitch: drag.start.pitch - (event.clientY - drag.y) * .01,
     });
-    renderScene(svg, content, view, variables);
-    onInput?.(node.id, view, { phase: "update", control: "orbit", input: drag.input,
-      ...(drag.operationId ? { operation_id: drag.operationId } : {}) });
+    if (orbitFrame === undefined) orbitFrame = hostWindow.requestAnimationFrame(() => {
+      orbitFrame = undefined;
+      if (!drag) return;
+      renderScene(svg, content, view, variables, prepared);
+      onInput?.(node.id, view, { phase: "update", control: "orbit", input: drag.input,
+        ...(drag.operationId ? { operation_id: drag.operationId } : {}) });
+    });
   });
-  const finishDrag = (event: PointerEvent) => {
+  const finishOrbit = () => {
     if (!drag) return;
-    event.stopPropagation();
-    onInput?.(node.id, view, { phase: "commit", control: "orbit", input: drag.input,
-      ...(drag.operationId ? { operation_id: drag.operationId } : {}) });
+    cancelOrbitFrame();
+    renderScene(svg, content, view, variables, prepared);
+    const finished = drag;
     drag = undefined;
+    onInput?.(node.id, view, { phase: "commit", control: "orbit", input: finished.input,
+      ...(finished.operationId ? { operation_id: finished.operationId } : {}) });
+  };
+  const finishDrag = (event: PointerEvent) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    event.stopPropagation();
+    finishOrbit();
   };
   svg.addEventListener("pointerup", finishDrag);
   svg.addEventListener("pointercancel", finishDrag);
+  svg.addEventListener("lostpointercapture", finishDrag);
+  let wheelFrame: number | undefined;
+  const cancelWheelFrame = () => {
+    if (wheelFrame !== undefined) hostWindow.cancelAnimationFrame(wheelFrame);
+    wheelFrame = undefined;
+  };
   let wheelGesture: {
     operationId?: string;
     timer?: ReturnType<typeof setTimeout>;
   } | undefined;
+  const finishWheel = () => {
+    if (!wheelGesture) return;
+    if (wheelGesture.timer) clearTimeout(wheelGesture.timer);
+    cancelWheelFrame();
+    renderScene(svg, content, view, variables, prepared);
+    const finished = wheelGesture;
+    wheelGesture = undefined;
+    onInput?.(node.id, view, {
+      phase: "commit", control: "zoom", input: "mouse",
+      ...(finished.operationId ? { operation_id: finished.operationId } : {}),
+    });
+  };
   svg.addEventListener("wheel", (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (drag) return;
     if (!wheelGesture) {
       const operationId = onInput?.(node.id, view, {
         phase: "start",
@@ -969,31 +1172,49 @@ export function renderScene3d(
       ...view,
       zoom: view.zoom * Math.exp(-event.deltaY * .0015),
     });
-    renderScene(svg, content, view, variables);
-    onInput?.(node.id, view, {
-      phase: "update",
-      control: "zoom",
-      input: "mouse",
-      ...(wheelGesture.operationId ? { operation_id: wheelGesture.operationId } : {}),
-    });
-    if (wheelGesture.timer) clearTimeout(wheelGesture.timer);
-    wheelGesture.timer = setTimeout(() => {
+    if (wheelFrame === undefined) wheelFrame = hostWindow.requestAnimationFrame(() => {
+      wheelFrame = undefined;
       if (!wheelGesture) return;
+      renderScene(svg, content, view, variables, prepared);
       onInput?.(node.id, view, {
-        phase: "commit",
-        control: "zoom",
-        input: "mouse",
+        phase: "update", control: "zoom", input: "mouse",
         ...(wheelGesture.operationId ? { operation_id: wheelGesture.operationId } : {}),
       });
-      wheelGesture = undefined;
-    }, 140);
+    });
+    if (wheelGesture.timer) clearTimeout(wheelGesture.timer);
+    wheelGesture.timer = setTimeout(finishWheel, 140);
   }, { passive: false });
-  renderScene(svg, content, view, variables);
+  renderScene(svg, content, view, variables, prepared);
   const fallback = document.createElement("p");
   fallback.className = "scene3d-fallback";
   fallback.textContent = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
   shell.append(controls, svg, fallback);
   parent.append(shell);
+  sceneControllers.set(parent, {
+    shell, titleKey: sceneTitleKey(node),
+    dispose() {
+      cancelOrbitFrame();
+      cancelWheelFrame();
+      drag = undefined;
+      if (wheelGesture?.timer) clearTimeout(wheelGesture.timer);
+      wheelGesture = undefined;
+      onInput = undefined;
+    },
+    update(nextNode, storedView, nextVariables, nextInput) {
+      content = nextNode.content ?? {};
+      variables = nextVariables;
+      prepared = prepareScene(content, variables, prepared);
+      onInput = nextInput;
+      // A delayed runtime echo must not rewind the most recent local pointer position.
+      if (!drag && !wheelGesture) view = normalizeScene3dView(storedView ?? content.camera ?? view);
+      initial = normalizeScene3dView(content.camera ?? view);
+      const label = textLabel(content.title, "可旋转三维场景");
+      if (svg.getAttribute("aria-label") !== label) svg.setAttribute("aria-label", label);
+      const explanation = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
+      if (fallback.textContent !== explanation) fallback.textContent = explanation;
+      renderScene(svg, content, view, variables, prepared);
+    },
+  });
 }
 
 function textLabel(value: unknown, fallback: string): string {
