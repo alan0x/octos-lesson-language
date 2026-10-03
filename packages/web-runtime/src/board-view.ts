@@ -772,7 +772,11 @@ function drawPlot(
       svg.append(pointLabel);
     }
   }
-  if (!reuseFrame) parent.append(svg);
+  // Explorer redraws keep the previous SVG mounted; a new frame replaces it.
+  if (!reuseFrame) {
+    if (priorFrame?.svg.parentNode === parent) priorFrame.svg.replaceWith(svg);
+    else parent.append(svg);
+  }
 
   if (measurementText) appendText(parent, measurementText, "plot-measurement");
   if (controlHint) {

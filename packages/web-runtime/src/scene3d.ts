@@ -1091,10 +1091,11 @@ export function renderScene3d(
   };
   let drag: { pointerId: number; x: number; y: number; start: Scene3dViewState; input: StudentInputMethod; operationId?: string } | undefined;
   svg.addEventListener("pointerdown", (event) => {
-    if (drag) return;
-    finishWheel();
     event.preventDefault();
     event.stopPropagation();
+    // Extra fingers belong to the orbit; they must not reach board navigation.
+    if (drag) return;
+    finishWheel();
     svg.setPointerCapture(event.pointerId);
     const input = inputMethod(event.pointerType);
     const operationId = onInput?.(node.id, view, { phase: "start", control: "orbit", input });
