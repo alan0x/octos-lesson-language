@@ -2444,7 +2444,15 @@ export class InfiniteBoardView {
     const notify = (timestamp: number): void => {
       const camera = this.getCameraState();
       for (const listener of this.cameraListeners) listener(camera);
-      if (timestamp < this.cameraNotifyUntil) this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      // Slow WebViews can deliver the final scheduled frame before the CSS
+      // transition has visibly settled. Keep the ink camera in step until the
+      // visible transform reaches its target, not only for a fixed interval.
+      const cameraUnsettled = Math.abs(camera.panX - this.panX) >= .01
+        || Math.abs(camera.panY - this.panY) >= .01
+        || Math.abs(camera.scale - this.scale) >= .0001;
+      if (timestamp < this.cameraNotifyUntil || cameraUnsettled) {
+        this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      }
       else this.cameraFrame = undefined;
     };
     this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
