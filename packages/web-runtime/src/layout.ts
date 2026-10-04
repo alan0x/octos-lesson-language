@@ -55,10 +55,12 @@ export interface RegionLayoutConstraint {
     /** `reflection`: a thinking-question card placed directly under its anchor card. */
     kind?: "control" | "task" | "reflection";
     anchorNodeId: string;
+    /** Display owner; only its teaching row reserves space for this attachment. */
+    ownerNodeId?: string;
     /**
      * All semantic visuals controlled by this attachment. When present, the
-     * host UI is placed below their union instead of below only the final
-     * visual that happened to expose the control.
+     * dependency set can span teaching rows; it does not imply display ownership
+     * in each row. Controls default to the first target, tasks to anchorNodeId.
      */
     anchorNodeIds?: string[];
     width: number;

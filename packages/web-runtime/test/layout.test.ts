@@ -1191,3 +1191,50 @@ test("a thinking-question card opens under its anchor and moves only the content
   assert.equal(after.nodes.z!.y, before.nodes.z!.y + 90 + 16, "the card below moves down once");
   assert.deepEqual(after.nodes.v, before.nodes.v, "the visual beside it stays");
 });
+
+
+test("cross-row dependencies do not reserve a shared task twice", () => {
+  const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot"), c: card("c", "plot") });
+  const measured = { a: { width: 440, height: 380 }, b: { width: 440, height: 360 }, c: { width: 440, height: 360 } };
+  for (const width of [1920, 700]) {
+    const control = { id: "slider", kind: "control" as const, anchorNodeId: "c", ownerNodeId: "a",
+      anchorNodeIds: ["a", "b", "c"], width: 360, height: 34 };
+    const task = { id: "task", kind: "task" as const, anchorNodeId: "c", ownerNodeId: "c",
+      anchorNodeIds: ["a", "b", "c"], width: 330, height: 191 };
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "1", c: "2" },
+      plannedSteps: { "1": { visual: 2 }, "2": { visual: 1 } }, composition: { ...wideComposition, width }, attachments: [control] };
+    const before = computeBoardLayout(board, measured, { regions: { r: region } });
+    const opened = computeBoardLayout(board, measured, { regions: { r: { ...region, attachments: [control, task] } } });
+    assert.deepEqual(opened.nodes.a, before.nodes.a);
+    assert.deepEqual(opened.nodes.b, before.nodes.b);
+    assert.deepEqual(opened.attachments.slider, before.attachments.slider, "the shared slider stays in its first row");
+    assert.equal(opened.nodes.c!.y, before.nodes.c!.y, "opening a later-row task leaves no phantom space in the first row");
+    assert.ok(opened.attachments.task!.y >= opened.nodes.c!.y + opened.nodes.c!.height);
+    assert.equal(Object.keys(opened.attachments).length, 2);
+  }
+});
+
+test("an attachment waits for its declared owner and preserves multiple independent tasks", () => {
+  const board = emptyBoard({ a: card("a", "plot"), b: card("b", "plot") });
+  const task = { id: "first", kind: "task" as const, anchorNodeId: "b", ownerNodeId: "b", anchorNodeIds: ["a", "b"], width: 330, height: 150 };
+  for (const width of [1920, 700]) {
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "2" },
+      composition: { ...wideComposition, width }, attachments: [task, { ...task, id: "second", height: 170 }] };
+    const partial = structuredClone(board); delete partial.nodes.b;
+    const pending = computeBoardLayout(partial, {}, { regions: { r: region } });
+    assert.deepEqual(pending.attachments, {}, "future ownership does not fall back to an earlier dependency");
+    const ready = computeBoardLayout(board, {}, { regions: { r: region } });
+    assert.ok(ready.attachments.first && ready.attachments.second, "neither task is overwritten during clustering");
+    assert.ok(ready.attachments.second!.y >= ready.attachments.first!.y + ready.attachments.first!.height);
+  }
+});
+
+
+test("a task and an explanation anchored under the same visual do not overlap", () => {
+  const board = emptyBoard({ a: card("a", "plot"), n: card("n", "note") });
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", n: "2" },
+    composition: wideComposition, relations: { n: ["a"] },
+    attachments: [{ id: "task", kind: "task" as const, anchorNodeId: "a", width: 330, height: 191 }] };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  assert.ok(layout.nodes.n!.y >= layout.attachments.task!.y + layout.attachments.task!.height);
+});
