@@ -1552,6 +1552,15 @@ export class InfiniteBoardView {
     });
   };
   private readonly hostWindow: Window;
+  private readonly handleCameraTransitionEnd = (event: TransitionEvent): void => this.onCameraTransitionEnd(event);
+
+  private onCameraTransitionEnd(event: TransitionEvent): void {
+    if (event.target !== this.world || event.propertyName !== "transform") return;
+    // The convergence tolerance may be reached just before CSS finishes.
+    // Deliver the exact final transform once, without another repaint loop.
+    const camera = this.getCameraState();
+    for (const listener of this.cameraListeners) listener(camera);
+  }
   private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
   private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
   private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
@@ -1575,6 +1584,7 @@ export class InfiniteBoardView {
     const hostWindow = viewport.ownerDocument.defaultView;
     if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
     this.hostWindow = hostWindow;
+    world.addEventListener("transitionend", this.handleCameraTransitionEnd);
     // Font metrics may settle after the last playback operation. Coalesce font
     // events, and never let a disposed board schedule another render.
     const fonts = viewport.ownerDocument.fonts;
@@ -2203,6 +2213,7 @@ export class InfiniteBoardView {
     this.scene3dInputHandler = undefined;
     this.regionLayouts = {};
     this.activeRegionId = undefined;
+    this.world.removeEventListener("transitionend", this.handleCameraTransitionEnd);
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation", "space-panning");
   }

@@ -107,3 +107,24 @@ test("a new camera target requested during the last notification receives a fina
   assert.deepEqual(received.at(-1), { panX: 160, panY: 60, scale: .78 });
   assert.equal(harness.frames.length, 0);
 });
+
+
+test("CSS transition end delivers the exact final frame after convergence tolerance", () => {
+  const harness = createTransitionHarness();
+  const received: CameraState[] = [];
+  harness.view.subscribeCamera(camera => received.push(camera));
+  harness.frameAt(800, { panX: 79.9901, panY: 59.9926, scale: .780027 });
+  assert.equal(harness.frames.length, 0);
+  harness.frameAt(900, { panX: 80, panY: 60, scale: .78 });
+  const internals = harness.view as unknown as {
+    world: EventTarget;
+    onCameraTransitionEnd(event: TransitionEvent): void;
+  };
+  internals.onCameraTransitionEnd({ target: internals.world, propertyName: "transform" } as unknown as TransitionEvent);
+  assert.deepEqual(received.at(-1), { panX: 80, panY: 60, scale: .78 });
+  assert.equal(harness.frames.length, 0);
+  const count = received.length;
+  internals.onCameraTransitionEnd({ target: {}, propertyName: "transform" } as unknown as TransitionEvent);
+  internals.onCameraTransitionEnd({ target: internals.world, propertyName: "opacity" } as unknown as TransitionEvent);
+  assert.equal(received.length, count);
+});
