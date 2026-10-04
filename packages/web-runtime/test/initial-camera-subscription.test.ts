@@ -128,3 +128,12 @@ test("CSS transition end delivers the exact final frame after convergence tolera
   internals.onCameraTransitionEnd({ target: internals.world, propertyName: "opacity" } as unknown as TransitionEvent);
   assert.equal(received.length, count);
 });
+
+
+test("large whiteboard translations stop notifying at CSS matrix precision", () => {
+  const harness = createTransitionHarness();
+  Object.assign(harness.view, { panX: -20000.043, panY: 35000.076 });
+  harness.view.subscribeCamera(() => {});
+  harness.frameAt(800, { panX: -20000, panY: 35000.1, scale: .78 });
+  assert.equal(harness.frames.length, 0);
+});

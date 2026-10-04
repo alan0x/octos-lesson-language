@@ -2458,8 +2458,10 @@ export class InfiniteBoardView {
       // Slow WebViews can deliver the final scheduled frame before the CSS
       // transition has visibly settled. Keep the ink camera in step until the
       // visible transform reaches its target, not only for a fixed interval.
-      const cameraUnsettled = Math.abs(camera.panX - this.panX) >= .01
-        || Math.abs(camera.panY - this.panY) >= .01
+      // Older WebViews serialize large matrix translations with limited
+      // significant digits. Allow that rounding without polling forever.
+      const cameraUnsettled = Math.abs(camera.panX - this.panX) >= Math.max(.01, Math.abs(this.panX) * .000005)
+        || Math.abs(camera.panY - this.panY) >= Math.max(.01, Math.abs(this.panY) * .000005)
         || Math.abs(camera.scale - this.scale) >= .0001;
       if (timestamp < this.cameraNotifyUntil || cameraUnsettled) {
         this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
