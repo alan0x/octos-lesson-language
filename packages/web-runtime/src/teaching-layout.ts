@@ -186,20 +186,6 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   }
   const paired = (a: string, b: string) => pairs.some(pair => pair.includes(a) && pair.includes(b));
 
-  // Controls and practice, grouped by the visuals they control.
-  const clusters: Cluster[] = [];
-  for (const attachment of region.attachments ?? []) {
-    if (attachment.kind === 'reflection') continue;
-    const visualIds = (attachment.anchorNodeIds?.length ? attachment.anchorNodeIds : [attachment.anchorNodeId])
-      .filter(id => byId.get(id)?.visual);
-    if (!visualIds.length) continue;
-    let cluster = clusters.find(c => c.visualIds.some(id => visualIds.includes(id)));
-    if (!cluster) { cluster = { visualIds: [] }; clusters.push(cluster); }
-    cluster.visualIds = [...new Set([...cluster.visualIds, ...visualIds])];
-    if (attachment.kind === 'task') cluster.tasks = attachment;
-    else cluster.controls = attachment;
-  }
-
   // A visual the lesson declares as a comparison/supporting view right_of a
   // visual from an earlier step joins that visual's row instead of opening a
   // new stage, so the compared figures stay side by side.
@@ -225,6 +211,26 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     if (joining) sectionVisuals.forEach(item => joiners.add(item.id));
     if (!stages.length || (plannedVisuals(section) > 0 && !joining)) stages.push({ open: section, sections: [section] });
     else current!.sections.push(section);
+  }
+  // An attachment has one display owner. Its dependency set may span rows,
+  // but must never reserve space in every row that uses the same variable.
+  const stageOf = new Map(items.map(item => [item.id, stages.find(stage => stage.sections.includes(item.section))]));
+  const clusters: Array<Cluster & { stage: typeof stages[number] }> = [];
+  for (const attachment of region.attachments ?? []) {
+    if (attachment.kind === 'reflection') continue;
+    const targets = attachment.anchorNodeIds?.length ? attachment.anchorNodeIds : [attachment.anchorNodeId];
+    const owner = attachment.ownerNodeId ?? (attachment.kind === 'task'
+      ? attachment.anchorNodeId : targets.find(id => byId.get(id)?.visual));
+    const stage = owner ? stageOf.get(owner) : undefined;
+    // A declared owner that has not arrived yet must not fall back to an unrelated row.
+    if (!stage) continue;
+    const visualIds = targets.filter(id => byId.get(id)?.visual && stageOf.get(id) === stage);
+    if (!visualIds.length) continue;
+    const kind = attachment.kind === 'task' ? 'tasks' : 'controls';
+    let cluster = clusters.find(c => c.stage === stage && !c[kind] && c.visualIds.some(id => visualIds.includes(id)));
+    if (!cluster) { cluster = { stage, visualIds: [] }; clusters.push(cluster); }
+    cluster.visualIds = [...new Set([...cluster.visualIds, ...visualIds])];
+    cluster[kind] = attachment;
   }
   const widestVisual = Math.max(0, ...items.filter(item => item.visual).map(item => item.w));
   const wide = readingWidth >= Math.max(DEFAULT_VISUAL_WIDTH, widestVisual) + WORKBENCH_GAP + MIN_WIDE_COLUMN;
@@ -252,6 +258,26 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     box.slotOf[item.id] = slot;
     slotted.add(item.id);
     return true;
+  };
+
+  const placeRemainingAttachments = (stage: typeof stages[number]) => {
+    for (const cluster of clusters.filter(c => c.stage === stage)) {
+      const bound = cluster.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
+      if (!bound.length) continue;
+      for (const spec of [cluster.controls, cluster.tasks]) {
+        if (!spec || attachments[spec.id]) continue;
+        const x = bound[0]!.x;
+        let y = Math.max(...bound.map(r => r.y + r.height)) + CONTROL_GAP;
+        // Include cards/attachments in this column, not the height of another row.
+        for (;;) {
+          const rect = { x, y, width: spec.width, height: spec.height };
+          const hits = [...Object.values(nodes), ...Object.values(attachments)].filter(r => overlaps(rect, r));
+          if (!hits.length) break;
+          y = Math.max(...hits.map(r => r.y + r.height)) + CARD_GAP;
+        }
+        placeAttachment(spec, x, y);
+      }
+    }
   };
 
   const wideStage = (stage: { open: string; sections: string[] }, top: number, previous: StageBox | null): StageBox => {
@@ -366,7 +392,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     let referenceBottom = top;
     if (visuals.length || plannedVisuals(stage.open) > 0) {
       const planCount = plannedVisuals(stage.open);
-      const cluster = clusters.find(c => c.controls && c.visualIds.some(id => visuals.some(v => v.id === id)));
+      const cluster = clusters.find(c => c.stage === stage && c.controls && c.visualIds.some(id => visuals.some(v => v.id === id)));
       const besideShape = planCount <= 1;
       // Practice takes space only once it is open; no space is reserved for it,
       // so opening practice may move later content once.
@@ -445,11 +471,18 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       }
       // Task-only clusters (no controls) sit directly under their visuals.
       for (const c of clusters) {
-        if (c.controls || !c.tasks || attachments[c.tasks.id]) continue;
+        if (c.stage !== stage || c.controls || !c.tasks || attachments[c.tasks.id]) continue;
         const bound = c.visualIds.map(id => nodes[id]).filter((r): r is Rect => Boolean(r));
         if (!bound.length) continue;
-        const y = Math.max(...bound.map(r => r.y + r.height)) + CONTROL_GAP;
-        placeAttachment(c.tasks, Math.min(...bound.map(r => r.x)), y);
+        const x = Math.min(...bound.map(r => r.x));
+        let y = Math.max(...bound.map(r => r.y + r.height)) + CONTROL_GAP;
+        for (;;) {
+          const rect = { x, y, width: c.tasks.width, height: c.tasks.height };
+          const hits = Object.values(attachments).filter(r => overlaps(rect, r));
+          if (!hits.length) break;
+          y = Math.max(...hits.map(r => r.y + r.height)) + CARD_GAP;
+        }
+        placeAttachment(c.tasks, x, y);
         visualBottom = Math.max(visualBottom, y + c.tasks.height);
         box.bottom = Math.max(box.bottom, visualBottom);
       }
@@ -460,7 +493,10 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
         box.slots = {};
         for (const visual of visuals.filter(v => nodes[v.id]!.y === top)) {
           const r = nodes[visual.id]!;
-          box.slots[visual.id] = { x: r.x, w: r.width, y: (besideShape ? r.y + r.height : visualBottom) + CARD_GAP };
+          const dockBottom = Math.max(r.y + r.height, ...Object.values(attachments)
+            .filter(a => a.x < r.x + r.width && a.x + a.width > r.x)
+            .map(a => a.y + a.height));
+          box.slots[visual.id] = { x: r.x, w: r.width, y: (besideShape ? dockBottom : visualBottom) + CARD_GAP };
         }
       }
       x = right + WORKBENCH_GAP;
@@ -549,6 +585,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       for (const id of column.ids) nodes[id]!.width = column.side?.spans.includes(id) ? spanTo : column.width;
       if (column.side) for (const id of column.side.ids) nodes[id]!.width = column.side.width;
     }
+    placeRemainingAttachments(stage);
     box.bottom = Math.max(box.bottom, allBottom());
     return box;
   };
@@ -574,7 +611,7 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       y += height;
       if (row.length > 1) i += 1;
       for (const cluster of clusters) {
-        if (done.has(cluster) || !row.some(item => cluster.visualIds.includes(item.id))) continue;
+        if (cluster.stage !== stage || done.has(cluster) || !row.some(item => cluster.visualIds.includes(item.id))) continue;
         done.add(cluster);
         if (cluster.controls) { y += CONTROL_GAP; placeAttachment(cluster.controls, 0, y); y += cluster.controls.height; }
         if (cluster.tasks) { y += CARD_GAP; placeAttachment(cluster.tasks, 0, y); y += cluster.tasks.height; }
@@ -592,7 +629,8 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
       for (const visual of joining) { place(visual.id, 0, y, visual.w, visual.h); y += visual.h + CARD_GAP; }
       for (const item of cards) { place(item.id, 0, y, width, item.h); y += item.h + CARD_GAP; }
     }
-    return { top, bottom: Math.max(top, y - CARD_GAP), slots: null, slotOf: {} };
+    placeRemainingAttachments(stage);
+    return { top, bottom: Math.max(top, y - CARD_GAP, allBottom()), slots: null, slotOf: {} };
   };
 
   let previous: StageBox | null = null;
