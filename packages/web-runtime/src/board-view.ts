@@ -1552,6 +1552,15 @@ export class InfiniteBoardView {
     });
   };
   private readonly hostWindow: Window;
+  private readonly handleCameraTransitionEnd = (event: TransitionEvent): void => this.onCameraTransitionEnd(event);
+
+  private onCameraTransitionEnd(event: TransitionEvent): void {
+    if (event.target !== this.world || event.propertyName !== "transform") return;
+    // The convergence tolerance may be reached just before CSS finishes.
+    // Deliver the exact final transform once, without another repaint loop.
+    const camera = this.getCameraState();
+    for (const listener of this.cameraListeners) listener(camera);
+  }
   private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
   private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
   private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
@@ -1575,6 +1584,7 @@ export class InfiniteBoardView {
     const hostWindow = viewport.ownerDocument.defaultView;
     if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
     this.hostWindow = hostWindow;
+    world.addEventListener("transitionend", this.handleCameraTransitionEnd);
     // Font metrics may settle after the last playback operation. Coalesce font
     // events, and never let a disposed board schedule another render.
     const fonts = viewport.ownerDocument.fonts;
@@ -2203,6 +2213,7 @@ export class InfiniteBoardView {
     this.scene3dInputHandler = undefined;
     this.regionLayouts = {};
     this.activeRegionId = undefined;
+    this.world.removeEventListener("transitionend", this.handleCameraTransitionEnd);
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation", "space-panning");
   }
@@ -2444,7 +2455,17 @@ export class InfiniteBoardView {
     const notify = (timestamp: number): void => {
       const camera = this.getCameraState();
       for (const listener of this.cameraListeners) listener(camera);
-      if (timestamp < this.cameraNotifyUntil) this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      // Slow WebViews can deliver the final scheduled frame before the CSS
+      // transition has visibly settled. Keep the ink camera in step until the
+      // visible transform reaches its target, not only for a fixed interval.
+      // Older WebViews serialize large matrix translations with limited
+      // significant digits. Allow that rounding without polling forever.
+      const cameraUnsettled = Math.abs(camera.panX - this.panX) >= Math.max(.01, Math.abs(this.panX) * .000005)
+        || Math.abs(camera.panY - this.panY) >= Math.max(.01, Math.abs(this.panY) * .000005)
+        || Math.abs(camera.scale - this.scale) >= .0001;
+      if (timestamp < this.cameraNotifyUntil || cameraUnsettled) {
+        this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      }
       else this.cameraFrame = undefined;
     };
     this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
