@@ -1,6 +1,7 @@
 //! Web parity for the stage rows teaching layout and the teaching camera.
 //! Fixture: tools/teaching-reference.ts over the nine product course packs
-//! (1440 wide and 700 narrow compositions) plus randomized camera cases.
+//! (1440 and 700 wide desktop compositions, 1920 meeting display at reading
+//! scale .68) plus randomized camera and frame-hold cases.
 use oll_runtime::{
     camera::{self, Insets, Mode},
     preview::Preview,
@@ -95,36 +96,33 @@ fn stage_rows_layout_matches_web_at_every_action_of_every_course() {
     assert!(frames_checked > 300, "only {frames_checked} frames");
 }
 
+fn camera_of(c: &Value) -> Camera {
+    Camera {
+        x: c["panX"].as_f64().unwrap(),
+        y: c["panY"].as_f64().unwrap(),
+        scale: c["scale"].as_f64().unwrap(),
+    }
+}
+fn insets_of(i: &Value) -> Insets {
+    Insets {
+        top: i["top"].as_f64().unwrap(),
+        right: i["right"].as_f64().unwrap(),
+        bottom: i["bottom"].as_f64().unwrap(),
+        left: i["left"].as_f64().unwrap(),
+        focus_margin: i["focusMargin"].as_f64(),
+        occlusions: i["occlusions"].as_array().unwrap().iter().map(rect).collect(),
+    }
+}
+fn rects(v: &Value) -> Vec<Rect> {
+    v.as_array().unwrap().iter().map(rect).collect()
+}
+
 #[test]
 fn focus_camera_matches_web_plan_focus_camera() {
     let r = reference();
     for (i, case) in r["cameras"].as_array().unwrap().iter().enumerate() {
-        let targets: Vec<Rect> = case["targets"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(rect)
-            .collect();
-        let c = &case["current"];
-        let current = Camera {
-            x: c["panX"].as_f64().unwrap(),
-            y: c["panY"].as_f64().unwrap(),
-            scale: c["scale"].as_f64().unwrap(),
-        };
-        let i_ = &case["insets"];
-        let insets = Insets {
-            top: i_["top"].as_f64().unwrap(),
-            right: i_["right"].as_f64().unwrap(),
-            bottom: i_["bottom"].as_f64().unwrap(),
-            left: i_["left"].as_f64().unwrap(),
-            focus_margin: i_["focusMargin"].as_f64(),
-            occlusions: i_["occlusions"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(rect)
-                .collect(),
-        };
+        let targets = rects(&case["targets"]);
+        let parts = case.get("parts").filter(|p| p.is_array()).map(rects);
         let mode = match case["mode"].as_str().unwrap() {
             "relationship" => Mode::Relationship,
             "overview" => Mode::Overview,
@@ -134,12 +132,14 @@ fn focus_camera_matches_web_plan_focus_camera() {
         let v = &case["viewport"];
         let got = camera::plan_focus(
             &targets,
-            current,
+            camera_of(&case["current"]),
             v["width"].as_f64().unwrap(),
             v["height"].as_f64().unwrap(),
             mode,
-            &insets,
+            &insets_of(&case["insets"]),
             case["floor"].as_f64().unwrap(),
+            case["ceiling"].as_f64().unwrap(),
+            parts.as_deref(),
         );
         let w = &case["result"];
         for (a, b) in [
@@ -149,6 +149,28 @@ fn focus_camera_matches_web_plan_focus_camera() {
         ] {
             assert!((a - b).abs() < 1e-6, "camera case {i}: {got:?} != web {w}");
         }
+    }
+}
+
+#[test]
+fn teaching_frame_hold_matches_web() {
+    let r = reference();
+    let cases = r["holds"].as_array().unwrap();
+    let held = cases.iter().filter(|c| c["result"] == true).count();
+    assert!(held > 0 && held < cases.len());
+    for (i, case) in cases.iter().enumerate() {
+        let v = &case["viewport"];
+        let got = camera::holds_teaching_frame(
+            &rects(&case["targets"]),
+            camera_of(&case["current"]),
+            camera_of(&case["planned"]),
+            v["width"].as_f64().unwrap(),
+            v["height"].as_f64().unwrap(),
+            &insets_of(&case["insets"]),
+            case["centerShare"].as_f64().unwrap_or(f64::INFINITY),
+            case["readable"].as_f64().unwrap_or(f64::INFINITY),
+        );
+        assert_eq!(got, case["result"].as_bool().unwrap(), "hold case {i}");
     }
 }
 

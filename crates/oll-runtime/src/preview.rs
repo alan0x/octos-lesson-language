@@ -10,6 +10,8 @@ pub struct Frame {
     pub action: Value,
     pub step_id: String,
     pub beat_id: String,
+    /// Beat phase (before_speech, during_speech, after_speech).
+    pub phase: String,
 }
 #[derive(Clone, Debug)]
 pub struct Preview {
@@ -28,6 +30,8 @@ pub struct Preview {
     pub cursor: usize,
     frames: Vec<Frame>,
     declarations: Vec<Value>,
+    /// lesson.reflections: thinking questions shown after the lesson.
+    reflections: Vec<Value>,
     animation: Option<Animation>,
 }
 #[derive(Clone, Debug)]
@@ -70,6 +74,7 @@ impl Preview {
             cursor: 0,
             frames: Vec::new(),
             declarations: Vec::new(),
+            reflections: Vec::new(),
             animation: None,
         }
     }
@@ -170,6 +175,7 @@ impl Preview {
                             action: action.clone(),
                             step_id: string(&event["step"], "id")?.into(),
                             beat_id: string(beat, "id")?.into(),
+                            phase: phase.to_string(),
                         });
                     }
                 }
@@ -192,6 +198,10 @@ impl Preview {
             cursor: 0,
             frames,
             declarations,
+            reflections: events[0]["lesson"]["reflections"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default(),
             animation: None,
         };
         // Validate all supported actions before the host opens the lesson.
@@ -324,6 +334,45 @@ impl Preview {
     }
     /// Host teaching-layout inputs (octos-learn oll-artifacts): node -> step
     /// in creation order, and per-step planned card counts in step order.
+    /// Cards the Beat creates up to the current operation (web
+    /// compositionTargets' `created`). The Web slices the operation stream
+    /// through `cursor` inclusive, so the next action already counts when it
+    /// directly follows in the same phase (no phase.end/begin between them).
+    pub fn beat_created(&self, beat: &str) -> Vec<String> {
+        let mut end = self.cursor.min(self.frames.len());
+        if let (Some(last), Some(next)) = (
+            self.cursor.checked_sub(1).and_then(|i| self.frames.get(i)),
+            self.frames.get(self.cursor),
+        ) {
+            if next.beat_id == last.beat_id && next.phase == last.phase {
+                end += 1;
+            }
+        }
+        self.frames[..end]
+            .iter()
+            .filter(|f| f.beat_id == beat && f.action["op"] == "board.create")
+            .filter_map(|f| f.action["node"]["id"].as_str().map(str::to_owned))
+            .collect()
+    }
+    /// Web stepContextTargets: cards the Beat's Step wrote before the Beat.
+    pub fn step_context_targets(&self, beat: &str) -> Vec<String> {
+        let Some(start) = self.frames.iter().position(|f| f.beat_id == beat) else {
+            return vec![];
+        };
+        let step = &self.frames[start].step_id;
+        let mut out: Vec<String> = Vec::new();
+        for f in &self.frames[..start] {
+            if &f.step_id != step || f.action["op"] != "board.create" {
+                continue;
+            }
+            if let Some(id) = f.action["node"]["id"].as_str() {
+                if !out.iter().any(|o| o == id) {
+                    out.push(id.to_owned());
+                }
+            }
+        }
+        out
+    }
     pub fn node_sections(&self) -> Vec<(String, String)> {
         self.frames
             .iter()
@@ -580,6 +629,21 @@ impl Preview {
         }
         Ok(())
     }
+    /// Web ReflectionSnapshot list: (id, prompt, answer, anchor node id).
+    /// They become available with the after-lesson window (`complete`).
+    pub fn reflections(&self) -> Vec<(String, String, String, String)> {
+        self.reflections
+            .iter()
+            .filter_map(|r| {
+                Some((
+                    r["as"].as_str()?.to_owned(),
+                    r["prompt"].as_str()?.to_owned(),
+                    r["answer"].as_str()?.to_owned(),
+                    r["anchor"].as_str()?.to_owned(),
+                ))
+            })
+            .collect()
+    }
     pub fn variable_declarations(&self) -> &[Value] {
         &self.declarations
     }
@@ -598,10 +662,41 @@ impl Preview {
 }
 fn bind(content: &mut Value, values: &Variables) -> Result<(), String> {
     let bindings = content["bindings"].as_array().cloned().unwrap_or_default();
+    // Content is re-evaluated in place, so clear any earlier "undefined" mark.
+    for b in bindings.iter().filter(|b| b["hide_when_undefined"] == true) {
+        let id = b["target"].as_str().and_then(|t| t.rsplit_once('.')).map(|(id, _)| id);
+        if let Some(points) = content.get_mut("points").and_then(Value::as_array_mut) {
+            for point in points.iter_mut().filter(|p| p["id"].as_str() == id) {
+                if let Some(o) = point.as_object_mut() {
+                    o.remove("binding_undefined");
+                }
+            }
+        }
+    }
     for b in bindings {
         let target = string(&b, "target")?;
         let (id, field) = target.rsplit_once('.').ok_or("Invalid binding target")?;
-        let value = evaluate(string(&b, "expression")?, values)?;
+        let value = if b["hide_when_undefined"] == true {
+            // A point with no defined position (e.g. the intersection of two
+            // parallel lines) is hidden instead of failing the lesson.
+            match evaluate(string(&b, "expression")?, values) {
+                Ok(v) if v.is_finite() => v,
+                _ => {
+                    for point in content
+                        .get_mut("points")
+                        .and_then(Value::as_array_mut)
+                        .into_iter()
+                        .flatten()
+                        .filter(|p| p["id"] == id)
+                    {
+                        point["binding_undefined"] = Value::Bool(true);
+                    }
+                    continue;
+                }
+            }
+        } else {
+            evaluate(string(&b, "expression")?, values)?
+        };
         let mut found = false;
         // Union of the web OLL_BINDING_CAPABILITIES collections; the canonical
         // validator already restricts each collection to its node kind.

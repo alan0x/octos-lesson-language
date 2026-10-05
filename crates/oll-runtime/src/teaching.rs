@@ -11,6 +11,8 @@ use crate::spatial::Rect;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
+/// Gap between a visual and the variable controls docked under it.
+const DOCK_GAP: f64 = 8.;
 const CARD_GAP: f64 = 16.;
 const WORKBENCH_GAP: f64 = 28.;
 const SUBCOLUMN_GAP: f64 = 20.;
@@ -22,6 +24,10 @@ const MIN_COLUMN_HEIGHT: f64 = 260.;
 const MIN_WIDE_COLUMN: f64 = 300.;
 const SAFE_MARGIN: f64 = 80.;
 const READING_SCALE: f64 = 0.9;
+/// A short step (at most this many cards) may continue under the previous step's column.
+const STACK_STEP_MAX_CARDS: usize = 2;
+/// How much a stacked step may widen the column it joins.
+const STACK_WIDTH_RATIO: f64 = 1.7;
 const DEFAULT_VISUAL_WIDTH: f64 = 460.;
 const OBSTACLE_GAP: f64 = 28.;
 
@@ -45,17 +51,30 @@ pub(crate) fn is_visual(kind: &str) -> bool {
     matches!(kind, "geometry" | "scene3d" | "plot" | "image" | "diagram")
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum AttachmentKind {
+    #[default]
+    Control,
+    Task,
+    /// A thinking-question card placed directly under its anchor card.
+    Reflection,
+}
 /// Host attachment (web RegionLayoutConstraint.attachments[]).
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Attachment {
     pub id: String,
-    pub task: bool,
+    pub kind: AttachmentKind,
+    pub anchor_node_id: String,
+    /// Display owner; only its teaching row reserves space for the attachment.
+    pub owner_node_id: Option<String>,
+    /// Dependency set (anchorNodeIds, or [anchorNodeId]).
     pub anchor_node_ids: Vec<String>,
     pub width: f64,
     pub height: f64,
 }
 impl Attachment {
     pub fn from_json(v: &Value) -> Result<Self, String> {
+        let anchor = v["anchorNodeId"].as_str().unwrap_or("").to_owned();
         let ids: Vec<String> = v["anchorNodeIds"]
             .as_array()
             .filter(|a| !a.is_empty())
@@ -65,15 +84,16 @@ impl Attachment {
                     .map(str::to_owned)
                     .collect()
             })
-            .unwrap_or_else(|| {
-                v["anchorNodeId"]
-                    .as_str()
-                    .map(|s| vec![s.to_owned()])
-                    .unwrap_or_default()
-            });
+            .unwrap_or_else(|| vec![anchor.clone()]);
         Ok(Self {
             id: v["id"].as_str().ok_or("Missing attachment id")?.into(),
-            task: v["kind"] == "task",
+            kind: match v["kind"].as_str() {
+                Some("task") => AttachmentKind::Task,
+                Some("reflection") => AttachmentKind::Reflection,
+                _ => AttachmentKind::Control,
+            },
+            anchor_node_id: anchor,
+            owner_node_id: v["ownerNodeId"].as_str().map(str::to_owned),
             anchor_node_ids: ids,
             width: v["width"].as_f64().ok_or("Invalid attachment width")?,
             height: v["height"].as_f64().ok_or("Invalid attachment height")?,
@@ -99,6 +119,8 @@ pub struct Region {
     pub height: f64,
     /// Viewport insets (top, right, bottom, left).
     pub insets: (f64, f64, f64, f64),
+    /// Camera scale the host reads a teaching row at (web composition.readingScale).
+    pub reading_scale: Option<f64>,
     pub attachments: Vec<Attachment>,
     pub obstacles: Vec<Rect>,
 }
@@ -149,6 +171,7 @@ impl Region {
                 .as_f64()
                 .ok_or("Missing composition height")?,
             insets: (inset("top"), inset("right"), inset("bottom"), inset("left")),
+            reading_scale: composition["readingScale"].as_f64(),
             attachments: v["attachments"]
                 .as_array()
                 .into_iter()
@@ -181,6 +204,8 @@ struct Item {
 }
 #[derive(Clone, Debug, Default)]
 struct Cluster {
+    /// Index of the stage (teaching row) that displays this cluster.
+    stage: usize,
     visual_ids: Vec<String>,
     controls: Option<Attachment>,
     tasks: Option<Attachment>,
@@ -245,6 +270,7 @@ struct Plan {
     placed: Vec<usize>,
 }
 struct Column {
+    x: f64,
     width: f64,
     ids: Vec<String>,
 }
@@ -366,6 +392,10 @@ struct Cursor {
     col_y: f64,
     col_count: usize,
     col_ids: Vec<String>,
+    /// Right edge of the current band.
+    row_right: f64,
+    /// The open column was reopened below earlier content (must not widen).
+    reopened: bool,
     plan: Option<Plan>,
     columns: Vec<Column>,
     bottom: f64,
@@ -374,21 +404,23 @@ impl Cursor {
     fn close_column(&mut self) {
         if self.col_count > 0 {
             self.columns.push(Column {
+                x: self.x,
                 width: self.col_width,
                 ids: self.col_ids.clone(),
             });
         }
+        self.row_right = self.row_right.max(self.x + self.col_width);
     }
     fn open_column(&mut self, gap: f64) {
         if self.col_count > 0 {
-            let right = self.x + self.col_width;
             self.close_column();
-            self.x = right + gap;
+            self.x = self.row_right + gap;
         }
         self.col_width = 0.;
         self.col_y = self.col_top;
         self.col_count = 0;
         self.col_ids.clear();
+        self.reopened = false;
     }
     fn wrap_to_band(&mut self, all_bottom: f64) {
         self.close_column();
@@ -398,6 +430,65 @@ impl Cursor {
         self.col_y = self.col_top;
         self.col_count = 0;
         self.col_ids.clear();
+        self.row_right = 0.;
+        self.reopened = false;
+    }
+    /// A card that does not fit to the right of the row continues under an
+    /// earlier column of the same band when that column is wide enough and
+    /// has room, instead of opening a new band below everything.
+    fn reopen_column_for(&mut self, ctx: &Ctx, item: &Item) -> bool {
+        for index in 0..self.columns.len() {
+            let column = &self.columns[index];
+            if item.w > column.width + 1. {
+                continue;
+            }
+            let rects: Vec<Rect> = column.ids.iter().map(|id| ctx.nodes[id]).collect();
+            if rects.iter().map(|r| r.y).fold(f64::INFINITY, f64::min) < self.col_top - 1. {
+                continue;
+            }
+            let bottom = rects
+                .iter()
+                .map(|r| r.y + r.height)
+                .fold(f64::NEG_INFINITY, f64::max);
+            let last_section = column
+                .ids
+                .last()
+                .and_then(|id| ctx.item(id))
+                .map(|i| i.section.as_str());
+            let gap_before = if last_section == Some(item.section.as_str()) {
+                CARD_GAP
+            } else {
+                STEP_GAP
+            };
+            let probe = Rect {
+                x: column.x,
+                y: bottom + gap_before,
+                width: column.width,
+                height: item.h,
+            };
+            if probe.y + probe.height > self.col_top + ctx.column_height {
+                continue;
+            }
+            let occupied = ctx
+                .nodes
+                .iter()
+                .filter(|(id, _)| !column.ids.contains(id))
+                .map(|(_, r)| r)
+                .chain(ctx.attachments.values());
+            if occupied.into_iter().any(|r| overlaps(probe, *r)) {
+                continue;
+            }
+            self.close_column();
+            let column = self.columns.remove(index);
+            self.x = column.x;
+            self.col_width = column.width;
+            self.col_y = bottom + gap_before - CARD_GAP;
+            self.col_count = column.ids.len();
+            self.col_ids = column.ids;
+            self.reopened = true;
+            return true;
+        }
+        false
     }
     fn add_primary(&mut self, ctx: &mut Ctx, item: &Item) {
         let overflow =
@@ -413,7 +504,11 @@ impl Cursor {
                 p.index = (p.index + 1).min(p.counts.len() - 1);
             }
         }
-        if self.col_count == 0 && self.x > 0. && self.x + item.w > ctx.reading_width {
+        if self.col_count == 0
+            && self.x > 0.
+            && self.x + item.w > ctx.reading_width
+            && !self.reopen_column_for(ctx, item)
+        {
             self.wrap_to_band(ctx.all_bottom());
         }
         let y = if self.col_count > 0 {
@@ -425,7 +520,9 @@ impl Cursor {
         self.col_ids.push(item.id.clone());
         self.col_y = y + item.h;
         self.col_count += 1;
-        self.col_width = self.col_width.max(item.w);
+        if !self.reopened {
+            self.col_width = self.col_width.max(item.w);
+        }
         if let Some(p) = &mut self.plan {
             p.placed[p.index] += 1;
         }
@@ -433,7 +530,56 @@ impl Cursor {
     }
 }
 
-fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
+fn rects_of(ctx: &Ctx, ids: &[String]) -> Vec<Rect> {
+    ids.iter().filter_map(|id| ctx.nodes.get(id).copied()).collect()
+}
+
+/// Attachments of this stage not placed by the workbench (e.g. controls whose
+/// visual arrived in a later step) go below their visuals, clear of the rest.
+fn place_remaining_attachments(ctx: &mut Ctx, stage: usize) {
+    for cluster in ctx.clusters.clone() {
+        if cluster.stage != stage {
+            continue;
+        }
+        let bound = rects_of(ctx, &cluster.visual_ids);
+        if bound.is_empty() {
+            continue;
+        }
+        for spec in [&cluster.controls, &cluster.tasks].into_iter().flatten() {
+            if ctx.attachments.contains_key(&spec.id) {
+                continue;
+            }
+            let x = bound[0].x;
+            let mut y = bound
+                .iter()
+                .map(|r| r.y + r.height)
+                .fold(f64::NEG_INFINITY, f64::max)
+                + CONTROL_GAP;
+            loop {
+                let rect = Rect {
+                    x,
+                    y,
+                    width: spec.width,
+                    height: spec.height,
+                };
+                let hits: Vec<f64> = ctx
+                    .nodes
+                    .values()
+                    .chain(ctx.attachments.values())
+                    .filter(|r| overlaps(rect, **r))
+                    .map(|r| r.y + r.height)
+                    .collect();
+                if hits.is_empty() {
+                    break;
+                }
+                y = hits.into_iter().fold(f64::NEG_INFINITY, f64::max) + CARD_GAP;
+            }
+            ctx.place_attachment(spec, x, y);
+        }
+    }
+}
+
+fn wide_stage(ctx: &mut Ctx, stage_index: usize, stage: &Stage, top: f64) -> f64 {
     let own: Vec<Item> = ctx
         .items
         .iter()
@@ -465,6 +611,8 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
         col_y: top,
         col_count: 0,
         col_ids: vec![],
+        row_right: 0.,
+        reopened: false,
         plan: None,
         columns: vec![],
         bottom: top,
@@ -478,7 +626,7 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
         c.open_column(WORKBENCH_GAP);
     }
 
-    // 2. Workbench: operation column (single-visual stages), visuals, controls.
+    // 2. Workbench: practice (single-visual stages), visuals, docked controls.
     let mut reference_height = ctx.column_height;
     let mut reference_bottom = top;
     let plan_count = ctx.planned_visuals(&stage.open);
@@ -487,32 +635,25 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
             .clusters
             .iter()
             .find(|cl| {
-                cl.controls.is_some()
+                cl.stage == stage_index
+                    && cl.controls.is_some()
                     && cl
                         .visual_ids
                         .iter()
                         .any(|id| visuals.iter().any(|v| &v.id == id))
             })
             .cloned();
+        let controls = cluster.as_ref().and_then(|cl| cl.controls.clone());
         let beside_shape = plan_count <= 1;
+        // Practice takes space only once it is open.
         let open_task = cluster.as_ref().and_then(|cl| cl.tasks.clone());
         let mut x0 = c.x;
-        if let (Some(controls), true) = (
-            cluster.as_ref().and_then(|cl| cl.controls.clone()),
-            beside_shape,
-        ) {
-            let operation_width = controls
-                .width
-                .max(open_task.as_ref().map_or(0., |t| t.width));
-            ctx.place_attachment(&controls, x0, top);
-            let mut operation_bottom = top + controls.height;
-            reference_bottom = reference_bottom.max(operation_bottom);
-            if let Some(task) = &open_task {
-                ctx.place_attachment(task, x0, operation_bottom + CARD_GAP);
-                operation_bottom += CARD_GAP + task.height;
-            }
-            c.bottom = c.bottom.max(operation_bottom);
-            x0 += operation_width + WORKBENCH_GAP;
+        // A single visual's controls dock under it at its width, so they cost
+        // no row width. Practice keeps its place left of the visual.
+        if let (Some(_), true, Some(task)) = (&controls, beside_shape, &open_task) {
+            ctx.place_attachment(task, x0, top);
+            c.bottom = c.bottom.max(top + task.height);
+            x0 += task.width + WORKBENCH_GAP;
         }
         let (mut vx, mut vy, mut line_height, mut right) = (x0, top, 0.0f64, x0);
         for (index, visual) in visuals.iter().enumerate() {
@@ -542,13 +683,35 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
         };
         reference_bottom = reference_bottom.max(visual_bottom);
         c.bottom = c.bottom.max(visual_bottom);
-        if let (Some(cl), false) = (&cluster, beside_shape) {
-            let controls = cl.controls.clone().unwrap();
-            let bound: Vec<Rect> = cl
+        if let (Some(controls), true) = (&controls, beside_shape) {
+            let cl = cluster.as_ref().unwrap();
+            let anchor = rects_of(ctx, &cl.visual_ids)
+                .first()
+                .copied()
+                .or_else(|| visuals.first().map(|v| ctx.nodes[&v.id]));
+            let dock_x = anchor.map_or(x0, |a| a.x);
+            let dock_y = anchor.map_or(visual_bottom, |a| a.y + a.height) + DOCK_GAP;
+            ctx.attachments.insert(
+                controls.id.clone(),
+                Rect {
+                    x: dock_x,
+                    y: dock_y,
+                    width: anchor.map_or(controls.width, |a| a.width),
+                    height: controls.height,
+                },
+            );
+            visual_bottom = visual_bottom.max(dock_y + controls.height);
+            reference_bottom = reference_bottom.max(visual_bottom);
+            c.bottom = c.bottom.max(visual_bottom);
+        }
+        if let (Some(controls), false) = (&controls, beside_shape) {
+            let cl = cluster.as_ref().unwrap();
+            let bound_ids: Vec<&String> = cl
                 .visual_ids
                 .iter()
-                .filter_map(|id| ctx.nodes.get(id).copied())
+                .filter(|id| ctx.nodes.contains_key(*id))
                 .collect();
+            let bound = rects_of(ctx, &cl.visual_ids);
             let left = if bound.is_empty() {
                 x0
             } else {
@@ -562,27 +725,54 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
                     .map(|r| r.x + r.width)
                     .fold(f64::NEG_INFINITY, f64::max)
             };
-            let y = bound
-                .iter()
-                .map(|r| r.y + r.height)
-                .fold(visual_bottom, f64::max)
-                + CONTROL_GAP;
-            let beside_controls = open_task
-                .as_ref()
-                .is_some_and(|t| span_right - left >= controls.width + CARD_GAP + t.width);
-            ctx.place_attachment(&controls, left, y);
-            let mut bottom = y + controls.height;
+            // Controls shared by several visuals dock under the first of them
+            // at its width, unless another visual sits under it (a wrapped
+            // comparison); then they go below all of them.
+            let docked = bound.first().map(|primary| Rect {
+                x: primary.x,
+                y: primary.y + primary.height + DOCK_GAP,
+                width: primary.width,
+                height: controls.height,
+            });
+            let collides = docked.is_some_and(|d| {
+                visuals
+                    .iter()
+                    .any(|v| Some(&&v.id) != bound_ids.first() && overlaps(d, ctx.nodes[&v.id]))
+            });
+            let rect = match docked {
+                Some(d) if !collides => d,
+                _ => Rect {
+                    x: left,
+                    y: bound
+                        .iter()
+                        .map(|r| r.y + r.height)
+                        .fold(visual_bottom, f64::max)
+                        + CONTROL_GAP,
+                    width: controls.width,
+                    height: controls.height,
+                },
+            };
+            ctx.attachments.insert(controls.id.clone(), rect);
+            let mut bottom = rect.y + rect.height;
             reference_bottom = reference_bottom.max(bottom);
             if let Some(task) = &open_task {
+                let beside_controls = span_right - rect.x >= rect.width + CARD_GAP + task.width;
                 let tx = if beside_controls {
-                    left + controls.width + CARD_GAP
+                    rect.x + rect.width + CARD_GAP
                 } else {
-                    left
+                    rect.x
                 };
+                // Beside the controls, practice still starts below any visual above it.
                 let ty = if beside_controls {
-                    y
+                    bound
+                        .iter()
+                        .copied()
+                        .chain(visuals.iter().map(|v| ctx.nodes[&v.id]))
+                        .filter(|r| r.x < tx + task.width && r.x + r.width > tx)
+                        .map(|r| r.y + r.height + DOCK_GAP)
+                        .fold(rect.y, f64::max)
                 } else {
-                    y + controls.height + CARD_GAP
+                    rect.y + rect.height + CARD_GAP
                 };
                 ctx.place_attachment(task, tx, ty);
                 bottom = bottom.max(ty + task.height);
@@ -595,29 +785,48 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
             let Some(task) = cl.tasks.clone() else {
                 continue;
             };
-            if cl.controls.is_some() || ctx.attachments.contains_key(&task.id) {
+            if cl.stage != stage_index
+                || cl.controls.is_some()
+                || ctx.attachments.contains_key(&task.id)
+            {
                 continue;
             }
-            let bound: Vec<Rect> = cl
-                .visual_ids
-                .iter()
-                .filter_map(|id| ctx.nodes.get(id).copied())
-                .collect();
+            let bound = rects_of(ctx, &cl.visual_ids);
             if bound.is_empty() {
                 continue;
             }
-            let y = bound
+            let x = bound.iter().map(|r| r.x).fold(f64::INFINITY, f64::min);
+            let mut y = bound
                 .iter()
                 .map(|r| r.y + r.height)
                 .fold(f64::NEG_INFINITY, f64::max)
                 + CONTROL_GAP;
-            let x = bound.iter().map(|r| r.x).fold(f64::INFINITY, f64::min);
+            loop {
+                let rect = Rect {
+                    x,
+                    y,
+                    width: task.width,
+                    height: task.height,
+                };
+                let hits: Vec<f64> = ctx
+                    .attachments
+                    .values()
+                    .filter(|r| overlaps(rect, **r))
+                    .map(|r| r.y + r.height)
+                    .collect();
+                if hits.is_empty() {
+                    break;
+                }
+                y = hits.into_iter().fold(f64::NEG_INFINITY, f64::max) + CARD_GAP;
+            }
             ctx.place_attachment(&task, x, y);
             visual_bottom = visual_bottom.max(y + task.height);
             c.bottom = c.bottom.max(visual_bottom);
         }
+        // The row height that guides column splitting ignores open practice.
         reference_height = reference_bottom - top;
         c.x = right + WORKBENCH_GAP;
+        c.row_right = c.row_right.max(right);
     }
     let target = ctx
         .column_height
@@ -648,6 +857,7 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
                 }
                 let (x, y) = (c.x, c.col_top);
                 ctx.place(&visual.id, x, y, visual.w, visual.h);
+                c.row_right = c.row_right.max(x + visual.w);
                 c.x += visual.w + CARD_GAP;
                 c.bottom = c.bottom.max(c.col_top + visual.h);
             }
@@ -661,27 +871,72 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
         if flow.is_empty() {
             continue;
         }
-        if !first && joining.is_empty() {
-            c.open_column(STEP_GAP);
-        }
-        first = false;
         c.plan = None;
-        if let Some(counts) = ctx.planned.get(section).copied() {
-            let before = ctx
-                .items
-                .iter()
-                .position(|i| i.id == flow[0].id)
-                .unwrap_or(0);
-            let lead_count = if section == &stage.open {
-                lead_in.len()
-            } else {
-                0
-            };
-            let kinds: Vec<&str> = std::iter::repeat("math")
+        let counts = ctx.planned.get(section).copied();
+        let lead_count = if section == &stage.open {
+            lead_in.len()
+        } else {
+            0
+        };
+        let planned_kinds = |counts: Planned| -> Vec<String> {
+            std::iter::repeat("math")
                 .take(counts.math)
                 .chain(std::iter::repeat("note").take(counts.text))
                 .skip(lead_count)
-                .collect();
+                .map(str::to_owned)
+                .collect()
+        };
+        // A short step continues under the previous step's column when its
+        // planned cards fit there, instead of opening a column at the row's end.
+        let step_kinds: Vec<String> = match counts {
+            Some(counts) => planned_kinds(counts),
+            None => flow.iter().map(|i| i.kind.clone()).collect(),
+        };
+        let before = ctx
+            .items
+            .iter()
+            .position(|i| i.id == flow[0].id)
+            .unwrap_or(0);
+        let gaps = |n: usize| CARD_GAP * (n as f64 - 1.);
+        let (step_height, step_width) = if counts.is_some() {
+            (
+                step_kinds
+                    .iter()
+                    .map(|k| ctx.estimate(k, true, before))
+                    .sum::<f64>()
+                    + gaps(step_kinds.len()),
+                step_kinds
+                    .iter()
+                    .map(|k| ctx.estimate(k, false, before))
+                    .fold(flow[0].w, f64::max),
+            )
+        } else {
+            (
+                flow.iter().map(|i| i.h).sum::<f64>() + gaps(flow.len()),
+                max0(flow.iter().map(|i| i.w)).max(flow[0].w),
+            )
+        };
+        let stack = !first
+            && joining.is_empty()
+            && c.col_count > 0
+            && step_kinds.len() <= STACK_STEP_MAX_CARDS
+            && step_width
+                <= c.col_width
+                    * if c.reopened {
+                        1.
+                    } else {
+                        STACK_WIDTH_RATIO
+                    }
+            && c.x + step_width <= ctx.reading_width
+            && c.col_y + STEP_GAP + step_height <= c.col_top + ctx.column_height;
+        if stack {
+            c.col_y += STEP_GAP - CARD_GAP;
+        } else if !first && joining.is_empty() {
+            c.open_column(STEP_GAP);
+        }
+        first = false;
+        if let (Some(counts), false) = (counts, stack) {
+            let kinds = planned_kinds(counts);
             if !kinds.is_empty() {
                 let heights: Vec<f64> = kinds
                     .iter()
@@ -691,9 +946,9 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
                     .iter()
                     .map(|k| ctx.estimate(k, false, before))
                     .collect();
-                let total = heights.iter().sum::<f64>() + CARD_GAP * (heights.len() as f64 - 1.);
+                let total = heights.iter().sum::<f64>() + gaps(heights.len());
                 let k = heights.len().min(((total / target).ceil() as usize).max(1));
-                let split = balanced_counts(&heights, k);
+                let mut split = balanced_counts(&heights, k);
                 let mut offset = 0;
                 let estimated_width = split
                     .iter()
@@ -708,8 +963,12 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
                     .sum::<f64>()
                     + SUBCOLUMN_GAP * (split.len() as f64 - 1.);
                 if c.x > 0. && c.x + estimated_width > ctx.reading_width {
-                    let ab = ctx.all_bottom();
-                    c.wrap_to_band(ab);
+                    if !c.reopen_column_for(ctx, &flow[0]) {
+                        let ab = ctx.all_bottom();
+                        c.wrap_to_band(ab);
+                    } else {
+                        split = vec![flow.len()];
+                    }
                 }
                 c.plan = Some(Plan {
                     placed: vec![0; split.len()],
@@ -718,7 +977,13 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
                 });
             }
         }
-        if c.plan.is_none() && c.x > 0. && c.x + flow[0].w > ctx.reading_width {
+        if c.plan.is_none()
+            && !stack
+            && c.col_count == 0
+            && c.x > 0.
+            && c.x + flow[0].w > ctx.reading_width
+            && !c.reopen_column_for(ctx, &flow[0])
+        {
             let ab = ctx.all_bottom();
             c.wrap_to_band(ab);
         }
@@ -735,11 +1000,12 @@ fn wide_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
             }
         }
     }
+    place_remaining_attachments(ctx, stage_index);
     c.bottom.max(ctx.all_bottom())
 }
 
 /// Narrow windows: one readable stream.
-fn narrow_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
+fn narrow_stage(ctx: &mut Ctx, stage_index: usize, stage: &Stage, top: f64) -> f64 {
     let own: Vec<Item> = ctx
         .items
         .iter()
@@ -787,7 +1053,8 @@ fn narrow_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
             i += 1;
         }
         for (index, cluster) in ctx.clusters.clone().iter().enumerate() {
-            if done.contains(&index)
+            if cluster.stage != stage_index
+                || done.contains(&index)
                 || !row.iter().any(|item| cluster.visual_ids.contains(&item.id))
             {
                 continue;
@@ -839,7 +1106,8 @@ fn narrow_stage(ctx: &mut Ctx, stage: &Stage, top: f64) -> f64 {
             y += item.h + CARD_GAP;
         }
     }
-    top.max(y - CARD_GAP)
+    place_remaining_attachments(ctx, stage_index);
+    top.max(y - CARD_GAP).max(ctx.all_bottom())
 }
 
 /// Web computeTeachingRegion for the given node ids of one region.
@@ -854,8 +1122,12 @@ pub fn layout_region(
     let (top_i, right_i, bottom_i, left_i) = region.insets;
     let safe_width = region.width - left_i - right_i - SAFE_MARGIN;
     let safe_height = region.height - top_i - bottom_i - SAFE_MARGIN;
-    let reading_width = (safe_width / READING_SCALE).max(320.);
-    let column_height = (safe_height / READING_SCALE).max(MIN_COLUMN_HEIGHT);
+    let reading_scale = region
+        .reading_scale
+        .filter(|s| s.is_finite() && *s > 0.)
+        .map_or(READING_SCALE, |s| s.clamp(0.3, 1.5));
+    let reading_width = (safe_width / reading_scale).max(320.);
+    let column_height = (safe_height / reading_scale).max(MIN_COLUMN_HEIGHT);
 
     let order: BTreeMap<&str, usize> = region
         .node_sections
@@ -970,41 +1242,6 @@ pub fn layout_region(
         }
     }
 
-    // Controls and practice, grouped by the visuals they control.
-    for attachment in &region.attachments {
-        let visual_ids: Vec<String> = attachment
-            .anchor_node_ids
-            .iter()
-            .filter(|id| ctx.item(id).is_some_and(|i| i.visual))
-            .cloned()
-            .collect();
-        if visual_ids.is_empty() {
-            continue;
-        }
-        let index = match ctx
-            .clusters
-            .iter()
-            .position(|c| c.visual_ids.iter().any(|id| visual_ids.contains(id)))
-        {
-            Some(i) => i,
-            None => {
-                ctx.clusters.push(Cluster::default());
-                ctx.clusters.len() - 1
-            }
-        };
-        let cluster = &mut ctx.clusters[index];
-        for id in visual_ids {
-            if !cluster.visual_ids.contains(&id) {
-                cluster.visual_ids.push(id);
-            }
-        }
-        if attachment.task {
-            cluster.tasks = Some(attachment.clone());
-        } else {
-            cluster.controls = Some(attachment.clone());
-        }
-    }
-
     // A comparison/supporting view right_of a visual from an earlier step joins
     // that visual's row instead of opening a new stage.
     let anchor_visuals = |ctx: &Ctx, id: &str| -> Vec<Item> {
@@ -1059,19 +1296,127 @@ pub fn layout_region(
             stages.last_mut().unwrap().sections.push(section.clone());
         }
     }
+    // An attachment has one display owner. Its dependency set may span rows,
+    // but must never reserve space in every row that uses the same variable.
+    let stage_of = |id: &str| -> Option<usize> {
+        let section = &ctx.item(id)?.section;
+        stages.iter().position(|s| s.sections.contains(section))
+    };
+    let mut clusters: Vec<Cluster> = Vec::new();
+    for attachment in &region.attachments {
+        let task = match attachment.kind {
+            AttachmentKind::Reflection => continue,
+            AttachmentKind::Task => true,
+            AttachmentKind::Control => false,
+        };
+        let targets = &attachment.anchor_node_ids;
+        let owner = attachment.owner_node_id.clone().or_else(|| {
+            if task {
+                Some(attachment.anchor_node_id.clone())
+            } else {
+                targets
+                    .iter()
+                    .find(|id| ctx.item(id).is_some_and(|i| i.visual))
+                    .cloned()
+            }
+        });
+        // A declared owner that has not arrived yet must not fall back to an unrelated row.
+        let Some(stage) = owner.as_deref().and_then(stage_of) else {
+            continue;
+        };
+        let visual_ids: Vec<String> = targets
+            .iter()
+            .filter(|id| ctx.item(id).is_some_and(|i| i.visual) && stage_of(id) == Some(stage))
+            .cloned()
+            .collect();
+        if visual_ids.is_empty() {
+            continue;
+        }
+        let index = clusters
+            .iter()
+            .position(|c| {
+                c.stage == stage
+                    && if task {
+                        c.tasks.is_none()
+                    } else {
+                        c.controls.is_none()
+                    }
+                    && c.visual_ids.iter().any(|id| visual_ids.contains(id))
+            })
+            .unwrap_or_else(|| {
+                clusters.push(Cluster {
+                    stage,
+                    ..Cluster::default()
+                });
+                clusters.len() - 1
+            });
+        let cluster = &mut clusters[index];
+        for id in visual_ids {
+            if !cluster.visual_ids.contains(&id) {
+                cluster.visual_ids.push(id);
+            }
+        }
+        if task {
+            cluster.tasks = Some(attachment.clone());
+        } else {
+            cluster.controls = Some(attachment.clone());
+        }
+    }
+    ctx.clusters = clusters;
     let widest_visual = max0(ctx.items.iter().filter(|i| i.visual).map(|i| i.w));
     let wide =
         reading_width >= DEFAULT_VISUAL_WIDTH.max(widest_visual) + WORKBENCH_GAP + MIN_WIDE_COLUMN;
 
     let mut previous: Option<f64> = None;
-    for stage in &stages {
+    for (index, stage) in stages.iter().enumerate() {
         let top = previous.map_or(0., |b| b + STAGE_GAP);
         let bottom = if wide {
-            wide_stage(&mut ctx, stage, top)
+            wide_stage(&mut ctx, index, stage, top)
         } else {
-            narrow_stage(&mut ctx, stage, top)
+            narrow_stage(&mut ctx, index, stage, top)
         };
         previous = Some(bottom);
+    }
+
+    // A thinking-question card opens after the lesson directly under the card
+    // that poses it, at that card's width. Content below it in the same
+    // columns moves down once, like opening practice.
+    for spec in &region.attachments {
+        if spec.kind != AttachmentKind::Reflection {
+            continue;
+        }
+        let Some(anchor) = ctx.nodes.get(&spec.anchor_node_id).copied() else {
+            continue;
+        };
+        let anchor_bottom = anchor.y + anchor.height;
+        let card = Rect {
+            x: anchor.x,
+            y: anchor_bottom + CARD_GAP,
+            width: anchor.width,
+            height: spec.height,
+        };
+        let shift = card.height + CARD_GAP;
+        let mut moved = vec![card];
+        let mut below: Vec<&mut Rect> = ctx
+            .nodes
+            .iter_mut()
+            .filter(|(id, _)| **id != spec.anchor_node_id)
+            .map(|(_, r)| r)
+            .chain(ctx.attachments.values_mut())
+            .filter(|r| r.y >= anchor_bottom - 1.)
+            .collect();
+        below.sort_by(|a, b| a.y.total_cmp(&b.y));
+        for rect in below {
+            if !moved
+                .iter()
+                .any(|m| rect.x < m.x + m.width && rect.x + rect.width > m.x)
+            {
+                continue;
+            }
+            rect.y += shift;
+            moved.push(*rect);
+        }
+        ctx.attachments.insert(spec.id.clone(), card);
     }
 
     let mut nodes = ctx.nodes;
@@ -1199,7 +1544,8 @@ pub fn control_attachments(
 
 /// octos-learn buildInteractionClusters (controls only) plus the host's
 /// control panel sizing: one 360-wide panel per group of sliders that drive
-/// the same visuals, anchored at the group's last delivered visual.
+/// the same visuals, anchored at the group's last delivered visual and owned
+/// (displayed) by its first.
 /// `course_node_ids` is the course's planned node order (topic.nodeIds).
 pub fn control_clusters(
     p: &Preview,
@@ -1272,10 +1618,14 @@ pub fn control_clusters(
         out.push((
             Attachment {
                 id: format!("{region_id}:interaction:{}", out.len() + 1),
-                task: false,
+                kind: AttachmentKind::Control,
+                anchor_node_id: ordered.last().cloned().unwrap_or_default(),
+                // Controls belong to the first bound visual.
+                owner_node_id: ordered.first().cloned(),
                 anchor_node_ids: ordered,
                 width: 360.,
-                height: 20. + n * 24. + (n - 1.).max(0.) * 6.,
+                // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
+                height: 12. + n * 24. + (n - 1.).max(0.) * 4.,
             },
             sliders,
         ));

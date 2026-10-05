@@ -16,7 +16,7 @@ import { join } from "node:path";
 import { applyCanonicalAction, createSemanticBoardState } from "../../../packages/core/src/index.ts";
 import { compilePlaybackOperations } from "../../../packages/player-core/src/index.ts";
 import { computeBoardLayout, measureSemanticNode } from "../../../packages/web-runtime/src/layout.ts";
-import { planFocusCamera } from "../../../packages/web-runtime/src/camera.ts";
+import { holdsTeachingFrame, planFocusCamera } from "../../../packages/web-runtime/src/camera.ts";
 import { variableControlModels } from "../../../packages/web-runtime/src/variable-controls.ts";
 // Host module from the sibling octos-learn checkout (workspace layout); its
 // "octos-lesson-language" import resolves through the esbuild alias.
@@ -24,8 +24,16 @@ import { buildInteractionClusters } from "../../../../octos-learn/src/learning/o
 
 const [packRoot] = process.argv.slice(2);
 const visualKinds = ["geometry", "scene3d", "plot", "image", "diagram"];
-const INSETS = { top: 92, right: 28, bottom: 120, left: 28,
-  occlusions: [{ x: 14, y: 14, width: 1412, height: 58 }, { x: 360, y: 790, width: 720, height: 62 }] };
+// Desktop host insets after boardChromeInsets: the top bar and the input dock
+// become bands (under the 92/120 floors); nothing is left as an occlusion.
+const INSETS = { top: 92, right: 28, bottom: 120, left: 28, occlusions: [] };
+// Host compositions: desktop (reading scale .9) at a wide and a narrow width,
+// and a meeting display (reading scale .68).
+const COMPOSITIONS = [
+  { width: 1440, height: 868, readingScale: .9 },
+  { width: 700, height: 868, readingScale: .9 },
+  { width: 1920, height: 1080, readingScale: .68 },
+];
 
 function courseInputs(events: any[]) {
   const nodeSections: Record<string, string> = {};
@@ -56,17 +64,22 @@ function attachmentsFor(state: any, events: any[], regionId: string, nodeIds: st
     id: regionId, nodeIds,
     variableAliases: (open.lesson?.variables ?? []).map((v: any) => v.as), taskTargets,
   }, controls, tasks);
-  return clusters.flatMap((cluster: any) => {
+  // oll-lesson-runtime.tsx interactionPlans + regionLayoutConstraints.
+  return [...clusters.flatMap((cluster: any) => {
     const n = cluster.variableAliases.filter((a: string) => controls.includes(a)).length;
-    const controlsHeight = n > 0 ? 20 + n * 24 + Math.max(0, n - 1) * 6 : 0;
+    const controlsHeight = n > 0 ? 12 + n * 24 + Math.max(0, n - 1) * 4 : 0;
     const tasksHeight = cluster.taskIds.length ? 60 + cluster.taskIds.length * 220 : 0;
     return [
-      ...(n ? [{ id: cluster.id, kind: "control", anchorNodeId: cluster.anchorNodeId, anchorNodeIds: cluster.nodeIds,
+      ...(n ? [{ id: cluster.id, kind: "control", anchorNodeId: cluster.anchorNodeId,
+        ownerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId, anchorNodeIds: cluster.nodeIds,
         width: 360, height: controlsHeight, focusHeight: controlsHeight, gap: 24 }] : []),
       ...(cluster.taskIds.length ? [{ id: `${cluster.id}:tasks`, kind: "task", anchorNodeId: cluster.anchorNodeId,
-        anchorNodeIds: cluster.nodeIds, width: n ? 360 : 330, height: tasksHeight, gap: 28 }] : []),
+        ownerNodeId: cluster.anchorNodeId, anchorNodeIds: cluster.nodeIds, width: 330, height: tasksHeight, gap: 28 }] : []),
     ];
-  });
+  }),
+  // Thinking questions open with the after-lesson window (estimated height).
+  ...(practice ? (open.lesson?.reflections ?? []) : []).map((r: any) => ({
+    id: `reflection:${regionId}:${r.as}`, kind: "reflection", anchorNodeId: r.anchor, width: 330, height: 150 }))];
 }
 
 const courses: any[] = [];
@@ -78,11 +91,11 @@ for (const pack of readdirSync(packRoot).sort()) {
     const events = source.split("\n").filter(Boolean).map((line) => JSON.parse(line));
     const operations = compilePlaybackOperations(events);
     const { nodeSections, plannedSteps } = courseInputs(events);
-    for (const width of [1440, 700]) {
+    for (const viewport of COMPOSITIONS) {
       const state = createSemanticBoardState(events[0]);
       const frames: any[] = [];
       const visualContent: Record<string, any> = {};
-      const composition = { width, height: 868, mode: "progressive", insets: INSETS };
+      const composition = { ...viewport, mode: "progressive", insets: INSETS };
       const record = (actionId: string, practice: boolean) => {
         const nodes = Object.values<any>(state.nodes);
         if (!nodes.length) { frames.push({ action_id: actionId }); return; }
@@ -133,8 +146,24 @@ for (let i = 0; i < 400; i++) {
     ...(rand() < .2 ? { focusMargin: rand() * 60 } : {}), occlusions };
   const mode = modes[Math.floor(rand() * 4)]!;
   const floor = .18 + rand() * .6;
-  cameras.push({ targets, current, viewport, mode, insets, floor,
-    result: planFocusCamera(targets, current, viewport, mode, insets, floor) });
+  const ceiling = rand() < .5 ? 1 : .5 + rand() * .7;
+  // Parts: the targets themselves, or nothing (whole scene counts).
+  const parts = rand() < .5 ? targets : undefined;
+  cameras.push({ targets, current, viewport, mode, insets, floor, ceiling, parts,
+    result: planFocusCamera(targets, current, viewport, mode, insets, floor, ceiling, parts) });
+}
+// holdsTeachingFrame: current near a planned frame.
+const holds: any[] = [];
+for (let i = 0; i < 300; i++) {
+  const { targets, viewport, insets, mode, floor, ceiling, parts } = cameras[i % cameras.length];
+  const planned = planFocusCamera(targets, { panX: 0, panY: 0, scale: 1 }, viewport, mode, insets, floor, ceiling, parts);
+  const current = { panX: planned.panX + (rand() - .5) * 300, panY: planned.panY + (rand() - .5) * 300,
+    scale: planned.scale * (.7 + rand() * .6) };
+  const centerShare = rand() < .5 ? .05 : null;
+  const readable = rand() < .5 ? .55 + rand() * .3 : null;
+  holds.push({ targets, current, planned, viewport, insets, centerShare, readable,
+    result: holdsTeachingFrame(targets, current, planned, viewport, insets,
+      centerShare ?? Number.POSITIVE_INFINITY, readable ?? Number.POSITIVE_INFINITY) });
 }
 
-process.stdout.write(JSON.stringify({ courses, cameras }));
+process.stdout.write(JSON.stringify({ courses, cameras, holds }));
