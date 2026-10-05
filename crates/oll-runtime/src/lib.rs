@@ -19,6 +19,8 @@ pub mod focus;
 
 pub mod tasks;
 
+pub mod plot;
+
 pub mod connections;
 
 pub mod checkpoint;
