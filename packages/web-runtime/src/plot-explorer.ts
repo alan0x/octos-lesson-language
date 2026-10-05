@@ -10,6 +10,22 @@ import {
 type Ranges = CoordinateRanges;
 type State = {disposed?:boolean;ranges:Ranges;signature:string;exploring:boolean;hidden:Set<number>;dialog?:HTMLDialogElement;gesture?:{host:HTMLElement;pointers:Map<number,{x:number;y:number}>};draw?:()=>void};
 const states=new WeakMap<HTMLElement,State>();
+interface PlotController {
+  body: HTMLElement;
+  signature: string;
+  update: (node: Record<string,any>, variables: Record<string,number>) => void;
+}
+const controllers = new WeakMap<HTMLElement, PlotController>();
+function controllerSignature(node: Record<string,any>): string {
+  return JSON.stringify([node.kind, node.role, node.content?.title, node.content?.label,
+    node.content?.axes, node.content?.curves?.map((curve: Record<string,any>) => [curve.id, curve.expression, curve.kind])]);
+}
+export function updatePlotExplorer(parent: HTMLElement, node: Record<string,any>, variables: Record<string,number>): boolean {
+  const controller = controllers.get(parent);
+  if (!controller || controller.body.parentNode !== parent || controller.signature !== controllerSignature(node)) return false;
+  controller.update(node, variables);
+  return true;
+}
 export function disposePlotExplorer(parent:HTMLElement):void {
   const state=states.get(parent);
   if (!state) return;
@@ -17,6 +33,7 @@ export function disposePlotExplorer(parent:HTMLElement):void {
   state.dialog?.close();
   state.dialog?.remove();
   states.delete(parent);
+  controllers.delete(parent);
 }
 export function zoomPlotRanges(ranges:Ranges,factor:number,anchor={x:.5,y:.5}):Ranges {
   return zoomCoordinateRanges(ranges,factor,anchor);
@@ -36,7 +53,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   const axes=node.content?.axes??{};
   const valid=(r:any):PlotRange=>validCoordinateRange(r,{min:-5,max:5});
   const recommended={x:valid(axes.x),y:valid(axes.y)};
-  const curves:any[]=node.content?.curves??[];
+  let curves:any[]=node.content?.curves??[];
   const xLabel=String(axes.x?.label||"x"),yLabel=String(axes.y?.label||"y");
   const defaultAxisNames=xLabel==="x"&&yLabel==="y";
   const signature=JSON.stringify({axes,curves:curves.map(c=>[c.id,c.expression])});
@@ -51,7 +68,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     states.set(parent,state);
   }
   const current=state;
-  const evaluators=curves.map(c=>{try{return c.kind==='implicit'?undefined:compilePlotExpression(c.expression,variables);}catch{return undefined;}});
+  const compileEvaluators=()=>curves.map(c=>{try{return c.kind==='implicit'?undefined:compilePlotExpression(c.expression,variables);}catch{return undefined;}});
+  let evaluators=compileEvaluators();
   const surfaces:Array<{body:HTMLElement;large:boolean}>=[];
   const save=()=>{if(storageKey)try{sessionStorage.setItem(storageKey,JSON.stringify({signature,ranges:current.ranges}));}catch{}};
   const toolbar=document.createElement('div'); toolbar.className='plot-toolbar';
@@ -96,7 +114,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   }
   function paint(host:HTMLElement,large:boolean){
     if(!host.isConnected && host!==body)return;
-    host.replaceChildren();
+    // Keep the coordinate SVG and captured-pointer host across variable updates.
+    for (const child of [...host.children]) if (child.tagName.toLowerCase() !== 'svg') child.remove();
     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
     const width=large?Math.max(360,Math.min(1000,window.innerWidth-80)):404, height=large?Math.max(260,Math.min(520,window.innerHeight-220)):235;
     const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
@@ -124,8 +143,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       const svgX=(event.clientX-rect.left)/rect.width*width,svgY=(event.clientY-rect.top)/rect.height*height;
       return {inside:svgX>=frame.left&&svgX<=frame.right&&svgY>=frame.top&&svgY<=frame.bottom,
         x:Math.max(0,Math.min(1,(svgX-frame.left)/frame.width)),y:Math.max(0,Math.min(1,1-(svgY-frame.top)/frame.height))};};
-    svg.addEventListener('wheel',event=>{const point=anchor(event);if(!point.inside)return;event.preventDefault();event.stopPropagation();
-      current.ranges=zoomPlotRanges(current.ranges,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point);schedule();},{passive:false});
+    svg.onwheel=event=>{const point=anchor(event);if(!point.inside)return;event.preventDefault();event.stopPropagation();
+      current.ranges=zoomPlotRanges(current.ranges,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point);schedule();};
     // Pointer capture lives on the persistent host: redraws do not lose the gesture.
     svg.onpointerdown=event=>{if(!current.exploring)return;event.preventDefault();event.stopPropagation();host.setPointerCapture(event.pointerId);
       if(current.gesture?.host!==host)current.gesture={host,pointers:new Map()};
@@ -193,4 +212,14 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   current.draw=refresh;
   if(current.dialog)mountDialog(current.dialog);
   refresh();
+  controllers.set(parent, {
+    body, signature: controllerSignature(node),
+    update(nextNode, nextVariables) {
+      node = nextNode;
+      variables = nextVariables;
+      curves = node.content?.curves ?? [];
+      evaluators = compileEvaluators();
+      refresh();
+    },
+  });
 }

@@ -858,7 +858,7 @@ test('viewport-aware overview uses horizontal space, includes tasks and preserve
       {id:'task',kind:'task' as const,anchorNodeId:'a',width:360,height:240}]};
   const layout = computeBoardLayout(board,{}, {regions:{r:region}});
   assert.equal(layout.nodes.a!.y,layout.nodes.b!.y);
-  assert.equal(layout.attachments.slider!.y,layout.nodes.a!.y+layout.nodes.a!.height+24);
+  assert.equal(layout.attachments.slider!.y,layout.nodes.a!.y+layout.nodes.a!.height+8,'shared controls dock under the first visual');
   assert.ok(layout.bounds.width >= 900, 'comparison pair still uses horizontal space');
   const rects=[...Object.values(layout.nodes),...Object.values(layout.attachments)];
   for(let i=0;i<rects.length;i++)for(let j=i+1;j<rects.length;j++) {
@@ -874,14 +874,16 @@ test('viewport-aware overview uses horizontal space, includes tasks and preserve
   assert.ok(Math.min(...Object.values(avoided.nodes).map(r=>r.y))>=obstacle.y+obstacle.height);
 });
 
-test('progressive composition does not relocate existing controls when practice opens', () => {
+test('progressive composition keeps controls docked under their visual when practice opens', () => {
   const board={board_id:'b',revision:1,nodes:{a:{id:'a',kind:'scene3d',region_id:'r',content:{}}},groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]} as SemanticBoardState;
   const control={id:'c',kind:'control' as const,anchorNodeId:'a',width:360,height:44};
   const region={x:20,y:20,flow:'teaching' as const,composition:{width:1920,height:1080,mode:'progressive' as const},attachments:[control]};
   const before=computeBoardLayout(board,{}, {regions:{r:region}});
   const after=computeBoardLayout(board,{}, {regions:{r:{...region,attachments:[control,{...control,id:'t',kind:'task',height:400}]}}});
-  assert.deepEqual(after.nodes,before.nodes);
-  assert.deepEqual(after.attachments.c,before.attachments.c);
+  for (const layout of [before, after]) {
+    assert.equal(layout.attachments.c!.x, layout.nodes.a!.x);
+    assert.equal(layout.attachments.c!.y, layout.nodes.a!.y + layout.nodes.a!.height + 8);
+  }
 });
 
 
@@ -902,9 +904,9 @@ const wideComposition = { width: 1920, height: 1080, mode: "progressive" as cons
 
 test("each stage is one row and each step opens its own column in narration order", () => {
   const board = emptyBoard({ s1v: card("s1v", "scene3d"), s1m: card("s1m", "math"),
-    s2v: card("s2v", "plot"), s2m: card("s2m", "math"), s3n: card("s3n", "note") });
+    s2v: card("s2v", "plot"), s2m: card("s2m", "math"), s3n: card("s3n", "note"), s3o: card("s3o", "note"), s3p: card("s3p", "note") });
   const region = { x: 20, y: 20, flow: "teaching" as const,
-    nodeSections: { s1v: "1", s1m: "1", s2v: "2", s2m: "2", s3n: "3" }, composition: wideComposition };
+    nodeSections: { s1v: "1", s1m: "1", s2v: "2", s2m: "2", s3n: "3", s3o: "3", s3p: "3" }, composition: wideComposition };
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
   const n = layout.nodes;
   assert.ok(Math.max(n.s1v!.y + n.s1v!.height, n.s1m!.y + n.s1m!.height) <= Math.min(n.s2v!.y, n.s2m!.y), "stage 1 row is above stage 2 row");
@@ -943,20 +945,22 @@ test("arriving cards never move existing cards; widths may only grow", () => {
   assert.equal(previous.nodes.c!.width, previous.nodes.d!.width, "text cards in one column share its width");
 });
 
-test("a single visual's controls and practice form an operation column on its left", () => {
+test("a single visual's controls dock under it at its width; practice opens on its left", () => {
   const board = emptyBoard({ scene: card("scene", "scene3d"), m: card("m", "math") });
   const control = { id: "slider", kind: "control" as const, anchorNodeId: "scene", width: 360, height: 44, gap: 24 };
   const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { scene: "1", m: "2" },
     plannedSteps: { "1": { visual: 1 }, "2": { math: 1 } }, composition: wideComposition, attachments: [control] };
   const before = computeBoardLayout(board, {}, { regions: { r: region } });
+  const scene = before.nodes.scene!;
+  assert.deepEqual(before.attachments.slider, { x: scene.x, y: scene.y + scene.height + 8, width: scene.width, height: 44 },
+    "controls dock under the visual at its width");
+  assert.equal(scene.x, 20, "controls take no row width during the lesson");
+  assert.equal(before.nodes.m!.x, scene.x + scene.width + 28, "explanation starts right next to the visual");
   const after = computeBoardLayout(board, {}, { regions: { r: { ...region,
     attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "scene", width: 330, height: 190 }] } } });
-  assert.deepEqual(after.attachments.slider, before.attachments.slider, "the control does not move when practice opens");
-  assert.equal(before.attachments.slider!.y, before.nodes.scene!.y, "controls share the visual's top line");
-  assert.ok(before.attachments.slider!.x + 360 <= before.nodes.scene!.x, "controls sit left of the visual");
-  assert.equal(after.attachments.task!.x, after.attachments.slider!.x, "practice aligns with its controls");
-  assert.equal(after.attachments.task!.y, after.attachments.slider!.y + 44 + 16, "practice sits directly below its controls");
-  assert.equal(before.nodes.m!.x, before.nodes.scene!.x + before.nodes.scene!.width + 28, "explanation starts right next to the visual");
+  assert.equal(after.attachments.task!.x, 20, "practice opens left of the visual");
+  assert.equal(after.attachments.task!.y, after.nodes.scene!.y, "practice shares the visual's top line");
+  assert.equal(after.attachments.slider!.x, after.nodes.scene!.x, "controls stay docked when practice opens");
 });
 
 test("comparison visuals share controls below them and practice beside the controls", () => {
@@ -966,10 +970,13 @@ test("comparison visuals share controls below them and practice beside the contr
     plannedSteps: { "1": { visual: 2 } }, composition: wideComposition, attachments: [control] };
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
   assert.equal(layout.nodes.a!.y, layout.nodes.b!.y, "comparison visuals share a top line");
-  assert.equal(layout.attachments.slider!.y, Math.max(layout.nodes.a!.y + layout.nodes.a!.height, layout.nodes.b!.y + layout.nodes.b!.height) + 24);
+  assert.deepEqual(layout.attachments.slider, { x: layout.nodes.a!.x, y: layout.nodes.a!.y + layout.nodes.a!.height + 8,
+    width: layout.nodes.a!.width, height: 44 }, "shared controls dock under the first visual at its width");
   const opened = computeBoardLayout(board, {}, { regions: { r: { ...region,
     attachments: [control, { id: "task", kind: "task" as const, anchorNodeId: "b", anchorNodeIds: ["a", "b"], width: 330, height: 190 }] } } });
-  assert.equal(opened.attachments.task!.y, opened.attachments.slider!.y, "practice sits beside the shared controls");
+  const slider = opened.attachments.slider!, task = opened.attachments.task!;
+  assert.equal(task.x, slider.x + slider.width + 16, "practice sits beside the shared controls");
+  assert.ok(task.y >= Math.max(slider.y, opened.nodes.b!.y + opened.nodes.b!.height), "practice starts below the visual above it");
   assert.deepEqual(opened.attachments.slider, layout.attachments.slider, "controls keep their place when practice opens");
   assert.deepEqual(opened.nodes, layout.nodes);
 });
@@ -1061,6 +1068,11 @@ test("a step that does not fit the reading width starts the next band at the row
     nodes[`m${step}`] = card(`m${step}`, "math");
     nodeSections[`m${step}`] = String(step);
     measured[`m${step}`] = { width: 420, height: 80 };
+    for (const extra of ["b", "c"]) {
+      nodes[`m${step}${extra}`] = card(`m${step}${extra}`, "math");
+      nodeSections[`m${step}${extra}`] = String(step);
+      measured[`m${step}${extra}`] = { width: 420, height: 200 };
+    }
   }
   const layout = computeBoardLayout(emptyBoard(nodes), measured, { regions: { r: { x: 20, y: 20, flow: "teaching", nodeSections,
     composition: { ...wideComposition, width: 1440, height: 900 } } } });
@@ -1122,4 +1134,107 @@ test("animation camera frames the Beat target with the animated visuals only whe
   assert.deepEqual(animationFocusTargets(["circle", "cos"], ["compare"], () => true), ["circle", "cos", "compare"], "frame both when readable");
   assert.deepEqual(animationFocusTargets(["circle", "cos"], ["compare"], () => false), ["compare"], "otherwise keep the Beat target");
   assert.deepEqual(animationFocusTargets(["circle", "cos"], [], () => false), ["circle", "cos"], "without a Beat target follow the animation");
+});
+
+test("the host reading scale sizes teaching rows for the camera that will read them", () => {
+  // A meeting display reads rows at a smaller scale than the 0.9 default, so
+  // the same step fits beside its visual instead of wrapping below it.
+  const board = emptyBoard({ v: card("v", "plot"), m: card("m", "math"), n: card("n", "note"), n2: card("n2", "note"), n3: card("n3", "note") });
+  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, m: { width: 300, height: 90 },
+    n: { width: 430, height: 100 }, n2: { width: 430, height: 100 }, n3: { width: 430, height: 100 } };
+  const tv = { width: 960, height: 540, mode: "progressive" as const, insets: { top: 83, bottom: 45 } };
+  const region = (readingScale?: number) => ({ x: 20, y: 20, flow: "teaching" as const,
+    nodeSections: { v: "1", m: "1", n: "2", n2: "2", n3: "2" }, composition: { ...tv, ...(readingScale ? { readingScale } : {}) } });
+  const defaultScale = computeBoardLayout(board, sizes, { regions: { r: region() } }).nodes;
+  const meetingScale = computeBoardLayout(board, sizes, { regions: { r: region(.6) } }).nodes;
+  assert.ok(defaultScale.n!.y > defaultScale.v!.y + defaultScale.v!.height, "at 0.9 the second step wraps below the row");
+  assert.equal(meetingScale.n!.y, meetingScale.v!.y, "at the host scale the second step stays on the row");
+});
+
+test("a short step continues under the previous step's column instead of opening one at the row's end", () => {
+  // Quadrants: two interval formulas in step 2, one more in step 3. The third
+  // interval belongs under the first two, not at the far right of the row.
+  const board = emptyBoard({ v: card("v", "plot"), n: card("n", "note"), a: card("a", "math"), b: card("b", "math"), c: card("c", "math") });
+  const sizes: MeasuredNodeSizes = { v: { width: 900, height: 380 }, n: { width: 430, height: 156 },
+    a: { width: 244, height: 107 }, b: { width: 244, height: 113 }, c: { width: 329, height: 86 } };
+  const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching",
+    nodeSections: { v: "1", n: "1", a: "2", b: "2", c: "3" },
+    plannedSteps: { "1": { visual: 1, text: 1 }, "2": { math: 2 }, "3": { math: 1 } }, composition: wideComposition } } }).nodes;
+  assert.equal(layout.c!.x, layout.a!.x, "step 3 shares step 2's column");
+  assert.ok(layout.c!.y >= layout.b!.y + layout.b!.height + 40, "a step gap separates the two steps");
+  assert.ok(layout.a!.width >= 329, "the column widens to the stacked card");
+});
+
+test("a card that does not fit the row back-fills an earlier column before starting a band", () => {
+  // Partial derivative on a meeting display: lead-in formula, 3D scene, then
+  // a note that no longer fits to the right. It goes under the formula.
+  const board = emptyBoard({ m: card("m", "math"), s: card("s", "scene3d"), n: card("n", "note") });
+  const sizes: MeasuredNodeSizes = { m: { width: 382, height: 72 }, s: { width: 820, height: 360 }, n: { width: 302, height: 135 } };
+  const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching",
+    nodeSections: { m: "1", s: "1", n: "1" }, plannedSteps: { "1": { visual: 1, math: 1, text: 1 } },
+    composition: { width: 960, height: 540, mode: "progressive", insets: { top: 83, bottom: 45 }, readingScale: .68 } } } }).nodes;
+  assert.equal(layout.n!.x, layout.m!.x, "the note joins the lead-in column");
+  assert.ok(layout.n!.y < layout.s!.y + layout.s!.height, "it stays beside the scene instead of a band below");
+});
+
+test("a thinking-question card opens under its anchor and moves only the content below it", () => {
+  const board = emptyBoard({ v: card("v", "plot"), q: card("q", "note"), z: card("z", "math") });
+  const sizes: MeasuredNodeSizes = { v: { width: 440, height: 360 }, q: { width: 330, height: 120 }, z: { width: 330, height: 80 } };
+  const region = (withCard: boolean) => ({ x: 20, y: 20, flow: "teaching" as const, nodeSections: { v: "1", q: "1", z: "1" },
+    composition: wideComposition,
+    ...(withCard ? { attachments: [{ id: "think", kind: "reflection" as const, anchorNodeId: "q", width: 330, height: 90 }] } : {}) });
+  const before = computeBoardLayout(board, sizes, { regions: { r: region(false) } });
+  const after = computeBoardLayout(board, sizes, { regions: { r: region(true) } });
+  const think = after.attachments.think!;
+  assert.equal(think.x, after.nodes.q!.x);
+  assert.equal(think.y, after.nodes.q!.y + after.nodes.q!.height + 16);
+  assert.equal(after.nodes.z!.y, before.nodes.z!.y + 90 + 16, "the card below moves down once");
+  assert.deepEqual(after.nodes.v, before.nodes.v, "the visual beside it stays");
+});
+
+
+test("cross-row dependencies do not reserve a shared task twice", () => {
+  const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot"), c: card("c", "plot") });
+  const measured = { a: { width: 440, height: 380 }, b: { width: 440, height: 360 }, c: { width: 440, height: 360 } };
+  for (const width of [1920, 700]) {
+    const control = { id: "slider", kind: "control" as const, anchorNodeId: "c", ownerNodeId: "a",
+      anchorNodeIds: ["a", "b", "c"], width: 360, height: 34 };
+    const task = { id: "task", kind: "task" as const, anchorNodeId: "c", ownerNodeId: "c",
+      anchorNodeIds: ["a", "b", "c"], width: 330, height: 191 };
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "1", c: "2" },
+      plannedSteps: { "1": { visual: 2 }, "2": { visual: 1 } }, composition: { ...wideComposition, width }, attachments: [control] };
+    const before = computeBoardLayout(board, measured, { regions: { r: region } });
+    const opened = computeBoardLayout(board, measured, { regions: { r: { ...region, attachments: [control, task] } } });
+    assert.deepEqual(opened.nodes.a, before.nodes.a);
+    assert.deepEqual(opened.nodes.b, before.nodes.b);
+    assert.deepEqual(opened.attachments.slider, before.attachments.slider, "the shared slider stays in its first row");
+    assert.equal(opened.nodes.c!.y, before.nodes.c!.y, "opening a later-row task leaves no phantom space in the first row");
+    assert.ok(opened.attachments.task!.y >= opened.nodes.c!.y + opened.nodes.c!.height);
+    assert.equal(Object.keys(opened.attachments).length, 2);
+  }
+});
+
+test("an attachment waits for its declared owner and preserves multiple independent tasks", () => {
+  const board = emptyBoard({ a: card("a", "plot"), b: card("b", "plot") });
+  const task = { id: "first", kind: "task" as const, anchorNodeId: "b", ownerNodeId: "b", anchorNodeIds: ["a", "b"], width: 330, height: 150 };
+  for (const width of [1920, 700]) {
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", b: "2" },
+      composition: { ...wideComposition, width }, attachments: [task, { ...task, id: "second", height: 170 }] };
+    const partial = structuredClone(board); delete partial.nodes.b;
+    const pending = computeBoardLayout(partial, {}, { regions: { r: region } });
+    assert.deepEqual(pending.attachments, {}, "future ownership does not fall back to an earlier dependency");
+    const ready = computeBoardLayout(board, {}, { regions: { r: region } });
+    assert.ok(ready.attachments.first && ready.attachments.second, "neither task is overwritten during clustering");
+    assert.ok(ready.attachments.second!.y >= ready.attachments.first!.y + ready.attachments.first!.height);
+  }
+});
+
+
+test("a task and an explanation anchored under the same visual do not overlap", () => {
+  const board = emptyBoard({ a: card("a", "plot"), n: card("n", "note") });
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { a: "1", n: "2" },
+    composition: wideComposition, relations: { n: ["a"] },
+    attachments: [{ id: "task", kind: "task" as const, anchorNodeId: "a", width: 330, height: 191 }] };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  assert.ok(layout.nodes.n!.y >= layout.attachments.task!.y + layout.attachments.task!.height);
 });

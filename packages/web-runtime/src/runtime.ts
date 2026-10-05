@@ -281,6 +281,16 @@ export function variableAnimationDuration(
   return Math.max(32, duration / normalizedSpeed(speed));
 }
 
+export interface ReflectionSnapshot {
+  id: string;
+  prompt: string;
+  answer: string;
+  /** Canonical node ID of the board card that poses the question. */
+  anchor: string;
+  /** True once the after-lesson window is open. */
+  available: boolean;
+}
+
 export interface BrowserLessonSessionOptions {
   incremental?: boolean;
   /**
@@ -432,7 +442,33 @@ export class BrowserLessonSession {
     if (!beatId) return [];
     for (const step of this.player.outline) {
       const beat = step.beats.find((candidate) => candidate.id === beatId);
-      if (beat) return [...beat.focus_targets];
+      if (!beat) continue;
+      // Cards this Beat writes belong to what the narration is about, even
+      // when its declared focus names only the diagram being discussed.
+      const created = this.player.operations
+        .slice(beat.start_cursor, Math.min(beat.end_cursor, this.player.cursor) + 1)
+        .flatMap((operation) => operation.action?.op === "board.create" && operation.action.node?.id
+          ? [operation.action.node.id as string] : []);
+      return [...new Set([...beat.focus_targets, ...created])];
+    }
+    return [];
+  }
+  /**
+   * Cards the current Step wrote before the current Beat. The camera keeps
+   * them in frame beside the Beat's own targets while both stay readable, so
+   * a formula written a moment ago does not drop off screen when the next
+   * Beat of the same Step points back at the diagram.
+   */
+  get stepContextTargets(): string[] {
+    const beatId = this.currentOperation?.beat_id ?? this.player.snapshot.current_beat_id;
+    if (!beatId) return [];
+    for (const step of this.player.outline) {
+      const beat = step.beats.find((candidate) => candidate.id === beatId);
+      if (!beat) continue;
+      return [...new Set(this.player.operations
+        .slice(step.start_cursor, beat.start_cursor)
+        .flatMap((operation) => operation.action?.op === "board.create" && operation.action.node?.id
+          ? [operation.action.node.id as string] : []))];
     }
     return [];
   }
@@ -455,6 +491,20 @@ export class BrowserLessonSession {
       this.studentTaskProgressLog,
       this.studentTaskWindowOpen,
     );
+  }
+  /**
+   * Thinking questions of this lesson. They become available with the
+   * after-lesson window; the host shows each as its own card beside its
+   * anchor, with the answer collapsed.
+   */
+  get reflections(): ReflectionSnapshot[] {
+    return (this.events[0]?.lesson?.reflections ?? []).map((reflection) => ({
+      id: reflection.as,
+      prompt: reflection.prompt,
+      answer: reflection.answer,
+      anchor: reflection.anchor,
+      available: this.studentTaskWindowOpen,
+    }));
   }
   get isDeliverySettled(): boolean { return this.studentTaskWindowOpen; }
   get isPlaying(): boolean { return this.playing; }

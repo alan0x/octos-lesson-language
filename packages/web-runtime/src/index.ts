@@ -105,6 +105,7 @@ export {
   type PlaybackStore,
   type PlaybackFailure,
   type PhaseTransition,
+  type ReflectionSnapshot,
 } from "./runtime.js";
 export {
   createStudentInkSelectionOperation,

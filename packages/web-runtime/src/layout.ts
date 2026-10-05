@@ -42,16 +42,25 @@ export interface RegionLayoutConstraint {
     height: number;
     mode: "progressive" | "overview";
     insets?: import('./camera.js').ViewportInsets;
+    /**
+     * Camera scale at which the host reads a teaching row. Rows and columns
+     * are sized so the row stays readable at this scale; hosts should keep
+     * their automatic camera near it. Defaults to 0.9.
+     */
+    readingScale?: number;
   };
   /** Host-rendered controls or tasks anchored to a lesson node. */
   attachments?: Array<{
     id: string;
-    kind?: "control" | "task";
+    /** `reflection`: a thinking-question card placed directly under its anchor card. */
+    kind?: "control" | "task" | "reflection";
     anchorNodeId: string;
+    /** Display owner; only its teaching row reserves space for this attachment. */
+    ownerNodeId?: string;
     /**
      * All semantic visuals controlled by this attachment. When present, the
-     * host UI is placed below their union instead of below only the final
-     * visual that happened to expose the control.
+     * dependency set can span teaching rows; it does not imply display ownership
+     * in each row. Controls default to the first target, tasks to anchorNodeId.
      */
     anchorNodeIds?: string[];
     width: number;

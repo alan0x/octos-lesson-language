@@ -8,6 +8,7 @@ import {
   assertExecutionDeclaration,
   assertExecutionSupported,
   deriveExecutionRequirements,
+  evaluateContentBindings,
   OLL_ACTION_NAMES,
   OLL_BINDING_CAPABILITIES,
   OLL_EXECUTION_CAPABILITIES,
@@ -993,4 +994,50 @@ test("numeric labels trim trailing zeros, remove negative zero, and reject inval
   assert.equal(formatBoundNumericLabel(2, { precision: 6, suffix: " cm" }), "2 cm");
   assert.throws(() => formatBoundNumericLabel(Infinity, { precision: 2 }), /non-finite/);
   assert.throws(() => formatBoundNumericLabel(2, { precision: 7 }), /precision/);
+});
+
+test("reflections anchor to a written card, normalize to its canonical ID and require the newer player", () => {
+  const lesson = unitCircleLesson();
+  lesson.lesson.reflections = [{
+    as: "think-radius",
+    prompt: "半径变为原来的几倍？",
+    answer: "两倍。",
+    anchor: "unit-circle",
+    availability: { kind: "after_lesson" },
+  }];
+  assertAuthoringSchema(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  assert.equal(events[0]!.lesson!.reflections![0]!.anchor, `${host.lessonId}:node:unit-circle`);
+  const requirements = deriveExecutionRequirements(events);
+  assert.equal(requirements.minimumPlayerVersion, "0.3.0");
+  assert.ok(requirements.requiredCapabilities.includes("reflections"));
+  assert.throws(() => assertExecutionSupported(events, "0.2.0"), /requires player/);
+
+  const missingAnchor = structuredClone(lesson);
+  missingAnchor.lesson.reflections![0]!.anchor = "not-written";
+  assert.throws(() => normalizeAuthoringLesson(missingAnchor, host), (error) => error instanceof OllError
+    && error.path === "/lesson/reflections/0/anchor");
+  const emptyAnswer = structuredClone(lesson);
+  emptyAnswer.lesson.reflections![0]!.answer = " ";
+  assert.throws(() => normalizeAuthoringLesson(emptyAnswer, host), (error) => error instanceof OllError
+    && error.code === "OLL_INVALID_REFLECTION");
+});
+
+test("a point bound with hide_when_undefined disappears while undefined and returns afterwards", () => {
+  const content = {
+    points: [{ id: "cross", x: 0, y: 0, label: "交点 ({x}, {y})" }],
+    bindings: [
+      { target: "cross.x", expression: "(b2-b1)/(k1-k2)", hide_when_undefined: true },
+      { target: "cross.y", expression: "k1*((b2-b1)/(k1-k2))+b1", hide_when_undefined: true },
+    ],
+  };
+  const crossing = evaluateContentBindings(content, { k1: 1, b1: 1, k2: -1, b2: 3 });
+  assert.deepEqual([crossing.points[0].x, crossing.points[0].y, crossing.points[0].binding_undefined], [1, 2, undefined]);
+  const parallel = evaluateContentBindings(crossing, { k1: 1, b1: 1, k2: 1, b2: -2 });
+  assert.equal(parallel.points[0].binding_undefined, true, "parallel lines hide the intersection instead of failing");
+  const again = evaluateContentBindings(parallel, { k1: 1, b1: 1, k2: -1, b2: 3 });
+  assert.equal(again.points[0].binding_undefined, undefined, "the point returns once it is defined again");
+  assert.throws(() => evaluateContentBindings({ points: content.points, bindings: [{ target: "cross.x", expression: "1/(k1-k2)" }] },
+    { k1: 1, k2: 1 }), (error) => error instanceof OllError && error.code === "OLL_BINDING_EVALUATION_FAILED",
+  "without the option an undefined value still fails");
 });

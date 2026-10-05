@@ -301,6 +301,33 @@ export function resolvePhaseStart(
   }));
 }
 
+function validateReflections(document: AuthoringLesson, registry: Registry): void {
+  const reflections = document.lesson.reflections;
+  if (reflections === undefined) return;
+  requireArray(reflections, "/lesson/reflections");
+  const taskAliases = new Set((document.lesson.tasks ?? []).map((task) => task.as));
+  const aliases = new Set<string>();
+  reflections.forEach((reflection, index) => {
+    const path = `/lesson/reflections/${index}`;
+    requireObject(reflection, path);
+    requireAlias(reflection.as, `${path}/as`);
+    if (aliases.has(reflection.as) || taskAliases.has(reflection.as)) {
+      fail("OLL_DUPLICATE_ALIAS", `${path}/as`, `Reflection '${reflection.as}' is duplicated`);
+    }
+    aliases.add(reflection.as);
+    for (const field of ["prompt", "answer"] as const) {
+      if (typeof reflection[field] !== "string" || !reflection[field].trim()) {
+        fail("OLL_INVALID_REFLECTION", `${path}/${field}`, `Reflection ${field} must not be empty`);
+      }
+    }
+    requireObject(reflection.availability, `${path}/availability`);
+    if (reflection.availability.kind !== "after_lesson") {
+      fail("OLL_INVALID_REFLECTION", `${path}/availability/kind`, `Unsupported reflection availability '${String(reflection.availability.kind)}'`);
+    }
+    resolveLocal(registry, reflection.anchor, `${path}/anchor`, ["node"]);
+  });
+}
+
 function validateStudentTasks(
   document: AuthoringLesson,
   variables: Map<string, number>,
@@ -489,11 +516,15 @@ function validateValueBindings(action: WriteAction, path: string, variables: Map
     const bindingPath = `${path}/content/bindings/${index}`;
     requireObject(binding, bindingPath);
     for (const field of Object.keys(binding)) {
-      if (!["target", "expression", "label", "allow_zero"].includes(field)) fail("OLL_INVALID_BINDING", `${bindingPath}/${field}`, `Unknown binding field '${field}'`);
+      if (!["target", "expression", "label", "allow_zero", "hide_when_undefined"].includes(field)) fail("OLL_INVALID_BINDING", `${bindingPath}/${field}`, `Unknown binding field '${field}'`);
     }
     const { alias, property } = splitBindingTarget(binding.target, `${bindingPath}/target`);
     if (!targets.get(alias)?.has(property)) {
       fail("OLL_REFERENCE_NOT_FOUND", `${bindingPath}/target`, `Binding target '${binding.target}' is not a supported numeric field`);
+    }
+    if (binding.hide_when_undefined !== undefined
+      && (binding.hide_when_undefined !== true || action.kind !== "plot" && action.kind !== "geometry" || !["x", "y"].includes(property))) {
+      fail("OLL_INVALID_BINDING", `${bindingPath}/hide_when_undefined`, "hide_when_undefined is only valid on point x/y bindings and must be true");
     }
     if (binding.allow_zero !== undefined && (binding.allow_zero !== true || property !== "radius")) {
       fail("OLL_INVALID_BINDING", `${bindingPath}/allow_zero`, "allow_zero is only valid on radius bindings and must be true");
@@ -1292,6 +1323,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   });
 
   validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras);
+  validateReflections(document, registry);
 
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
@@ -1354,6 +1386,7 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
         expression: binding.expression,
         ...(binding.label !== undefined ? { label: structuredClone(binding.label) } : {}),
         ...(binding.allow_zero === true ? { allow_zero: true } : {}),
+        ...(binding.hide_when_undefined === true ? { hide_when_undefined: true } : {}),
       };
     });
   }
@@ -1550,6 +1583,9 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   }
   const registry = buildCanonicalRegistry(document, host);
   const canonicalLesson = structuredClone(document.lesson);
+  for (const reflection of canonicalLesson.reflections ?? []) {
+    reflection.anchor = requireRegistryId(registry, reflection.anchor);
+  }
   for (const candidate of canonicalLesson.tasks ?? []) {
     if (candidate.start) candidate.start.values = resolvePhaseStart(candidate.start, document.lesson.variables ?? [], `/lesson/tasks/${candidate.as}/start`);
     const task = candidate as AuthoringScene3dStudentTask;
@@ -1693,8 +1729,22 @@ export function formatBoundNumericLabel(value: number, format: { precision: numb
 
 export function evaluateContentBindings(content: JsonObject, variables: Record<string, number>): JsonObject {
   const evaluated = structuredClone(content);
+  // Content is re-evaluated in place, so clear any earlier "undefined" mark.
+  for (const binding of Array.isArray(evaluated.bindings) ? evaluated.bindings : []) {
+    if (binding.hide_when_undefined === true) delete bindingTarget(evaluated, binding.target).record.binding_undefined;
+  }
   for (const binding of Array.isArray(evaluated.bindings) ? evaluated.bindings : []) {
     const { record, property } = bindingTarget(evaluated, binding.target);
+    if (binding.hide_when_undefined === true) {
+      // A point with no defined position (e.g. the intersection of two
+      // parallel lines) is hidden instead of failing the lesson.
+      let value: number | undefined;
+      try { value = evaluateMathExpression(binding.expression, variables); } catch { value = undefined; }
+      if (value === undefined || !Number.isFinite(value)) {
+        record.binding_undefined = true;
+        continue;
+      }
+    }
     try {
       record[property] = evaluateMathExpression(binding.expression, variables);
       if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {

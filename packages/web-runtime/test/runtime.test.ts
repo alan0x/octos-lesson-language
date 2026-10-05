@@ -1234,3 +1234,21 @@ test("manual advance at lesson completion finishes a practice start transition a
   unsubscribe();
 });
 
+
+test("the Beat composition includes cards it wrote and exposes the Step's earlier cards as context", () => {
+  const session = new BrowserLessonSession(events, new MemoryStore(), "composition");
+  const created = (from: number, to: number) => session.operations.slice(from, to + 1)
+    .flatMap((operation) => operation.action?.op === "board.create" && operation.action.node?.id ? [operation.action.node.id as string] : []);
+  const step = session.outline.find((candidate) => candidate.beats.length > 1
+    && created(candidate.beats[0]!.start_cursor, candidate.beats[0]!.end_cursor).length > 0);
+  assert.ok(step, "fixture has a Step whose first Beat writes a card");
+  const [first, second] = step.beats as [typeof step.beats[0], typeof step.beats[0]];
+  session.seekToBeat(first.id, "end");
+  for (const id of created(first.start_cursor, first.end_cursor)) {
+    assert.ok(session.compositionTargets.includes(id), `${id} written in the Beat joins its composition`);
+  }
+  session.seekToBeat(second.id, "start");
+  session.advance();
+  assert.deepEqual(session.stepContextTargets, created(step.start_cursor, second.start_cursor - 1),
+    "cards written earlier in the same Step are camera context for the next Beat");
+});

@@ -130,6 +130,8 @@ const MIN_OCCLUSION_OVERLAP = 8;
 // the viewer. Candidates within this ratio of the best fit compete on
 // distance to the usable area's center instead.
 const NEAR_FIT_RATIO = .85;
+// Clearance kept between centred content and floating UI it does not overlap.
+const OCCLUSION_CLEARANCE = 8;
 
 const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   detail: .78,
@@ -141,7 +143,7 @@ const COMPOSITION_TARGET: Record<AttentionMode, number> = {
   course: 1,
 };
 
-function unionRects(rects: Rect[]): Rect {
+export function unionRects(rects: Rect[]): Rect {
   const left = Math.min(...rects.map((rect) => rect.x));
   const top = Math.min(...rects.map((rect) => rect.y));
   const right = Math.max(...rects.map((rect) => rect.x + rect.width));
@@ -155,8 +157,9 @@ function visibleAt(
   viewport: ViewportSize,
   margin: number,
   insets: ViewportInsets,
+  parts?: Rect[],
 ): boolean {
-  const safe = safeViewport(viewport, insets, margin, rect);
+  const safe = safeViewport(viewport, insets, margin, rect, NEAR_FIT_RATIO, MAX_AUTOMATIC_SCALE, parts);
   const left = camera.panX + rect.x * camera.scale;
   const right = left + rect.width * camera.scale;
   const top = camera.panY + rect.y * camera.scale;
@@ -183,6 +186,8 @@ function safeViewport(
   margin: number,
   content?: Rect,
   nearFitRatio = NEAR_FIT_RATIO,
+  scaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts: Rect[] = content ? [content] : [],
 ): { left: number; top: number; right: number; bottom: number; width: number; height: number } {
   const base = {
     left: inset(insets.left) + margin,
@@ -209,6 +214,27 @@ function safeViewport(
   if (occlusions.length === 0) {
     return { ...base, width: base.right - base.left, height: base.bottom - base.top };
   }
+  // Floating UI only matters where the content would actually be. If every
+  // part of the content, fitted and centred in the whole safe area, stays
+  // clear of every occlusion (e.g. a small avatar beside an empty corner of
+  // the course), keep the whole area rather than a smaller rectangle beside
+  // the occlusion that shifts the scene.
+  if (content) {
+    const width = base.right - base.left, height = base.bottom - base.top;
+    const scale = Math.min(scaleCeiling, width / Math.max(1, content.width), height / Math.max(1, content.height));
+    const originX = base.left + width / 2 - (content.x + content.width / 2) * scale;
+    const originY = base.top + height / 2 - (content.y + content.height / 2) * scale;
+    const clear = parts.every((part) => {
+      const left = originX + part.x * scale - OCCLUSION_CLEARANCE;
+      const top = originY + part.y * scale - OCCLUSION_CLEARANCE;
+      const right = originX + (part.x + part.width) * scale + OCCLUSION_CLEARANCE;
+      const bottom = originY + (part.y + part.height) * scale + OCCLUSION_CLEARANCE;
+      return (insets.occlusions ?? []).every((occlusion) => !(
+        left < occlusion.x + occlusion.width && right > occlusion.x
+        && top < occlusion.y + occlusion.height && bottom > occlusion.y));
+    });
+    if (clear) return { ...base, width, height };
+  }
   const xs = [...new Set([base.left, base.right, ...occlusions.flatMap((item) => [item.left, item.right])])];
   const ys = [...new Set([base.top, base.bottom, ...occlusions.flatMap((item) => [item.top, item.bottom])])];
   interface Candidate {
@@ -224,13 +250,13 @@ function safeViewport(
     const width = right - left;
     const height = bottom - top;
     const area = width * height;
-    // Every teaching-camera plan is capped at 1×. Once a clear rectangle can
+    // Every teaching-camera plan is capped. Once a clear rectangle can
     // show the complete scene at that scale, a larger theoretical fit only
     // means unused zoom headroom, so near-best candidates are treated as
     // equal and the most centered one wins instead of the largest.
     const fit = content
       ? Math.min(
-          MAX_AUTOMATIC_SCALE,
+          scaleCeiling,
           width / Math.max(1, content.width),
           height / Math.max(1, content.height),
         )
@@ -268,8 +294,10 @@ function centeredCamera(
   viewport: ViewportSize,
   insets: ViewportInsets,
   nearFitRatio = NEAR_FIT_RATIO,
+  scaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts?: Rect[],
 ): CameraState {
-  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, nearFitRatio);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, nearFitRatio, scaleCeiling, parts);
   return {
     scale,
     panX: safe.left + safe.width / 2 - (rect.x + rect.width / 2) * scale,
@@ -282,8 +310,9 @@ function composedAt(
   camera: CameraState,
   viewport: ViewportSize,
   insets: ViewportInsets,
+  parts?: Rect[],
 ): boolean {
-  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect);
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), rect, NEAR_FIT_RATIO, MAX_AUTOMATIC_SCALE, parts);
   const sceneCenterX = camera.panX + (rect.x + rect.width / 2) * camera.scale;
   const sceneCenterY = camera.panY + (rect.y + rect.height / 2) * camera.scale;
   return Math.abs(sceneCenterX - (safe.left + safe.width / 2)) < 1
@@ -294,6 +323,8 @@ function composedAt(
  * Compose an explicit teaching focus. The resulting scale is not a camera preset:
  * it is derived from the target geometry and current viewport so the complete
  * teaching scene stays readable and occupies a deliberate share of the view.
+ * `parts` are the cards inside the targets that floating UI must not cover;
+ * by default the whole target area counts.
  */
 export function planFocusCamera(
   targets: Rect[],
@@ -302,14 +333,19 @@ export function planFocusCamera(
   mode: AttentionMode,
   insets: ViewportInsets = {},
   automaticScaleFloor = MIN_AUTOMATIC_SCALE,
+  automaticScaleCeiling = MAX_AUTOMATIC_SCALE,
+  parts?: Rect[],
 ): CameraState {
   if (!targets.length) return current;
+  const ceiling = Math.max(MIN_AUTOMATIC_SCALE, Math.min(MAX_AUTOMATIC_SCALE, automaticScaleCeiling));
   // Overview already includes all course content. Keep a small safety margin,
   // rather than reserving the broad context used during teaching close-ups.
   if (mode === "course") insets = {...insets, focusMargin: insets.focusMargin ?? 24};
   const scene = unionRects(targets);
   const margin = configuredFocusMargin(insets);
-  const safe = safeViewport(viewport, insets, margin, scene, mode === "course" ? 1 : NEAR_FIT_RATIO);
+  // Course framing uses the same centred near-fit choice as teaching: a
+  // strict best fit let a small corner toolbar push the whole course aside.
+  const safe = safeViewport(viewport, insets, margin, scene, NEAR_FIT_RATIO, ceiling, parts);
   const safeWidth = safe.width;
   const safeHeight = safe.height;
   // A relationship is only intelligible when every related target stays in
@@ -317,9 +353,9 @@ export function planFocusCamera(
   // but must not crop a multi-card comparison or shared-variable animation.
   const scaleFloor = mode === "course" ? 0 : mode === "relationship"
     ? MIN_AUTOMATIC_SCALE
-    : Math.min(MAX_AUTOMATIC_SCALE, Math.max(MIN_AUTOMATIC_SCALE, automaticScaleFloor));
+    : Math.min(ceiling, Math.max(MIN_AUTOMATIC_SCALE, automaticScaleFloor));
   const fitScale = Math.min(
-    MAX_AUTOMATIC_SCALE,
+    ceiling,
     Math.max(
       scaleFloor,
       Math.min(safeWidth / Math.max(1, scene.width), safeHeight / Math.max(1, scene.height)),
@@ -333,10 +369,55 @@ export function planFocusCamera(
 
   if (
     Math.abs(scale - current.scale) < .000_001
-    && visibleAt(scene, current, viewport, margin, insets)
-    && composedAt(scene, current, viewport, insets)
+    && visibleAt(scene, current, viewport, margin, insets, parts)
+    && composedAt(scene, current, viewport, insets, parts)
   ) return current;
-  return centeredCamera(scene, scale, viewport, insets, mode === "course" ? 1 : NEAR_FIT_RATIO);
+  return centeredCamera(scene, scale, viewport, insets, NEAR_FIT_RATIO, ceiling, parts);
+}
+
+// A planned teaching move is skipped when the current camera already shows
+// the scene completely, near the planned scale and close to the centre of the
+// usable viewport. Pointing at or re-focusing something the learner can
+// already see must not slide the whole board.
+const HOLD_SCALE_RATIO = 1.18;
+/**
+ * Off-centre share tolerated when re-focusing part of the scene already
+ * framed: the frame was centred on the whole composition, so a part of it may
+ * sit anywhere inside the view.
+ */
+export const HOLD_CENTER_SHARE_FRAMED = Number.POSITIVE_INFINITY;
+/** Off-centre share tolerated for a scene that adds content to the frame. */
+export const HOLD_CENTER_SHARE_NEW = .05;
+
+/**
+ * Whether `current` is an acceptable stand-in for `planned` when framing
+ * `targets`: every target is fully inside the safe viewport, the scale is
+ * within a small ratio of the planned scale, and the scene centre stays near
+ * the middle of the usable area.
+ */
+export function holdsTeachingFrame(
+  targets: Rect[],
+  current: CameraState,
+  planned: CameraState,
+  viewport: ViewportSize,
+  insets: ViewportInsets = {},
+  centerShare = HOLD_CENTER_SHARE_FRAMED,
+  readableScale = Number.POSITIVE_INFINITY,
+): boolean {
+  if (!targets.length || !(current.scale > 0) || !(planned.scale > 0)) return false;
+  const ratio = current.scale / planned.scale;
+  if (ratio > HOLD_SCALE_RATIO) return false;
+  // Zooming in is not required while the current view is already readable:
+  // pointing at a card inside a readable frame keeps that frame.
+  if (ratio < 1 / HOLD_SCALE_RATIO && current.scale < readableScale) return false;
+  const scene = unionRects(targets);
+  const margin = Math.min(configuredFocusMargin(insets), REVEAL_MARGIN) / 2;
+  if (!visibleAt(scene, current, viewport, margin, insets)) return false;
+  const safe = safeViewport(viewport, insets, configuredFocusMargin(insets), scene);
+  const centerX = current.panX + (scene.x + scene.width / 2) * current.scale;
+  const centerY = current.panY + (scene.y + scene.height / 2) * current.scale;
+  return Math.abs(centerX - (safe.left + safe.width / 2)) <= safe.width * centerShare
+    && Math.abs(centerY - (safe.top + safe.height / 2)) <= safe.height * centerShare;
 }
 
 export function planRevealCamera(

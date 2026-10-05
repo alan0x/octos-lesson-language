@@ -1,4 +1,4 @@
-import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
+import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
 import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
@@ -14,7 +14,11 @@ import {
 } from "./board-targets.js";
 import {
   boardToViewportPoint,
+  HOLD_CENTER_SHARE_FRAMED,
+  HOLD_CENTER_SHARE_NEW,
+  holdsTeachingFrame,
   planFocusCamera,
+  unionRects,
   viewportToBoardPoint,
   type AttentionMode,
   TeachingCameraAuthority,
@@ -37,6 +41,7 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
+  measureSemanticNode,
   targetRect,
   type BoardLayout,
   type MeasuredNodeSizes,
@@ -62,6 +67,9 @@ import {
 } from "./student-operations.js";
 import {
   renderScene3d,
+  disposeScene3d,
+  updateScene3d,
+  scene3dVariableSignature,
   type Scene3dViewInputHandler,
   type Scene3dViewState,
 } from "./scene3d.js";
@@ -246,6 +254,16 @@ export function animationFocusTargets(
   const union = [...animatedTargets, ...outside];
   return readableTogether(union) ? union : [...beatTargets];
 }
+
+/** The Beat's own targets join a narrower request only if the frame keeps this share of its scale. */
+const BEAT_CONTEXT_MIN_SCALE_SHARE = .8;
+/** A Beat's composed frame at or above this scale is readable on any host. */
+const CONTEXT_READABLE_SCALE = .55;
+/** Earlier cards of the Step join only if the frame stays nearly as close. */
+const STEP_CONTEXT_MIN_SCALE_SHARE = .92;
+
+/** A supporting visual joins a note's frame only if the frame keeps this share of its scale. */
+const SUPPORTING_VISUAL_MIN_SCALE_SHARE = .85;
 
 /** Lowest camera scale at which an animation is framed together with the Beat target. */
 export const ANIMATION_CONTEXT_MIN_SCALE = .75;
@@ -546,6 +564,9 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
 let plotClipSequence = 0;
 let geometryClipSequence = 0;
 const plotTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
+const plotFrames = new WeakMap<HTMLElement, {
+  svg: SVGSVGElement; staticKey: string; clipId: string; staticCount: number;
+}>();
 const geometryTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
 
 function drawPlot(
@@ -562,51 +583,61 @@ function drawPlot(
   const {left:PLOT_LEFT,right:PLOT_RIGHT,top:PLOT_TOP,bottom:PLOT_BOTTOM}=plotFrame(width,height,xRange,yRange,axes.equal_scale===true);
   const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
   const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.classList.add("plot-preview");
+  const priorFrame = plotFrames.get(parent);
+  const staticKey = JSON.stringify([width, height, axes]);
+  const reuseFrame = priorFrame?.staticKey === staticKey && priorFrame.svg.parentNode === parent;
+  const svg = reuseFrame ? priorFrame.svg : document.createElementNS(SVG_NS, "svg");
+  if (!reuseFrame) {
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.classList.add("plot-preview");
+  } else {
+    while (svg.childNodes.length > priorFrame.staticCount) svg.lastChild!.remove();
+  }
+  const clipId = reuseFrame ? priorFrame.clipId : `plot-clip-${++plotClipSequence}`;
+  if (!reuseFrame) {
+    const previousTickSteps = plotTickSteps.get(parent);
+    const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
+      minMajorPixelSpacing: 46,
+      previousStep: previousTickSteps?.x,
+    });
+    const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
+      minMajorPixelSpacing: 34,
+      previousStep: previousTickSteps?.y,
+    });
+    plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
+    for (const value of xTicks.minor) {
+      const x = mapX(value);
+      appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+    }
+    for (const value of yTicks.minor) {
+      const y = mapY(value);
+      appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
+    }
+    for (const value of xTicks.major) {
+      const x = mapX(value);
+      appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
+      appendPlotLabel(svg, xTicks.format(value), x, height-4);
+    }
+    for (const value of yTicks.major) {
+      const y = mapY(value);
+      appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
+      appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
+    }
+    const xAxisY = zeroAxisPosition(yRange, mapY);
+    const yAxisX = zeroAxisPosition(xRange, mapX);
+    if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
+    if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+    appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
+    appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
 
-  const previousTickSteps = plotTickSteps.get(parent);
-  const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
-    minMajorPixelSpacing: 46,
-    previousStep: previousTickSteps?.x,
-  });
-  const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
-    minMajorPixelSpacing: 34,
-    previousStep: previousTickSteps?.y,
-  });
-  plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
-  for (const value of xTicks.minor) {
-    const x = mapX(value);
-    appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+    const defs = document.createElementNS(SVG_NS, "defs");
+    const clip = document.createElementNS(SVG_NS, "clipPath");
+    clip.setAttribute("id", clipId);
+    const clipRect = document.createElementNS(SVG_NS, "rect");
+    for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
+    clip.append(clipRect); defs.append(clip); svg.append(defs);
+    plotFrames.set(parent, { svg, staticKey, clipId, staticCount: svg.childNodes.length });
   }
-  for (const value of yTicks.minor) {
-    const y = mapY(value);
-    appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
-  }
-  for (const value of xTicks.major) {
-    const x = mapX(value);
-    appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
-    appendPlotLabel(svg, xTicks.format(value), x, height-4);
-  }
-  for (const value of yTicks.major) {
-    const y = mapY(value);
-    appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
-    appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
-  }
-  const xAxisY = zeroAxisPosition(yRange, mapY);
-  const yAxisX = zeroAxisPosition(xRange, mapX);
-  if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
-  if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
-  appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
-  appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
-  const clipId = `plot-clip-${++plotClipSequence}`;
-  const defs = document.createElementNS(SVG_NS, "defs");
-  const clip = document.createElementNS(SVG_NS, "clipPath");
-  clip.setAttribute("id", clipId);
-  const clipRect = document.createElementNS(SVG_NS, "rect");
-  for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
-  clip.append(clipRect); defs.append(clip); svg.append(defs);
 
   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
     const value = Number(guide.value);
@@ -696,6 +727,7 @@ function drawPlot(
   }
 
   for (const point of Array.isArray(content.points) ? content.points : []) {
+    if (point.binding_undefined === true) continue;
     const pointX = Number(point.x);
     const pointY = Number(point.y);
     if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) continue;
@@ -740,7 +772,11 @@ function drawPlot(
       svg.append(pointLabel);
     }
   }
-  parent.append(svg);
+  // Explorer redraws keep the previous SVG mounted; a new frame replaces it.
+  if (!reuseFrame) {
+    if (priorFrame?.svg.parentNode === parent) priorFrame.svg.replaceWith(svg);
+    else parent.append(svg);
+  }
 
   if (measurementText) appendText(parent, measurementText, "plot-measurement");
   if (controlHint) {
@@ -1007,7 +1043,7 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     return leftIsControl - rightIsControl;
   });
   for (const point of orderedPoints) {
-    if (point.visible === false) continue;
+    if (point.visible === false || point.binding_undefined === true) continue;
     const x = viewport.mapX(point.x);
     const y = viewport.mapY(point.y);
     const dot = document.createElementNS(SVG_NS, "circle");
@@ -1453,10 +1489,13 @@ export class InfiniteBoardView {
   private panY = 60;
   private scale = .78;
   private layout?: BoardLayout;
+  private layoutMeasuredSizes?: MeasuredNodeSizes;
+  private layoutSemanticSizes?: string;
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
   private lastAttentionTargets: string[] = [];
   private beatTargets: string[] = [];
+  private stepContextTargets: string[] = [];
   private activeRegionId?: string;
   private readonly gesture = new BoardGestureRecognizer();
   /** Latest teaching-camera request deferred while a touch gesture owns the camera. */
@@ -1485,9 +1524,21 @@ export class InfiniteBoardView {
   private inputOwner: BoardInputOwner = "runtime";
   private viewportInsets: ViewportInsets = {};
   private automaticCameraMinimumScale = .18;
+  private automaticCameraMaximumScale = 1.3;
+  /** Scene the teaching camera last composed; subsets of it may be held off-centre. */
+  private lastFramedScene?: Rect;
+  /** Beat whose request last composed or confirmed `lastFramedScene`. */
+  private lastFramedBeat?: string;
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
+  /**
+   * Last measured size of each card for its content signature and layout
+   * width. A variable change re-renders only the visuals bound to it; reusing
+   * the other cards' sizes avoids forcing a browser layout per card on every
+   * animation frame (which made sliders and their values stutter).
+   */
+  private readonly nodeMeasurements = new Map<string, { key: string; size: { width: number; height: number } }>();
   private readonly groupElements = new Map<string, HTMLElement>();
   private nodeInstanceSequence = 0;
   private disposed = false;
@@ -1496,10 +1547,20 @@ export class InfiniteBoardView {
     if (this.disposed || this.fontReflowFrame !== undefined) return;
     this.fontReflowFrame = this.hostWindow.requestAnimationFrame(() => {
       this.fontReflowFrame = undefined;
+      this.nodeMeasurements.clear();
       if (!this.disposed && this.board) this.render(this.board, this.operation);
     });
   };
   private readonly hostWindow: Window;
+  private readonly handleCameraTransitionEnd = (event: TransitionEvent): void => this.onCameraTransitionEnd(event);
+
+  private onCameraTransitionEnd(event: TransitionEvent): void {
+    if (event.target !== this.world || event.propertyName !== "transform") return;
+    // The convergence tolerance may be reached just before CSS finishes.
+    // Deliver the exact final transform once, without another repaint loop.
+    const camera = this.getCameraState();
+    for (const listener of this.cameraListeners) listener(camera);
+  }
   private readonly handleWheel = (event: WheelEvent): void => this.onWheel(event);
   private readonly handlePointerDown = (event: PointerEvent): void => this.onPointerDown(event);
   private readonly handlePointerMove = (event: PointerEvent): void => this.onPointerMove(event);
@@ -1523,6 +1584,7 @@ export class InfiniteBoardView {
     const hostWindow = viewport.ownerDocument.defaultView;
     if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
     this.hostWindow = hostWindow;
+    world.addEventListener("transitionend", this.handleCameraTransitionEnd);
     // Font metrics may settle after the last playback operation. Coalesce font
     // events, and never let a disposed board schedule another render.
     const fonts = viewport.ownerDocument.fonts;
@@ -1547,27 +1609,77 @@ export class InfiniteBoardView {
       board?.board_id,
       operation?.operation_id,
     );
+    // Parameter updates usually keep card dimensions and placement unchanged.
+    // Try the current widths first; only reflow if semantic or measured sizes
+    // changed. Avoid alternating intrinsic/final-width DOM measurements on
+    // every slider frame, which also forced layout for unrelated math cards.
+    const semanticSizes = board ? JSON.stringify(Object.values(board.nodes).map(node =>
+      [node.id, node.kind, measureSemanticNode(node)])) : undefined;
+    if (!teachingCameraChanged && board && this.board?.board_id === board.board_id
+      && this.layout && this.layoutMeasuredSizes && semanticSizes === this.layoutSemanticSizes) {
+      const candidate = computeBoardLayout(board, this.layoutMeasuredSizes, { regions: this.regionLayouts });
+      if (JSON.stringify(candidate) === JSON.stringify(this.layout)) {
+        const priorSizes = new Map([...this.nodeMeasurements].map(([id, measurement]) => [id, measurement.size]));
+        const sizes = this.syncNodes(board, this.layout, operation?.action, true);
+        const unchanged = Object.keys(sizes).length === priorSizes.size && Object.entries(sizes).every(([id, size]) => {
+          const prior = priorSizes.get(id);
+          return prior && Math.abs(prior.width - size.width) < .5 && Math.abs(prior.height - size.height) < .5;
+        });
+        if (unchanged) {
+          this.board = board;
+          this.operation = operation;
+          this.pointer.hidden = true;
+          this.positionNodes(this.layout);
+          this.syncGroups(board, this.layout, operation?.action);
+          this.renderConnections(board, this.layout);
+          this.renderPointer(board, this.layout, operation);
+          return;
+        }
+      }
+    }
     const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
       ? this.captureReflowAnchor(board) : undefined;
-    if (this.board?.board_id !== board?.board_id) this.lastAttentionTargets = [];
+    if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; }
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
     if (!board) { this.clearBoard(); return; }
     const layoutOptions = { regions: this.regionLayouts };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
-    let measuredNodeSizes = this.syncNodes(board, provisionalLayout, operation?.action);
+    // Non-math cards report the width they were rendered at, which in a
+    // teaching row may already be stretched to their column. Their layout
+    // input width is their natural width instead.
+    const intrinsicSizes = Object.fromEntries(Object.entries(
+      this.syncNodes(board, provisionalLayout, operation?.action),
+    ).map(([id, size]) => {
+      const node = board.nodes[id];
+      return [id, node && node.kind !== "math"
+        ? { width: measureSemanticNode(node).width, height: size.height }
+        : size];
+    }));
+    let measuredNodeSizes = intrinsicSizes;
     let layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
-    // Reading columns may narrow a card after its intrinsic-width measurement.
-    // Measure at the final width before committing heights and collisions.
+    // Reading columns may narrow or stretch a card after its intrinsic-width
+    // measurement. Measure heights at the final width, but keep each card's
+    // intrinsic width as the layout input: feeding a stretched width back in
+    // made a card look wider than its column and jump to a new band when a
+    // later card widened that column.
+    let measuredAt = Object.fromEntries(Object.entries(intrinsicSizes).map(([id, size]) => [id, size.width]));
     for (let pass = 0; pass < 3; pass += 1) {
-      const changedWidth = Object.entries(measuredNodeSizes).some(([id, size]) =>
-        Math.abs(size.width - (layout.nodes[id]?.width ?? size.width)) >= .5);
+      const changedWidth = Object.entries(measuredAt).some(([id, width]) =>
+        Math.abs(width - (layout.nodes[id]?.width ?? width)) >= .5);
       if (!changedWidth) break;
-      measuredNodeSizes = this.syncNodes(board, layout, operation?.action, true);
+      const remeasured = this.syncNodes(board, layout, operation?.action, true);
+      measuredAt = Object.fromEntries(Object.entries(remeasured).map(([id, size]) => [id, size.width]));
+      measuredNodeSizes = Object.fromEntries(Object.entries(remeasured).map(([id, size]) => [id, {
+        width: intrinsicSizes[id]?.width ?? size.width,
+        height: size.height,
+      }]));
       layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
     }
     this.layout = layout;
+    this.layoutMeasuredSizes = measuredNodeSizes;
+    this.layoutSemanticSizes = semanticSizes;
     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
     this.positionNodes(layout);
@@ -1620,11 +1732,17 @@ export class InfiniteBoardView {
         : operation?.action?.target?.node_id
           ?? operation?.action?.target?.group_id
           ?? operation?.action?.target?.connection_id;
-      const activeRect = activeId && focusTargetsInRegion(board, [activeId], this.activeRegionId).length
-        ? targetRect(board, layout, activeTarget)
-        : undefined;
-      if (activeRect && this.resumeAutomaticCamera()) {
-        this.requestTeachingFocus(activeId ? [activeId] : [], [activeRect], board);
+      // Resolve the card exactly as an explicit focus would (including its
+      // controls), so pointing at a visual never frames it differently from
+      // the Beat that focused it a moment earlier.
+      const activeInRegion = Boolean(activeId && focusTargetsInRegion(board, [activeId], this.activeRegionId).length);
+      const activeRects = activeInRegion ? this.resolveFocusRects([activeId!], board, layout) : [];
+      if (!activeRects.length && activeInRegion && activeTarget) {
+        const rect = targetRect(board, layout, activeTarget);
+        if (rect) activeRects.push(rect);
+      }
+      if (activeRects.length && this.resumeAutomaticCamera()) {
+        this.requestTeachingFocus(activeId ? [activeId] : [], activeRects, board);
       }
     }
   }
@@ -1682,7 +1800,16 @@ export class InfiniteBoardView {
 
   subscribeCamera(listener: CameraListener): () => void {
     this.cameraListeners.add(listener);
-    listener(this.getCameraState());
+    const camera = this.getCameraState();
+    listener(camera);
+    // The initial transform can start before the first listener exists. Its
+    // replay may still be an early CSS-transition frame, so follow the camera
+    // until it settles instead of leaving ink at that subscribe-time snapshot.
+    if (Math.abs(camera.panX - this.panX) >= .01
+        || Math.abs(camera.panY - this.panY) >= .01
+        || Math.abs(camera.scale - this.scale) >= .0001) {
+      this.scheduleCameraNotifications();
+    }
     return () => this.cameraListeners.delete(listener);
   }
 
@@ -1891,17 +2018,29 @@ export class InfiniteBoardView {
     if (regionId === this.activeRegionId) return;
     this.activeRegionId = regionId;
     this.lastAttentionTargets = [];
+    this.lastFramedScene = undefined;
   }
 
   /** The current Beat's own targets (focus, pointer, created cards), supplied by the host. */
-  setBeatTargets(targetIds: string[]): void {
+  setBeatTargets(targetIds: string[], stepContext: string[] = []): void {
     this.beatTargets = [...targetIds];
+    this.stepContextTargets = [...stepContext];
   }
 
   /** Sets a readability floor for ordinary automatic teaching-camera moves. */
   setAutomaticCameraMinimumScale(scale: number): void {
     if (!Number.isFinite(scale)) return;
     this.automaticCameraMinimumScale = Math.min(1, Math.max(.18, scale));
+  }
+
+  /**
+   * Sets the zoom ceiling for automatic teaching-camera moves. Hosts pass a
+   * value near their teaching layout's reading scale so a single diagram is
+   * not magnified until its neighbours in the same row fall off screen.
+   */
+  setAutomaticCameraMaximumScale(scale: number): void {
+    if (!Number.isFinite(scale)) return;
+    this.automaticCameraMaximumScale = Math.min(1.3, Math.max(.18, scale));
   }
 
   getRegionBounds(regionId: string): Rect | undefined {
@@ -1951,11 +2090,13 @@ export class InfiniteBoardView {
    * Moves the teaching camera to host-owned content mounted in board/world
    * coordinates, such as a pending learner question and its loading card.
    * This is an explicit one-shot request from the host; ordinary renders and
-   * elapsed time never call it automatically.
+   * elapsed time never call it automatically. `parts` optionally lists the
+   * cards inside `rect`, so floating UI beside an empty corner of it does not
+   * push the frame aside.
    */
   focusWorldRect(
     rect: Rect,
-    options: { exclusive?: boolean; framing?: "content" | "course" } = {},
+    options: { exclusive?: boolean; framing?: "content" | "course"; parts?: Rect[] } = {},
   ): Rect | undefined {
     if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
       || rect.width <= 0 || rect.height <= 0) return undefined;
@@ -1967,8 +2108,11 @@ export class InfiniteBoardView {
       options.framing === "course" ? "course" : "detail",
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
+      options.parts?.length ? options.parts : undefined,
     );
     this.cameraAuthority.holdHostCamera(options.exclusive === true);
+    this.lastFramedScene = undefined;
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
@@ -2006,11 +2150,14 @@ export class InfiniteBoardView {
       : this.operation?.action?.target?.node_id
         ?? this.operation?.action?.target?.group_id
         ?? this.operation?.action?.target?.connection_id;
-    const activeRect = activeId && focusTargetsInRegion(this.board, [activeId], this.activeRegionId).length
-      ? targetRect(this.board, this.layout, activeTarget)
-      : undefined;
-    if (activeRect) {
-      this.focusRects(activeId ? [activeId] : [], [activeRect], this.board);
+    const activeInRegion = Boolean(activeId && focusTargetsInRegion(this.board, [activeId], this.activeRegionId).length);
+    const activeRects = activeInRegion ? this.resolveFocusRects([activeId!], this.board, this.layout) : [];
+    if (!activeRects.length && activeInRegion && activeTarget) {
+      const rect = targetRect(this.board, this.layout, activeTarget);
+      if (rect) activeRects.push(rect);
+    }
+    if (activeRects.length) {
+      this.focusRects(activeId ? [activeId] : [], activeRects, this.board);
       return;
     }
     const priorTargets = focusTargetsInRegion(this.board, this.lastAttentionTargets, this.activeRegionId);
@@ -2045,7 +2192,7 @@ export class InfiniteBoardView {
     this.disposed = true;
     this.viewport.ownerDocument.fonts?.removeEventListener("loadingdone", this.handleFontsLoaded);
     if (this.fontReflowFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.fontReflowFrame);
-    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
     this.viewport.removeEventListener("contextmenu", this.handleContextMenu);
@@ -2066,15 +2213,17 @@ export class InfiniteBoardView {
     this.scene3dInputHandler = undefined;
     this.regionLayouts = {};
     this.activeRegionId = undefined;
+    this.world.removeEventListener("transitionend", this.handleCameraTransitionEnd);
     this.cameraListeners.clear();
     this.viewport.classList.remove("dragging", "manual-navigation", "space-panning");
   }
 
   private clearBoard(): void {
-    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
+    for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.groupElements.clear(); this.layout = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
+    this.lastFramedScene = undefined;
   }
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction, constrainWidth = false): MeasuredNodeSizes {
@@ -2088,7 +2237,8 @@ export class InfiniteBoardView {
       if (board.nodes[id]) continue;
       disposePlotExplorer(element);
       disposeGeometryExplorer(element);
-      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id);
+      disposeScene3d(element);
+      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id); this.nodeMeasurements.delete(id);
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
@@ -2112,21 +2262,38 @@ export class InfiniteBoardView {
       applyEmphasisClass(element, latestEmphasis(node));
       const signature = nodeContentSignature(node)
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
-        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "");
+        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "")
+        + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
-        element.replaceChildren();
-        renderContent(
-          element,
-          node,
-          this.resolveAsset,
-          this.scene3dViews[node.id],
-          this.scene3dInputHandler,
-          variableValues,
-        );
+        let updated = false;
+        if (kind === "plot") {
+          try { updated = updatePlotExplorer(element, node, variableValues); }
+          catch { /* Recreate the plot if an incremental update cannot render. */ }
+        }
+        if (kind === "scene3d") {
+          try {
+            updated = updateScene3d(element, node, this.scene3dViews[node.id],
+              variableValues, this.scene3dInputHandler);
+          } catch { /* Recreate through the existing static fallback on failure. */ }
+        }
+        if (!updated) {
+          disposeScene3d(element);
+          element.replaceChildren();
+          renderContent(
+            element, node, this.resolveAsset,
+            this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
+          );
+        }
         this.nodeContentSignatures.set(node.id, signature);
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
+      const measureKey = `${signature}\u0000${layout.nodes[node.id]!.width}\u0000${constrainWidth}`;
+      const cachedMeasurement = this.nodeMeasurements.get(node.id);
+      if (!created && cachedMeasurement?.key === measureKey) {
+        measured[node.id] = { ...cachedMeasurement.size };
+        continue;
+      }
       const intrinsicMathWidth = kind === "math" ? renderedMathCardWidth(element) : undefined;
       const measuredMathWidth = intrinsicMathWidth === undefined ? undefined
         : constrainWidth ? Math.min(intrinsicMathWidth, layout.nodes[node.id]!.width) : intrinsicMathWidth;
@@ -2142,6 +2309,7 @@ export class InfiniteBoardView {
             ? Math.max(72, element.offsetHeight)
             : Math.max(72, Math.ceil(element.scrollHeight + 8)),
       };
+      this.nodeMeasurements.set(node.id, { key: measureKey, size: { ...measured[node.id]! } });
     }
     return measured;
   }
@@ -2287,12 +2455,43 @@ export class InfiniteBoardView {
     const notify = (timestamp: number): void => {
       const camera = this.getCameraState();
       for (const listener of this.cameraListeners) listener(camera);
-      if (timestamp < this.cameraNotifyUntil) this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      // Slow WebViews can deliver the final scheduled frame before the CSS
+      // transition has visibly settled. Keep the ink camera in step until the
+      // visible transform reaches its target, not only for a fixed interval.
+      // Older WebViews serialize large matrix translations with limited
+      // significant digits. Allow that rounding without polling forever.
+      const cameraUnsettled = Math.abs(camera.panX - this.panX) >= Math.max(.01, Math.abs(this.panX) * .000005)
+        || Math.abs(camera.panY - this.panY) >= Math.max(.01, Math.abs(this.panY) * .000005)
+        || Math.abs(camera.scale - this.scale) >= .0001;
+      if (timestamp < this.cameraNotifyUntil || cameraUnsettled) {
+        this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
+      }
       else this.cameraFrame = undefined;
     };
     this.cameraFrame = this.hostWindow.requestAnimationFrame(notify);
   }
   private resolveFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
+    const own = this.collectFocusRects(targetIds, board, layout);
+    const supporting = supportingVisualFocusTargets(targetIds, board, layout)
+      .filter((id) => !targetIds.includes(id));
+    if (!own.length || !supporting.length) return own;
+    const withSupport = this.collectFocusRects([...targetIds, ...supporting], board, layout);
+    // The visual a note explains joins the frame only while both stay
+    // readable together; otherwise a note far below its diagram would shrink
+    // the camera a little more with every card added to the row.
+    const viewport = this.viewport.getBoundingClientRect();
+    const plan = (rects: Rect[]) => planFocusCamera(
+      rects,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      rects.length > 1 ? "relationship" : "detail",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
+    ).scale;
+    return plan(withSupport) >= plan(own) * SUPPORTING_VISUAL_MIN_SCALE_SHARE ? withSupport : own;
+  }
+  private collectFocusRects(targetIds: string[], board: SemanticBoardState, layout: BoardLayout): Rect[] {
     const rects: Rect[] = [];
     const visited = new Set<string>();
     const visit = (id: string): void => {
@@ -2309,7 +2508,6 @@ export class InfiniteBoardView {
       }
     };
     for (const id of targetIds) visit(id);
-    for (const id of supportingVisualFocusTargets(targetIds, board, layout)) visit(id);
     // Course controls and tasks are laid out as attachments beneath their
     // semantic anchor nodes. They share the same teaching scene, so a camera
     // focused on an anchor must reserve room for the visible attachment too.
@@ -2348,6 +2546,7 @@ export class InfiniteBoardView {
       "relationship",
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
     );
     return camera.scale >= ANIMATION_CONTEXT_MIN_SCALE;
   }
@@ -2367,22 +2566,90 @@ export class InfiniteBoardView {
     if (!pending) return;
     if (this.resumeAutomaticCamera()) this.focusRects(pending.targetIds, pending.rects, pending.board);
   }
-  private focusRects(targetIds: string[], rects: Rect[], board: SemanticBoardState): void {
+  /**
+   * Adds the current Beat's own targets, then cards the Step wrote earlier,
+   * to an automatic request while the frame stays readable. Pointing at a
+   * diagram therefore keeps the formula being explained beside it instead of
+   * sliding it off screen, and every request inside one Beat composes the
+   * same scene.
+   */
+  private withTeachingContext(targetIds: string[], rects: Rect[], board: SemanticBoardState): Rect[] {
+    const layout = this.layout;
+    if (!layout || !rects.length) return rects;
+    const viewport = this.viewport.getBoundingClientRect();
+    const plan = (candidate: Rect[]) => planFocusCamera(
+      candidate,
+      { panX: this.panX, panY: this.panY, scale: this.scale },
+      viewport,
+      candidate.length > 1 ? "relationship" : "detail",
+      this.viewportInsets,
+      this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
+    ).scale;
+    // A composed frame is kept when it costs little zoom, or when it is still
+    // comfortably readable on this device even if it costs more.
+    const readable = Math.max(this.automaticCameraMinimumScale, CONTEXT_READABLE_SCALE);
+    const extend = (current: Rect[], ids: string[], share: number, allowReadable: boolean): Rect[] => {
+      const extra = this.resolveFocusRects(ids, board, layout);
+      if (!extra.length) return current;
+      const candidate = [...current, ...extra];
+      const scale = plan(candidate);
+      return scale >= plan(current) * share || (allowReadable && scale >= readable) ? candidate : current;
+    };
+    const known = new Set(targetIds);
+    const beat = focusTargetsInRegion(board, this.beatTargets, this.activeRegionId).filter((id) => !known.has(id));
+    beat.forEach((id) => known.add(id));
+    let result = beat.length ? extend(rects, beat, BEAT_CONTEXT_MIN_SCALE_SHARE, true) : rects;
+    const step = focusTargetsInRegion(board, this.stepContextTargets, this.activeRegionId)
+      .filter((id) => !known.has(id) && board.nodes[id]);
+    if (step.length) result = extend(result, step, STEP_CONTEXT_MIN_SCALE_SHARE, false);
+    return result;
+  }
+  private focusRects(targetIds: string[], requestedRects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
+    const rects = this.withTeachingContext(targetIds, requestedRects, board);
     const viewport = this.viewport.getBoundingClientRect();
     const mode: AttentionMode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
       ? "relationship"
       : targetIds.some((id) => Boolean(board.groups[id]))
         ? "overview"
         : "detail";
+    const current = { panX: this.panX, panY: this.panY, scale: this.scale };
     const camera = planFocusCamera(
       rects,
-      { panX: this.panX, panY: this.panY, scale: this.scale },
+      current,
       viewport,
       mode,
       this.viewportInsets,
       this.automaticCameraMinimumScale,
+      this.automaticCameraMaximumScale,
     );
+    // Every automatic teaching request passes through here. When the scene
+    // is already fully visible, close to the planned scale and near the
+    // centre, keep the camera still instead of re-centring on each pointer,
+    // focus or Beat boundary.
+    // A request for part of the scene already on screen may stay a little
+    // off-centre; a scene that adds content is centred properly.
+    const scene = unionRects(rects);
+    const framed = this.lastFramedScene;
+    const withinFrame = Boolean(framed
+      && scene.x >= framed.x - 1 && scene.y >= framed.y - 1
+      && scene.x + scene.width <= framed.x + framed.width + 1
+      && scene.y + scene.height <= framed.y + framed.height + 1);
+    const centerShare = withinFrame ? HOLD_CENTER_SHARE_FRAMED : HOLD_CENTER_SHARE_NEW;
+    // Within one Beat the composed frame already chose its scale, so a
+    // request inside it never zooms in. A new Beat whose subject sits inside
+    // a wider earlier frame is re-framed when it can be shown clearly larger.
+    const beat = this.operation?.beat_id;
+    const sameBeat = beat !== undefined && beat === this.lastFramedBeat;
+    const readable = withinFrame && sameBeat ? 0 : Number.POSITIVE_INFINITY;
+    if (holdsTeachingFrame(rects, current, camera, viewport, this.viewportInsets, centerShare, readable)) {
+      if (!withinFrame) this.lastFramedScene = scene;
+      this.lastFramedBeat = beat;
+      return;
+    }
+    this.lastFramedScene = scene;
+    this.lastFramedBeat = beat;
     this.panX = camera.panX;
     this.panY = camera.panY;
     this.scale = camera.scale;
@@ -2409,6 +2676,7 @@ export class InfiniteBoardView {
   }
   private beginManualNavigation(): void {
     this.cameraAuthority.beginManualNavigation();
+    this.lastFramedScene = undefined;
     this.viewport.classList.add("manual-navigation");
   }
   private resumeAutomaticCamera(): boolean {

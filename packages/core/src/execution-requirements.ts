@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.2.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.3.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -18,6 +18,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "practice-start": "0.2.0",
   "student-tasks:expression_target": "0.1.0",
   "student-tasks:scene3d_view_target": "0.1.0",
+  "reflections": "0.3.0",
+  "binding-hide-undefined": "0.3.0",
 });
 
 export interface ExecutionRequirements {
@@ -61,6 +63,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
       for (const [index, binding] of bindings.entries()) {
         if ((binding as { label?: unknown }).label !== undefined) add("binding-labels", `${path}/bindings/${index}`);
         if ((binding as { allow_zero?: unknown }).allow_zero !== undefined) add("bound-zero-radius", `${path}/bindings/${index}`);
+        if ((binding as { hide_when_undefined?: unknown }).hide_when_undefined !== undefined) add("binding-hide-undefined", `${path}/bindings/${index}`);
         const property = { property: (binding as { target?: string }).target?.split(".").at(-1) };
         // Full reference and numerical validation remains owned by the core validator.
         if (property.property && !Object.values(OLL_CANONICAL_BINDING_CAPABILITIES)
@@ -74,6 +77,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
     const path = `/events/${index}`;
     add(`canonical:${event.version}`, `${path}/version`);
     if (event.lesson?.variables?.length) add("variables", `${path}/lesson/variables`);
+    if (event.lesson?.reflections?.length) add("reflections", `${path}/lesson/reflections`);
     for (const task of event.lesson?.tasks ?? []) {
       if (task.start) add("practice-start", `${path}/lesson/tasks/${task.as}/start`);
       add(`student-tasks:${task.completion.kind}`, `${path}/lesson/tasks/${task.as}`);

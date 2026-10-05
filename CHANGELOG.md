@@ -4,6 +4,8 @@
 
 ### Added
 
+- Point bindings (plot and geometry x/y) accept `hide_when_undefined: true`: when the expression has no finite value (e.g. the intersection of parallel lines) the point is hidden instead of failing the lesson, and it returns once defined (`binding-hide-undefined`, player 0.3.0).
+- `lesson.reflections` (Authoring schema, validator, Canonical normalization, `reflections` execution capability, player version 0.3.0): thinking questions whose reference answer opens after the lesson in a collapsed card under the anchoring board card. The web session exposes `reflections`, and teaching layout places `reflection` attachments under their anchor.
 - 建立 OLL 独立仓库。
 - 从 Octos Learn 产品文档迁入需求、规范和一致性测试基线。
 - 定义 Authoring Profile 与 Canonical Profile 的边界。
@@ -17,6 +19,17 @@
 - 增加 `mountInfiniteBoard()` 宿主 API、独立 Runtime 测试命令、testing 子路径和可安装 tarball 清单。
 
 ### Fixed
+
+- Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
+- Teaching layout: controls shared by several visuals dock under the first of them at its width (8 units below), like a single visual's controls; practice stays beside them, below any visual above it.
+- Board view: a card's measured size is reused while its content signature and width are unchanged, so a variable change re-measures only the visuals it drives instead of forcing a browser layout per card on every animation frame.
+- Teaching layout: a single visual's variable controls dock directly under it at its width instead of forming a column on its left, so they cost no row width; practice still opens left of the visual after the lesson.
+- Teaching camera: the lenient "inside the composed frame" hold applies only within one Beat; a new Beat whose subject sits inside a wider earlier frame is re-framed when it can be shown clearly larger.
+- Teaching layout: a card that no longer fits to the right of its row continues under an earlier column of the same band when that column has room, and a short step (at most two cards) continues under the previous step's column instead of opening a column at the far end of the row.
+
+- Teaching camera (web-runtime): every automatic request composes the Beat's own targets (declared focus plus the cards the Beat writes) and, while readable, the cards the Step wrote earlier; a request is held when its scene is already visible, near the planned scale and centred (subsets of the composed frame are always held), so pointers and focus boundaries no longer slide the board back and forth. Hosts can cap automatic zoom with `setAutomaticCameraMaximumScale()` and pass Step context through `setBeatTargets(targets, stepContext)`; the session exposes `stepContextTargets`.
+- Teaching layout: `composition.readingScale` sizes rows and columns for the scale the host camera reads them at (default 0.9); non-math cards keep their natural width as layout input, so a card stretched to its column no longer jumps to a new band when a later card widens that column.
+- A note's supporting visual joins its camera frame only while both stay readable; course framing uses the same centred near-fit choice as teaching.
 
 - Align the Authoring Schema action payload requirements with the reference validator. In particular, `connect` now declares its stable local alias as required.
 - Document reference types and the required Session resource-to-local-fragment mapping in the model Authoring contract.
