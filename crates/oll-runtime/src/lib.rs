@@ -21,6 +21,8 @@ pub mod tasks;
 
 pub mod plot;
 
+pub mod geometry;
+
 pub mod connections;
 
 pub mod checkpoint;
