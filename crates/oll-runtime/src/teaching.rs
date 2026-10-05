@@ -1546,13 +1546,72 @@ pub fn control_attachments(
 /// control panel sizing: one 360-wide panel per group of sliders that drive
 /// the same visuals, anchored at the group's last delivered visual and owned
 /// (displayed) by its first.
-/// `course_node_ids` is the course's planned node order (topic.nodeIds).
 pub fn control_clusters(
     p: &Preview,
     region_id: &str,
     course_node_ids: &[String],
     declarations: &[Value],
 ) -> Vec<(Attachment, Vec<String>)> {
+    interaction_clusters(p, region_id, course_node_ids, declarations, &[])
+        .into_iter()
+        .filter(|c| !c.sliders.is_empty())
+        .map(|c| (c.controls_attachment(), c.sliders))
+        .collect()
+}
+
+/// One web InteractionCluster: the visuals a group of sliders and tasks act on.
+#[derive(Clone, Debug, PartialEq)]
+pub struct InteractionCluster {
+    pub id: String,
+    pub anchor_node_id: String,
+    pub node_ids: Vec<String>,
+    /// Slider variables of the group (web variableAliases ∩ controls).
+    pub sliders: Vec<String>,
+    pub task_ids: Vec<String>,
+}
+impl InteractionCluster {
+    /// Host control panel attachment (estimated compact height).
+    pub fn controls_attachment(&self) -> Attachment {
+        let n = self.sliders.len() as f64;
+        Attachment {
+            id: self.id.clone(),
+            kind: AttachmentKind::Control,
+            anchor_node_id: self.anchor_node_id.clone(),
+            // Controls belong to the first bound visual.
+            owner_node_id: Some(self.node_ids.first().cloned().unwrap_or_else(|| self.anchor_node_id.clone())),
+            anchor_node_ids: self.node_ids.clone(),
+            width: 360.,
+            // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
+            height: 12. + n * 24. + (n - 1.).max(0.) * 4.,
+        }
+    }
+    /// Host practice panel attachment for `open_tasks` available tasks;
+    /// practice belongs to the final target visual and renders 330 wide.
+    pub fn tasks_attachment(&self, open_tasks: usize, height: Option<f64>) -> Attachment {
+        Attachment {
+            id: format!("{}:tasks", self.id),
+            kind: AttachmentKind::Task,
+            anchor_node_id: self.anchor_node_id.clone(),
+            owner_node_id: Some(self.anchor_node_id.clone()),
+            anchor_node_ids: self.node_ids.clone(),
+            width: 330.,
+            height: height.unwrap_or(60. + open_tasks as f64 * 220.),
+        }
+    }
+}
+
+/// octos-learn buildInteractionClusters: groups of slider variables and the
+/// visuals they drive, then each task joins the cluster of its target
+/// variables/visuals (or gets its own cluster at its last target visual).
+/// `tasks` are the lesson task definitions (all of them: ownership is stable
+/// before a task opens).
+pub fn interaction_clusters(
+    p: &Preview,
+    region_id: &str,
+    course_node_ids: &[String],
+    declarations: &[Value],
+    tasks: &[Value],
+) -> Vec<InteractionCluster> {
     let aliases: Vec<String> = declarations
         .iter()
         .filter_map(|d| d["as"].as_str().map(str::to_owned))
@@ -1566,6 +1625,10 @@ pub fn control_clusters(
         .iter()
         .filter(|id| p.nodes.iter().any(|n| n["id"] == id.as_str()))
         .collect();
+    let mut out: Vec<InteractionCluster> = Vec::new();
+    if topic_nodes.is_empty() || (controls.is_empty() && tasks.is_empty()) {
+        return out;
+    }
     let mut variables_by_node: Vec<(String, Vec<String>)> = Vec::new();
     for id in &topic_nodes {
         let node = p.nodes.iter().find(|n| n["id"] == id.as_str()).unwrap();
@@ -1578,7 +1641,6 @@ pub fn control_clusters(
     }
     let active: Vec<&String> = controls.iter().filter(|c| aliases.contains(c)).collect();
     let mut visited: Vec<String> = Vec::new();
-    let mut out = Vec::new();
     for initial in &active {
         if visited.contains(initial) {
             continue;
@@ -1610,25 +1672,65 @@ pub fn control_clusters(
             .filter(|id| node_ids.contains(id.as_str()))
             .map(|id| (*id).clone())
             .collect();
-        let sliders: Vec<String> = group_aliases
+        out.push(InteractionCluster {
+            id: format!("{region_id}:interaction:{}", out.len() + 1),
+            anchor_node_id: ordered.last().cloned().unwrap_or_default(),
+            node_ids: ordered,
+            sliders: group_aliases.into_iter().filter(|a| controls.contains(a)).collect(),
+            task_ids: vec![],
+        });
+    }
+    // Task targets: variables changed and 3D views a task allows.
+    let targets = |task: &Value| -> (Vec<String>, Vec<String>) {
+        let ops = task["allowed_operations"].as_array().cloned().unwrap_or_default();
+        let pick = |kind: &str, key: &str| -> Vec<String> {
+            ops.iter()
+                .filter(|o| o["kind"] == kind)
+                .filter_map(|o| o[key].as_str().map(str::to_owned))
+                .collect()
+        };
+        (pick("variable_change", "variable"), pick("scene3d_view", "node"))
+    };
+    let mut assigned: Vec<String> = Vec::new();
+    for task in tasks {
+        let Some(id) = task["as"].as_str() else { continue };
+        let (vars, nodes) = targets(task);
+        if let Some(c) = out.iter_mut().find(|c| {
+            vars.iter().any(|v| c.sliders.contains(v)) || nodes.iter().any(|n| c.node_ids.contains(n))
+        }) {
+            c.task_ids.push(id.to_owned());
+            assigned.push(id.to_owned());
+        }
+    }
+    for task in tasks {
+        let Some(id) = task["as"].as_str() else { continue };
+        if assigned.iter().any(|a| a == id) {
+            continue;
+        }
+        let target_nodes: Vec<String> = targets(task)
+            .1
             .into_iter()
-            .filter(|a| controls.contains(a))
+            .filter(|n| topic_nodes.iter().any(|t| *t == n))
             .collect();
-        let n = sliders.len() as f64;
-        out.push((
-            Attachment {
-                id: format!("{region_id}:interaction:{}", out.len() + 1),
-                kind: AttachmentKind::Control,
-                anchor_node_id: ordered.last().cloned().unwrap_or_default(),
-                // Controls belong to the first bound visual.
-                owner_node_id: ordered.first().cloned(),
-                anchor_node_ids: ordered,
-                width: 360.,
-                // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
-                height: 12. + n * 24. + (n - 1.).max(0.) * 4.,
-            },
-            sliders,
-        ));
+        let Some(anchor) = target_nodes.last().cloned() else { continue };
+        if let Some(c) = out.iter_mut().find(|c| c.anchor_node_id == anchor && c.sliders.is_empty()) {
+            c.task_ids.push(id.to_owned());
+            for n in target_nodes {
+                if !c.node_ids.contains(&n) {
+                    c.node_ids.push(n);
+                }
+            }
+        } else {
+            let n = out.len() + 1;
+            out.push(InteractionCluster {
+                id: format!("{region_id}:interaction:{n}"),
+                anchor_node_id: anchor,
+                node_ids: target_nodes,
+                sliders: vec![],
+                task_ids: vec![id.to_owned()],
+            });
+        }
+        assigned.push(id.to_owned());
     }
     out
 }

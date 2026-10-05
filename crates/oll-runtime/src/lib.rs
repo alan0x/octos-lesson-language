@@ -17,6 +17,8 @@ pub mod camera;
 
 pub mod focus;
 
+pub mod tasks;
+
 pub mod connections;
 
 pub mod checkpoint;

@@ -190,9 +190,7 @@ fn control_panels_cluster_like_the_web_host() {
             let Some(board) = frame.get("board") else {
                 continue;
             };
-            if frame["action_id"] == "practice" {
-                continue;
-            }
+
             let mut nodes = board["nodes"].as_array().unwrap().clone();
             for n in &mut nodes {
                 let content = course["visualContent"][n["id"].as_str().unwrap()].clone();
@@ -205,16 +203,32 @@ fn control_panels_cluster_like_the_web_host() {
                 .unwrap_or("__legacy__")
                 .to_owned();
             let p = Preview::from_board(nodes, vec![], vec![]);
-            let got = oll_runtime::teaching::control_attachments(
+            // Host: every cluster's controls, then (after the lesson) its practice panel.
+            let practice = frame["action_id"] == "practice";
+            let got: Vec<oll_runtime::teaching::Attachment> = oll_runtime::teaching::interaction_clusters(
                 &p,
                 &region,
                 &course_nodes,
                 declarations,
-            );
+                course["tasks"].as_array().unwrap(),
+            )
+            .iter()
+            .flat_map(|c| {
+                let mut out = Vec::new();
+                if !c.sliders.is_empty() {
+                    out.push(c.controls_attachment());
+                }
+                if practice && !c.task_ids.is_empty() {
+                    out.push(c.tasks_attachment(c.task_ids.len(), None));
+                }
+                out
+            })
+            .collect();
             let web: Vec<oll_runtime::teaching::Attachment> = frame["attachments"]
                 .as_array()
                 .unwrap()
                 .iter()
+                .filter(|a| a["kind"] != "reflection")
                 .map(|a| oll_runtime::teaching::Attachment::from_json(a).unwrap())
                 .collect();
             assert_eq!(got, web, "{} {}", course["pack"], frame["action_id"]);

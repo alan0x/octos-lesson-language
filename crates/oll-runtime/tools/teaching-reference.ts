@@ -55,7 +55,9 @@ function courseInputs(events: any[]) {
 function attachmentsFor(state: any, events: any[], regionId: string, nodeIds: string[], practice: boolean) {
   const open = events[0];
   const controls = variableControlModels(state).map((c: any) => c.alias);
-  const tasks = practice ? (open.lesson?.tasks ?? []).map((t: any) => t.as) : [];
+  // The host reserves every task for cluster ownership; tasks render only
+  // once the after-lesson window opens.
+  const tasks = (open.lesson?.tasks ?? []).map((t: any) => t.as);
   const taskTargets = Object.fromEntries((open.lesson?.tasks ?? []).map((task: any) => [task.as, {
     variableAliases: task.allowed_operations.flatMap((o: any) => o.kind === "variable_change" ? [o.variable] : []),
     nodeIds: task.allowed_operations.flatMap((o: any) => o.kind === "scene3d_view" ? [o.node] : []),
@@ -68,12 +70,13 @@ function attachmentsFor(state: any, events: any[], regionId: string, nodeIds: st
   return [...clusters.flatMap((cluster: any) => {
     const n = cluster.variableAliases.filter((a: string) => controls.includes(a)).length;
     const controlsHeight = n > 0 ? 12 + n * 24 + Math.max(0, n - 1) * 4 : 0;
-    const tasksHeight = cluster.taskIds.length ? 60 + cluster.taskIds.length * 220 : 0;
+    const openTasks = practice ? cluster.taskIds.length : 0;
+    const tasksHeight = openTasks ? 60 + openTasks * 220 : 0;
     return [
       ...(n ? [{ id: cluster.id, kind: "control", anchorNodeId: cluster.anchorNodeId,
         ownerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId, anchorNodeIds: cluster.nodeIds,
         width: 360, height: controlsHeight, focusHeight: controlsHeight, gap: 24 }] : []),
-      ...(cluster.taskIds.length ? [{ id: `${cluster.id}:tasks`, kind: "task", anchorNodeId: cluster.anchorNodeId,
+      ...(openTasks ? [{ id: `${cluster.id}:tasks`, kind: "task", anchorNodeId: cluster.anchorNodeId,
         ownerNodeId: cluster.anchorNodeId, anchorNodeIds: cluster.nodeIds, width: 330, height: tasksHeight, gap: 28 }] : []),
     ];
   }),
@@ -125,7 +128,7 @@ for (const pack of readdirSync(packRoot).sort()) {
       }
       record("practice", true);
       courses.push({ pack, version, nodeSections, plannedSteps, composition,
-        variables: events[0].lesson?.variables ?? [], visualContent, frames });
+        variables: events[0].lesson?.variables ?? [], tasks: events[0].lesson?.tasks ?? [], visualContent, frames });
     }
   }
 }

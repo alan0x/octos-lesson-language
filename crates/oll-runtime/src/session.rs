@@ -101,6 +101,8 @@ pub struct Session {
     source: String,
     closed: bool,
     incremental: bool,
+    /// After-lesson student tasks and their progress.
+    pub practice: crate::tasks::Practice,
 }
 impl Session {
     pub fn load(source: &str) -> Result<Self, String> {
@@ -127,7 +129,13 @@ impl Session {
                     .ok_or("Invalid final focus".to_owned())
             })
             .collect::<Result<_, _>>()?;
+        let open: Value = source
+            .lines()
+            .find(|l| !l.trim().is_empty())
+            .and_then(|l| serde_json::from_str(l).ok())
+            .unwrap_or(Value::Null);
         Ok(Self {
+            practice: crate::tasks::Practice::new(&open),
             board: Preview::load_incremental(source, allow_incomplete)?,
             source: source.into(),
             closed: last["event"] == "lesson.close",
@@ -145,6 +153,88 @@ impl Session {
     }
     pub fn complete(&self) -> bool {
         self.closed && self.cursor == self.operations.len()
+    }
+    /// Web studentTasks snapshots (available once the lesson completed).
+    pub fn tasks(&self) -> Vec<crate::tasks::Snapshot> {
+        self.practice.snapshots(self.complete())
+    }
+    /// A practice start transition is moving variables; manual input is ignored.
+    pub fn practice_transition(&self) -> bool {
+        self.practice.transition.is_some()
+    }
+    /// Declared initial value of a lesson variable.
+    pub fn initial(&self, alias: &str) -> Option<f64> {
+        self.board
+            .variable_declarations()
+            .iter()
+            .find(|d| d["as"] == alias)
+            .and_then(|d| d["initial"].as_f64())
+    }
+    fn initials(&self) -> crate::expression::Variables {
+        self.board
+            .variable_declarations()
+            .iter()
+            .filter_map(|d| Some((d["as"].as_str()?.to_owned(), d["initial"].as_f64()?)))
+            .collect()
+    }
+    /// Web activatePractice + phase transition timer: start the active task's
+    /// start state once the lesson is complete and advance it. Returns true
+    /// when variables changed.
+    pub fn step_practice(&mut self, seconds: f64) -> Result<bool, String> {
+        let initials = self.initials();
+        let mut values = self
+            .practice
+            .activate(self.complete(), &self.board.variables, &initials);
+        if values.is_none() {
+            values = self.practice.tick(seconds);
+        }
+        let Some(values) = values else { return Ok(false) };
+        for (alias, value) in values {
+            self.board.set_variable(&alias, value)?;
+        }
+        Ok(true)
+    }
+    /// A learner variable change finished (web commitStudentVariableOperation):
+    /// evaluate the active task against the current variables. `control` is
+    /// slider, geometry_point or reset. Returns true when a task attempt was recorded.
+    pub fn commit_student_variable(&mut self, alias: &str, control: &str) -> Result<bool, String> {
+        if self.practice_transition() {
+            return Ok(false);
+        }
+        let operation = crate::tasks::Operation::Variable {
+            id: self.practice.next_operation_id(),
+            alias: alias.to_owned(),
+            control: control.to_owned(),
+        };
+        self.practice.evaluate(self.complete(), &operation, &self.board.variables)
+    }
+    /// A learner 3D view change finished (orbit, preset, zoom, reset).
+    pub fn commit_student_view(&mut self, node: &str, control: &str, yaw: f64, pitch: f64, zoom: f64) -> Result<bool, String> {
+        if self.practice_transition() {
+            return Ok(false);
+        }
+        let operation = crate::tasks::Operation::Scene3dView {
+            id: self.practice.next_operation_id(),
+            node: node.to_owned(),
+            control: control.to_owned(),
+            yaw,
+            pitch,
+            zoom,
+        };
+        self.practice.evaluate(self.complete(), &operation, &self.board.variables)
+    }
+    pub fn task_hint(&mut self, task: &str) -> Result<(), String> {
+        self.practice.hint(self.complete(), task)
+    }
+    /// Web retryStudentTask: variables return to their initial values (not
+    /// evaluated), or the task's start state replays.
+    pub fn task_retry(&mut self, task: &str) -> Result<(), String> {
+        for alias in self.practice.retry(self.complete(), task)? {
+            if let Some(initial) = self.initial(&alias) {
+                self.board.set_variable(&alias, initial)?;
+            }
+        }
+        Ok(())
     }
     pub fn play(&mut self) -> Result<(), String> {
         if !self.complete() {
@@ -350,7 +440,7 @@ impl Session {
     pub fn checkpoint(&self) -> Result<Value, String> {
         let events = self.events()?;
         Ok(
-            json!({"profile":"octos.rust.playback.checkpoint","version":"0.1","program_fingerprint":crate::checkpoint::fingerprint(&events),"canonical_events":events,"incremental":self.incremental,"cursor":self.cursor,"variables":self.board.variables,"animation":self.board.animation_state(),"wait_ms":self.wait_ms,"narration_remaining_ms":self.narration_remaining_ms}),
+            json!({"profile":"octos.rust.playback.checkpoint","version":"0.1","program_fingerprint":crate::checkpoint::fingerprint(&events),"canonical_events":events,"incremental":self.incremental,"cursor":self.cursor,"variables":self.board.variables,"animation":self.board.animation_state(),"wait_ms":self.wait_ms,"narration_remaining_ms":self.narration_remaining_ms,"practice":self.practice.log()}),
         )
     }
     pub fn restore(source: &str, saved: &Value) -> Result<Self, String> {
@@ -459,6 +549,9 @@ impl Session {
         } else {
             saved["incremental"].as_bool().unwrap_or(true)
         };
+        if saved["practice"].is_object() {
+            result.practice.restore(&saved["practice"]);
+        }
         result.playing = false;
         Ok(result)
     }
