@@ -103,6 +103,14 @@ pub struct Session {
     incremental: bool,
     /// After-lesson student tasks and their progress.
     pub practice: crate::tasks::Practice,
+    /// Recorded narration clip durations by Beat id (course pack manifest
+    /// narration.segments): a Beat's narration lasts exactly its clip.
+    pub narration_durations: std::collections::BTreeMap<String, f64>,
+    /// Narration voice on. Off, the lesson does not wait for narration (web:
+    /// a disabled voice completes each narration immediately).
+    pub narration_enabled: bool,
+    narration_beat: Option<String>,
+    narration_total_ms: f64,
 }
 impl Session {
     pub fn load(source: &str) -> Result<Self, String> {
@@ -136,6 +144,10 @@ impl Session {
             .unwrap_or(Value::Null);
         Ok(Self {
             practice: crate::tasks::Practice::new(&open),
+            narration_durations: Default::default(),
+            narration_enabled: true,
+            narration_beat: None,
+            narration_total_ms: 0.,
             board: Preview::load_incremental(source, allow_incomplete)?,
             source: source.into(),
             closed: last["event"] == "lesson.close",
@@ -153,6 +165,19 @@ impl Session {
     }
     pub fn complete(&self) -> bool {
         self.closed && self.cursor == self.operations.len()
+    }
+    /// The Beat whose narration is being spoken and how far into it (ms).
+    pub fn narration_position(&self) -> Option<(&str, f64)> {
+        let beat = self.narration_beat.as_deref()?;
+        Some((beat, (self.narration_total_ms - self.narration_remaining_ms).max(0.)))
+    }
+    /// Turn the narration voice on or off. Turning it off releases the
+    /// narration in progress (the lesson moves on without waiting).
+    pub fn set_narration_enabled(&mut self, enabled: bool) {
+        self.narration_enabled = enabled;
+        if !enabled {
+            self.narration_remaining_ms = 0.;
+        }
     }
     /// Web studentTasks snapshots (available once the lesson completed).
     pub fn tasks(&self) -> Vec<crate::tasks::Snapshot> {
@@ -270,14 +295,21 @@ impl Session {
                     .as_str()
                     .ok_or("Missing narration text")?
                     .into();
-                self.narration_remaining_ms = narration_ms(
-                    &self.narration,
-                    op["narration"]["delivery"].as_str().unwrap_or(""),
-                );
+                let beat = op["beat_id"].as_str().map(str::to_owned);
+                self.narration_remaining_ms = if !self.narration_enabled {
+                    0.
+                } else if let Some(ms) = beat.as_ref().and_then(|b| self.narration_durations.get(b)) {
+                    *ms
+                } else {
+                    narration_ms(&self.narration, op["narration"]["delivery"].as_str().unwrap_or(""))
+                };
+                self.narration_total_ms = self.narration_remaining_ms;
+                self.narration_beat = beat;
             }
             "narration.end" | "beat.end" => {
                 self.narration.clear();
                 self.narration_remaining_ms = 0.0;
+                self.narration_beat = None;
             }
             "step.commit" => self
                 .committed_steps
