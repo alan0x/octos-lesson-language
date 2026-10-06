@@ -111,6 +111,79 @@ pub struct Session {
     pub narration_enabled: bool,
     narration_beat: Option<String>,
     narration_total_ms: f64,
+    /// Targets a seek asks the camera to show (web seekAttentionTargets).
+    pub seek_attention: Vec<String>,
+}
+
+/// One Beat of the playback outline (web PlaybackOutlineBeat).
+#[derive(Clone, Debug, PartialEq)]
+pub struct OutlineBeat {
+    pub id: String,
+    pub title: String,
+    pub start_cursor: usize,
+    pub end_cursor: usize,
+    pub focus_targets: Vec<String>,
+}
+/// One Step of the playback outline (web PlaybackOutlineStep).
+#[derive(Clone, Debug, PartialEq)]
+pub struct OutlineStep {
+    pub id: String,
+    pub title: String,
+    pub start_cursor: usize,
+    pub end_cursor: usize,
+    pub focus_targets: Vec<String>,
+    pub beats: Vec<OutlineBeat>,
+}
+
+/// Web narrationPreview: the first sentence, at most 42 characters.
+fn narration_preview(text: Option<&str>, fallback: String) -> String {
+    let normalized = text.map(|t| t.split_whitespace().collect::<Vec<_>>().join(" ")).unwrap_or_default();
+    if normalized.is_empty() {
+        return fallback;
+    }
+    let sentence = normalized
+        .char_indices()
+        .find(|(_, c)| "。！？.!?".contains(*c))
+        .map(|(i, c)| normalized[..i + c.len_utf8()].trim().to_owned());
+    let preview = sentence.filter(|s| !s.is_empty()).unwrap_or(normalized);
+    if preview.encode_utf16().count() > 42 {
+        let cut: String = preview.chars().take(41).collect();
+        format!("{}…", cut.trim_end())
+    } else {
+        preview
+    }
+}
+/// Web focusTargets of an operation range (inclusive).
+fn range_focus(ops: &[Value], start: usize, end: usize) -> Vec<String> {
+    let scoped = &ops[start..=end.min(ops.len() - 1)];
+    let ids = |a: &Value| -> Vec<String> {
+        if a["op"] == "board.focus" {
+            return a["focus"]["targets"].as_array().into_iter().flatten().filter_map(|t| t.as_str().map(str::to_owned)).collect();
+        }
+        let t = &a["target"];
+        [a["node"]["id"].as_str(), a["connection"]["id"].as_str(), a["group"]["id"].as_str(), t["node_id"].as_str(), t["group_id"].as_str(), t["connection_id"].as_str()]
+            .into_iter()
+            .flatten()
+            .map(str::to_owned)
+            .collect()
+    };
+    let declared: Vec<String> = scoped
+        .iter()
+        .filter(|o| o["action"]["op"] == "board.focus")
+        .flat_map(|o| ids(&o["action"]))
+        .collect();
+    let candidates = if declared.is_empty() {
+        scoped.iter().flat_map(|o| ids(&o["action"])).collect()
+    } else {
+        declared
+    };
+    let mut out: Vec<String> = Vec::new();
+    for c in candidates {
+        if !out.contains(&c) {
+            out.push(c);
+        }
+    }
+    out
 }
 impl Session {
     pub fn load(source: &str) -> Result<Self, String> {
@@ -148,6 +221,7 @@ impl Session {
             narration_enabled: true,
             narration_beat: None,
             narration_total_ms: 0.,
+            seek_attention: Vec::new(),
             board: Preview::load_incremental(source, allow_incomplete)?,
             source: source.into(),
             closed: last["event"] == "lesson.close",
@@ -165,6 +239,81 @@ impl Session {
     }
     pub fn complete(&self) -> bool {
         self.closed && self.cursor == self.operations.len()
+    }
+    /// Web buildPlaybackOutline: steps (titled by purpose) and their Beats
+    /// (titled by the narration's first sentence) with cursor ranges.
+    pub fn outline(&self) -> Vec<OutlineStep> {
+        let Ok(events) = self.events() else { return vec![] };
+        let ops = &self.operations;
+        let find = |kind: &str, key: &str, id: &str| ops.iter().position(|o| o["type"] == kind && o[key] == id);
+        let mut steps = Vec::new();
+        for event in events.as_array().into_iter().flatten() {
+            if event["event"] != "lesson.step" {
+                continue;
+            }
+            let step = &event["step"];
+            let id = step["id"].as_str().unwrap_or("");
+            let (Some(start), Some(end)) = (find("step.begin", "step_id", id), find("step.commit", "step_id", id)) else { continue };
+            let beats = step["beats"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+                .filter_map(|(i, beat)| {
+                    let bid = beat["id"].as_str()?;
+                    let (bs, be) = (find("beat.begin", "beat_id", bid)?, find("beat.end", "beat_id", bid)?);
+                    Some(OutlineBeat {
+                        id: bid.to_owned(),
+                        title: narration_preview(beat["narration"]["text"].as_str(), format!("讲解片段 {}", i + 1)),
+                        start_cursor: bs,
+                        end_cursor: be + 1,
+                        focus_targets: range_focus(ops, bs, be),
+                    })
+                })
+                .collect();
+            steps.push(OutlineStep {
+                id: id.to_owned(),
+                title: step["purpose"].as_str().unwrap_or("").to_owned(),
+                start_cursor: start,
+                end_cursor: end + 1,
+                focus_targets: range_focus(ops, start, end),
+                beats,
+            });
+        }
+        steps
+    }
+    /// The Step and Beat of the current operation (web currentStepId / currentBeatId).
+    pub fn current_ids(&self) -> (Option<String>, Option<String>) {
+        let op = self.cursor.checked_sub(1).and_then(|i| self.operations.get(i));
+        (
+            op.and_then(|o| o["step_id"].as_str().map(str::to_owned)),
+            op.and_then(|o| o["beat_id"].as_str().map(str::to_owned)),
+        )
+    }
+    /// Web seek: rebuild the lesson up to `cursor` (animations finished),
+    /// paused, keeping task progress and the narration settings.
+    pub fn seek(&mut self, cursor: usize, attention: Vec<String>) -> Result<(), String> {
+        let cursor = cursor.min(self.operations.len());
+        let mut fresh = Session::load_incremental(&self.source, self.incremental)?;
+        fresh.narration_durations = std::mem::take(&mut self.narration_durations);
+        fresh.narration_enabled = self.narration_enabled;
+        fresh.practice = std::mem::take(&mut self.practice);
+        fresh.practice.transition = None;
+        while fresh.cursor < cursor {
+            let op = fresh.operations[fresh.cursor].clone();
+            fresh.apply_operation(&op)?;
+            fresh.board.tick(1000.)?;
+            fresh.cursor += 1;
+        }
+        fresh.playing = false;
+        fresh.seek_attention = attention;
+        *self = fresh;
+        Ok(())
+    }
+    /// Web reset + play from the beginning.
+    pub fn restart(&mut self) -> Result<(), String> {
+        self.seek(0, vec![])?;
+        self.play()
     }
     /// The Beat whose narration is being spoken and how far into it (ms).
     pub fn narration_position(&self) -> Option<(&str, f64)> {

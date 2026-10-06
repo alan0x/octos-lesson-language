@@ -344,6 +344,22 @@ impl Policy {
                 >= ANIMATION_CONTEXT_MIN_SCALE
     }
 
+    /// Host attention request (web focusTargets, e.g. after an outline
+    /// seek): frame `targets` through the full focusRects pipeline.
+    pub fn focus_targets(
+        &mut self,
+        p: &Preview,
+        layout: &BoardLayout,
+        targets: &[String],
+        current: Camera,
+        view: &View,
+    ) -> Option<Camera> {
+        let rects = Self::focus_rects(p, layout, targets, current, view);
+        if rects.is_empty() {
+            return None;
+        }
+        self.focus(p, layout, targets, rects, current, view)
+    }
     /// Web resize(): re-plan the last attention after a viewport change.
     pub fn refocus(
         &mut self,
