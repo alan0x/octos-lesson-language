@@ -337,6 +337,8 @@ pub enum Primitive {
 #[derive(Clone, Debug, PartialEq)]
 pub struct LegendItem {
     pub text: String,
+    /// Index into content.curves (the legend checkbox toggles this curve).
+    pub index: usize,
     pub series: usize,
     pub hidden: bool,
 }
@@ -354,6 +356,64 @@ pub struct PlotScene {
     pub y: Range,
 }
 
+/// Web legend / probe label: the curve label (or expression), with the
+/// evaluated linear equation appended under default x/y axis names.
+fn curve_label(curve: &Value, axes: &Value, variables: &Variables) -> String {
+    let expression = curve["expression"].as_str().unwrap_or("");
+    let base = curve["label"].as_str().filter(|s| !s.is_empty()).unwrap_or(expression).to_owned();
+    let name = |a: &Value, d: &str| a["label"].as_str().filter(|s| !s.is_empty()).unwrap_or(d).to_owned();
+    let default_names = name(&axes["x"], "x") == "x" && name(&axes["y"], "y") == "y";
+    match default_names.then(|| format_linear_equation(expression, variables)).flatten() {
+        Some(eq) if eq != base => format!("{base}（{eq}）"),
+        _ => base,
+    }
+}
+/// Web plot-explorer readout text before the pointer reads a curve.
+pub fn readout_idle(exploring: bool, any_hidden: bool) -> &'static str {
+    if any_hidden {
+        "部分曲线已隐藏；练习前请恢复课程视图。"
+    } else if exploring {
+        "探索中：拖动空白平移，滚轮/双指缩放。"
+    } else {
+        "指向曲线查看坐标"
+    }
+}
+/// A pointer reading of one curve (web plot-explorer onpointermove).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Probe {
+    pub index: usize,
+    pub x: f64,
+    pub y: f64,
+    pub text: String,
+}
+/// Web plot-explorer probe: at the pointer's x (frame fractions `fx`, `fy`,
+/// y up), the visible explicit curve whose in-range value lies nearest the
+/// pointer. `None` means 当前位置没有可读曲线.
+pub fn probe(node: &Value, variables: &Variables, x: Range, y: Range, hidden: &[usize], fx: f64, fy: f64) -> Option<Probe> {
+    let axes = &node["content"]["axes"];
+    let px = x.min + fx.clamp(0., 1.) * x.span();
+    let fy = fy.clamp(0., 1.);
+    let curves = node["content"]["curves"].as_array()?;
+    let hit = curves
+        .iter()
+        .enumerate()
+        .filter(|(i, c)| !hidden.contains(i) && c["kind"] != "implicit")
+        .filter_map(|(i, c)| {
+            let v = eval_at(c["expression"].as_str()?, px, variables);
+            (v.is_finite() && v >= y.min && v <= y.max).then(|| (i, c, v, ((v - y.min) / y.span() - fy).abs()))
+        })
+        .min_by(|a, b| a.3.total_cmp(&b.3))?;
+    let name = |a: &Value, d: &str| a["label"].as_str().filter(|s| !s.is_empty()).unwrap_or(d).to_owned();
+    let text = format!(
+        "{}：{} ≈ {}，{} ≈ {}",
+        curve_label(hit.1, axes, variables),
+        name(&axes["x"], "x"),
+        precision5(px),
+        name(&axes["y"], "y"),
+        precision5(hit.2)
+    );
+    Some(Probe { index: hit.0, x: px, y: hit.2, text })
+}
 /// Series dash patterns (stroke-dasharray) of plot-series-0..5.
 pub fn series_dash(series: usize) -> &'static [f64] {
     match series % 6 {
@@ -455,15 +515,9 @@ pub fn plot_scene(
     for (index, curve) in curves.iter().enumerate() {
         let Some(expression) = curve["expression"].as_str().filter(|s| !s.is_empty()) else { continue };
         let series = curve["plotSeries"].as_u64().map_or(index, |s| s as usize) % 6;
-        let base = curve["label"].as_str().filter(|s| !s.is_empty()).unwrap_or(expression).to_owned();
-        let default_names = axis_name(&axes["x"], "x") == "x" && axis_name(&axes["y"], "y") == "y";
-        let eq = default_names.then(|| format_linear_equation(expression, variables)).flatten();
-        let text = match eq {
-            Some(eq) if eq != base => format!("{base}（{eq}）"),
-            _ => base,
-        };
+        let text = curve_label(curve, axes, variables);
         let hidden_curve = hidden.contains(&index);
-        legend.push(LegendItem { text, series: index % 6, hidden: hidden_curve });
+        legend.push(LegendItem { text, index, series: index % 6, hidden: hidden_curve });
         if hidden_curve {
             continue;
         }
@@ -603,6 +657,24 @@ pub fn wheel_zoom_factor(delta_y: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn probe_reads_the_nearest_visible_curve_like_the_web() {
+        let node = serde_json::json!({"content": {"axes": {}, "curves": [
+            {"expression": "x^2+1", "label": "截线 z=x²+1"},
+            {"expression": "2*x", "label": "P处切线 z=2x"},
+            {"kind": "implicit", "expression": "x^2+y^2-1"}
+        ]}});
+        let vars = Variables::new();
+        let r = Range { min: -5., max: 5. };
+        // x = 1: both curves read 2 (fraction .7); the first wins the tie.
+        let p = probe(&node, &vars, r, r, &[], 0.6, 0.7).unwrap();
+        assert_eq!((p.index, p.x, p.y), (0, 1., 2.));
+        assert_eq!(p.text, "截线 z=x²+1：x ≈ 1，y ≈ 2");
+        // Hidden curves are skipped; out-of-range values do not read.
+        assert_eq!(probe(&node, &vars, r, r, &[0], 0.6, 0.7).unwrap().index, 1);
+        assert!(probe(&node, &vars, r, r, &[1], 0.9, 0.5).is_none());
+        assert_eq!(readout_idle(true, true), "部分曲线已隐藏；练习前请恢复课程视图。");
+    }
     #[test]
     fn ticks_and_formats_follow_the_web() {
         let t = plan_axis_ticks(Range { min: -0.75, max: 8.75 }, 236., 46., None);
