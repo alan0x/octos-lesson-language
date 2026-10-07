@@ -28,6 +28,8 @@ pub mod connections;
 
 pub mod diagram;
 
+pub mod classroom;
+
 pub mod checkpoint;
 
 pub mod api;

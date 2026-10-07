@@ -1,0 +1,616 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "一元二次方程求根公式及其推导",
+    "goals": [
+      "掌握一元二次方程标准形式及判别式的意义",
+      "理解配方法推导求根公式的完整步骤",
+      "能够运用求根公式准确求解一元二次方程"
+    ],
+    "adaptation": {
+      "strategies": [
+        "借助二次函数图象直观理解根与交点的对应关系",
+        "通过配方过程的逐步展开建立代数推导逻辑",
+        "结合典型例题进行公式应用示范与练习"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": -5,
+        "max": 5,
+        "label": "a",
+        "control": {
+          "kind": "slider",
+          "step": 0.05
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": -2,
+        "min": -10,
+        "max": 10,
+        "label": "b",
+        "control": {
+          "kind": "slider",
+          "step": 0.1
+        }
+      },
+      {
+        "as": "number_03",
+        "initial": -3,
+        "min": -10,
+        "max": 10,
+        "label": "c",
+        "control": {
+          "kind": "slider",
+          "step": 0.1
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请把c调到 10。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动左下角的滑杆，观察数值和画面同步变化。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成，c已经调到 10。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_03",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_03",
+          "value": 10,
+          "tolerance": 0.05
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_03"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "请调整系数 b 的值，使得判别式 Δ = b² - 4ac 等于 16（当前 a=1, c=-3）。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "Δ = b² - 4(1)(-3) = b² + 12",
+          "要使 b² + 12 = 16，则 b² 需要等于 4",
+          "将 b 调整为 2 或 -2"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！此时判别式为正数，方程有两个不同的实数根。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 2,
+          "tolerance": 0.05
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      },
+      {
+        "as": "section-03-task-01",
+        "prompt": "请调整系数 b 的数值，使得判别式 Δ = b² - 4ac 的值大于 0。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "已知 a=1, c=-3，此时 -4ac = 12 > 0",
+          "无论 b 为何值，b² ≥ 0，此时 Δ 均大于 0，可将 b 设为 4"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "非常好！此时 Δ > 0，方程有两个不相等的实数根。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 4,
+          "tolerance": 0.05
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果判别式 Δ < 0，方程在实数范围内为什么没有解？",
+        "answer": "因为在实数范围内，任何数的平方都不可能是负数。当 Δ < 0 时，√(b² - 4ac) 在实数范围内无意义，因此方程没有实数根。",
+        "anchor": "section-02-moment-05-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-03-reflection-02",
+        "prompt": "如果计算出判别式 Δ < 0，方程在实数范围内有解吗？",
+        "answer": "当 Δ < 0 时，负数在实数范围内没有平方根，因此一元二次方程在实数范围内无实数根。",
+        "anchor": "section-03-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "建立一元二次方程标准形式与二次函数图象交点的直观联系",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "大家好，今天我们来学习一元二次方程的求根公式。首先，一元二次方程的标准形式可以写为 ax² + bx + c = 0，其中 a 不等于 0。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "二次函数与x轴交点",
+                "axes": {
+                  "x": {
+                    "min": -7,
+                    "max": 7,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -60,
+                    "max": 60,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(((number_01)*((x)^(2)))+((number_02)*(x)))+(number_03)",
+                    "label": "y = ax² + bx + c"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "ax^2 + bx + c = 0 \\quad (a \\neq 0)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-03",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "一元二次方程",
+                "items": [
+                  "标准形式：ax² + bx + c = 0 (a ≠ 0)",
+                  "方程的解即为对应二次函数 y = ax² + bx + c 与 x 轴交点的横坐标"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-01-item-02"
+              ],
+              "intent": "强调标准形式和二次项系数不为0的条件",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "方程 ax² + bx + c = 0 的解，在几何上对应着二次函数 y = ax² + bx + c 的图象与 x 轴交点的横坐标。当函数图象与 x 轴有两个交点时，方程就有两个不相等的实数根。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_03",
+              "value": -3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "通过配方法推导求根公式并引入判别式 Delta",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "今天我们来一起推导一元二次方程的求根公式。我们从标准形式 ax^2 + bx + c = 0 开始，其中 a 不等于 0。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "ax^2 + bx + c = 0 \\quad (a \\neq 0)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-02-moment-01-item-01"
+              ],
+              "intent": "展示一元二次方程标准形式",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "推导的关键是配方法。第一步，把常数项 c 移到方程右边；第二步，两边同时除以二次项系数 a。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "配方法推导步骤",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "移项：将常数项移至右边"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "化一：两边同除以 a"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "配方：两边加上 (b/2a)²"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "开方：变形并求出 x"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + \\frac{b}{a}x = -\\frac{c}{a}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "第三步，两边同时加上一次项系数一半的平方，也就是加 2a 分之 b 的平方，从而将左边凑成完全平方式。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\left(x + \\frac{b}{2a}\\right)^2 = \\frac{b^2 - 4ac}{4a^2}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-02"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "这里我们发现右边的分母是正数，分子 b^2 - 4ac 决定了能否开平方。我们把它记作判别式 Delta。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\Delta = b^2 - 4ac \\ge 0 \\implies x + \\frac{b}{2a} = \\pm \\frac{\\sqrt{\\Delta}}{2a}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-02-moment-02-item-01",
+                "section-02-moment-04-item-01"
+              ],
+              "intent": "强调判别式 Delta 的引入与条件",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "移项整理后，就得到了最终的一元二次方程求根公式！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-05-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-04-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-02-moment-05-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "求根公式",
+                "items": [
+                  "当 Δ = b² - 4ac ≥ 0 时",
+                  "x = (-b ± √(b² - 4ac)) / (2a)"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-05-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-02-moment-02-item-01",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "想一想，如果 Delta 小于 0，方程在实数范围内会有解吗？请试着调整参数体验系数与根的关系吧。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-05-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-03",
+      "purpose": "掌握求根公式的应用步骤与根的判别",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "大家好！掌握了配方法推导后，我们来看看如何利用求根公式直接求解一元二次方程。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-02-item-01"
+              ],
+              "intent": "引入求根公式的实际应用主题",
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "对于标准形式 ax² + bx + c = 0，首先要计算根的判别式 Δ = b² - 4ac。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-02-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "当 Δ > 0 时，方程有两个不相等的实数根 x = (-b ± √Δ) / (2a)；当 Δ = 0 时，有两个相等的实数根；当 Δ < 0 时，在实数范围内无解。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 4,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "总结一下应用求根公式的三个步骤：第一步，化方程为标准形式，确定系数 a、b、c；第二步，计算判别式 Δ；第三步，代入公式求解。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-03-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "求根公式解题步骤",
+                "items": [
+                  "1. 化为标准形式 ax² + bx + c = 0，确定 a, b, c",
+                  "2. 计算判别式 Δ = b² - 4ac",
+                  "3. 当 Δ ≥ 0 时，代入 x = (-b ± √Δ) / (2a) 求解"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "如果方程的 Δ 小于 0，在实数范围内该怎么处理呢？请思考一下。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-02-item-01"
+              ],
+              "intent": "引导思考 Δ < 0 时的实数根情况",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "现在，尝试调整系数，看看不同判别式下根的变化吧！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-03-moment-04-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "本课程介绍了二次方程 ax²+bx+c=0 的求根公式 x=(-b±√(b²-4ac))/(2a)，通过配方法完成了推导，并结合判别式 Δ 分析了根的情况。",
+    "focus": [
+      "section-01-moment-01-item-01",
+      "section-02-moment-02-item-01"
+    ]
+  }
+}

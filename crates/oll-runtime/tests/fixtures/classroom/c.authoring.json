@@ -1,0 +1,334 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "理解正比例函数",
+    "goals": [
+      "掌握正比例函数的定义与解析式 y = kx (k ≠ 0)",
+      "学会绘制与分析正比例函数的图像特征",
+      "能运用正比例函数解决实际问题"
+    ],
+    "reflections": [
+      {
+        "as": "section-01-reflection-01",
+        "prompt": "为什么正比例函数 y = kx 中规定 k ≠ 0？如果 k = 0 会发生什么？",
+        "answer": "如果 k = 0，解析式变为 y = 0，此时无论 x 取何值，y 恒为 0。这代表一条与 x 轴重合的常数直线，不再反映两个变量成正比例变化的关系，因此定义中规定 k ≠ 0。",
+        "anchor": "section-01-moment-03-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-02-reflection-01",
+        "prompt": "正比例函数 y = kx 的比例系数绝对值 |k| 越大，图像的倾斜程度有什么变化？",
+        "answer": "|k| 越大，直线越陡峭，越靠近 y 轴。",
+        "anchor": "section-02-moment-03-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-03-reflection-01",
+        "prompt": "在实际问题中，正比例函数 y = kx 的自变量 x 是否一定可以取任意实数？",
+        "answer": "不一定。在实际问题中，自变量 x 的取值范围需要符合实际物理意义或生活常理，例如时间、距离、件数等通常要求 x ≥ 0 或为非负整数。",
+        "anchor": "section-03-moment-01-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "建立正比例函数的代数定义与斜率 k 的直观理解",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "欢迎来到正比例函数的学习！在日常生活中，如果两个变量成正比例，它们之间的数学关系该如何表达呢？",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "理解正比例函数",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "expression",
+              "expression": "neutral",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "简单来说，一般地，形如 y 等于 kx 的函数，叫作正比例函数。其中 k 是常数，且绝对不能等于零。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = kx \\quad (k \\neq 0)"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "这里的 k 叫作比例系数。在平面直角坐标系中，正比例函数的图像是一条经过原点的直线。当 k 大于 0 时，直线经过一、三象限；当 k 小于 0 时，直线经过二、四象限。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "正比例函数图像 y = 2x",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 10,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(2)*(x)",
+                    "label": "y = 2x"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "正比例函数性质",
+                "items": [
+                  "解析式：y = kx (k ≠ 0)",
+                  "图像：过原点 (0,0) 的一条直线",
+                  "k > 0 时，经过第一、三象限",
+                  "k < 0 时，经过第二、四象限"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01",
+                "section-01-moment-03-item-02"
+              ],
+              "intent": "观察直线经过原点以及与比例系数 k 的关系",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "思考一下：为什么正比例函数 y 等于 kx 的比例系数 k 不能为零？如果 k 等于零，这个函数会变成什么样？",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "探究正比例函数图像的性质（过原点、象限与增减性）",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们在直角坐标系中观察正比例函数 y 等于 kx 的图像。首先来看当 k 大于 0 时的情况，比如直线 y 等于 2x。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "观察正比例函数在 k 大于 0 时的图像走势",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "注意观察，无论比例系数 k 如何变化，正比例函数的图像总是经过原点 (0,0)。当 k 大于 0 时，直线经过第一、三象限，从左到右上升，y 随 x 的增大而增大。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "正比例函数图像性质",
+                "items": [
+                  "必过原点 (0, 0)",
+                  "k > 0 时：经过一、三象限，y 随 x 增大而增大",
+                  "k < 0 时：经过二、四象限，y 随 x 增大而减小"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果 k 小于 0，比如 y 等于负 2x，直线则经过第二、四象限，从左到右下降，y 随 x 的增大而减小。那么思考一下，|k| 的大小对直线的倾斜程度有什么影响呢？课后你可以亲自试一试。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = kx \\quad (k \\neq 0)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-03",
+      "purpose": "应用正比例函数解决实际问题并检验掌握情况",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "现在我们来看如何利用正比例函数解决实际问题。假设一辆汽车以每小时 60 千米的速度匀速行驶，行驶的路程 y 千米与时间 x 小时之间就满足正比例关系。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-03-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = 60x \\quad (x \\ge 0)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-03-moment-01-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "实际问题建模",
+                "items": [
+                  "1. 确定自变量 x 与因变量 y",
+                  "2. 寻找比例系数 k (速度、单价等)",
+                  "3. 注意自变量的实际取值范围 (x ≥ 0)"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-03-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01",
+                "section-03-moment-01-item-01"
+              ],
+              "intent": "引入正比例函数在实际生活中的应用场景",
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-03-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "在解决实际问题时，我们不仅要写出解析式，还要注意实际意义对自变量取值范围的限制。想一想，如果购买某种物品，总价与数量的关系也是正比例函数吗？课后你可以亲自尝试动手操作与思考。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "引导思考并邀请进行课后练习",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "本课讲解了正比例函数的表达式 y = kx (k ≠ 0) 及其图像特征。比例系数 k 决定了直线的倾斜程度与增减性。 Check back anytime for a quick review!",
+    "focus": [
+      "section-01-moment-03-item-01"
+    ]
+  }
+}

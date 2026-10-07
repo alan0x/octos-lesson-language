@@ -1,0 +1,444 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用因式分解法解一元二次方程",
+    "goals": [
+      "掌握将 x² - 5x + 6 拆解为 (x - 2)(x - 3) 的十字相乘/因式分解方法",
+      "理解“两数之积为零，则至少一数为零”的逻辑，并求出方程的解",
+      "结合二次函数图象的 x 轴交点理解方程解的几何意义"
+    ],
+    "adaptation": {
+      "strategies": [
+        "一步步拆解因式分解关键步骤并同步记录板书",
+        "展示二次函数 y = x² - 5x + 6 及其与 x 轴交点，直观验证根的正确性"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": 0,
+        "max": 2,
+        "label": "二次项系数a",
+        "control": {
+          "kind": "slider",
+          "step": 0.01
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": -5,
+        "min": -6,
+        "max": -4,
+        "label": "一次项系数b",
+        "control": {
+          "kind": "slider",
+          "step": 0.01
+        }
+      },
+      {
+        "as": "number_03",
+        "initial": 6,
+        "min": 5,
+        "max": 7,
+        "label": "常数项c",
+        "control": {
+          "kind": "slider",
+          "step": 0.01
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请把一次项系数b调到 -6。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动左下角的滑杆，观察数值和画面同步变化。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成，一次项系数b已经调到 -6。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": -6,
+          "tolerance": 0.005
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "请把常数项c调到 5。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动左下角的滑杆，观察数值和画面同步变化。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成，常数项c已经调到 5。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_03",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_03",
+          "value": 5,
+          "tolerance": 0.005
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_03"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-01-reflection-02",
+        "prompt": "如果将常数项 6 分解为 1 × 6 或 (-1) × (-6)，能正确凑出一次项系数 -5 吗？为什么？",
+        "answer": "不能。1 + 6 = 7，(-1) + (-6) = -7，都不等于 -5。只有 (-2) + (-3) = -5，才能正确满足交叉相乘凑一次项系数的要求。",
+        "anchor": "section-01-moment-05-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "讲解因式分解法解 x² - 5x + 6 = 0 的步骤与原理",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "今天我们来看练习3：用因式分解法解一元二次方程 x² - 5x + 6 = 0。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "因式分解法求解流程",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "原方程: x² - 5x + 6 = 0"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "因式分解: (x - 2)(x - 3) = 0"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "转化为线性方程: x - 2 = 0 或 x - 3 = 0"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "求出方程的解: x₁ = 2, x₂ = 3"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 - 5x + 6 = 0"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-01-item-02"
+              ],
+              "intent": "引入练习3方程题目",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "第一步，观察常数项6和一次项系数-5。我们可以将常数项6分解为 (-2) × (-3)，而 (-2) + (-3) 恰好等于 -5。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "分析常数项与一次项系数的关系",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "因此，方程左边可以因式分解为 (x - 2)(x - 3) = 0。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "(x - 2)(x - 3) = 0"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "展示因式分解后的表达形式",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "根据“两个数相乘等于零，则至少有一个数为零”的性质，我们可以得到 x - 2 = 0 或 x - 3 = 0。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "因式分解法解题步骤",
+                "items": [
+                  "1. 移项将右边化为 0",
+                  "2. 将左边二次三项式因式分解",
+                  "3. 令每个因式分别等于 0 求根"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-04-item-01"
+              ],
+              "intent": "梳理因式分解法解方程的核心步骤",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "解这两个一元一次方程，得到 x₁ = 2，x₂ = 3。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-05-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x_1 = 2, \\quad x_2 = 3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-04-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "如果将二次三项式分解为其他组合，比如 1 × 6，能正确得到一次项系数 -5 吗？请思考一下。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-05-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "结合二次函数图象二次验证方程的解及其几何意义",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "现在我们结合二次函数 y = x² - 5x + 6 的图象，来看看这个方程解的几何意义。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "二次函数 y = n1*x^2 + n2*x + n3 与 x 轴的交点",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 5,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 50,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(((number_01)*((x)^(2)))+((number_02)*(x)))+(number_03)",
+                    "label": "y = x² - 5x + 6"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-02"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-01-item-01"
+              ],
+              "intent": "观察二次函数图象与x轴的交点",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "当方程右边为0时，相当于求函数图象与 x 轴的交点横坐标。我们可以看到，图象精准交于 (2,0) 和 (3,0) 两点。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-02-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果改变常数项，例如将 c 调整为 5，图象会发生上下平移，对应的交点横坐标也会随之改变。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_03",
+              "value": 5,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "将常数项恢复为 6，交点重新回到 x = 2 和 x = 3。这完美验证了代数解法与几何图象的一致性。请你尝试调整参数巩固理解。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_03",
+              "value": 6,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "今天我们通过因式分解法解出方程 x² - 5x + 6 = 0 的解为 x₁ = 2, x₂ = 3，并在二次函数图象上验证了这两个解对应的就是函数与 x 轴交点的横坐标。",
+    "focus": [
+      "section-01-moment-01-item-01",
+      "section-02-moment-01-item-01"
+    ]
+  }
+}
