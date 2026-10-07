@@ -158,14 +158,6 @@ impl Preview {
                         {
                             return Err("Unsupported preview node kind".into());
                         }
-                        if op == "board.create"
-                            && action["node"]["kind"] == "diagram"
-                            && !action["node"]["content"]["sequence"].is_array()
-                        {
-                            return Err(
-                                "Native preview currently supports sequence diagrams only".into()
-                            );
-                        }
                         frames.push(Frame {
                             narration: if phase == "during_speech" {
                                 beat["narration"]["text"].as_str().unwrap_or("").into()

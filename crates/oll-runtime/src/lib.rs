@@ -26,6 +26,8 @@ pub mod geometry;
 
 pub mod connections;
 
+pub mod diagram;
+
 pub mod checkpoint;
 
 pub mod api;
