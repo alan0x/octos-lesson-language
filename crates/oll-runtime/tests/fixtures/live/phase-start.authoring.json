@@ -1,0 +1,403 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "理解相反数",
+    "goals": [
+      "理解相反数的几何含义：数轴上位于原点两侧且到原点距离相等的两个数",
+      "掌握相反数的代数特征与符号改变规则"
+    ],
+    "adaptation": {
+      "strategies": [
+        "利用数轴上关于原点对称的两点直观引入相反数的概念",
+        "演示数值动态变化，观察两点同步对称移动的效果"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 3,
+        "min": -5,
+        "max": 5,
+        "label": "数值",
+        "control": {
+          "kind": "slider",
+          "step": 0.05
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请将数值调整到 0，观察其相反数的位置。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "尝试将滑块向左拖动到坐标原点。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！0 的相反数依然是 0。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 0,
+          "tolerance": 0.025
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "请将数值调整到 -2，观察它与原点的距离以及它的相反数位置。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "-2 位于原点的左侧，距离原点 2 个单位",
+          "它的相反数应当位于原点右侧 2 个单位处"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！你找到了 -2，它的相反数是 2。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -2,
+          "tolerance": 0.025
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-01-reflection-02",
+        "prompt": "数轴上有没有哪个数的相反数就是它自己？",
+        "answer": "有，0 的相反数是 0。在数轴上，0 到原点的距离是 0，关于原点对称的点还是它本身。",
+        "anchor": "section-01-moment-03-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "为什么正数的相反数是负数，而负数的相反数会变成正数呢？",
+        "answer": "因为求一个数的相反数在几何上相当于将该点绕原点旋转180度（或者关于原点作镜面对称）。正数在原点右侧，对称后落到原点左侧变为负数；负数在原点左侧，对称后落到原点右侧变为正数。",
+        "anchor": "section-02-moment-02-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "利用数轴直观感受关于原点对称的两点，建立相反数的概念",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们在数轴上观察一个数和它的相反数。首先看点 3，它到原点的距离是 3 个单位长度。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "数轴上的相反数",
+                "axes": {
+                  "x": {
+                    "min": -5,
+                    "max": 5,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -1,
+                    "max": 1,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(0)*(x)",
+                    "label": "数轴"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 3,
+                    "y": 0,
+                    "label": "P(x, y)"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "(0)*(number_01)"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "3 \\text{ 与 } -3 \\text{ 互为相反数}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "如果我们将这个数移动到 -3，它同样距离原点 3 个单位长度，只是方向相反。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "总结来说，只有符号不同的两个数互为相反数，在数轴上它们关于原点对称。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "相反数的特征",
+                "items": [
+                  "几何意义：数轴上关于原点对称，到原点距离相等",
+                  "代数特征：数值符号相反（0的相反数是0）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "思考一下：数轴上有没有哪个数的相反数就是它自己呢？你可以尝试把数值调到不同位置看看。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "深入代数表示与性质，掌握求一个数的相反数的方法",
+      "beats": [
+        {
+          "key": "moment-01",
+          "start": {
+            "kind": "replay",
+            "variables": [
+              "number_01"
+            ]
+          },
+          "say": "在前一节中，我们在数轴上看到了位于原点两侧、到原点距离相等的点。现在我们从代数符号的角度深入观察：3 的相反数是 -3，-3 的相反数又是 3。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "a \\text{ 的相反数是 } -a"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-02-moment-01-item-01"
+              ],
+              "intent": "通过几何对应引入代数符号规则",
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "在任意一个数前面添上一个负号，就表示求这个数的相反数。比如，当我们求 -3 的相反数时，写作 -(-3)，它等于 3。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "-(-3) = 3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "相反数的代数性质",
+                "items": [
+                  "任何数 a 的相反数记作 -a",
+                  "互为相反数的两个数之和为 0：a + (-a) = 0",
+                  "0 的相反数是 0"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果我们把数值移动到 -4，它的相反数就是 4。如果一个数和它的相反数相加，结果总是等于 0。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -4,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "为什么正数的相反数是负数，而负数的相反数会变成正数呢？",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-02-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "请你在数轴上将数值滑动到 -2，观察它的相反数在原点的哪一侧。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-02-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "相反数在数轴上表现为关于原点对称的两个点，代数上表现为数值大小相同、符号相反。0的相反数是0本身。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

@@ -75,3 +75,35 @@ fn live_lesson_materializes_like_the_web_and_plays() {
     }
     assert!(session.complete());
 }
+
+/// A generated lesson whose Beat replays a start state (`lesson.phase.start`,
+/// web beginPhaseTransition): the variables ease to the start values over
+/// the brief duration while playing, and the lesson plays to the end.
+#[test]
+fn phase_start_replays_variables_while_playing() {
+    use oll_runtime::authoring::materialize_jsonl;
+    use oll_runtime::session::Session;
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/live");
+    let source: Value = serde_json::from_str(&std::fs::read_to_string(dir.join("phase-start.authoring.json")).unwrap()).unwrap();
+    let host = Host {
+        lesson_id: "live-2".into(),
+        board_id: "learn-2".into(),
+        base_revision: 0,
+        region_intent: "new_topic".into(),
+        region_id: None,
+    };
+    let jsonl = materialize_jsonl(&source, &host).unwrap();
+    assert!(jsonl.contains("\"lesson.phase.start\""));
+    let mut session = Session::load(&jsonl).unwrap();
+    session.play().unwrap();
+    for _ in 0..20_000 {
+        if session.complete() {
+            break;
+        }
+        session.tick(0.05).unwrap();
+        if !session.playing {
+            session.play().unwrap();
+        }
+    }
+    assert!(session.complete());
+}

@@ -33,7 +33,17 @@ pub struct Preview {
     /// lesson.reflections: thinking questions shown after the lesson.
     reflections: Vec<Value>,
     animation: Option<Animation>,
+    /// lesson.phase.start (replay): several variables ease back to a
+    /// start state (web beginPhaseTransition, brief duration).
+    phase: Option<PhaseAnimation>,
 }
+#[derive(Clone, Debug)]
+struct PhaseAnimation {
+    targets: Vec<(String, f64, f64)>,
+    elapsed: f64,
+}
+/// Web variableAnimationDuration("brief").
+const PHASE_SECONDS: f64 = 1.8;
 #[derive(Clone, Debug)]
 struct Animation {
     variable: String,
@@ -76,6 +86,7 @@ impl Preview {
             declarations: Vec::new(),
             reflections: Vec::new(),
             animation: None,
+            phase: None,
         }
     }
     pub fn load_incremental(source: &str, allow_incomplete: bool) -> Result<Self, String> {
@@ -136,6 +147,7 @@ impl Preview {
                                 | "teacher.point"
                                 | "teacher.expression"
                                 | "lesson.variable.animate"
+                                | "lesson.phase.start"
                         ) {
                             return Err(format!("Preview does not yet support {op}"));
                         }
@@ -195,6 +207,7 @@ impl Preview {
                 .cloned()
                 .unwrap_or_default(),
             animation: None,
+            phase: None,
         };
         // Validate all supported actions before the host opens the lesson.
         let mut validation = result.clone();
@@ -391,13 +404,12 @@ impl Preview {
         out
     }
     pub fn animation_remaining(&self) -> f64 {
-        self.animation
-            .as_ref()
-            .map(|a| (a.duration - a.elapsed).max(0.0))
-            .unwrap_or(0.0)
+        let single = self.animation.as_ref().map(|a| (a.duration - a.elapsed).max(0.0)).unwrap_or(0.0);
+        let phase = self.phase.as_ref().map(|p| (PHASE_SECONDS - p.elapsed).max(0.0)).unwrap_or(0.0);
+        single.max(phase)
     }
     pub fn animating(&self) -> bool {
-        self.animation.is_some()
+        self.animation.is_some() || self.phase.is_some()
     }
     pub fn complete(&self) -> bool {
         self.cursor == self.frames.len() && !self.animating()
@@ -537,6 +549,21 @@ impl Preview {
                     easing: easing.into(),
                 });
             }
+            "lesson.phase.start" => {
+                let values = a["transition"]["values"].as_object().ok_or("Phase start requires transition targets")?;
+                let mut targets = Vec::new();
+                for (alias, to) in values {
+                    let to = to.as_f64().ok_or("Invalid phase start value")?;
+                    self.check_value(alias, to)?;
+                    let from = *self.variables.get(alias).ok_or("Unknown phase start variable")?;
+                    if from != to {
+                        targets.push((alias.clone(), from, to));
+                    }
+                }
+                if !targets.is_empty() {
+                    self.phase = Some(PhaseAnimation { targets, elapsed: 0.0 });
+                }
+            }
             _ => unreachable!(),
         }
         self.narration = frame.narration;
@@ -561,6 +588,15 @@ impl Preview {
             };
             self.set_variable(&a.variable, a.from + (a.to - a.from) * p)?;
             self.animation = if t == 1.0 { None } else { Some(a) };
+        }
+        if let Some(mut p) = self.phase.clone() {
+            p.elapsed = (p.elapsed + seconds).min(PHASE_SECONDS);
+            let t = p.elapsed / PHASE_SECONDS;
+            let eased = if t < 0.5 { 2.0 * t * t } else { 1.0 - (-2.0 * t + 2.0).powi(2) / 2.0 };
+            for (alias, from, to) in &p.targets {
+                self.set_variable(alias, from + (to - from) * eased)?;
+            }
+            self.phase = if t >= 1.0 { None } else { Some(p) };
         }
         Ok(())
     }
