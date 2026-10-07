@@ -30,6 +30,8 @@ pub mod diagram;
 
 pub mod classroom;
 
+pub mod selection;
+
 pub mod checkpoint;
 
 pub mod api;
