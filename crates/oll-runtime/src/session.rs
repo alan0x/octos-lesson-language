@@ -320,6 +320,29 @@ impl Session {
         let beat = self.narration_beat.as_deref()?;
         Some((beat, (self.narration_total_ms - self.narration_remaining_ms).max(0.)))
     }
+    /// Host narration audio clock: the current Beat's clip is `position_ms`
+    /// of `total_ms` in (`finished` once it played out). The narration then
+    /// ends with the audio itself rather than the declared or estimated
+    /// duration (web waits for onPlaybackComplete), so a lesson neither cuts
+    /// a longer clip off nor idles after a shorter one.
+    pub fn sync_narration_audio(&mut self, beat: &str, position_ms: f64, total_ms: f64, finished: bool) {
+        if !self.narration_enabled || self.narration_beat.as_deref() != Some(beat) {
+            return;
+        }
+        if total_ms.is_finite() && total_ms > 0. {
+            self.narration_total_ms = total_ms;
+        }
+        self.narration_remaining_ms = if finished {
+            0.
+        } else {
+            // Still sounding: never release before the audio ends.
+            (self.narration_total_ms - position_ms.max(0.)).max(1.)
+        };
+        // Already waiting at this Beat's narration.end: follow the audio.
+        if self.operations.get(self.cursor).is_some_and(|op| op["type"] == "narration.end") {
+            self.wait_ms = self.narration_remaining_ms;
+        }
+    }
     /// Turn the narration voice on or off. Turning it off releases the
     /// narration in progress (the lesson moves on without waiting).
     pub fn set_narration_enabled(&mut self, enabled: bool) {
