@@ -335,8 +335,9 @@ impl Session {
         self.narration_remaining_ms = if finished {
             0.
         } else {
-            // Still sounding: never release before the audio ends.
-            (self.narration_total_ms - position_ms.max(0.)).max(1.)
+            // Still sounding: never release before the audio ends. The guard
+            // outlasts one host tick, so only `finished` lets the Beat go.
+            (self.narration_total_ms - position_ms.max(0.)).max(0.) + 40.
         };
         // Already waiting at this Beat's narration.end: follow the audio.
         if self.operations.get(self.cursor).is_some_and(|op| op["type"] == "narration.end") {
