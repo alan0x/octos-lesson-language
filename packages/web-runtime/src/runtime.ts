@@ -273,6 +273,8 @@ export function operationDelay(operation: PlaybackOperation, speed = 1): number 
   return Math.max(18, operationBaseDelay(operation) / normalizedSpeed(speed));
 }
 
+const dragPersistIntervalMs = 400;
+
 export function variableAnimationDuration(
   intent: PlaybackVariableAnimation["duration_intent"],
   speed = 1,
@@ -331,6 +333,8 @@ export class BrowserLessonSession {
   private currentFrame?: PlaybackFrame;
   private variableAnimation?: PlaybackVariableAnimation;
   private variableAnimationTimer?: ReturnType<typeof setTimeout>;
+  private dragPersistTimer?: ReturnType<typeof setTimeout>;
+  private lastDragPersistAt = 0;
   private variableAnimationStartedAt?: number;
   private variableAnimationStartProgress = 0;
   private readonly listeners = new Set<() => void>();
@@ -964,7 +968,7 @@ export class BrowserLessonSession {
     if (this.studentOperationLog.operations.some((operation) => operation.id === operationId)) return;
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
-    pending.accepted = this.applyManualVariable(pending.alias, value) || pending.accepted;
+    pending.accepted = this.applyManualVariable(pending.alias, value, true) || pending.accepted;
   }
 
   commitStudentVariableOperation(
@@ -1222,7 +1226,7 @@ export class BrowserLessonSession {
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
-  private applyManualVariable(alias: string, value: number): boolean {
+  private applyManualVariable(alias: string, value: number, duringDrag = false): boolean {
     if (this.failureState || this.phaseState.transition) return false;
     if (this.playing && this.variableAnimation?.variable === alias) return false;
     if (!this.playing && this.variableAnimation?.variable === alias) this.discardVariableAnimation();
@@ -1232,9 +1236,31 @@ export class BrowserLessonSession {
       this.reportFailure("input", error);
       return false;
     }
-    this.persist();
+    if (duringDrag) this.persistDuringDrag();
+    else this.persist();
     this.emit();
     return true;
+  }
+
+  /**
+   * A drag emits an update per frame. Each checkpoint clones the whole
+   * projection and rewrites the stored document, so save at most every
+   * `dragPersistIntervalMs` plus once more when the drag pauses; the commit
+   * that ends the gesture still saves immediately.
+   */
+  private persistDuringDrag(): void {
+    const now = Date.now();
+    if (this.dragPersistTimer === undefined && now - this.lastDragPersistAt >= dragPersistIntervalMs) {
+      this.lastDragPersistAt = now;
+      this.persist();
+      return;
+    }
+    if (this.dragPersistTimer !== undefined) clearTimeout(this.dragPersistTimer);
+    this.dragPersistTimer = setTimeout(() => {
+      this.dragPersistTimer = undefined;
+      this.lastDragPersistAt = Date.now();
+      this.persist();
+    }, dragPersistIntervalMs);
   }
 
   private practiceKey(taskId: string): string {
@@ -1630,6 +1656,11 @@ export class BrowserLessonSession {
   }
 
   private persist(): void {
+    if (this.dragPersistTimer !== undefined) {
+      clearTimeout(this.dragPersistTimer);
+      this.dragPersistTimer = undefined;
+    }
+    this.lastDragPersistAt = Date.now();
     if (this.player.cursor === 0) return;
     try {
       const checkpoint: BrowserCheckpoint = this.player.checkpoint();

@@ -1099,6 +1099,28 @@ test("animation failure retains last accepted value and progress and stays block
   assert.equal(restored.cursor, 0);
 });
 
+test("slider drag updates throttle checkpoint writes and the commit still saves the final value", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 1_000_000 });
+  const store = new MemoryStore();
+  let saves = 0;
+  const save = store.save.bind(store);
+  store.save = (key, checkpoint) => { saves += 1; save(key, checkpoint); };
+  const session = new BrowserLessonSession(unitCircleEvents, store, "drag-persist");
+  advanceToVariableAnimation(session);
+  const gesture = session.beginStudentVariableOperation("theta", { control: "slider", input: "mouse" });
+  const before = saves;
+  for (let frame = 1; frame <= 20; frame += 1) {
+    session.updateStudentVariableOperation(gesture, frame / 10);
+    context.mock.timers.tick(16);
+  }
+  assert.ok(saves - before <= 2, `20 drag frames wrote ${saves - before} checkpoints`);
+  context.mock.timers.tick(500);
+  assert.equal(store.values.get("drag-persist")?.projection.board?.variables?.theta?.value, 2, "trailing save keeps the last dragged value");
+  session.updateStudentVariableOperation(gesture, 2.5);
+  session.commitStudentVariableOperation(gesture, 2.5);
+  assert.equal(store.values.get("drag-persist")?.projection.board?.variables?.theta?.value, 2.5, "commit saves immediately");
+});
+
 test("invalid student input never commits a successful gesture or task attempt", () => {
   const session = new BrowserLessonSession(unitCircleEvents, new MemoryStore(), "failed-input");
   advanceToVariableAnimation(session);
