@@ -1543,6 +1543,14 @@ export class InfiniteBoardView {
   private nodeInstanceSequence = 0;
   private disposed = false;
   private fontReflowFrame?: number;
+  /**
+   * Plot cards whose size was reused while a variable drag redrew them. Their
+   * real height is checked once the updates settle, so a legend that wrapped
+   * differently still reflows the board.
+   */
+  private readonly plotsAwaitingRemeasure = new Set<string>();
+  private layoutRevisionCounter = 0;
+  private plotRemeasureTimer?: ReturnType<Window["setTimeout"]>;
   private readonly handleFontsLoaded = (): void => {
     if (this.disposed || this.fontReflowFrame !== undefined) return;
     this.fontReflowFrame = this.hostWindow.requestAnimationFrame(() => {
@@ -1604,6 +1612,13 @@ export class InfiniteBoardView {
     this.transform();
   }
 
+  /**
+   * Changes whenever card positions or sizes may have changed. A render that
+   * reused the previous layout (typically a slider frame) leaves it unchanged,
+   * so hosts can skip re-measuring card bounds.
+   */
+  get layoutRevision(): number { return this.layoutRevisionCounter; }
+
   render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
     const teachingCameraChanged = this.cameraAuthority.observeRender(
       board?.board_id,
@@ -1643,6 +1658,7 @@ export class InfiniteBoardView {
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
+    this.layoutRevisionCounter += 1;
     if (!board) { this.clearBoard(); return; }
     const layoutOptions = { regions: this.regionLayouts };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
@@ -2192,6 +2208,7 @@ export class InfiniteBoardView {
     this.disposed = true;
     this.viewport.ownerDocument.fonts?.removeEventListener("loadingdone", this.handleFontsLoaded);
     if (this.fontReflowFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.fontReflowFrame);
+    if (this.plotRemeasureTimer !== undefined) this.hostWindow.clearTimeout(this.plotRemeasureTimer);
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.viewport.removeEventListener("wheel", this.handleWheel);
     this.viewport.removeEventListener("pointerdown", this.handlePointerDown);
@@ -2221,7 +2238,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2238,7 +2255,7 @@ export class InfiniteBoardView {
       disposePlotExplorer(element);
       disposeGeometryExplorer(element);
       disposeScene3d(element);
-      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id); this.nodeMeasurements.delete(id);
+      element.remove(); this.nodeElements.delete(id); this.nodeContentSignatures.delete(id); this.plotsAwaitingRemeasure.delete(id); this.nodeMeasurements.delete(id);
     }
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
@@ -2284,11 +2301,16 @@ export class InfiniteBoardView {
             this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
           );
         }
+        // A plot redrawn in place keeps its frame while a variable changes
+        // its curves and legend. Re-measuring it forces a synchronous browser
+        // layout of the whole board on every slider frame, so its size is
+        // reused and verified once the updates settle.
+        if (kind === "plot" && updated) this.plotsAwaitingRemeasure.add(node.id);
         this.nodeContentSignatures.set(node.id, signature);
       }
       this.syncNodeFragmentEmphasis(element, node);
       setRect(element, layout.nodes[node.id]!);
-      const measureKey = `${signature}\u0000${layout.nodes[node.id]!.width}\u0000${constrainWidth}`;
+      const measureKey = `${this.plotsAwaitingRemeasure.has(node.id) ? "live-plot" : signature}\u0000${layout.nodes[node.id]!.width}\u0000${constrainWidth}`;
       const cachedMeasurement = this.nodeMeasurements.get(node.id);
       if (!created && cachedMeasurement?.key === measureKey) {
         measured[node.id] = { ...cachedMeasurement.size };
@@ -2311,7 +2333,26 @@ export class InfiniteBoardView {
       };
       this.nodeMeasurements.set(node.id, { key: measureKey, size: { ...measured[node.id]! } });
     }
+    this.scheduleRemeasureOfRedrawnPlots();
     return measured;
+  }
+
+  private scheduleRemeasureOfRedrawnPlots(): void {
+    if (this.plotRemeasureTimer !== undefined) {
+      this.hostWindow.clearTimeout(this.plotRemeasureTimer);
+      this.plotRemeasureTimer = undefined;
+    }
+    if (!this.plotsAwaitingRemeasure.size || this.disposed) return;
+    this.plotRemeasureTimer = this.hostWindow.setTimeout(() => {
+      this.plotRemeasureTimer = undefined;
+      for (const id of this.plotsAwaitingRemeasure) {
+        const measurement = this.nodeMeasurements.get(id);
+        // Keep the last size for the unchanged-size comparison in render().
+        if (measurement) this.nodeMeasurements.set(id, { key: "", size: measurement.size });
+      }
+      this.plotsAwaitingRemeasure.clear();
+      if (!this.disposed && this.board) this.render(this.board, this.operation);
+    }, 200);
   }
 
   private syncNodeFragmentEmphasis(element: HTMLElement, node: Record<string, any>): void {
