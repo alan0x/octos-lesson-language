@@ -1121,6 +1121,26 @@ test("slider drag updates throttle checkpoint writes and the commit still saves 
   assert.equal(store.values.get("drag-persist")?.projection.board?.variables?.theta?.value, 2.5, "commit saves immediately");
 });
 
+test("a sustained slider drag keeps saving every interval instead of waiting for it to stop", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 2_000_000 });
+  const store = new MemoryStore();
+  const saved: number[] = [];
+  const save = store.save.bind(store);
+  store.save = (key, checkpoint) => { saved.push(checkpoint.projection.board?.variables?.theta?.value as number); save(key, checkpoint); };
+  const session = new BrowserLessonSession(unitCircleEvents, store, "sustained-drag");
+  advanceToVariableAnimation(session);
+  const gesture = session.beginStudentVariableOperation("theta", { control: "slider", input: "mouse" });
+  const before = saved.length;
+  for (let frame = 1; frame <= 190; frame += 1) {
+    session.updateStudentVariableOperation(gesture, frame / 100);
+    context.mock.timers.tick(16);
+  }
+  // ~3s of continuous input with no pause: saves must happen during it.
+  const during = saved.slice(before);
+  assert.ok(during.length >= 6 && during.length <= 9, `saved ${during.length} times during a 3s drag`);
+  assert.ok(during.at(-1)! > 1.5, "a mid-drag save carries a recent value, not the first one");
+});
+
 test("invalid student input never commits a successful gesture or task attempt", () => {
   const session = new BrowserLessonSession(unitCircleEvents, new MemoryStore(), "failed-input");
   advanceToVariableAnimation(session);

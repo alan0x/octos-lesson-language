@@ -1249,18 +1249,18 @@ export class BrowserLessonSession {
    * that ends the gesture still saves immediately.
    */
   private persistDuringDrag(): void {
-    const now = Date.now();
-    if (this.dragPersistTimer === undefined && now - this.lastDragPersistAt >= dragPersistIntervalMs) {
-      this.lastDragPersistAt = now;
+    // Throttle, not debounce: an armed timer keeps its deadline while updates
+    // keep arriving, so a long drag still saves every interval.
+    if (this.dragPersistTimer !== undefined) return;
+    const wait = dragPersistIntervalMs - (Date.now() - this.lastDragPersistAt);
+    if (wait <= 0) {
       this.persist();
       return;
     }
-    if (this.dragPersistTimer !== undefined) clearTimeout(this.dragPersistTimer);
     this.dragPersistTimer = setTimeout(() => {
       this.dragPersistTimer = undefined;
-      this.lastDragPersistAt = Date.now();
       this.persist();
-    }, dragPersistIntervalMs);
+    }, wait);
   }
 
   private practiceKey(taskId: string): string {
