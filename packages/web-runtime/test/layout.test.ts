@@ -1238,3 +1238,11 @@ test("a task and an explanation anchored under the same visual do not overlap", 
   const layout = computeBoardLayout(board, {}, { regions: { r: region } });
   assert.ok(layout.nodes.n!.y >= layout.attachments.task!.y + layout.attachments.task!.height);
 });
+
+
+test("polygon perimeter legends reserve card height without changing existing geometry", () => {
+  const plain = {kind:"geometry",content:{caption:"Bounds"}};
+  const measured = {kind:"geometry",content:{caption:"Bounds",regular_polygons:[{show_measurements:true},{show_measurements:true}]}};
+  assert.deepEqual(measureSemanticNode(plain), {width:440,height:420});
+  assert.equal(measureSemanticNode(measured).height,516);
+});

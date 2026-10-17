@@ -111,7 +111,12 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   const content = node.content ?? {};
   const length = visibleContentLength(content);
   const kind = String(node.kind ?? "text");
-  if (kind === "geometry") return { width: 440, height: content.caption ? 420 : 380 };
+  if (kind === "geometry") {
+    const measurementRows = Array.isArray(content.regular_polygons)
+      ? content.regular_polygons.filter((polygon: Record<string, unknown>) => polygon.show_measurements).length
+      : 0;
+    return { width: 440, height: (content.caption ? 420 : 380) + (measurementRows ? 16 + measurementRows * 40 : 0) };
+  }
   if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
