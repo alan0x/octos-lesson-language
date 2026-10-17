@@ -749,7 +749,7 @@ test("every declared geometry and plot binding capability validates and executes
     { target: "current-guide.value", expression: "theta" },
   ];
 
-  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "arcs"]);
+  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "regular_polygons", "arcs"]);
   assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.plot), ["points", "guides"]);
   validateAuthoringLesson(interactive);
 

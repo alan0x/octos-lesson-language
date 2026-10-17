@@ -1,3 +1,4 @@
+export { regularPolygonGeometry } from "./regular-polygon.js";
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import authoringSchema from "../../../schema/authoring/v0.1.schema.json" with { type: "json" };
 import {
@@ -593,7 +594,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -703,6 +704,22 @@ function validateGeometryContent(
       if (new Set(polygon.points).size < 3) {
         fail("OLL_INVALID_OPERATION_PAYLOAD", `${polygonPath}/points`, "A geometry polygon requires at least three distinct points");
       }
+    });
+  }
+  if (content.regular_polygons !== undefined) {
+    requireArray(content.regular_polygons, `${path}/content/regular_polygons`);
+    if (content.regular_polygons.length > 8) fail("OLL_INVALID_OPERATION_PAYLOAD", path, "At most 8 regular polygons");
+    content.regular_polygons.forEach((polygon: unknown, index: number) => {
+      const p = `${path}/content/regular_polygons/${index}`;
+      requireObject(polygon, p);
+      requireAlias(polygon.as, `${p}/as`);
+      requirePointReference(polygon.center, `${p}/center`);
+      const radius = requireFiniteNumber(polygon.radius, `${p}/radius`);
+      const sides = requireFiniteNumber(polygon.sides, `${p}/sides`);
+      if (radius <= 0 || !Number.isInteger(sides) || sides < 3 || sides > 384)
+        fail("OLL_INVALID_OPERATION_PAYLOAD", p, "Regular polygons require positive radius and integer sides 3..384");
+      if (polygon.relation !== "inscribed" && polygon.relation !== "circumscribed") fail("OLL_INVALID_OPERATION_PAYLOAD", `${p}/relation`, "Expected inscribed or circumscribed");
+      if (polygon.rotation !== undefined) requireFiniteNumber(polygon.rotation, `${p}/rotation`);
     });
   }
   for (const [field, references] of [
@@ -1340,7 +1357,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1350,7 +1367,7 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
         normalized.from = `${nodeId}:fragment:${item.from}`;
         normalized.to = `${nodeId}:fragment:${item.to}`;
       }
-      if (field === "circles") {
+      if (field === "circles" || field === "regular_polygons") {
         normalized.center = `${nodeId}:fragment:${item.center}`;
       }
       if (field === "segments") {
@@ -1749,6 +1766,9 @@ export function evaluateContentBindings(content: JsonObject, variables: Record<s
       record[property] = evaluateMathExpression(binding.expression, variables);
       if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {
         throw new Error("Bound radius must be positive unless explicitly allowed to degenerate to zero");
+      }
+      if (property === "sides" && (record[property] < 3 || record[property] > 384)) {
+        throw new Error("Bound polygon sides must be in 3..384");
       }
       if (binding.label) record.label = formatBoundNumericLabel(record[property], binding.label);
     } catch (error) {

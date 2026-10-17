@@ -1,3 +1,4 @@
+import { regularPolygonGeometry } from "../../core/src/regular-polygon.js";
 import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
@@ -980,6 +981,23 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     }
   }
 
+  const measurements: Array<{ label: string; tone: string; sides: number; perimeter: number; ratio: number }> = [];
+  for (const polygon of Array.isArray(content.regular_polygons) ? content.regular_polygons : []) {
+    const center = points.get(text(polygon.center));
+    if (!center) continue;
+    const shape = regularPolygonGeometry(center as { x: number; y: number }, Number(polygon.radius), Number(polygon.sides), polygon.relation, Number(polygon.rotation ?? 0));
+    const element = document.createElementNS(SVG_NS, "polygon");
+    element.setAttribute("points", shape.vertices.map(point => `${viewport.mapX(point.x)},${viewport.mapY(point.y)}`).join(" "));
+    element.classList.add("geometry-polygon", "geometry-regular-polygon", `geometry-polygon-${text(polygon.tone || "primary")}`);
+    element.setAttribute("clip-path", `url(#${clipId})`);
+    element.setAttribute("aria-label", `${polygon.label || polygon.relation}，${shape.sides} 边`);
+    element.dataset.id = text(polygon.id);
+    element.dataset.sides = String(shape.sides);
+    element.dataset.relation = polygon.relation;
+    applyEmphasisClass(element, latestEmphasis(node, text(polygon.id)));
+    svg.append(element);
+    if (polygon.show_measurements) measurements.push({ label: polygon.label || polygon.relation, tone: polygon.tone || "primary", sides: shape.sides, perimeter: shape.perimeter, ratio: shape.perimeterOverDiameter });
+  }
   for (const circle of Array.isArray(content.circles) ? content.circles : []) {
     const center = points.get(text(circle.center));
     const radius = Number(circle.radius);
@@ -1069,6 +1087,18 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     if (point.label) appendGeometryLabel(svg, point.label, x + 7, y - 7);
   }
   parent.append(svg);
+  if (measurements.length) {
+    const legend = document.createElement("div");
+    legend.className = "geometry-measurements";
+    legend.setAttribute("aria-live", "off");
+    for (const measurement of measurements) {
+      const row = document.createElement("div");
+      row.className = `geometry-measurement geometry-measurement-${measurement.tone}`;
+      row.textContent = `${measurement.label} · ${measurement.sides} 边 · 周长 ${measurement.perimeter.toFixed(6)} · 周长÷直径 ${measurement.ratio.toFixed(9)}`;
+      legend.append(row);
+    }
+    parent.append(legend);
+  }
   if (content.caption) appendText(parent, text(content.caption), "geometry-caption");
 }
 

@@ -125,3 +125,5 @@ Runner 不修复模型输出。只有原始文本可直接解析为 JSON，并�
 植物蒸腾作用 V2 是第三份正向切片和第一份真实图片课：11 个 Beat 完成“直接观察 → 无叶对照 → 推断 → 根/茎/叶运输模型 → 凝结 → 回图检验 → 证据分层”。Runtime 通过宿主 resolver 加载 PNG 和 region bounds，未修改 OLL v0.1；真实 Chrome Observer 对 37 个动作帧和 11 个 Beat 全部通过。验收记录在 `examples/science-transpiration-v2/ACCEPTANCE.md`。
 
 英语定语从句 V2 是第四份正向切片和第一份文本证据课：11 个 Beat 完成“明确核心问题 → 圈出从句 → 抽出主句 → 找先行词 → 还原普通句 → the book 替换为 that → 标注成分 → 重组含义”。最终白板按课题、主句、从句作用、句意和总结五个区域组织。真实 Chrome Observer 对 47 个动作帧和 11 个 Beat 全部通过；英语 V1 在同一门禁下 expected-fail。验收记录在 `examples/english-relative-clause-v2/ACCEPTANCE.md`。
+
+- [Regular polygon geometry and execution contract](docs/REGULAR_POLYGONS.md)

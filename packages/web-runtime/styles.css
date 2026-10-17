@@ -225,3 +225,8 @@
 .plot-probe-readout, .plot-legend-item { overflow-wrap:anywhere; }
 
 .geometry-caption { max-height:3em; overflow:auto; font:12px/1.5 system-ui; color:#53635c; margin-top:6px; }
+
+.geometry-regular-polygon { fill: none; }
+.geometry-measurements { display: grid; gap: 5px; padding: 8px 4px; font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.geometry-measurement-primary { color: #23877c; }
+.geometry-measurement-accent { color: #a86819; }

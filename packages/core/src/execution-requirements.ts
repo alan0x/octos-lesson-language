@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.3.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.4.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -11,6 +11,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
     "board.focus", "teacher.point", "teacher.expression", "lesson.variable.animate",
   ].map(op => [`action:${op}`, "0.1.0"])),
   "variables": "0.1.0",
+  "geometry:regular-polygons": "0.4.0",
   "value-bindings": "0.1.0",
   "binding-labels": "0.2.0",
   "bound-zero-radius": "0.2.0",
@@ -57,6 +58,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
   };
   const content = (value: Record<string, unknown> | undefined, path: string) => {
     if (!value) return;
+    if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     const bindings = value.bindings;
     if (Array.isArray(bindings) && bindings.length) {
       add("value-bindings", path);

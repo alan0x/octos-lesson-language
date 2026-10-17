@@ -40,6 +40,7 @@ export const OLL_BINDING_CAPABILITIES = {
   geometry: {
     points: ["x", "y"],
     circles: ["radius"],
+    regular_polygons: ["sides", "radius", "rotation"],
     arcs: ["radius", "start_angle", "end_angle"],
   },
   plot: {
