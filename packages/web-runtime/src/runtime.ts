@@ -1,4 +1,4 @@
-import type { AuthoringStudentTask, CanonicalEvent, Delivery } from "../../core/src/index.js";
+import { checkNumericAnswer, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -16,6 +16,7 @@ import {
   parseStudentOperationLog,
   type StudentInkSelectionOperation,
   type StudentInkSelectionSource,
+  type StudentAnswerOperation,
   type StudentInputMethod,
   type StudentOperation,
   type StudentOperationLog,
@@ -1173,6 +1174,53 @@ export class BrowserLessonSession {
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
+  /**
+   * Submit a typed answer to the open numeric answer task. Text that cannot be
+   * read as a number is returned as `unreadable` and is not an attempt.
+   */
+  submitStudentAnswer(
+    taskId: string,
+    text: string,
+    input: StudentInputMethod = "keyboard",
+  ): StudentTaskSnapshot | { unreadable: true } {
+    const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
+    const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
+    if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
+    if (definition.completion.kind !== "numeric_answer") throw new Error(`Student task '${taskId}' does not take a typed answer`);
+    if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
+      throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    if (progress.status === "succeeded") return this.studentTasks.find((task) => task.task_id === taskId)!;
+    if (!checkNumericAnswer(definition.completion, text).readable) return { unreadable: true };
+    const sequence = this.nextStudentOperationSequence;
+    this.nextStudentOperationSequence += 1;
+    const operation: StudentAnswerOperation = {
+      profile: "octos.student.operation",
+      version: "0.1",
+      id: `${this.player.snapshot.lesson_id}:answer:${sequence}`,
+      sequence,
+      lesson_id: this.player.snapshot.lesson_id,
+      kind: "answer_submit",
+      target: { kind: "student_task", task_id: taskId },
+      answer: text,
+      input,
+    };
+    const previousProgress = structuredClone(this.studentTaskProgressLog);
+    try {
+      this.evaluateStudentTasks(operation);
+    } catch (error) {
+      this.studentTaskProgressLog = previousProgress;
+      this.reportFailure("input", error);
+      return this.studentTasks.find((task) => task.task_id === taskId)!;
+    }
+    this.studentOperationLog.operations.push(operation);
+    this.persistStudentOperations();
+    this.persistStudentTaskProgress();
+    this.emit();
+    return this.studentTasks.find((task) => task.task_id === taskId)!;
+  }
+
   retryStudentTask(
     taskId: string,
     input: StudentVariableOperationContext["input"] = "unknown",
@@ -1201,7 +1249,7 @@ export class BrowserLessonSession {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
         }
-      } else {
+      } else if (definition.completion.kind === "scene3d_view_target") {
         const nodeId = definition.completion.node;
         const node = this.player.snapshot.board?.nodes?.[nodeId];
         const current = this.scene3dViews[nodeId];

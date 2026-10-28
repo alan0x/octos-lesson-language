@@ -116,6 +116,7 @@ export {
   type StudentInputMethod,
   type StudentInkSelectionOperation,
   type StudentInkSelectionSource,
+  type StudentAnswerOperation,
   type StudentOperation,
   type StudentOperationLog,
   type StudentScene3dControl,

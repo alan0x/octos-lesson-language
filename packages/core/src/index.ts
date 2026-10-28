@@ -1,3 +1,5 @@
+export { regularPolygonGeometry } from "./regular-polygon.js";
+export * from "./numeric-answer.js";
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import authoringSchema from "../../../schema/authoring/v0.1.schema.json" with { type: "json" };
 import {
@@ -5,6 +7,7 @@ import {
   evaluateMathExpression,
   referencedMathVariables,
 } from "./math-expression.js";
+import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -14,6 +17,7 @@ import type {
   ActionPhase,
   AuthoringAction,
   AuthoringLesson,
+  AuthoringAnswerStudentTask,
   AuthoringScene3dStudentTask,
   AuthoringStudentTask,
   AuthoringVariableStudentTask,
@@ -254,6 +258,38 @@ function validateScene3dStudentTask(
   if (!presetReachable && !orbitReachable && !zoomOnlyReachable) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "No allowed 3D control can reach the target view");
   }
+  validateTaskFeedback(task, path);
+}
+
+function validateAnswerStudentTask(task: AuthoringAnswerStudentTask, path: string, registry: Registry): void {
+  resolveLocal(registry, task.anchor, `${path}/anchor`, ["node"]);
+  requireArray(task.allowed_operations, `${path}/allowed_operations`);
+  if (task.allowed_operations.length !== 1 || task.allowed_operations[0]?.kind !== "answer_entry") {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "Numeric answer tasks allow exactly one answer_entry operation");
+  }
+  const completion = task.completion;
+  const expected = typeof completion.answer === "string" ? parseNumericAnswer(completion.answer) : undefined;
+  if (!expected) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/answer`, "Expected answer must be a whole number, decimal, fraction or mixed number");
+  }
+  if (completion.tolerance !== undefined
+    && (requireFiniteNumber(completion.tolerance, `${path}/completion/tolerance`) < 0)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/tolerance`, "Answer tolerance must not be negative");
+  }
+  if (completion.form !== undefined && completion.form !== "any" && completion.form !== "simplest_fraction") {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/form`, `Unsupported answer form '${String(completion.form)}'`);
+  }
+  if (completion.form === "simplest_fraction" && !isSimplestFraction(expected!)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/answer`, "Expected answer is not written in its simplest form");
+  }
+  if (completion.unit !== undefined
+    && (typeof completion.unit !== "string" || !completion.unit.trim() || completion.unit.length > 16)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/unit`, "Answer unit must be 1 to 16 characters");
+  }
+  validateTaskFeedback(task, path);
+}
+
+function validateTaskFeedback(task: AuthoringStudentTask, path: string): void {
   requireArray(task.hints, `${path}/hints`);
   if (task.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/hints`, "Task hints must not be empty");
@@ -333,6 +369,7 @@ function validateStudentTasks(
   variables: Map<string, number>,
   availableControls: Map<string, Set<string>>,
   scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
+  registry: Registry,
 ): void {
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
@@ -356,6 +393,10 @@ function validateStudentTasks(
 
     if (task.completion.kind === "scene3d_view_target") {
       validateScene3dStudentTask(task as AuthoringScene3dStudentTask, path, scene3dCameras);
+      continue;
+    }
+    if (task.completion.kind === "numeric_answer") {
+      validateAnswerStudentTask(task as AuthoringAnswerStudentTask, path, registry);
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -464,18 +505,7 @@ function validateStudentTasks(
     } catch (error) {
       fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/expression`, `Invalid task completion expression: ${(error as Error).message}`);
     }
-    requireArray(task.hints, `${path}/hints`);
-    if (task.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
-      fail("OLL_INVALID_STUDENT_TASK", `${path}/hints`, "Task hints must not be empty");
-    }
-    if (task.hint_after_attempts !== undefined
-      && (!Number.isInteger(task.hint_after_attempts) || task.hint_after_attempts < 1 || task.hint_after_attempts > 20)) {
-      fail("OLL_INVALID_STUDENT_TASK", `${path}/hint_after_attempts`, "hint_after_attempts must be an integer from 1 to 20");
-    }
-    if (task.success_message !== undefined
-      && (typeof task.success_message !== "string" || !task.success_message.trim())) {
-      fail("OLL_INVALID_STUDENT_TASK", `${path}/success_message`, "Task success_message must not be empty");
-    }
+    validateTaskFeedback(task, path);
   }
 }
 
@@ -593,7 +623,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -703,6 +733,22 @@ function validateGeometryContent(
       if (new Set(polygon.points).size < 3) {
         fail("OLL_INVALID_OPERATION_PAYLOAD", `${polygonPath}/points`, "A geometry polygon requires at least three distinct points");
       }
+    });
+  }
+  if (content.regular_polygons !== undefined) {
+    requireArray(content.regular_polygons, `${path}/content/regular_polygons`);
+    if (content.regular_polygons.length > 8) fail("OLL_INVALID_OPERATION_PAYLOAD", path, "At most 8 regular polygons");
+    content.regular_polygons.forEach((polygon: unknown, index: number) => {
+      const p = `${path}/content/regular_polygons/${index}`;
+      requireObject(polygon, p);
+      requireAlias(polygon.as, `${p}/as`);
+      requirePointReference(polygon.center, `${p}/center`);
+      const radius = requireFiniteNumber(polygon.radius, `${p}/radius`);
+      const sides = requireFiniteNumber(polygon.sides, `${p}/sides`);
+      if (radius <= 0 || !Number.isInteger(sides) || sides < 3 || sides > 384)
+        fail("OLL_INVALID_OPERATION_PAYLOAD", p, "Regular polygons require positive radius and integer sides 3..384");
+      if (polygon.relation !== "inscribed" && polygon.relation !== "circumscribed") fail("OLL_INVALID_OPERATION_PAYLOAD", `${p}/relation`, "Expected inscribed or circumscribed");
+      if (polygon.rotation !== undefined) requireFiniteNumber(polygon.rotation, `${p}/rotation`);
     });
   }
   for (const [field, references] of [
@@ -1322,7 +1368,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
     });
   });
 
-  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry);
   validateReflections(document, registry);
 
   if (document.close?.focus) {
@@ -1340,7 +1386,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1350,7 +1396,7 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
         normalized.from = `${nodeId}:fragment:${item.from}`;
         normalized.to = `${nodeId}:fragment:${item.to}`;
       }
-      if (field === "circles") {
+      if (field === "circles" || field === "regular_polygons") {
         normalized.center = `${nodeId}:fragment:${item.center}`;
       }
       if (field === "segments") {
@@ -1588,6 +1634,11 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   }
   for (const candidate of canonicalLesson.tasks ?? []) {
     if (candidate.start) candidate.start.values = resolvePhaseStart(candidate.start, document.lesson.variables ?? [], `/lesson/tasks/${candidate.as}/start`);
+    if (candidate.completion.kind === "numeric_answer") {
+      const answerTask = candidate as AuthoringAnswerStudentTask;
+      answerTask.anchor = requireRegistryId(registry, answerTask.anchor);
+      continue;
+    }
     const task = candidate as AuthoringScene3dStudentTask;
     if (task.completion.kind !== "scene3d_view_target") continue;
     task.completion.node = requireRegistryId(registry, task.completion.node);
@@ -1749,6 +1800,9 @@ export function evaluateContentBindings(content: JsonObject, variables: Record<s
       record[property] = evaluateMathExpression(binding.expression, variables);
       if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {
         throw new Error("Bound radius must be positive unless explicitly allowed to degenerate to zero");
+      }
+      if (property === "sides" && (record[property] < 3 || record[property] > 384)) {
+        throw new Error("Bound polygon sides must be in 3..384");
       }
       if (binding.label) record.label = formatBoundNumericLabel(record[property], binding.label);
     } catch (error) {

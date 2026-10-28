@@ -1,4 +1,5 @@
 import type { OllNodeKind } from "./capabilities.js";
+import type { NumericAnswerCompletion } from "./numeric-answer.js";
 
 export type Alias = string;
 export type LocalReference = string;
@@ -183,7 +184,21 @@ export interface AuthoringScene3dStudentTask extends AuthoringStudentTaskBase {
   };
 }
 
-export type AuthoringStudentTask = AuthoringVariableStudentTask | AuthoringScene3dStudentTask;
+/**
+ * A question the learner answers by typing a number. It sits by the board
+ * card that poses it, like a reflection, and the program checks the answer.
+ */
+export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
+  /** Board card (node alias; a canonical node ID after normalization) the task sits by. */
+  anchor: Alias;
+  allowed_operations: Array<{ kind: "answer_entry" }>;
+  completion: NumericAnswerCompletion;
+}
+
+export type AuthoringStudentTask =
+  | AuthoringVariableStudentTask
+  | AuthoringScene3dStudentTask
+  | AuthoringAnswerStudentTask;
 
 /**
  * A thinking question the learner answers alone. It appears after the lesson

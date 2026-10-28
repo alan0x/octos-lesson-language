@@ -17,7 +17,7 @@ import type {
   StudentOperationLog,
   StudentVariableOperation,
 } from "../src/student-operations.js";
-import type { StudentTaskProgressLog } from "../src/student-tasks.js";
+import type { StudentTaskProgressLog, StudentTaskSnapshot } from "../src/student-tasks.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -884,6 +884,60 @@ test("student tasks judge committed operations, reveal hints, retry, and restore
   const invalidProgress = new BrowserLessonSession(taskEvents, store, "student-task");
   assert.equal(invalidProgress.studentTasks[0]!.status, "not_started");
   assert.equal(invalidProgress.studentTasks[0]!.attempts.length, 0, "task progress without its source operation is discarded");
+});
+
+test("numeric answer tasks judge typed answers, ignore unreadable text, and restore progress", () => {
+  const taskEvents = structuredClone(unitCircleEvents);
+  taskEvents[0]!.lesson!.tasks = [{
+    as: "simplify",
+    anchor: "unit-circle:node:card",
+    prompt: "把 6/8 化成最简分数",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "answer_entry" }],
+    completion: { kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" },
+    hints: ["分子分母同时除以 2。"],
+    hint_after_attempts: 2,
+  }, {
+    as: "then-reach",
+    prompt: "把圆周点拖到 sin θ = 1",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "theta", controls: ["slider"] }],
+    completion: { kind: "expression_target", expression: "sin(theta)", value: 1, tolerance: 0.01 },
+    hints: ["把角度移到 π/2 附近。"],
+  }];
+  const store = new MemoryStore();
+  const first = new BrowserLessonSession(taskEvents, store, "answer-task");
+  assert.throws(() => first.submitStudentAnswer("simplify", "3/4"), /not available before the lesson completes/);
+  while (first.projection.status !== "completed") first.advance();
+
+  assert.deepEqual(first.submitStudentAnswer("simplify", "三四"), { unreadable: true });
+  assert.equal(first.studentTasks[0]!.attempts.length, 0, "unreadable text is not an attempt");
+  assert.throws(() => first.submitStudentAnswer("then-reach", "1"), /does not take a typed answer/);
+
+  // A slider gesture does not answer a typed question.
+  first.changeStudentVariable("theta", Math.PI / 2, { control: "slider", input: "mouse" });
+  assert.equal(first.studentTasks[0]!.attempts.length, 0);
+
+  const wrongForm = first.submitStudentAnswer("simplify", "6/8");
+  assert.ok(!("unreadable" in wrongForm));
+  assert.equal(wrongForm.status, "in_progress");
+  assert.equal(wrongForm.attempts[0]!.answer, "6/8");
+  assert.equal((first.submitStudentAnswer("simplify", "0.7") as StudentTaskSnapshot).status, "needs_hint");
+  assert.equal(first.studentOperations.at(-1)!.kind, "answer_submit");
+  assert.equal(first.retryStudentTask("simplify").status, "not_started");
+  const solved = first.submitStudentAnswer("simplify", "３／４");
+  assert.ok(!("unreadable" in solved));
+  assert.equal(solved.status, "succeeded");
+  assert.deepEqual(solved.attempts.map((attempt) => attempt.succeeded), [false, false, true]);
+  assert.equal(first.studentTasks[1]!.available, true, "the next task opens after the typed answer");
+
+  const restored = new BrowserLessonSession(taskEvents, store, "answer-task");
+  assert.deepEqual(restored.studentTasks, first.studentTasks);
+  assert.deepEqual(restored.studentOperations, first.studentOperations);
+
+  store.studentTaskProgress.get("answer-task")!.tasks[0]!.attempts[0]!.succeeded = true;
+  const tampered = new BrowserLessonSession(taskEvents, store, "answer-task");
+  assert.equal(tampered.studentTasks[0]!.attempts.length, 0, "a saved attempt must repeat its own check");
 });
 
 test("an incremental final artifact restores playback and opens its deferred task when delivery settles", () => {

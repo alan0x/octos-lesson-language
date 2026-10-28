@@ -4,7 +4,10 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   assertAuthoringSchema,
+  checkNumericAnswer,
   formatBoundNumericLabel,
+  isSimplestFraction,
+  parseNumericAnswer,
   assertExecutionDeclaration,
   assertExecutionSupported,
   deriveExecutionRequirements,
@@ -20,7 +23,9 @@ import {
   setLessonVariable,
   validateAuthoringSchema,
   validateAuthoringLesson,
+  type AuthoringAnswerStudentTask,
   type AuthoringLesson,
+  type AuthoringVariableStudentTask,
   type NormalizationHost,
   type ResourceContext,
 } from "../src/index.js";
@@ -415,7 +420,7 @@ test("publishes only the executable node, action, binding, control, and task cap
       scene3d: ["orbit", "zoom", "preset", "reset"],
     },
     student_tasks: {
-      completion: ["expression_target", "scene3d_view_target"],
+      completion: ["expression_target", "scene3d_view_target", "numeric_answer"],
       scene3d_view_match: ["view_direction", "camera_pose"],
     },
   });
@@ -749,7 +754,7 @@ test("every declared geometry and plot binding capability validates and executes
     { target: "current-guide.value", expression: "theta" },
   ];
 
-  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "arcs"]);
+  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "regular_polygons", "arcs"]);
   assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.plot), ["points", "guides"]);
   validateAuthoringLesson(interactive);
 
@@ -831,7 +836,7 @@ test("student tasks use declared variables and safe expression targets", () => {
 
   const sliderCannotReachRangeMaximum = structuredClone(interactive);
   sliderCannotReachRangeMaximum.lesson.variables![0]!.control!.step = 2;
-  sliderCannotReachRangeMaximum.lesson.tasks![0]!.allowed_operations[0]!.controls = ["slider"];
+  (sliderCannotReachRangeMaximum.lesson.tasks![0] as AuthoringVariableStudentTask).allowed_operations[0]!.controls = ["slider"];
   sliderCannotReachRangeMaximum.lesson.tasks![0]!.completion = {
     kind: "expression_target",
     expression: "theta",
@@ -1021,6 +1026,77 @@ test("reflections anchor to a written card, normalize to its canonical ID and re
   emptyAnswer.lesson.reflections![0]!.answer = " ";
   assert.throws(() => normalizeAuthoringLesson(emptyAnswer, host), (error) => error instanceof OllError
     && error.code === "OLL_INVALID_REFLECTION");
+});
+
+test("numeric answers read whole numbers, decimals, fractions, mixed numbers and full-width input", () => {
+  assert.deepEqual(parseNumericAnswer("-12"), { value: -12, form: "integer" });
+  assert.deepEqual(parseNumericAnswer("12,450"), { value: 12450, form: "integer" });
+  assert.deepEqual(parseNumericAnswer(".5"), { value: .5, form: "decimal" });
+  assert.deepEqual(parseNumericAnswer(" 3 / 4 "), { value: .75, form: "fraction", numerator: 3, denominator: 4 });
+  assert.deepEqual(parseNumericAnswer("-2 3/4"), { value: -2.75, form: "mixed", numerator: 3, denominator: 4 });
+  assert.equal(parseNumericAnswer("１２．５")?.value, 12.5);
+  assert.equal(parseNumericAnswer("－３／４")?.value, -.75);
+  for (const unreadable of ["", "abc", "1/0", "2 5/4", "1,23", "3+4", "1e5", "--1", "2 0/3"]) {
+    assert.equal(parseNumericAnswer(unreadable), undefined, unreadable);
+  }
+  // Each spelling of one rational number is the same double, so exact means exact.
+  assert.equal(parseNumericAnswer("4/3")!.value, parseNumericAnswer("1 1/3")!.value);
+  assert.equal(parseNumericAnswer("0.1")!.value, parseNumericAnswer("1/10")!.value);
+  assert.notEqual(parseNumericAnswer("0.333")!.value, parseNumericAnswer("1/3")!.value);
+
+  const exact = { kind: "numeric_answer" as const, answer: "3/4" };
+  assert.deepEqual(checkNumericAnswer(exact, "6/8"), { readable: true, value: .75, succeeded: true });
+  assert.deepEqual(checkNumericAnswer(exact, "0.75"), { readable: true, value: .75, succeeded: true });
+  assert.deepEqual(checkNumericAnswer(exact, "0.7"), { readable: true, value: .7, succeeded: false, reason: "value" });
+  assert.deepEqual(checkNumericAnswer(exact, "三分之二"), { readable: false });
+  const simplest = { ...exact, form: "simplest_fraction" as const };
+  assert.deepEqual(checkNumericAnswer(simplest, "6/8"), { readable: true, value: .75, succeeded: false, reason: "form" });
+  assert.deepEqual(checkNumericAnswer(simplest, "0.75"), { readable: true, value: .75, succeeded: false, reason: "form" });
+  assert.equal(isSimplestFraction(parseNumericAnswer("4/1")!), false);
+  assert.equal(isSimplestFraction(parseNumericAnswer("2")!), true);
+  const rounded = { kind: "numeric_answer" as const, answer: "3.14", tolerance: .005 };
+  assert.deepEqual(checkNumericAnswer(rounded, "3.142"), { readable: true, value: 3.142, succeeded: true });
+});
+
+test("numeric answer tasks anchor to a written card, validate their answer and require the newer player", () => {
+  const lesson = unitCircleLesson();
+  lesson.lesson.tasks = [{
+    as: "radius-times",
+    anchor: "unit-circle",
+    prompt: "半径为 3 的圆，直径是多少？",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "answer_entry" }],
+    completion: { kind: "numeric_answer", answer: "6", unit: "cm" },
+    hints: ["直径是半径的两倍。"],
+  }];
+  assertAuthoringSchema(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const task = events[0]!.lesson!.tasks![0] as AuthoringAnswerStudentTask;
+  assert.equal(task.anchor, `${host.lessonId}:node:unit-circle`);
+  const requirements = deriveExecutionRequirements(events);
+  assert.equal(requirements.minimumPlayerVersion, "0.5.0");
+  assert.ok(requirements.requiredCapabilities.includes("student-tasks:numeric_answer"));
+  assert.throws(() => assertExecutionSupported(events, "0.4.0"), /requires player/);
+
+  const invalid = (change: (task: AuthoringAnswerStudentTask) => void, path: string) => {
+    const copy = structuredClone(lesson);
+    change(copy.lesson.tasks![0] as AuthoringAnswerStudentTask);
+    assert.throws(() => normalizeAuthoringLesson(copy, host), (error) => error instanceof OllError
+      && error.path === path, path);
+  };
+  invalid((task) => { task.anchor = "not-written"; }, "/lesson/tasks/0/anchor");
+  invalid((task) => { task.completion.answer = "six"; }, "/lesson/tasks/0/completion/answer");
+  invalid((task) => { task.completion.answer = "6/8"; task.completion.form = "simplest_fraction"; }, "/lesson/tasks/0/completion/answer");
+  invalid((task) => { task.completion.tolerance = -1; }, "/lesson/tasks/0/completion/tolerance");
+  invalid((task) => { task.hints = [" "]; }, "/lesson/tasks/0/hints");
+
+  const missingAnchor = structuredClone(lesson);
+  delete (missingAnchor.lesson.tasks![0] as Partial<AuthoringAnswerStudentTask>).anchor;
+  assert.throws(() => assertAuthoringSchema(missingAnchor));
+  // Only a typed answer sits by a card; other tasks live by their visual.
+  const strayAnchor = structuredClone(lesson);
+  strayAnchor.lesson.tasks![0]!.completion = { kind: "expression_target", expression: "a", value: 1, tolerance: .1 };
+  assert.throws(() => assertAuthoringSchema(strayAnchor));
 });
 
 test("a point bound with hide_when_undefined disappears while undefined and returns afterwards", () => {

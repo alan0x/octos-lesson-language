@@ -185,6 +185,27 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - 讲解播放期间的探索不计入任务。Lesson 完成后只开放第一个未完成任务，完成后才开放下一个；
 - 提示、尝试次数和完成状态独立于播放进度保存，刷新后恢复。重放课程不会伪造或删除学生任务记录。
 
+填数任务（`numeric_answer`，player 0.5.0）让学生输入一个数作答，用于没有可操作画面、但答案是确定数值的练习：
+
+```json
+"tasks": [{
+  "as": "diameter",
+  "anchor": "circle-card",
+  "prompt": "半径为 3 cm 的圆，直径是多少？",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "answer_entry"}],
+  "completion": {"kind": "numeric_answer", "answer": "6", "unit": "cm"},
+  "hints": ["直径是半径的两倍。"]
+}]
+```
+
+- `anchor` 必须是本课写出的板书卡片，规范化后变成该卡片的 Canonical 节点 ID；只有填数任务带 `anchor`；
+- `answer` 按学生能输入的写法给出：整数、小数、分数或带分数（如 `-12`、`0.75`、`3/4`、`2 3/4`）。学生输入同样四种写法，全角数字和符号按半角读取，千分位逗号可写可不写；
+- 未写 `tolerance` 时按值精确比较，`6/8`、`0.75` 与 `3/4` 相等，`0.333` 不等于 `1/3`；写了 `tolerance` 时按绝对误差判定；
+- `form: "simplest_fraction"` 时还要求写成整数或最简分数（带分数的分数部分也须最简），数值对但形式不对算一次未达标；`answer` 本身必须满足该形式；
+- `unit` 只显示在输入框后，不参与判定；
+- 无法读成数的输入不算一次尝试。
+
 ### 5.6 学生笔迹资源不属于 OLL
 
 学生原稿不放进 `lesson.open`、Canonical Event 或 Semantic BoardState。浏览器宿主把它作为独立资源保存，最低记录如下：
