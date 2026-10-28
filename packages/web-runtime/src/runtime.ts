@@ -1201,7 +1201,7 @@ export class BrowserLessonSession {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
         }
-      } else {
+      } else if (definition.completion.kind === "scene3d_view_target") {
         const nodeId = definition.completion.node;
         const node = this.player.snapshot.board?.nodes?.[nodeId];
         const current = this.scene3dViews[nodeId];

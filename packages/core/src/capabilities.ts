@@ -95,7 +95,7 @@ export const OLL_CANONICAL_BINDING_CAPABILITIES = collectBindingCapabilities();
 
 export const OLL_VARIABLE_CONTROL_KINDS = ["slider", "geometry_point"] as const;
 export const OLL_SCENE3D_CONTROL_KINDS = ["orbit", "zoom", "preset", "reset"] as const;
-export const OLL_TASK_COMPLETION_KINDS = ["expression_target", "scene3d_view_target"] as const;
+export const OLL_TASK_COMPLETION_KINDS = ["expression_target", "scene3d_view_target", "numeric_answer"] as const;
 export const OLL_SCENE3D_VIEW_MATCH_KINDS = ["view_direction", "camera_pose"] as const;
 
 /**
