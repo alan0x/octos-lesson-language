@@ -1,6 +1,9 @@
 import {
+  checkNumericAnswer,
   evaluateMathExpression,
+  parseNumericAnswer,
   scene3dViewTargetScore,
+  type AuthoringAnswerStudentTask,
   type AuthoringScene3dStudentTask,
   type AuthoringStudentTask,
   type AuthoringVariableStudentTask,
@@ -9,6 +12,7 @@ import {
 } from "../../core/src/index.js";
 import type { SemanticBoardState } from "../../core/src/index.js";
 import type {
+  StudentAnswerOperation,
   StudentOperation,
   StudentScene3dViewOperation,
   StudentVariableOperation,
@@ -22,6 +26,8 @@ export interface StudentTaskAttempt {
   actual: number;
   target: number;
   succeeded: boolean;
+  /** The typed text, kept for numeric answer tasks so the check can be repeated. */
+  answer?: string;
 }
 
 export interface StudentTaskProgress {
@@ -109,14 +115,7 @@ export function parseStudentTaskProgressLog(
         typeof attempt.target !== "number" ||
         !Number.isFinite(attempt.target) ||
         typeof attempt.succeeded !== "boolean" ||
-        attempt.target !== (definition.completion.kind === "expression_target"
-          ? definition.completion.value
-          : 0) ||
-        attempt.succeeded !== (Math.abs(attempt.actual - attempt.target) <= (
-          definition.completion.kind === "expression_target"
-            ? definition.completion.tolerance
-            : 1
-        ))
+        !attemptMatchesDefinition(definition, attempt as StudentTaskAttempt)
       ) return undefined;
       lastSequence = attempt.sequence as number;
       operationIds.add(attempt.operation_id);
@@ -138,6 +137,24 @@ export function parseStudentTaskProgressLog(
   return { ...emptyStudentTaskProgressLog(lessonId, []), tasks };
 }
 
+/** A saved attempt must be what its task would record for the same input. */
+function attemptMatchesDefinition(definition: AuthoringStudentTask, attempt: StudentTaskAttempt): boolean {
+  const completion = definition.completion;
+  if (completion.kind === "numeric_answer") {
+    if (typeof attempt.answer !== "string") return false;
+    const check = checkNumericAnswer(completion, attempt.answer);
+    return check.readable
+      && attempt.actual === check.value
+      && attempt.target === parseNumericAnswer(completion.answer)!.value
+      && attempt.succeeded === check.succeeded;
+  }
+  if (attempt.answer !== undefined) return false;
+  const target = completion.kind === "expression_target" ? completion.value : 0;
+  const tolerance = completion.kind === "expression_target" ? completion.tolerance : 1;
+  return attempt.target === target
+    && attempt.succeeded === (Math.abs(attempt.actual - attempt.target) <= tolerance);
+}
+
 function variableOperationAllowed(
   task: AuthoringVariableStudentTask,
   operation: StudentVariableOperation,
@@ -154,6 +171,13 @@ function scene3dOperationAllowed(
   return task.allowed_operations.some((allowed) => allowed.kind === "scene3d_view"
     && allowed.node === operation.target.node_id
     && allowed.controls.includes(operation.control as StudentTaskScene3dControl));
+}
+
+function answerOperationAllowed(
+  task: AuthoringAnswerStudentTask,
+  operation: StudentAnswerOperation,
+): boolean {
+  return operation.target.task_id === task.as;
 }
 
 function scene3dViewScore(
@@ -174,7 +198,16 @@ export function evaluateStudentTaskOperation(
   let actual: number;
   let target: number;
   let succeeded: boolean;
-  if (task.completion.kind === "expression_target") {
+  let answer: string | undefined;
+  if (task.completion.kind === "numeric_answer") {
+    if (operation.kind !== "answer_submit" || !answerOperationAllowed(task as AuthoringAnswerStudentTask, operation)) return false;
+    const check = checkNumericAnswer(task.completion, operation.answer);
+    if (!check.readable) return false;
+    actual = check.value;
+    target = parseNumericAnswer(task.completion.answer)!.value;
+    succeeded = check.succeeded;
+    answer = operation.answer;
+  } else if (task.completion.kind === "expression_target") {
     const variableTask = task as AuthoringVariableStudentTask;
     if (operation.kind !== "variable_change" || !variableOperationAllowed(variableTask, operation)) return false;
     const values = Object.fromEntries(Object.entries(board.variables ?? {}).map(([alias, variable]) => [alias, variable.value]));
@@ -194,6 +227,7 @@ export function evaluateStudentTaskOperation(
     actual,
     target,
     succeeded,
+    ...(answer !== undefined ? { answer } : {}),
   });
   const hintThreshold = task.hint_after_attempts ?? 2;
   progress.status = succeeded

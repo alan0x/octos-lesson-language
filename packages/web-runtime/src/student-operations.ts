@@ -67,10 +67,24 @@ export interface StudentScene3dViewOperation {
   input: StudentInputMethod;
 }
 
+/** A typed answer submitted to a numeric answer task. */
+export interface StudentAnswerOperation {
+  profile: "octos.student.operation";
+  version: "0.1";
+  id: string;
+  sequence: number;
+  lesson_id: string;
+  kind: "answer_submit";
+  target: { kind: "student_task"; task_id: string };
+  answer: string;
+  input: StudentInputMethod;
+}
+
 export type StudentOperation =
   | StudentVariableOperation
   | StudentInkSelectionOperation
-  | StudentScene3dViewOperation;
+  | StudentScene3dViewOperation
+  | StudentAnswerOperation;
 
 export interface StudentOperationLog {
   profile: "octos.student.operation-log";
@@ -152,6 +166,29 @@ export function parseStudentOperationLog(
       ids.add(operation.id);
       lastSequence = operation.sequence as number;
       operations.push(structuredClone(operation as StudentScene3dViewOperation));
+      continue;
+    }
+    if (candidateOperation.kind === "answer_submit") {
+      const operation = raw as Partial<StudentAnswerOperation>;
+      if (
+        operation.profile !== "octos.student.operation"
+        || operation.version !== "0.1"
+        || operation.lesson_id !== lessonId
+        || typeof operation.id !== "string"
+        || !operation.id
+        || ids.has(operation.id)
+        || !Number.isInteger(operation.sequence)
+        || (operation.sequence ?? 0) <= lastSequence
+        || operation.target?.kind !== "student_task"
+        || typeof operation.target.task_id !== "string"
+        || !operation.target.task_id
+        || typeof operation.answer !== "string"
+        || operation.answer.length > 64
+        || !inputMethods.has(operation.input as StudentInputMethod)
+      ) return undefined;
+      ids.add(operation.id);
+      lastSequence = operation.sequence as number;
+      operations.push(structuredClone(operation as StudentAnswerOperation));
       continue;
     }
     if (candidateOperation.kind === "ink_selection") {
