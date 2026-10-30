@@ -1,3 +1,4 @@
+import { bindUi, ui, inheritUiLocale } from "./ui-localization.js";
 import { plotFrame, compilePlotExpression, formatLinearCurveEquation, type PlotRange } from "./plot.js";
 import {
   coordinateWheelZoomFactor,
@@ -75,7 +76,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   const toolbar=document.createElement('div'); toolbar.className='plot-toolbar';
   toolbar.dataset.ollBoardInput='ignore';toolbar.dataset.ollInkInput='ignore';
   const button=(label:string,title:string,action:()=>void)=>{
-    const b=document.createElement('button');b.type='button';b.textContent=label;b.title=title;b.setAttribute('aria-label',title);b.onclick=action;toolbar.append(b);return b;
+    const b=document.createElement('button');b.type='button';bindUi(parent,b,'label',()=>{b.textContent=ui(parent,label);b.title=ui(parent,title);b.setAttribute('aria-label',ui(parent,title));});b.onclick=action;toolbar.append(b);return b;
   };
   const refresh=()=>{if(current.disposed)return;save();for(const s of surfaces)paint(s.body,s.large);syncControls();};
   let queued=false;
@@ -104,9 +105,10 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   const body=document.createElement('div');body.className='plot-explorer-body';parent.append(body);surfaces.push({body,large:false});
   function mountDialog(dialog:HTMLDialogElement){
     dialog.replaceChildren();
-    const close=document.createElement('button');close.textContent='关闭大图';close.type='button';close.onclick=()=>dialog.close();dialog.append(close);
-    const title=document.createElement('h2');title.textContent=node.content?.title??'函数图';dialog.append(title);
+    const close=document.createElement('button');bindUi(parent,close,'text',()=>{close.textContent=ui(parent,'关闭大图');});close.type='button';close.onclick=()=>dialog.close();dialog.append(close);
+    const title=document.createElement('h2');bindUi(parent,title,'text',()=>{title.textContent=node.content?.title??ui(parent,'函数图');});dialog.append(title);
     const controls=toolbar.cloneNode(true) as HTMLElement;
+    bindUi(parent,controls,'labels',()=>{controls.querySelectorAll('button').forEach((b,i)=>{const original=toolbar.querySelectorAll('button')[i];if(original){b.textContent=original.textContent;b.title=original.title;b.setAttribute('aria-label',original.getAttribute('aria-label')??'');}});});
     const original=Array.from(toolbar.querySelectorAll('button'));
     controls.querySelectorAll('button').forEach((b,i)=>{b.onclick=()=>{original[i]?.click();b.setAttribute("aria-pressed",original[i]?.getAttribute("aria-pressed")??"false");};if(b.dataset.action==='expand')b.remove();});dialog.append(controls);
     const shell=document.createElement('div');shell.className='oll-board-runtime plot-dialog-shell';
@@ -120,6 +122,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     const width=large?Math.max(360,Math.min(1000,window.innerWidth-80)):404, height=large?Math.max(260,Math.min(520,window.innerHeight-220)):235;
     const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
     const content={...node.content,axes:{...axes,x:{...axes.x,...current.ranges.x},y:{...axes.y,...current.ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
+    inheritUiLocale(host,parent);
     draw(host,{...node,content},variables,width,height);
     host.querySelector('.plot-legend')?.remove();
     const legend=document.createElement('div');legend.className='plot-legend';legend.dataset.ollBoardInput='ignore';legend.dataset.ollInkInput='ignore';
@@ -133,12 +136,12 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
         : baseLabel;
       label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
-    const readout=document.createElement('output');readout.className='plot-probe-readout';readout.textContent=current.hidden.size
+    const readout=document.createElement('output');readout.className='plot-probe-readout';bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,current.hidden.size
       ? '部分曲线已隐藏；练习前请恢复课程视图。'
-      : current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标';
+      : current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标');});
     readout.hidden=!current.exploring&&!current.hidden.size;host.append(readout);
     const svg=host.querySelector('svg') as SVGSVGElement|null;if(!svg)return;
-    svg.style.touchAction=current.exploring?'none':'';svg.dataset.ollBoardWheel='capture';svg.setAttribute('tabindex','0');svg.setAttribute('aria-label','函数图；滚轮缩放，探索模式可拖动平移');
+    svg.style.touchAction=current.exploring?'none':'';svg.dataset.ollBoardWheel='capture';svg.setAttribute('tabindex','0');bindUi(parent,svg,'aria',()=>{svg.setAttribute('aria-label',ui(parent,'函数图；滚轮缩放，探索模式可拖动平移'));});
     const anchor=(event:PointerEvent|WheelEvent)=>{const rect=svg.getBoundingClientRect();
       const svgX=(event.clientX-rect.left)/rect.width*width,svgY=(event.clientY-rect.top)/rect.height*height;
       return {inside:svgX>=frame.left&&svgX<=frame.right&&svgY>=frame.top&&svgY<=frame.bottom,
@@ -192,12 +195,13 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
         const hitCurve = curves[hit.i];
         const hitBaseLabel = hitCurve.label || hitCurve.expression;
         const hitEvaluatedEq = defaultAxisNames ? formatLinearCurveEquation(hitCurve.expression, variables) : undefined;
-        const hitDisplayText = hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
-          ? `${hitBaseLabel}（${hitEvaluatedEq}）`
-          : hitBaseLabel;
-        readout.textContent = `${hitDisplayText}：${xLabel} ≈ ${Number(x.toPrecision(5))}，${yLabel} ≈ ${Number(hit.y.toPrecision(5))}`;
+        const values = { label: hitBaseLabel, equation: hitEvaluatedEq ?? "", x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
+        // Bound like every other readout state, so a language switch keeps the coordinates shown.
+        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
+          ? "{label}（{equation}）：{x} ≈ {xValue}，{y} ≈ {yValue}"
+          : "{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
       } else {
-        readout.textContent = '当前位置没有可读曲线';
+        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,'当前位置没有可读曲线');});
       }
       readout.hidden=false;
     };

@@ -1,3 +1,4 @@
+import { bindUi, ui, setBoardUiLocale, disposeBoardUiLocale } from "./ui-localization.js";
 import { regularPolygonGeometry } from "../../core/src/regular-polygon.js";
 import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
@@ -505,7 +506,7 @@ function renderMath(parent: HTMLElement, node: Record<string, any>): void {
     parent.append(element); return;
   }
   const source = mathSource(content);
-  if (!source) { element.textContent = "（空公式）"; parent.append(element); return; }
+  if (!source) { bindUi(parent,element,"text",()=>{element.textContent=ui(parent,"（空公式）");}); parent.append(element); return; }
   const lines = mathDisplayLines(source);
   if (lines.length > 1) {
     element.classList.add("math-lines");
@@ -700,8 +701,8 @@ function drawPlot(
     }
   });
 
-  let measurementText: string | undefined;
-  let controlHint: string | undefined;
+  let measurementText: (()=>string) | undefined;
+  let controlHint: (()=>string) | undefined;
   if (content.measurement === "secant" && content.points?.length === 2) {
     const [a,b] = content.points;
     const measurement = secantMeasurement(a,b);
@@ -713,17 +714,17 @@ function drawPlot(
       dx.setAttribute("clip-path", `url(#${clipId})`); dy.setAttribute("clip-path", `url(#${clipId})`);
     }
     const display = (n:number) => Number(n.toPrecision(5)).toString();
-    measurementText = measurement
-      ? `Δx = ${display(measurement.dx)} · Δy = ${display(measurement.dy)} · 割线斜率 ≈ ${display(measurement.slope)}`
-      : "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。";
+    measurementText = ()=>measurement
+      ? ui(parent,"Δx = {dx} · Δy = {dy} · 割线斜率 ≈ {slope}",{dx:display(measurement.dx),dy:display(measurement.dy),slope:display(measurement.slope)})
+      : ui(parent,"两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。");
     if (typeof content.hint === "string" && content.hint.trim()) {
-      controlHint = content.hint.trim();
+      controlHint = ()=>content.hint.trim();
     } else {
       const pointNames = content.points.map((p: any) => text(p.label)).filter(Boolean);
-      const pointsRef = pointNames.length === 2 ? `${pointNames[0]}、${pointNames[1]}` : "两点";
-      controlHint = content.sample_input === "fixed_x"
-        ? `${pointsRef}的横坐标固定；曲线参数变化时同步观察两点与割线。`
-        : `通过滑块调整${pointsRef}的横坐标。`;
+      const pointsRef = ()=>pointNames.length === 2 ? ui(parent,"{first}、{second}",{first:pointNames[0],second:pointNames[1]}) : ui(parent,"两点");
+      controlHint = ()=>ui(parent,content.sample_input === "fixed_x"
+        ? "{points}的横坐标固定；曲线参数变化时同步观察两点与割线。"
+        : "通过滑块调整{points}的横坐标。",{points:pointsRef()});
     }
   }
 
@@ -779,14 +780,14 @@ function drawPlot(
     else parent.append(svg);
   }
 
-  if (measurementText) appendText(parent, measurementText, "plot-measurement");
+  if (measurementText) { const output=appendText(parent,"","plot-measurement");const message=measurementText;bindUi(parent,output,"text",()=>{output.textContent=message();}); }
   if (controlHint) {
     const details = document.createElement("details");
     details.className = "plot-details";
     const summary = document.createElement("summary");
-    summary.textContent = "说明";
+    bindUi(parent,summary,"text",()=>{summary.textContent=ui(parent,"说明");});
     details.append(summary);
-    appendText(details, controlHint, "plot-control-hint");
+    const hint=appendText(details,"","plot-control-hint");const message=controlHint;bindUi(parent,hint,"text",()=>{hint.textContent=message();});
     parent.append(details);
   }
 
@@ -990,7 +991,7 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     element.setAttribute("points", shape.vertices.map(point => `${viewport.mapX(point.x)},${viewport.mapY(point.y)}`).join(" "));
     element.classList.add("geometry-polygon", "geometry-regular-polygon", `geometry-polygon-${text(polygon.tone || "primary")}`);
     element.setAttribute("clip-path", `url(#${clipId})`);
-    element.setAttribute("aria-label", `${polygon.label || polygon.relation}，${shape.sides} 边`);
+    bindUi(parent,element,"aria",()=>{element.setAttribute("aria-label",ui(parent,"{label}，{sides} 边",{label:polygon.label||polygon.relation,sides:shape.sides}));});
     element.dataset.id = text(polygon.id);
     element.dataset.sides = String(shape.sides);
     element.dataset.relation = polygon.relation;
@@ -1080,7 +1081,7 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
       dot.dataset.ollVariableControl = interaction.variable;
       dot.dataset.angleCenterX = String(viewport.mapX(interactionCenter.x));
       dot.dataset.angleCenterY = String(viewport.mapY(interactionCenter.y));
-      dot.setAttribute("aria-label", `${point.label || interaction.variable}：拖动改变角度`);
+      bindUi(parent,dot,"aria",()=>{dot.setAttribute("aria-label",ui(parent,"{label}：拖动改变角度",{label:point.label||interaction.variable}));});
     }
     applyEmphasisClass(dot, latestEmphasis(node, text(point.id)));
     svg.append(dot);
@@ -1094,7 +1095,7 @@ function drawGeometry(parent: HTMLElement, node: Record<string, any>, width = 40
     for (const measurement of measurements) {
       const row = document.createElement("div");
       row.className = `geometry-measurement geometry-measurement-${measurement.tone}`;
-      row.textContent = `${measurement.label} · ${measurement.sides} 边 · 周长 ${measurement.perimeter.toFixed(6)} · 周长÷直径 ${measurement.ratio.toFixed(9)}`;
+      bindUi(parent,row,"text",()=>{row.textContent=ui(parent,"{label} · {sides} 边 · 周长 {perimeter} · 周长÷直径 {ratio}",{label:measurement.label,sides:measurement.sides,perimeter:measurement.perimeter.toFixed(6),ratio:measurement.ratio.toFixed(9)});});
       legend.append(row);
     }
     parent.append(legend);
@@ -1367,7 +1368,8 @@ function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsse
   const content = node.content ?? {};
   const asset = resolveAsset(text(content.asset_id));
   if (!asset) {
-    appendText(parent, text(content.alt || "受控课程图片"), "image-placeholder");
+    const placeholder=appendText(parent, "", "image-placeholder");
+    bindUi(parent,placeholder,"text",()=>{placeholder.textContent=text(content.alt||ui(parent,"受控课程图片"));});
     const regions = Array.isArray(content.regions) ? content.regions : [];
     if (regions.length) {
       const pills = document.createElement("div"); pills.className = "region-pills";
@@ -1385,7 +1387,7 @@ function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsse
   const image = document.createElement("img");
   image.className = "lesson-image";
   image.src = asset.src;
-  image.alt = text(content.alt || "课程图片");
+  bindUi(parent,image,"alt",()=>{image.alt=text(content.alt||ui(parent,"课程图片"));});
   image.draggable = false;
   frame.append(image);
   for (const region of Array.isArray(content.regions) ? content.regions : []) {
@@ -1422,11 +1424,8 @@ function renderContent(
     try {
       renderScene3d(parent, node, sceneView, variables, sceneInput);
     } catch {
-      appendText(
-        parent,
-        `三维场景暂时无法交互。静态说明：${text(content.fallback || content.caption || "请结合旁白理解空间关系。")}`,
-        "scene3d-fallback-error",
-      );
+      const fallback=appendText(parent,"","scene3d-fallback-error");
+      bindUi(parent,fallback,"text",()=>{fallback.textContent=ui(parent,"三维场景暂时无法交互。静态说明：{description}",{description:text(content.fallback||content.caption||ui(parent,"请结合旁白理解空间关系。"))});});
     }
     return;
   }
@@ -1622,6 +1621,7 @@ export class InfiniteBoardView {
     const hostWindow = viewport.ownerDocument.defaultView;
     if (!hostWindow) throw new Error("InfiniteBoardView requires a viewport attached to a browser document");
     this.hostWindow = hostWindow;
+    setBoardUiLocale(viewport, "zh-CN");
     world.addEventListener("transitionend", this.handleCameraTransitionEnd);
     // Font metrics may settle after the last playback operation. Coalesce font
     // events, and never let a disposed board schedule another render.
@@ -2029,6 +2029,9 @@ export class InfiniteBoardView {
     }
   }
 
+  /** Update UI labels in place without changing the camera, gestures, or lesson. */
+  setLocale(locale: string): void { setBoardUiLocale(this.viewport, locale); }
+
   setVariableInputHandler(handler: VariableInputHandler | undefined): void {
     if (!handler) this.finishVariableDrag();
     this.variableInputHandler = handler;
@@ -2235,6 +2238,7 @@ export class InfiniteBoardView {
   zoomBy(factor: number): void { this.zoomAt(factor, this.viewport.clientWidth / 2, this.viewport.clientHeight / 2); }
 
   dispose(): void {
+    disposeBoardUiLocale(this.viewport);
     this.disposed = true;
     this.viewport.ownerDocument.fonts?.removeEventListener("loadingdone", this.handleFontsLoaded);
     if (this.fontReflowFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.fontReflowFrame);
@@ -2439,7 +2443,7 @@ export class InfiniteBoardView {
       if (arrivingFocus?.has(group.id)) element.classList.add("focus-arrive");
       setRect(element, rect);
       const label = element.querySelector<HTMLElement>(".group-label");
-      if (label) label.textContent = text(group.title || group.role || "知识组");
+      if (label) bindUi(this.viewport,label,"text",()=>{label.textContent=text(group.title||group.role||ui(this.viewport,"知识组"));});
     }
   }
 
