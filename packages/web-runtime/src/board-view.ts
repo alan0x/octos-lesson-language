@@ -721,7 +721,7 @@ function drawPlot(
       controlHint = ()=>content.hint.trim();
     } else {
       const pointNames = content.points.map((p: any) => text(p.label)).filter(Boolean);
-      const pointsRef = ()=>pointNames.length === 2 ? pointNames.join(" / ") : ui(parent,"两点");
+      const pointsRef = ()=>pointNames.length === 2 ? ui(parent,"{first}、{second}",{first:pointNames[0],second:pointNames[1]}) : ui(parent,"两点");
       controlHint = ()=>ui(parent,content.sample_input === "fixed_x"
         ? "{points}的横坐标固定；曲线参数变化时同步观察两点与割线。"
         : "通过滑块调整{points}的横坐标。",{points:pointsRef()});

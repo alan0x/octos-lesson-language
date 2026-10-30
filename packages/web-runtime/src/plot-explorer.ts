@@ -195,10 +195,11 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
         const hitCurve = curves[hit.i];
         const hitBaseLabel = hitCurve.label || hitCurve.expression;
         const hitEvaluatedEq = defaultAxisNames ? formatLinearCurveEquation(hitCurve.expression, variables) : undefined;
-        const hitDisplayText = hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
-          ? `${hitBaseLabel}（${hitEvaluatedEq}）`
-          : hitBaseLabel;
-        readout.textContent = `${hitDisplayText}：${xLabel} ≈ ${Number(x.toPrecision(5))}，${yLabel} ≈ ${Number(hit.y.toPrecision(5))}`;
+        const values = { label: hitBaseLabel, equation: hitEvaluatedEq ?? "", x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
+        // Bound like every other readout state, so a language switch keeps the coordinates shown.
+        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
+          ? "{label}（{equation}）：{x} ≈ {xValue}，{y} ≈ {yValue}"
+          : "{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
       } else {
         bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,'当前位置没有可读曲线');});
       }

@@ -42,3 +42,19 @@ test("disposed boards release label callbacks", () => {
   setBoardUiLocale(root,"en-US");
   assert.equal(updates,1);
 });
+
+test("a live readout keeps its latest state through a language switch", () => {
+  const root=element(), readout=element(root);
+  setBoardUiLocale(root,"zh-CN");
+  let text="";
+  bindUi(root,readout,"text",()=>{text=ui(root,"当前位置没有可读曲线");});
+  const values={label:"y = 2x + 1",equation:"",x:"x",xValue:1.5,y:"y",yValue:4};
+  bindUi(root,readout,"text",()=>{text=ui(root,"{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
+  assert.equal(text,"y = 2x + 1：x ≈ 1.5，y ≈ 4");
+  setBoardUiLocale(root,"en-US");
+  assert.equal(text,"y = 2x + 1: x ≈ 1.5, y ≈ 4");
+  assert.equal(ui(root,"{first}、{second}",{first:"A",second:"B"}),"A and B");
+  setBoardUiLocale(root,"zh-CN");
+  assert.equal(ui(root,"{first}、{second}",{first:"A",second:"B"}),"A、B");
+  disposeBoardUiLocale(root);
+});
