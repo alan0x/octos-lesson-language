@@ -1,3 +1,4 @@
+import { bindUi, ui, inheritUiLocale } from "./ui-localization.js";
 import {
   coordinateWheelZoomFactor,
   panCoordinateRanges,
@@ -80,9 +81,7 @@ export function renderGeometryExplorer(
   const button = (label: string, title: string, action: () => void) => {
     const element = document.createElement("button");
     element.type = "button";
-    element.textContent = label;
-    element.title = title;
-    element.setAttribute("aria-label", title);
+    bindUi(parent,element,"label",()=>{element.textContent=ui(parent,label);element.title=ui(parent,title);element.setAttribute("aria-label",ui(parent,title));});
     element.onclick = action;
     toolbar.append(element);
     return element;
@@ -145,13 +144,17 @@ export function renderGeometryExplorer(
     dialog.replaceChildren();
     const close = document.createElement("button");
     close.type = "button";
-    close.textContent = "关闭大图";
+    bindUi(parent,close,"text",()=>{close.textContent=ui(parent,"关闭大图");});
     close.onclick = () => dialog.close();
     dialog.append(close);
     const title = document.createElement("h2");
-    title.textContent = node.content?.title ?? "几何图";
+    bindUi(parent,title,"text",()=>{title.textContent=node.content?.title??ui(parent,"几何图");});
     dialog.append(title);
     const controls = toolbar.cloneNode(true) as HTMLElement;
+    bindUi(parent,controls,"labels",()=>{controls.querySelectorAll("button").forEach((button,index)=>{
+      const original=toolbar.querySelectorAll("button")[index];
+      if(original){button.textContent=original.textContent;button.title=original.title;button.setAttribute("aria-label",original.getAttribute("aria-label")??"");}
+    });});
     const originals = Array.from(toolbar.querySelectorAll("button"));
     controls.querySelectorAll("button").forEach((control, index) => {
       if (control.dataset.action === "expand") control.remove();
@@ -173,13 +176,14 @@ export function renderGeometryExplorer(
     const width = large ? Math.max(400, Math.min(900, window.innerWidth - 80)) : 404;
     const height = large ? Math.max(360, Math.min(700, window.innerHeight - 210)) : 280;
     const content = { ...node.content, axes: { ...axes, ...current.ranges } };
+    inheritUiLocale(host,parent);
     draw(host, { ...node, content }, width, height);
     const svg = host.querySelector("svg") as SVGSVGElement | null;
     if (!svg) return;
     svg.dataset.ollBoardWheel = "capture";
     svg.style.touchAction = current.exploring ? "none" : "";
     svg.setAttribute("tabindex", "0");
-    svg.setAttribute("aria-label", "几何图；滚轮缩放，探索模式可拖动平移");
+    bindUi(parent,svg,"aria",()=>{svg.setAttribute("aria-label",ui(parent,"几何图；滚轮缩放，探索模式可拖动平移"));});
     const frame = plotFrame(width, height, current.ranges.x, current.ranges.y, true);
     const anchor = (event: PointerEvent | WheelEvent) => {
       const rect = svg.getBoundingClientRect();

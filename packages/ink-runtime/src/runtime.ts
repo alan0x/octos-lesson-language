@@ -1035,6 +1035,12 @@ export class InkRuntime {
     return () => this.listeners.delete(listener);
   }
 
+  /** Update descriptions in place; keep the editor, undo stack, and active strokes. */
+  setLocale(locale: string): void {
+    this.options.locale = locale;
+    Object.assign(this.editor.localization, getLocalizationTable([locale]));
+  }
+
   setMode(mode: InkMode): void {
     this.modeValue = mode;
     this.selectionTransformEnabled = false;
@@ -1141,7 +1147,8 @@ export class InkRuntime {
     components.forEach(markAiInkComponent);
     const componentIds = ensurePersistentInkComponentIds(components);
     const command = uniteCommands(components.map((component) => this.editor.image.addComponent(component)),
-      { description: "小章鱼板书" });
+      { description: /^zh(?:-|$)/i.test(this.options.locale ?? this.host.ownerDocument.documentElement.lang)
+        ? "小章鱼板书" : "Octos board writing" });
     const wasSuppressed = this.suppressSave;
     this.suppressSave = true;
     try {

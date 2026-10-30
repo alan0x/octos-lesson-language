@@ -1,3 +1,4 @@
+import { bindUi, ui } from "./ui-localization.js";
 import { compileMathExpression } from "../../core/src/index.js";
 import type { StudentInputMethod } from "./student-operations.js";
 
@@ -1041,7 +1042,7 @@ export function renderScene3d(
   shell.dataset.ollScene3d = node.id;
   const svg = svgElement("svg", { viewBox: `0 0 ${WIDTH} ${HEIGHT}` });
   svg.setAttribute("role", "img");
-  svg.setAttribute("aria-label", textLabel(content.title, "可旋转三维场景"));
+  bindUi(parent,svg,"aria",()=>{svg.setAttribute("aria-label",textLabel(content.title,ui(parent,"可旋转三维场景")));});
   const controls = document.createElement("div");
   controls.className = "scene3d-controls";
   const applyView = (
@@ -1066,7 +1067,7 @@ export function renderScene3d(
   ]) {
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = preset.label;
+    bindUi(parent,button,"text",()=>{button.textContent=ui(parent,preset.label);});
     button.addEventListener("click", (event) => applyView(
       preset.view,
       "preset",
@@ -1076,7 +1077,7 @@ export function renderScene3d(
   }
   const reset = document.createElement("button");
   reset.type = "button";
-  reset.textContent = "复位";
+  bindUi(parent,reset,"text",()=>{reset.textContent=ui(parent,"复位");});
   reset.addEventListener("click", (event) => applyView(
     initial,
     "reset",
@@ -1188,7 +1189,7 @@ export function renderScene3d(
   renderScene(svg, content, view, variables, prepared);
   const fallback = document.createElement("p");
   fallback.className = "scene3d-fallback";
-  fallback.textContent = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
+  bindUi(parent,fallback,"text",()=>{fallback.textContent=ui(parent,"静态说明：{description}",{description:textLabel(content.fallback,ui(parent,"请结合旁白和标注理解这个三维场景。"))});});
   shell.append(controls, svg, fallback);
   parent.append(shell);
   sceneControllers.set(parent, {
@@ -1209,9 +1210,9 @@ export function renderScene3d(
       // A delayed runtime echo must not rewind the most recent local pointer position.
       if (!drag && !wheelGesture) view = normalizeScene3dView(storedView ?? content.camera ?? view);
       initial = normalizeScene3dView(content.camera ?? view);
-      const label = textLabel(content.title, "可旋转三维场景");
+      const label = textLabel(content.title, ui(parent,"可旋转三维场景"));
       if (svg.getAttribute("aria-label") !== label) svg.setAttribute("aria-label", label);
-      const explanation = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
+      const explanation = ui(parent,"静态说明：{description}",{description:textLabel(content.fallback,ui(parent,"请结合旁白和标注理解这个三维场景。"))});
       if (fallback.textContent !== explanation) fallback.textContent = explanation;
       renderScene(svg, content, view, variables, prepared);
     },
