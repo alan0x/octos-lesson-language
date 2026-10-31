@@ -27,6 +27,7 @@
     "teaching:observe:english": "npm run teaching:observe -- --lesson english --output evals/teaching-playback/english-relative-clause-v2/report.json",
     "teaching:observe:learner-slope": "npm run teaching:observe -- --lesson learner-slope --output evals/teaching-playback/learner-slope-v1/report.json",
     "teaching:observe:learner-unit-circle": "npm run teaching:observe -- --lesson learner-unit-circle --output evals/teaching-playback/learner-unit-circle-v1/report.json",
+    "teaching:observe:large-board": "npm run build && for lesson in geometry quadratic science english unit-circle learner-slope learner-unit-circle; do node scripts/run-teaching-observer.mjs --lesson $lesson --board 1920x1080 --screenshots none --output evals/teaching-playback/large-board/$lesson/report.json || exit 1; done",
     "teaching:observe:english-probe": "npm run teaching:observe -- --lesson english-v1 --expect fail --screenshots none --output evals/teaching-playback/english-probe/report.json",
     "teaching:observe:calibration": "npm run teaching:observe -- --lesson geometry-v1 --expect fail --screenshots none --output evals/teaching-playback/geometry-v1-negative-control/report.json",
     "teaching:observe:quadratic-probe": "npm run teaching:observe -- --lesson quadratic-v1 --expect fail --screenshots none --output evals/teaching-playback/quadratic-probe/report.json"

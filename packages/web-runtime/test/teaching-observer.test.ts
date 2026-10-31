@@ -9,7 +9,7 @@ function observation(overrides: Partial<TeachingFrameObservation> = {}): Teachin
     node_count: 2, connection_count: 0, group_count: 0, new_nodes: 1, new_connections: 0, new_groups: 0,
     focus_targets: ["node-1"],
     focal_nodes: [{ id: "node-1", kind: "math", x: 100, y: 100, width: 320, height: 120, visible: true, fully_in_view: true }],
-    active_targets: [], min_focal_node_width: 320, min_focal_body_font_px: 18, min_focal_diagram_edge_px: null,
+    active_targets: [], focus_fits_readably: true, active_targets_fit_readably: true, min_focal_node_width: 320, min_focal_body_font_px: 18, min_focal_diagram_edge_px: null,
     math_errors: 0, content_overflows: [], label_node_overlaps: [], duplicate_internal_connections: [], image_load_failures: [], image_pending: [],
     node_instances: { "node-1": "node-instance-1" }, remounted_nodes: [],
     ...overrides,
@@ -32,8 +32,31 @@ test("teaching observer reports independent browser rendering failures", () => {
   }));
   assert.equal(result.passed, false);
   assert.deepEqual(result.issues.map((issue) => issue.code), [
-    "G3_CONTENT_OVERFLOW", "G1_LABEL_NODE_OVERLAP", "G3_FOCUS_TOO_SMALL", "G3_TEXT_TOO_SMALL",
+    "G3_CONTENT_OVERFLOW", "G1_LABEL_NODE_OVERLAP", "G3_TEXT_TOO_SMALL",
   ]);
+});
+
+test("a narrow focused card with readable text passes", () => {
+  const result = evaluateTeachingObservation(observation({ min_focal_node_width: 96, min_focal_body_font_px: 24 }));
+  assert.deepEqual(result, { passed: true, issues: [] });
+});
+
+const inView = { id: "newest", kind: "note", x: 100, y: 100, width: 300, height: 160, visible: true, fully_in_view: true };
+const besideFrame = { id: "earliest", kind: "image", x: -420, y: -300, width: 374, height: 290, visible: false, fully_in_view: false };
+
+test("a focused card beside the frame fails when all focused cards fit readably", () => {
+  const result = evaluateTeachingObservation(observation({ focal_nodes: [inView, besideFrame], focus_fits_readably: true }));
+  assert.deepEqual(result.issues.map((issue) => issue.code), ["G3_FOCUS_OUT_OF_VIEW"]);
+});
+
+test("cards that cannot share the screen readably may be framed one at a time", () => {
+  const result = evaluateTeachingObservation(observation({ focal_nodes: [inView, besideFrame], focus_fits_readably: false }));
+  assert.deepEqual(result, { passed: true, issues: [] });
+});
+
+test("a frame with no focused card in view still fails", () => {
+  const result = evaluateTeachingObservation(observation({ focal_nodes: [besideFrame], focus_fits_readably: false }));
+  assert.deepEqual(result.issues.map((issue) => issue.code), ["G3_FOCUS_OUT_OF_VIEW"]);
 });
 
 test("action frames require their active target to be visible", () => {
