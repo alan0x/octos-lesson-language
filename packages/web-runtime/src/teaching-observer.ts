@@ -134,6 +134,14 @@ function observeFramelessGroup(world: HTMLElement, board: SemanticBoardState, vi
   };
 }
 
+// The computed font size ignores the board camera and fitted-math transforms,
+// so a 14 px card text at camera scale 0.3 still reads as 14. Compare the
+// rendered box with its layout box to get the size the learner actually sees.
+function onScreenScale(element: Element): number {
+  if (!(element instanceof HTMLElement) || element.offsetWidth <= 0) return 1;
+  return element.getBoundingClientRect().width / element.offsetWidth;
+}
+
 function minimumFontSize(nodes: Element[]): number | null {
   const sizes: number[] = [];
   for (const node of nodes) {
@@ -142,7 +150,7 @@ function minimumFontSize(nodes: Element[]): number | null {
     );
     for (const element of candidates) {
       if (!element.textContent?.trim()) continue;
-      const size = Number.parseFloat(getComputedStyle(element).fontSize);
+      const size = Number.parseFloat(getComputedStyle(element).fontSize) * onScreenScale(element);
       if (Number.isFinite(size)) sizes.push(size);
     }
   }
