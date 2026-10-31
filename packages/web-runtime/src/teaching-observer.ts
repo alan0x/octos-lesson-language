@@ -99,7 +99,8 @@ function targetId(target: Record<string, unknown> | undefined): string | undefin
 }
 
 function activeTargetIds(action: CanonicalAction | undefined): string[] {
-  if (!action) return [];
+  // Hiding a card is meant to take it off the board.
+  if (!action || action.op === "board.hide") return [];
   if (action.op === "board.focus") return [...(action.focus?.targets ?? [])];
   const direct = action.node?.id ?? action.connection?.id ?? action.group?.id ?? targetId(action.target as Record<string, unknown> | undefined);
   return direct ? [direct] : [];
@@ -250,8 +251,13 @@ export function collectTeachingObservation(input: {
   const externalIds = new Set([...world.querySelectorAll<SVGElement>(".connection-line")].map((element) => element.dataset.id).filter(Boolean) as string[]);
   const duplicateInternalConnections = [...internalIds].filter((id) => externalIds.has(id));
   const images = [...world.querySelectorAll<HTMLImageElement>(".lesson-image")];
-  const imageLoadFailures = images.filter((image) => image.complete && image.naturalWidth === 0)
-    .map((image) => image.closest<HTMLElement>(".board-node")?.dataset.id ?? image.src);
+  const imageLoadFailures = [
+    ...images.filter((image) => image.complete && image.naturalWidth === 0)
+      .map((image) => image.closest<HTMLElement>(".board-node")?.dataset.id ?? image.src),
+    // A learner ink snapshot the host could not resolve is a missing asset too.
+    ...[...world.querySelectorAll<HTMLElement>(".lesson-ink-missing")]
+      .map((element) => element.closest<HTMLElement>(".board-node")?.dataset.id ?? element.dataset.snapshotId ?? "ink"),
+  ];
   const imagePending = images.filter((image) => !image.complete)
     .map((image) => image.closest<HTMLElement>(".board-node")?.dataset.id ?? image.src);
   const nodeInstances = Object.fromEntries(nodeElements.map((element) => [element.dataset.id ?? "unknown", element.dataset.instanceId ?? "missing"]));

@@ -80,7 +80,7 @@ const TOPIC_GUTTER = 180;
 const MAX_READING_COLUMN_HEIGHT = 760;
 const MAX_READING_COLUMN_ITEMS = 4;
 const MAX_AUTHORED_COLUMN_HEIGHT = 1_150;
-const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "diagram"]);
+const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "ink", "diagram"]);
 
 interface RegionCursor {
   x: number;
@@ -120,6 +120,7 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
+  if (kind === "ink") return { width: 340, height: 230 };
   if (kind === "table") {
     const columns = Array.isArray(content.columns) ? content.columns.length : 3;
     const rows = Array.isArray(content.rows) ? content.rows.length : 2;
@@ -165,7 +166,35 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
   return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
 }
 
+/**
+ * Lays out the board. Learner ink that annotates a card does not take part in
+ * the flow: it is drawn on its anchor at the position stored with the ink, so
+ * it moves and scales with that card.
+ */
 export function computeBoardLayout(
+  state: SemanticBoardState,
+  measuredNodeSizes: MeasuredNodeSizes = {},
+  options: BoardLayoutOptions = {},
+): BoardLayout {
+  const annotations = Object.values(state.nodes).filter((node) => node.placement?.relation === "annotates");
+  if (!annotations.length) return computeFlowLayout(state, measuredNodeSizes, options);
+  const flowNodes = Object.fromEntries(Object.entries(state.nodes).filter(([, node]) => node.placement?.relation !== "annotates"));
+  const layout = computeFlowLayout({ ...state, nodes: flowNodes }, measuredNodeSizes, options);
+  for (const node of annotations) {
+    const anchor = layout.nodes[String(node.placement?.anchor)];
+    const position = node.content?.annotation;
+    if (!anchor || !position) continue;
+    layout.nodes[node.id] = {
+      x: anchor.x + position.x * anchor.width,
+      y: anchor.y + position.y * anchor.height,
+      width: position.width * anchor.width,
+      height: position.height * anchor.height,
+    };
+  }
+  return layout;
+}
+
+function computeFlowLayout(
   state: SemanticBoardState,
   measuredNodeSizes: MeasuredNodeSizes = {},
   options: BoardLayoutOptions = {},

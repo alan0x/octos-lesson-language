@@ -167,6 +167,44 @@ function scene3dViewDirection(
   };
 }
 
+const SCENE3D_PRESET_VIEWS = {
+  front: { yaw: 0, pitch: 0 },
+  side: { yaw: Math.PI / 2, pitch: 0 },
+  top: { yaw: 0, pitch: Math.PI / 2 },
+  isometric: { yaw: 0.72, pitch: 0.55 },
+} as const;
+
+/**
+ * The camera a 3D view intent turns a scene to. A preset is a named direction;
+ * showing a highlighted part looks at it from the side it faces, measured from
+ * the centre of the scene's objects. Zoom is kept, and an intent that names no
+ * direction (a part at the centre) keeps the current view.
+ */
+export function scene3dViewForIntent(
+  content: JsonObject,
+  intent: { show?: { fragment_id?: string }; preset?: keyof typeof SCENE3D_PRESET_VIEWS },
+  current: { yaw: number; pitch: number; zoom: number },
+): { yaw: number; pitch: number; zoom: number } {
+  if (intent.preset) return { ...SCENE3D_PRESET_VIEWS[intent.preset], zoom: current.zoom };
+  const highlight = ((content.highlights ?? []) as JsonObject[]).find((candidate) => candidate.id === intent.show?.fragment_id);
+  const points = (highlight?.points ?? []) as Array<{ x: number; y: number; z: number }>;
+  if (!points.length) return { ...current };
+  const average = (values: Array<{ x: number; y: number; z: number }>) => values.reduce(
+    (sum, point) => ({ x: sum.x + point.x / values.length, y: sum.y + point.y / values.length, z: sum.z + point.z / values.length }),
+    { x: 0, y: 0, z: 0 },
+  );
+  const centres = ((content.objects ?? []) as JsonObject[]).map((object) => object.center).filter(Boolean) as Array<{ x: number; y: number; z: number }>;
+  const centre = centres.length ? average(centres) : { x: 0, y: 0, z: 0 };
+  const part = average(points);
+  const direction = { x: part.x - centre.x, y: part.y - centre.y, z: part.z - centre.z };
+  const length = Math.hypot(direction.x, direction.y, direction.z);
+  if (length < 1e-9) return { ...current };
+  const pitch = Math.asin(Math.max(-1, Math.min(1, direction.z / length)));
+  const horizontal = Math.hypot(direction.x, direction.y);
+  const yaw = horizontal < 1e-9 ? current.yaw : Math.atan2(direction.x, direction.y);
+  return { yaw, pitch, zoom: current.zoom };
+}
+
 /**
  * Score a visible 3D camera result against a lesson task. A score at or below
  * one completes the task. `view_direction` only compares the camera's sight
