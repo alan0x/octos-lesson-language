@@ -182,3 +182,22 @@ test("erasing and rewriting revises ink to a newer snapshot", () => {
   validate(inkLesson([grid, fraction, rewrite]));
   rejectsWith(inkLesson([grid, fraction, { ...rewrite, content: { ...rewrite.content, sha256: SHA } }]), "OLL_RESOURCE_DENIED");
 });
+
+// ---- 0007: a card's source
+
+test("a card made from ink records the selection the learner confirmed", () => {
+  const sourced = { ...neat, source: { selection: "sel-card3-all", confirmed_by: "learner" } };
+  validate(inkLesson([grid, fraction, sourced]));
+  const events = normalizeAuthoringLesson(inkLesson([grid, fraction, sourced]), { ...host, resourceContext: inkContext });
+  const state = reduceCanonicalEvents(events);
+  assert.deepEqual(state.nodes["lesson-learner-001:node:neat-fraction"]!.source, { selection: "sel-card3-all", confirmed_by: "learner" });
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("write-source"));
+});
+
+test("a source must be a selection of this lesson's ink, confirmed by the learner, in a learner-taught lesson", () => {
+  rejectsWith(inkLesson([grid, fraction, { ...neat, source: { selection: "sel-nowhere", confirmed_by: "learner" } }]), "OLL_REFERENCE_NOT_FOUND");
+  assert.equal(validateAuthoringSchema(inkLesson([grid, fraction, { ...neat, source: { selection: "sel-card3-all", confirmed_by: "ai" } }])).valid, false);
+  const explain = inkLesson([grid, { do: "write", as: "note", kind: "note", role: "note", place: { relation: "below", anchor: "grid" }, content: { title: "x" }, source: { selection: "sel-card3-all", confirmed_by: "learner" } }], "explain");
+  rejectsWith(explain, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/source");
+  rejectsWith(inkLesson([grid, fraction, { do: "point", target: "grid", source: { selection: "sel-card3-all", confirmed_by: "learner" } }]), "OLL_INVALID_OPERATION_PAYLOAD");
+});

@@ -322,7 +322,16 @@
         "value": {"type": "number"},
         "easing": {"enum": ["linear", "ease_in_out"]},
         "duration_intent": {"enum": ["brief", "normal", "extended"]},
-        "reason": {"type": "string"}
+        "reason": {"type": "string"},
+        "source": {
+          "type": "object",
+          "required": ["selection", "confirmed_by"],
+          "additionalProperties": false,
+          "properties": {
+            "selection": {"type": "string", "pattern": "^sel-[A-Za-z0-9_-]{1,96}$"},
+            "confirmed_by": {"const": "learner"}
+          }
+        }
       },
       "allOf": [
         {

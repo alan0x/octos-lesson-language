@@ -66,7 +66,7 @@ const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
   "intent", "expression", "reason",
-  "variable", "value", "easing", "duration_intent",
+  "variable", "value", "easing", "duration_intent", "source",
 ]);
 
 export class OllError extends Error {
@@ -1132,6 +1132,9 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
   for (const field of Object.keys(action)) {
     if (!ACTION_FIELDS.has(field)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/${field}`, `Unknown action field '${field}'`);
   }
+  if (action.do !== "write" && "source" in action) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/source`, "Only a new card has a source");
+  }
   if (action.do === "write") {
     requireAlias(action.as, `${path}/as`);
     requireString(action.kind, `${path}/kind`);
@@ -1259,6 +1262,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   // cards cannot be referenced again, and ink revisions must stay ink.
   const hidden = new Set<string>();
   const inkNodes = new Set<string>();
+  // A card made from ink names a selection the lesson's ink or Session Context provides.
+  const knownSelections = new Set<string>((resourceContext?.ink_snapshots ?? []).flatMap((snapshot) => snapshot.selection_ids ?? []));
   const requireLearnerTaught = (path: string, what: string) => {
     if (!isLearnerTaught(document)) fail("OLL_INVALID_OPERATION", path, `${what} is only available in learner-taught lessons`);
   };
@@ -1360,7 +1365,16 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             hidden.add(action.place.anchor!);
           }
           validateInkResource(action, actionPath, resourceContext);
-          if (action.kind === "ink") inkNodes.add(action.as);
+          if (action.kind === "ink") {
+            inkNodes.add(action.as);
+            for (const selection of (action.content.selections ?? []) as JsonObject[]) knownSelections.add(selection.selection_id);
+          }
+          if (action.source !== undefined) {
+            requireLearnerTaught(`${actionPath}/source`, "A learner-confirmed source");
+            if (!knownSelections.has(action.source.selection)) {
+              fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/source/selection`, `Selection '${action.source.selection}' is not part of this lesson's ink`);
+            }
+          }
           const fragments = collectAddressableContent(action.content);
           const uniqueFragments = new Set<string>();
           for (const fragment of fragments) {
@@ -1630,6 +1644,7 @@ function normalizeAction(
         role: action.role,
         content: normalizeAddressableContent(host, nodeId, action.content),
         placement: normalizePlacement(registry, action.place),
+        ...(action.source ? { source: structuredClone(action.source) } : {}),
         ...(host.regionId ? { region_id: host.regionId } : {}),
       },
     };

@@ -34,6 +34,8 @@ export interface WriteAction extends BaseAction {
   role: string;
   content: JsonObject;
   place: Placement;
+  /** The learner ink selection this card was made from, as the learner confirmed it. */
+  source?: { selection: string; confirmed_by: "learner" };
 }
 
 export interface ReviseAction extends BaseAction {
