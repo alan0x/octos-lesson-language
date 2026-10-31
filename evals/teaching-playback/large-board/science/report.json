@@ -1,0 +1,3609 @@
+{
+  "profile": "octos.teaching-playback.report",
+  "version": "0.1",
+  "generated_at": "2026-10-31T15:43:17.799Z",
+  "lesson_id": "lesson-science-transpiration-v2-001",
+  "fixture": "science",
+  "viewport": {
+    "width": 2240,
+    "height": 1192
+  },
+  "browser": "156.0.8078.74",
+  "passed": true,
+  "expected_result": "pass",
+  "expectation_met": true,
+  "console_messages": [],
+  "beats": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 16,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 2,
+        "new_connections": 0,
+        "new_groups": 1,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 625.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 1030.07,
+            "y": 332.57,
+            "width": 264.65,
+            "height": 150.75,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 264.65,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 30,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 46,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 318.3,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 461.3,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 60,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 761.01,
+            "y": 293,
+            "width": 397.98,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 760.63,
+            "y": 490.13,
+            "width": 398.74,
+            "height": 177.73,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 397.98,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.39,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 74,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 99,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 86,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 98,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 111,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 416.2,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 127,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 0.97,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 548.21,
+            "y": 145.7,
+            "width": 328.5,
+            "height": 257.97,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 1131.47,
+            "y": 668.85,
+            "width": 240.62,
+            "height": 145.97,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 240.62,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 139,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 784,
+            "y": 328.75,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 153,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 10,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 2,
+        "new_connections": 0,
+        "new_groups": 1,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:summary-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
+            "kind": "diagram",
+            "x": 658.6,
+            "y": 393.1,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 997.02,
+            "y": 392.52,
+            "width": 264.76,
+            "height": 174.95,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 264.76,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8",
+          "lesson-science-transpiration-v2-001:node:lesson-route": "node-instance-9",
+          "lesson-science-transpiration-v2-001:node:takeaway": "node-instance-10"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ],
+  "action_frames": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 8,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 773,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 9,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 827.67,
+            "y": 404.62,
+            "width": 264.65,
+            "height": 150.75,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 10,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:group:experiment-group",
+            "kind": "board-group",
+            "x": 385.8,
+            "y": 367.8,
+            "width": 743.6,
+            "height": 368.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 14,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:show-experiment-and-question",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 625.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 1030.07,
+            "y": 332.57,
+            "width": 264.65,
+            "height": 150.75,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:group:experiment-group",
+            "kind": "board-group",
+            "x": 588.2,
+            "y": 295.75,
+            "width": 743.6,
+            "height": 368.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 264.65,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 22,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 625.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 1030.07,
+            "y": 332.57,
+            "width": 264.65,
+            "height": 150.75,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets",
+            "kind": "image-region",
+            "x": 676.39,
+            "y": 389.3,
+            "width": 122.91,
+            "height": 132.88,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 264.65,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 23,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 625.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 1030.07,
+            "y": 332.57,
+            "width": 264.65,
+            "height": 150.75,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves",
+            "kind": "image-region",
+            "x": 689.67,
+            "y": 411.44,
+            "width": 93,
+            "height": 106.29,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 264.65,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 24,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:experiment-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 379.2,
+            "y": 263.85,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:question-card",
+            "kind": "note",
+            "x": 783.73,
+            "y": 263.08,
+            "width": 352.54,
+            "height": 126.93,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 784,
+            "y": 406.85,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 28,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:observe-left-droplets",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 36,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:droplets",
+            "kind": "image-region",
+            "x": 632.39,
+            "y": 389.3,
+            "width": 122.91,
+            "height": 132.88,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 37,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leaves",
+            "kind": "image-region",
+            "x": 645.67,
+            "y": 411.44,
+            "width": 93,
+            "height": 106.29,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 38,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 785.2,
+            "y": 389.3,
+            "width": 126.22,
+            "height": 168.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 39,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 333.15,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 476.15,
+            "width": 352,
+            "height": 146.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-bag",
+            "kind": "image-region",
+            "x": 791.84,
+            "y": 391.52,
+            "width": 116.26,
+            "height": 139.51,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 40,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 379.2,
+            "y": 246.8,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 784,
+            "y": 389.8,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 784,
+            "y": 389.8,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 44,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:compare-leafless-control",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 318.3,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 461.3,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 318.3,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 461.3,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 52,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 318.3,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 461.3,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup",
+            "kind": "image-region",
+            "x": 625.74,
+            "y": 374.45,
+            "width": 132.88,
+            "height": 168.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 53,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 581.6,
+            "y": 318.3,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 986.4,
+            "y": 461.3,
+            "width": 352,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 785.2,
+            "y": 374.45,
+            "width": 126.22,
+            "height": 168.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 54,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:evidence-table"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 356.21,
+            "y": 51,
+            "width": 374,
+            "height": 293.7,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 761.01,
+            "y": 194,
+            "width": 397.98,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 760.63,
+            "y": 391.13,
+            "width": 398.74,
+            "height": 177.73,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 374,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.39,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 58,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:establish-observation:beat:infer-leaf-relationship",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 761.01,
+            "y": 293,
+            "width": 397.98,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 760.63,
+            "y": 490.13,
+            "width": 398.74,
+            "height": 177.73,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 761.01,
+            "y": 293,
+            "width": 397.98,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 760.63,
+            "y": 490.13,
+            "width": 398.74,
+            "height": 177.73,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 397.98,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.39,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 68,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:evidence-table",
+          "lesson-science-transpiration-v2-001:node:first-inference"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:evidence-table",
+            "kind": "table",
+            "x": 1210.8,
+            "y": -22.7,
+            "width": 397.98,
+            "height": 180.4,
+            "visible": true,
+            "fully_in_view": false
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:first-inference",
+            "kind": "note",
+            "x": 1210.42,
+            "y": 174.43,
+            "width": 398.74,
+            "height": 177.73,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 99,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 397.98,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.39,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 72,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:absorb-water-through-roots",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 99,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 99,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 80,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 84,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:transport-water-to-leaves",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 92,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 96,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:release-water-vapor",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 430.5,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 104,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 480.4,
+            "y": 416.2,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 416.2,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 105,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:water-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:water-path",
+            "kind": "diagram",
+            "x": 480.4,
+            "y": 416.2,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:connection:vapor-to-condensation",
+            "kind": "connection-line",
+            "x": 788.4,
+            "y": 480,
+            "width": 17.6,
+            "height": 14.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 109,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:build-mechanism:beat:condense-on-bag",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 416.2,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 806,
+            "y": 416.2,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 119,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 1098.6,
+            "y": 929.35,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:leafy-setup",
+            "kind": "image-region",
+            "x": 817.14,
+            "y": 389.3,
+            "width": 132.88,
+            "height": 168.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 120,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 1098.6,
+            "y": 929.35,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image:fragment:control-setup",
+            "kind": "image-region",
+            "x": 976.6,
+            "y": 389.3,
+            "width": 126.22,
+            "height": 168.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 121,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:condensation-path"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:condensation-path",
+            "kind": "diagram",
+            "x": 484.58,
+            "y": 397.5,
+            "width": 308,
+            "height": 127.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 823.02,
+            "y": 396.9,
+            "width": 273.95,
+            "height": 166.19,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 125,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:return-to-experiment",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 0.97,
+        "node_count": 7,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 548.21,
+            "y": 145.7,
+            "width": 328.5,
+            "height": 257.97,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 1131.47,
+            "y": 668.85,
+            "width": 240.62,
+            "height": 145.97,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 548.21,
+            "y": 145.7,
+            "width": 328.5,
+            "height": 257.97,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 1131.47,
+            "y": 668.85,
+            "width": 240.62,
+            "height": 145.97,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 240.62,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 133,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:experiment-image",
+          "lesson-science-transpiration-v2-001:node:model-check"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:experiment-image",
+            "kind": "image",
+            "x": 119.6,
+            "y": -406.05,
+            "width": 374,
+            "height": 293.7,
+            "visible": false,
+            "fully_in_view": false
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:model-check",
+            "kind": "note",
+            "x": 783.74,
+            "y": 189.38,
+            "width": 352.52,
+            "height": 122.53,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 784,
+            "y": 328.75,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352.52,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.41,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 137,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:separate-evidence-and-model",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 8,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 784,
+            "y": 328.75,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 784,
+            "y": 328.75,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 145,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 9,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 423.2,
+            "y": 540.5,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
+            "kind": "diagram",
+            "x": 806,
+            "y": 401.9,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8",
+          "lesson-science-transpiration-v2-001:node:lesson-route": "node-instance-9"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 146,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 10,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 106.4,
+            "y": 531.7,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 827.62,
+            "y": 392.52,
+            "width": 264.76,
+            "height": 174.95,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8",
+          "lesson-science-transpiration-v2-001:node:lesson-route": "node-instance-9",
+          "lesson-science-transpiration-v2-001:node:takeaway": "node-instance-10"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 147,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 10,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:node:reasoning-layers"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:reasoning-layers",
+            "kind": "table",
+            "x": 106.4,
+            "y": 531.7,
+            "width": 352,
+            "height": 302.5,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:group:summary-group",
+            "kind": "board-group",
+            "x": 451.8,
+            "y": 355.7,
+            "width": 677.6,
+            "height": 248.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8",
+          "lesson-science-transpiration-v2-001:node:lesson-route": "node-instance-9",
+          "lesson-science-transpiration-v2-001:node:takeaway": "node-instance-10"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-science-transpiration-v2-001",
+        "cursor": 151,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-science-transpiration-v2-001:step:test-and-organize-explanation:beat:show-complete-route",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "world_scale": 1.1,
+        "node_count": 10,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-science-transpiration-v2-001:group:summary-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-science-transpiration-v2-001:node:lesson-route",
+            "kind": "diagram",
+            "x": 658.6,
+            "y": 393.1,
+            "width": 308,
+            "height": 156.2,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-science-transpiration-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 997.02,
+            "y": 392.52,
+            "width": 264.76,
+            "height": 174.95,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-science-transpiration-v2-001:group:summary-group",
+            "kind": "board-group",
+            "x": 621.2,
+            "y": 355.7,
+            "width": 677.6,
+            "height": 248.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 264.76,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-science-transpiration-v2-001:node:experiment-image": "node-instance-1",
+          "lesson-science-transpiration-v2-001:node:question-card": "node-instance-2",
+          "lesson-science-transpiration-v2-001:node:evidence-table": "node-instance-3",
+          "lesson-science-transpiration-v2-001:node:first-inference": "node-instance-4",
+          "lesson-science-transpiration-v2-001:node:water-path": "node-instance-5",
+          "lesson-science-transpiration-v2-001:node:condensation-path": "node-instance-6",
+          "lesson-science-transpiration-v2-001:node:model-check": "node-instance-7",
+          "lesson-science-transpiration-v2-001:node:reasoning-layers": "node-instance-8",
+          "lesson-science-transpiration-v2-001:node:lesson-route": "node-instance-9",
+          "lesson-science-transpiration-v2-001:node:takeaway": "node-instance-10"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ]
+}
