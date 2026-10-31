@@ -101,7 +101,7 @@ function activeTargetIds(action: CanonicalAction | undefined): string[] {
   return direct ? [direct] : [];
 }
 
-function focalNodeIds(board: SemanticBoardState): string[] {
+function memberNodeIds(board: SemanticBoardState, targets: readonly string[]): string[] {
   const result = new Set<string>();
   const visit = (id: string, seen = new Set<string>()) => {
     if (seen.has(id)) return;
@@ -110,8 +110,28 @@ function focalNodeIds(board: SemanticBoardState): string[] {
     const group = board.groups[id];
     for (const member of (group?.members as string[] | undefined) ?? []) visit(member, seen);
   };
-  for (const target of board.focus) visit(target);
+  for (const target of targets) visit(target);
   return [...result];
+}
+
+function focalNodeIds(board: SemanticBoardState): string[] {
+  return memberNodeIds(board, board.focus);
+}
+
+// A group whose frame would cover unrelated cards is drawn without a frame,
+// so what the learner sees of it is its member cards.
+function observeFramelessGroup(world: HTMLElement, board: SemanticBoardState, viewport: DOMRect, id: string): TeachingRectObservation | undefined {
+  if (!board.groups[id]) return undefined;
+  const members = memberNodeIds(board, [id]).map((member) => elementById(world, member)).filter(Boolean) as Element[];
+  if (!members.length) return undefined;
+  const rects = members.map((element) => observeRect(element, viewport, id));
+  const left = Math.min(...rects.map((rect) => rect.x)); const top = Math.min(...rects.map((rect) => rect.y));
+  return {
+    id, kind: "group-members", x: left, y: top,
+    width: rounded(Math.max(...rects.map((rect) => rect.x + rect.width)) - left),
+    height: rounded(Math.max(...rects.map((rect) => rect.y + rect.height)) - top),
+    visible: rects.some((rect) => rect.visible), fully_in_view: rects.every((rect) => rect.fully_in_view),
+  };
 }
 
 function minimumFontSize(nodes: Element[]): number | null {
@@ -158,7 +178,7 @@ export function collectTeachingObservation(input: {
   const activeIds = activeTargetIds(operation.action);
   const activeTargets = activeIds.map((id) => {
     const element = elementById(world, id);
-    return element ? observeRect(element, viewportRect, id) : {
+    return element ? observeRect(element, viewportRect, id) : observeFramelessGroup(world, board, viewportRect, id) ?? {
       id, kind: "missing", x: 0, y: 0, width: 0, height: 0, visible: false, fully_in_view: false,
     };
   });
