@@ -33,6 +33,7 @@ export const OLL_ACTION_NAMES = [
   "expression",
   "animate",
   "hide",
+  "view",
 ] as const;
 
 export type OllActionName = typeof OLL_ACTION_NAMES[number];
@@ -99,6 +100,8 @@ export const OLL_VARIABLE_CONTROL_KINDS = ["slider", "geometry_point"] as const;
 export const OLL_SCENE3D_CONTROL_KINDS = ["orbit", "zoom", "preset", "reset"] as const;
 export const OLL_TASK_COMPLETION_KINDS = ["expression_target", "scene3d_view_target", "numeric_answer"] as const;
 export const OLL_SCENE3D_VIEW_MATCH_KINDS = ["view_direction", "camera_pose"] as const;
+/** Named 3D views a lesson can turn a scene to; the runtime owns the camera numbers. */
+export const OLL_SCENE3D_VIEW_PRESETS = ["front", "top", "side", "isometric"] as const;
 
 /**
  * Serializable discovery surface for generators and hosts. It describes what

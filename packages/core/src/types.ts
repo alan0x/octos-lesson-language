@@ -98,7 +98,16 @@ export interface HideAction extends BaseAction {
   target: LocalReference;
 }
 
+/** Turns a 3D scene to show one of its highlighted parts, or to a named view. */
+export interface ViewAction extends BaseAction {
+  do: "view";
+  target: LocalReference;
+  show?: LocalReference;
+  preset?: "front" | "top" | "side" | "isometric";
+}
+
 export type AuthoringAction =
+  | ViewAction
   | HideAction
   | WriteAction
   | ReviseAction
@@ -348,6 +357,8 @@ export interface CanonicalAction {
     duration_intent: "brief" | "normal" | "extended";
   };
   revision?: { content: JsonObject; reason: string };
+  /** scene3d.view: a highlighted part to show, or a named view. */
+  view?: { show?: CanonicalTarget; preset?: "front" | "top" | "side" | "isometric" };
 }
 
 export interface CanonicalEvent {

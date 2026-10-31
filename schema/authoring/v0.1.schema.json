@@ -301,7 +301,7 @@
       "required": ["do"],
       "additionalProperties": false,
       "properties": {
-        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate", "hide"]},
+        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate", "hide", "view"]},
         "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
         "as": {"$ref": "#/$defs/alias"},
         "kind": {"enum": ["text", "math", "shape", "diagram", "geometry", "plot", "scene3d", "image", "table", "note", "ink"]},
@@ -323,6 +323,8 @@
         "easing": {"enum": ["linear", "ease_in_out"]},
         "duration_intent": {"enum": ["brief", "normal", "extended"]},
         "reason": {"type": "string"},
+        "show": {"type": "string"},
+        "preset": {"enum": ["front", "top", "side", "isometric"]},
         "source": {
           "type": "object",
           "required": ["selection", "confirmed_by"],
@@ -399,6 +401,10 @@
         },
         {
           "if": {"properties": {"do": {"const": "hide"}}},
+          "then": {"required": ["target"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "view"}}},
           "then": {"required": ["target"]}
         },
         {

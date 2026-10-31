@@ -201,3 +201,38 @@ test("a source must be a selection of this lesson's ink, confirmed by the learne
   rejectsWith(explain, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/source");
   rejectsWith(inkLesson([grid, fraction, { do: "point", target: "grid", source: { selection: "sel-card3-all", confirmed_by: "learner" } }]), "OLL_INVALID_OPERATION_PAYLOAD");
 });
+
+// ---- 0008: 3D view intent
+
+const box = { do: "write", as: "box", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+  content: {
+    fallback: "A rectangular box 4 by 3 by 2",
+    camera: { yaw: 0.7, pitch: 0.5, zoom: 1 },
+    objects: [{ as: "prism", kind: "box", center: { x: 0, y: 0, z: 1 }, size: { x: 4, y: 3, z: 2 } }],
+    highlights: [{ as: "bottom-face", kind: "face", points: [{ x: -2, y: -1.5, z: 0 }, { x: 2, y: -1.5, z: 0 }, { x: 2, y: 1.5, z: 0 }, { x: -2, y: 1.5, z: 0 }] }],
+  } };
+
+function boxLesson(actions: unknown[]): AuthoringLesson {
+  const lesson = inkLesson([box, ...actions]);
+  lesson.close.focus = ["box"];
+  return lesson;
+}
+
+test("a lesson turns a 3D scene to show a highlighted part or a named view", () => {
+  const lesson = boxLesson([{ do: "view", target: "box", show: "box#bottom-face" }, { do: "view", target: "box", preset: "top" }]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const views = events[1]!.step!.beats[0]!.stage.during_speech.filter((action) => action.op === "scene3d.view");
+  assert.deepEqual(views[0]!.view, { show: { node_id: "lesson-learner-001:node:box", fragment_id: "lesson-learner-001:node:box:fragment:bottom-face" } });
+  assert.deepEqual(reduceCanonicalEvents(events).nodes["lesson-learner-001:node:box"]!.view_intent, { preset: "top" });
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("action:scene3d.view"));
+});
+
+test("a view names exactly one intent on a whole 3D scene, never camera numbers", () => {
+  rejectsWith(boxLesson([{ do: "view", target: "box" }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(boxLesson([{ do: "view", target: "box", show: "box#bottom-face", preset: "top" }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(boxLesson([{ do: "view", target: "box", show: "box#prism" }]), "OLL_INVALID_REFERENCE");
+  rejectsWith(inkLesson([grid, { do: "view", target: "grid", preset: "top" }]), "OLL_INVALID_REFERENCE");
+  assert.equal(validateAuthoringSchema(boxLesson([{ do: "view", target: "box", preset: "below" }])).valid, false);
+  assert.equal(validateAuthoringSchema(boxLesson([{ do: "view", target: "box", yaw: 1 }])).valid, false);
+});

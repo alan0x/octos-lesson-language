@@ -28,6 +28,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "placement:replaces": "0.6.0",
   "action:board.hide": "0.6.0",
   "write-source": "0.6.0",
+  "action:scene3d.view": "0.6.0",
 });
 
 export interface ExecutionRequirements {

@@ -66,7 +66,7 @@ const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
   "intent", "expression", "reason",
-  "variable", "value", "easing", "duration_intent", "source",
+  "variable", "value", "easing", "duration_intent", "source", "show", "preset",
 ]);
 
 export class OllError extends Error {
@@ -1166,6 +1166,11 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
     requireString(action.intent, `${path}/intent`);
   } else if (action.do === "point" || action.do === "hide") {
     requireString(action.target, `${path}/target`);
+  } else if (action.do === "view") {
+    requireString(action.target, `${path}/target`);
+    if ((action.show === undefined) === (action.preset === undefined)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", path, "A view shows either one highlighted part or one preset");
+    }
   } else if (action.do === "expression") {
     requireString(action.expression, `${path}/expression`);
   } else if (action.do === "animate") {
@@ -1262,6 +1267,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   // cards cannot be referenced again, and ink revisions must stay ink.
   const hidden = new Set<string>();
   const inkNodes = new Set<string>();
+  // Highlighted parts of each 3D scene, which a view can turn to show.
+  const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
   const knownSelections = new Set<string>((resourceContext?.ink_snapshots ?? []).flatMap((snapshot) => snapshot.selection_ids ?? []));
   const requireLearnerTaught = (path: string, what: string) => {
@@ -1388,6 +1395,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validatePlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === "scene3d") {
+            scene3dHighlights.set(action.as, new Set(((action.content.highlights ?? []) as JsonObject[]).map((highlight) => highlight.as as string)));
             const camera = action.content.camera as UnknownRecord;
             scene3dCameras.set(action.as, {
               yaw: camera.yaw as number,
@@ -1421,6 +1429,20 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         if (["emphasize", "point"].includes(action.do)) {
           resolveLocal(registry, (action as EmphasizeAction | PointAction).target, `${actionPath}/target`, ["node", "connection", "group"]);
           requireVisible((action as EmphasizeAction | PointAction).target, `${actionPath}/target`);
+          return;
+        }
+
+        if (action.do === "view") {
+          const target = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          const highlights = scene3dHighlights.get(target.alias);
+          if (!highlights || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "A view turns a whole 3D scene of this lesson");
+          requireVisible(action.target, `${actionPath}/target`);
+          if (action.show !== undefined) {
+            const shown = resolveLocal(registry, action.show, `${actionPath}/show`, ["node"]);
+            if (shown.alias !== target.alias || !shown.fragment || !highlights.has(shown.fragment)) {
+              fail("OLL_INVALID_REFERENCE", `${actionPath}/show`, "A view shows a highlighted part of the same scene");
+            }
+          }
           return;
         }
 
@@ -1714,6 +1736,14 @@ function normalizeAction(
   if (action.do === "hide") {
     return { action_id: actionId, op: "board.hide", target: canonicalTarget(registry, action.target) };
   }
+  if (action.do === "view") {
+    return {
+      action_id: actionId,
+      op: "scene3d.view",
+      target: canonicalTarget(registry, action.target),
+      view: action.show !== undefined ? { show: canonicalTarget(registry, action.show) } : { preset: action.preset! },
+    };
+  }
   if (action.do === "revise") {
     return {
       action_id: actionId,
@@ -1993,6 +2023,10 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Hidden node not found");
     node.hidden = true;
     state.focus = state.focus.filter((id) => id !== node.id);
+  } else if (action.op === "scene3d.view") {
+    const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
+    if (!node || node.kind !== "scene3d" || !action.view) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "View target is not a 3D scene");
+    node.view_intent = structuredClone(action.view);
   } else if (action.op === "teacher.point") {
     if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
   } else if (action.op === "teacher.expression") {
