@@ -23,6 +23,10 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "reflections": "0.3.0",
   "binding-hide-undefined": "0.3.0",
   "lesson-mode:learner_taught": "0.6.0",
+  "node:ink": "0.6.0",
+  "placement:annotates": "0.6.0",
+  "placement:replaces": "0.6.0",
+  "action:board.hide": "0.6.0",
 });
 
 export interface ExecutionRequirements {
@@ -93,6 +97,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
         add(`action:${action.op}`, actionPath);
         if (action.node) {
           add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
+          const relation = action.node.placement?.relation;
+          if (relation === "annotates" || relation === "replaces") add(`placement:${relation}`, `${actionPath}/node/placement`);
           content(action.node.content, `${actionPath}/node/content`);
         }
         if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);

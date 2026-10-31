@@ -301,10 +301,10 @@
       "required": ["do"],
       "additionalProperties": false,
       "properties": {
-        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate"]},
+        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate", "hide"]},
         "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
         "as": {"$ref": "#/$defs/alias"},
-        "kind": {"enum": ["text", "math", "shape", "diagram", "geometry", "plot", "scene3d", "image", "table", "note"]},
+        "kind": {"enum": ["text", "math", "shape", "diagram", "geometry", "plot", "scene3d", "image", "table", "note", "ink"]},
         "role": {"type": "string"},
         "content": {"type": "object"},
         "place": {"$ref": "#/$defs/placement"},
@@ -335,6 +335,13 @@
             "properties": {"do": {"const": "write"}, "kind": {"const": "image"}}
           },
           "then": {"properties": {"content": {"$ref": "#/$defs/imageContent"}}}
+        },
+        {
+          "if": {
+            "required": ["do", "kind"],
+            "properties": {"do": {"const": "write"}, "kind": {"const": "ink"}}
+          },
+          "then": {"properties": {"content": {"$ref": "#/$defs/inkContent"}}}
         },
         {
           "if": {
@@ -379,6 +386,10 @@
         },
         {
           "if": {"properties": {"do": {"const": "point"}}},
+          "then": {"required": ["target"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "hide"}}},
           "then": {"required": ["target"]}
         },
         {
@@ -710,6 +721,42 @@
         "label": {"type": "string"}
       }
     },
+    "inkContent": {
+      "type": "object",
+      "required": ["snapshot_id", "sha256", "alt"],
+      "additionalProperties": false,
+      "properties": {
+        "snapshot_id": {"type": "string", "pattern": "^ink-snap:[A-Za-z0-9_.:@-]{1,96}$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "replay": {"enum": ["stroke_order", "static"]},
+        "alt": {"type": "string", "minLength": 1, "maxLength": 480},
+        "selections": {
+          "type": "array",
+          "maxItems": 24,
+          "items": {
+            "type": "object",
+            "required": ["as", "selection_id"],
+            "additionalProperties": false,
+            "properties": {
+              "as": {"$ref": "#/$defs/alias"},
+              "selection_id": {"type": "string", "pattern": "^sel-[A-Za-z0-9_-]{1,96}$"},
+              "label": {"type": "string"}
+            }
+          }
+        },
+        "annotation": {
+          "type": "object",
+          "required": ["x", "y", "width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "x": {"type": "number", "minimum": -0.5, "maximum": 1.5},
+            "y": {"type": "number", "minimum": -0.5, "maximum": 1.5},
+            "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 2},
+            "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 2}
+          }
+        }
+      }
+    },
     "imageContent": {
       "type": "object",
       "required": ["asset_id"],
@@ -744,7 +791,7 @@
       "required": ["relation"],
       "additionalProperties": false,
       "properties": {
-        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]},
+        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]},
         "anchor": {"$ref": "#/$defs/alias"},
         "region_role": {"type": "string"},
         "align": {"enum": ["start", "center", "end"]},

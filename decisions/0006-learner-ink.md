@@ -21,12 +21,12 @@ v0.1 中学生笔迹只能作为独立 SVG 资源保存（OLL-INP-006/ENV-007）
    - 自由笔记：普通 `place` 关系，参与自动布局；
    - 组件上的标注：`place.relation: "annotates"`，`anchor` 为组件节点。标注不参与排版流，随锚点节点移动和缩放，使用快照记录的相对位置。
 3. **笔迹编辑**（仅 `learner_taught`）：
-   - `write` 可带 `replaces: "<node>"`：新节点占用被替换节点的位置，被替换节点隐藏但保留在状态中（“整理一下”）；
+   - `write` 的 `place` 可为 `{"relation": "replaces", "anchor": "<node>"}`：新节点占用被替换节点的位置，被替换节点隐藏但保留在状态中（“整理一下”）。实现时由独立字段 `replaces` 改为放置关系，因为 `write` 本就必须带 `place`，避免两个字段描述同一位置；行为不变；
    - `hide`：隐藏孩子自己的节点；
    - 擦除与重写用已有 `revise` 指向新的快照版本。
    编辑目标只能是本课程中由孩子操作产生的节点。`explain` 课程使用这些动作时被校验器拒绝。
 4. **规则范围修订**：OLL-INP-001、OLL-BRD-008 与 AUTHORING §10 增加说明——它们约束 AI 生成的课程；`learner_taught` 课程中由孩子发起的编辑例外。
-5. 能力 `node:ink`、`placement:annotates`、`action:board.hide`、`write-replaces` 的执行版本为 0.6.0。
+5. 能力 `node:ink`、`placement:annotates`、`placement:replaces`、`action:board.hide` 的执行版本为 0.6.0。被隐藏或替换的节点之后不能再被引用。
 
 ## 原因
 

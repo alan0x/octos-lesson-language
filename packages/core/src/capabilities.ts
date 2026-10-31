@@ -17,6 +17,7 @@ export const OLL_NODE_KINDS = [
   "image",
   "table",
   "note",
+  "ink",
 ] as const;
 
 export type OllNodeKind = typeof OLL_NODE_KINDS[number];
@@ -31,6 +32,7 @@ export const OLL_ACTION_NAMES = [
   "point",
   "expression",
   "animate",
+  "hide",
 ] as const;
 
 export type OllActionName = typeof OLL_ACTION_NAMES[number];

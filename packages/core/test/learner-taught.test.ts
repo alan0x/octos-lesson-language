@@ -7,6 +7,7 @@ import {
   deriveExecutionRequirements,
   normalizeAuthoringLesson,
   OllError,
+  reduceCanonicalEvents,
   validateAuthoringLesson,
   validateAuthoringSchema,
   type AuthoringLesson,
@@ -70,4 +71,114 @@ test("an author is referenced opaquely, never by name or email", () => {
 test("explain lessons keep requiring only their existing player version", () => {
   const requirements = deriveExecutionRequirements(normalizeAuthoringLesson(unitCircle, host));
   assert.ok(!requirements.requiredCapabilities.includes("lesson-mode:learner_taught"));
+});
+
+// ---- 0006: learner ink, annotations, replace and hide
+
+const SHA = "a".repeat(64);
+const SHA2 = "b".repeat(64);
+const inkContext = {
+  ink_snapshots: [
+    { snapshot_id: "ink-snap:card3@v4", sha256: SHA, selection_ids: ["sel-card3-rise", "sel-card3-run", "sel-card3-all"] },
+    { snapshot_id: "ink-snap:card3@v5", sha256: SHA2, selection_ids: ["sel-card3-all"] },
+    { snapshot_id: "ink-snap:circle-a@v4", sha256: SHA, selection_ids: [] },
+  ],
+};
+
+function inkLesson(actions: unknown[], mode: "learner_taught" | "explain" = "learner_taught"): AuthoringLesson {
+  const lesson: AuthoringLesson = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode, language: "en-US", title: "Rise over run", goals: ["Find slope"] },
+    steps: [{ key: "teach", purpose: "Compute slope", beats: [{ key: "card-3", say: "Rise over run.", actions: actions as never }] }],
+    close: { summary: "Slope is rise over run.", focus: ["grid"] },
+  };
+  if (mode === "learner_taught") lesson.lesson.author = structuredClone(author);
+  return lesson;
+}
+
+const grid = { do: "write", as: "grid", kind: "geometry", role: "diagram", place: { relation: "new_region" },
+  content: { axes: { x: { min: -1, max: 6 }, y: { min: -1, max: 9 }, equal_scale: true }, points: [{ as: "point-a", x: 1, y: 2, label: "A" }] } };
+const fraction = { do: "write", as: "ink-fraction", kind: "ink", role: "derivation", place: { relation: "below", anchor: "grid" },
+  content: { snapshot_id: "ink-snap:card3@v4", sha256: SHA, replay: "stroke_order", alt: "8 minus 2 over 4 minus 1",
+    selections: [{ as: "rise", selection_id: "sel-card3-rise" }, { as: "run", selection_id: "sel-card3-run" }] } };
+const neat = { do: "write", as: "neat-fraction", kind: "math", role: "derivation", place: { relation: "replaces", anchor: "ink-fraction" },
+  content: { fragments: [{ as: "result", latex: "m=\\dfrac{6}{3}=2" }] } };
+
+function validate(lesson: AuthoringLesson) {
+  assertAuthoringSchema(lesson);
+  return validateAuthoringLesson(lesson, inkContext);
+}
+
+function rejectsWith(lesson: AuthoringLesson, code: string, path?: string) {
+  assert.throws(() => validate(lesson), (error: unknown) => {
+    assert.ok(error instanceof OllError, String(error));
+    assert.equal(error.code, code);
+    if (path) assert.equal(error.path, path);
+    return true;
+  });
+}
+
+test("learner ink is a card from a frozen snapshot whose selections are addressable", () => {
+  const lesson = inkLesson([grid, fraction, { do: "emphasize", target: "ink-fraction#rise", emphasis: "focus" }]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const create = events[1]!.step!.beats[0]!.stage.during_speech.find((action) => action.node?.kind === "ink")!;
+  assert.deepEqual(create.node!.content.selections.map((selection: { id: string }) => selection.id), [
+    "lesson-learner-001:node:ink-fraction:fragment:rise", "lesson-learner-001:node:ink-fraction:fragment:run",
+  ]);
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("node:ink"));
+});
+
+test("learner ink must come from a known snapshot with its checksum and selections", () => {
+  rejectsWith(inkLesson([grid, { ...fraction, content: { ...fraction.content, snapshot_id: "ink-snap:other@v1" } }]), "OLL_RESOURCE_DENIED");
+  rejectsWith(inkLesson([grid, { ...fraction, content: { ...fraction.content, sha256: SHA2 } }]), "OLL_RESOURCE_DENIED");
+  rejectsWith(inkLesson([grid, { ...fraction, content: { ...fraction.content, selections: [{ as: "rise", selection_id: "sel-elsewhere" }] } }]), "OLL_RESOURCE_DENIED");
+});
+
+test("ink, annotations, replacing and hiding belong only to learner-taught lessons", () => {
+  rejectsWith(inkLesson([grid, fraction], "explain"), "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/kind");
+  const explainHide = inkLesson([grid, { do: "write", as: "note", kind: "note", role: "note", place: { relation: "below", anchor: "grid" }, content: { title: "x" } }, { do: "hide", target: "note" }], "explain");
+  rejectsWith(explainHide, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/2/do");
+  const explainReplace = inkLesson([grid, { ...neat, place: { relation: "replaces", anchor: "grid" } }], "explain");
+  rejectsWith(explainReplace, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/place/relation");
+});
+
+test("an annotation is ink attached to one card at a position on it", () => {
+  const circle = { do: "write", as: "circle-a", kind: "ink", role: "annotation", place: { relation: "annotates", anchor: "grid" },
+    content: { snapshot_id: "ink-snap:circle-a@v4", sha256: SHA, alt: "circle around point A", annotation: { x: 0.2, y: 0.6, width: 0.15, height: 0.15 } } };
+  validate(inkLesson([grid, circle]));
+  const events = normalizeAuthoringLesson(inkLesson([grid, circle]), { ...host, resourceContext: inkContext });
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("placement:annotates"));
+  const { annotation: _, ...unpositioned } = circle.content;
+  rejectsWith(inkLesson([grid, { ...circle, content: unpositioned }]), "OLL_INVALID_PLACEMENT");
+  rejectsWith(inkLesson([grid, { ...circle, kind: "note", content: { title: "A" } }]), "OLL_INVALID_PLACEMENT");
+  rejectsWith(inkLesson([grid, { ...fraction, content: { ...fraction.content, annotation: { x: 0, y: 0, width: 1, height: 1 } } }]), "OLL_INVALID_PLACEMENT");
+});
+
+test("making ink neat replaces it in place; the replaced card is hidden and cannot be used again", () => {
+  const lesson = inkLesson([grid, fraction, neat]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const state = reduceCanonicalEvents(events);
+  const replaced = state.nodes["lesson-learner-001:node:ink-fraction"]!;
+  assert.equal(replaced.hidden, true);
+  assert.equal(replaced.replaced_by, "lesson-learner-001:node:neat-fraction");
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("placement:replaces"));
+  rejectsWith(inkLesson([grid, fraction, neat, { do: "emphasize", target: "ink-fraction#rise", emphasis: "focus" }]), "OLL_INVALID_REFERENCE");
+});
+
+test("a learner hides a whole card of their own", () => {
+  const lesson = inkLesson([grid, fraction, { do: "hide", target: "ink-fraction" }, { do: "focus", targets: ["grid"], intent: "back_to_grid" }]);
+  validate(lesson);
+  const state = reduceCanonicalEvents(normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext }));
+  assert.equal(state.nodes["lesson-learner-001:node:ink-fraction"]!.hidden, true);
+  rejectsWith(inkLesson([grid, fraction, { do: "hide", target: "ink-fraction#rise" }]), "OLL_INVALID_REFERENCE");
+  rejectsWith(inkLesson([grid, fraction, { do: "hide", target: "ink-fraction" }, { do: "hide", target: "ink-fraction" }]), "OLL_INVALID_REFERENCE");
+});
+
+test("erasing and rewriting revises ink to a newer snapshot", () => {
+  const rewrite = { do: "revise", target: "ink-fraction", reason: "learner rewrote the fraction",
+    content: { snapshot_id: "ink-snap:card3@v5", sha256: SHA2, alt: "6 over 3", selections: [{ as: "all", selection_id: "sel-card3-all" }] } };
+  validate(inkLesson([grid, fraction, rewrite]));
+  rejectsWith(inkLesson([grid, fraction, { ...rewrite, content: { ...rewrite.content, sha256: SHA } }]), "OLL_RESOURCE_DENIED");
 });

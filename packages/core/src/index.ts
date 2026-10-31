@@ -24,10 +24,12 @@ import type {
   CanonicalAction,
   CanonicalEvent,
   CanonicalTarget,
+  EmphasizeAction,
   JsonObject,
   NormalizationHost,
   Placement,
   PhaseStartPolicy,
+  PointAction,
   AuthoringVariable,
   RegistryEntry,
   RegistryEntryType,
@@ -59,7 +61,7 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
-const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]);
+const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
@@ -642,7 +644,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -1085,6 +1087,29 @@ function validateImageResource(action: WriteAction, path: string, resourceContex
   });
 }
 
+// Learner ink is shown from a frozen snapshot of the learner's own selection,
+// never from the live ink document, so replay cannot change with later writing.
+function validateInkResource(action: WriteAction, path: string, resourceContext: ResourceContext | null): void {
+  if (action.kind !== "ink") return;
+  const content = action.content;
+  if (content.annotation !== undefined && action.place.relation !== "annotates") {
+    fail("OLL_INVALID_PLACEMENT", `${path}/content/annotation`, "Only an annotation carries a position on its anchor");
+  }
+  if (action.place.relation === "annotates" && content.annotation === undefined) {
+    fail("OLL_INVALID_PLACEMENT", `${path}/content/annotation`, "An annotation needs its position on the anchor");
+  }
+  if (!resourceContext) return;
+  const snapshot = resourceContext.ink_snapshots?.find((candidate) => candidate.snapshot_id === content.snapshot_id);
+  if (!snapshot) fail("OLL_RESOURCE_DENIED", `${path}/content/snapshot_id`, `Ink snapshot '${content.snapshot_id}' is not available in Session Context`);
+  if (snapshot.sha256 !== content.sha256) fail("OLL_RESOURCE_DENIED", `${path}/content/sha256`, `Ink snapshot '${content.snapshot_id}' does not match its checksum`);
+  const allowed = new Set(snapshot.selection_ids ?? []);
+  (content.selections ?? []).forEach((selection: JsonObject, index: number) => {
+    if (!allowed.has(selection.selection_id)) {
+      fail("OLL_RESOURCE_DENIED", `${path}/content/selections/${index}/selection_id`, `Selection '${selection.selection_id}' is not part of '${content.snapshot_id}'`);
+    }
+  });
+}
+
 function validatePlacement(place: Placement, path: string, registry: Registry): void {
   requireObject(place, path);
   if (!PLACEMENT_RELATIONS.has(place.relation)) {
@@ -1095,6 +1120,9 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
   }
   if (place.relation === "new_region") {
     if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
+  } else if (place.relation === "annotates" || place.relation === "replaces") {
+    // Both attach to one card: an annotation moves with it; a replacement takes its place.
+    resolveLocal(registry, place.anchor, `${path}/anchor`, ["node"]);
   } else {
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node", "group"]);
   }
@@ -1133,7 +1161,7 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
   } else if (action.do === "focus") {
     requireArray(action.targets, `${path}/targets`);
     requireString(action.intent, `${path}/intent`);
-  } else if (action.do === "point") {
+  } else if (action.do === "point" || action.do === "hide") {
     requireString(action.target, `${path}/target`);
   } else if (action.do === "expression") {
     requireString(action.expression, `${path}/expression`);
@@ -1227,6 +1255,18 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   requireArray(document.close.focus, "/close/focus");
 
   const registry: Registry = new Map();
+  // Learner-taught lessons may hide or replace the learner's own cards; hidden
+  // cards cannot be referenced again, and ink revisions must stay ink.
+  const hidden = new Set<string>();
+  const inkNodes = new Set<string>();
+  const requireLearnerTaught = (path: string, what: string) => {
+    if (!isLearnerTaught(document)) fail("OLL_INVALID_OPERATION", path, `${what} is only available in learner-taught lessons`);
+  };
+  const requireVisible = (value: unknown, path: string) => {
+    if (typeof value !== "string") return;
+    const alias = value.split("#")[0]!;
+    if (hidden.has(alias)) fail("OLL_INVALID_REFERENCE", path, `'${alias}' is hidden`);
+  };
   if (document.board_context) {
     requireString(document.board_context.board_id, "/board_context/board_id");
     if (!Number.isSafeInteger(document.board_context.revision)
@@ -1306,6 +1346,21 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           requireAlias(action.as, `${actionPath}/as`);
           requireObject(action.content, `${actionPath}/content`);
           validatePlacement(action.place, `${actionPath}/place`, registry);
+          if (action.kind === "ink") requireLearnerTaught(`${actionPath}/kind`, "Learner ink");
+          if (action.place.relation === "annotates") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Annotating a card");
+            if (action.kind !== "ink") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink annotates a card");
+          }
+          if (action.place.anchor !== undefined) requireVisible(action.place.anchor, `${actionPath}/place/anchor`);
+          if (action.place.relation === "replaces") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Replacing a card");
+            if (registry.get(action.place.anchor!)?.external) {
+              fail("OLL_INVALID_REFERENCE", `${actionPath}/place/anchor`, "External board references are read-only");
+            }
+            hidden.add(action.place.anchor!);
+          }
+          validateInkResource(action, actionPath, resourceContext);
+          if (action.kind === "ink") inkNodes.add(action.as);
           const fragments = collectAddressableContent(action.content);
           const uniqueFragments = new Set<string>();
           for (const fragment of fragments) {
@@ -1350,7 +1405,20 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         }
 
         if (["emphasize", "point"].includes(action.do)) {
-          resolveLocal(registry, action.target, `${actionPath}/target`, ["node", "connection", "group"]);
+          resolveLocal(registry, (action as EmphasizeAction | PointAction).target, `${actionPath}/target`, ["node", "connection", "group"]);
+          requireVisible((action as EmphasizeAction | PointAction).target, `${actionPath}/target`);
+          return;
+        }
+
+        if (action.do === "hide") {
+          requireLearnerTaught(`${actionPath}/do`, "Hiding a card");
+          const resolved = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          if (resolved.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "Hide a whole card, not part of it");
+          if (registry.get(resolved.alias)?.external) {
+            fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "External board references are read-only");
+          }
+          requireVisible(action.target, `${actionPath}/target`);
+          hidden.add(resolved.alias);
           return;
         }
 
@@ -1359,12 +1427,19 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (registry.get(resolved.alias)?.external) {
             fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "External board references are read-only");
           }
+          requireVisible(action.target, `${actionPath}/target`);
+          if (inkNodes.has(resolved.alias)) {
+            // Erasing and rewriting shows a newer snapshot of the same ink.
+            validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: "new_region" } }, actionPath, resourceContext);
+          }
           return;
         }
 
         if (action.do === "connect") {
           resolveLocal(registry, action.from, `${actionPath}/from`);
           resolveLocal(registry, action.to, `${actionPath}/to`);
+          requireVisible(action.from, `${actionPath}/from`);
+          requireVisible(action.to, `${actionPath}/to`);
           register(registry, action.as, "connection", `${actionPath}/as`);
           return;
         }
@@ -1382,6 +1457,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           requireArray(action.targets, `${actionPath}/targets`);
           for (let index = 0; index < action.targets.length; index += 1) {
             resolveLocal(registry, action.targets[index], `${actionPath}/targets/${index}`, ["node", "group", "connection"]);
+            requireVisible(action.targets[index], `${actionPath}/targets/${index}`);
           }
         }
       });
@@ -1394,6 +1470,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
       resolveLocal(registry, document.close.focus[index], `/close/focus/${index}`, ["node", "group", "connection"]);
+      requireVisible(document.close.focus[index], `/close/focus/${index}`);
     }
   }
 
@@ -1406,7 +1483,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1618,6 +1695,9 @@ function normalizeAction(
         intent: action.intent,
       },
     };
+  }
+  if (action.do === "hide") {
+    return { action_id: actionId, op: "board.hide", target: canonicalTarget(registry, action.target) };
   }
   if (action.do === "revise") {
     return {
@@ -1851,6 +1931,13 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     const node = structuredClone(action.node);
     node.content = evaluateContentBindings(node.content, bindingValues(state));
     state.nodes[action.node.id] = node;
+    if (action.node.placement?.relation === "replaces") {
+      const replaced = state.nodes[anchor!];
+      if (!replaced) fail("OLL_REFERENCE_NOT_FOUND", "action.node.placement.anchor", `Replaced node '${anchor}' not found`);
+      replaced.hidden = true;
+      replaced.replaced_by = action.node.id;
+      state.focus = state.focus.filter((id) => id !== anchor);
+    }
   } else if (action.op === "board.connect") {
     if (!action.connection) fail("OLL_INVALID_EVENT", "action.connection", "board.connect requires connection");
     if (state.connections[action.connection.id]) fail("OLL_DUPLICATE_CONNECTION_ID", "action.connection.id", `Connection '${action.connection.id}' already exists`);
@@ -1886,6 +1973,11 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
           : undefined;
     if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
     target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
+  } else if (action.op === "board.hide") {
+    const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
+    if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Hidden node not found");
+    node.hidden = true;
+    state.focus = state.focus.filter((id) => id !== node.id);
   } else if (action.op === "teacher.point") {
     if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
   } else if (action.op === "teacher.expression") {

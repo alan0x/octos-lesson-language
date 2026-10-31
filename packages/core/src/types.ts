@@ -12,7 +12,7 @@ export type JsonObject = { [key: string]: any };
 export type Delivery = "neutral" | "patient" | "encouraging" | "careful" | "emphatic";
 export type ActionPhase = "before_speech" | "during_speech" | "after_speech";
 export type NodeKind = OllNodeKind;
-export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay";
+export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay" | "annotates" | "replaces";
 export type RegistryEntryType = "node" | "connection" | "group";
 
 export interface Placement {
@@ -90,7 +90,14 @@ export interface AnimateVariableAction extends BaseAction {
   duration_intent?: "brief" | "normal" | "extended";
 }
 
+/** A learner hides their own card in a learner-taught lesson. */
+export interface HideAction extends BaseAction {
+  do: "hide";
+  target: LocalReference;
+}
+
 export type AuthoringAction =
+  | HideAction
   | WriteAction
   | ReviseAction
   | EmphasizeAction
@@ -279,10 +286,18 @@ export interface SessionAsset {
   regions?: SessionRegion[];
 }
 
+/** A frozen selection of the learner's own ink that a learner-taught lesson may show. */
+export interface SessionInkSnapshot {
+  snapshot_id: string;
+  sha256: string;
+  selection_ids?: string[];
+}
+
 export interface ResourceContext {
   session_id?: string;
   request?: string;
   assets?: SessionAsset[];
+  ink_snapshots?: SessionInkSnapshot[];
 }
 
 export interface NormalizationHost {
