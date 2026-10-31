@@ -76,9 +76,11 @@ const boardView = mountedBoard.view;
 const viewportInsets = { top: 70, bottom: 190 };
 boardView.setViewportInsets(viewportInsets);
 // Match the desktop Learn host: lessons use the teaching layout sized for its
-// reading scale, and automatic close-ups stay near that scale.
+// reading scale, and the automatic teaching camera stays between that scale
+// and a modest close-up.
 const desktopReadingScale = .9;
 boardView.setAutomaticCameraMaximumScale(1.1);
+boardView.setAutomaticCameraMinimumScale(desktopReadingScale);
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
 const handleStudentVariableInput = (
@@ -312,6 +314,7 @@ const harnessApi: Window["__OLL_HARNESS__"] = window.__OLL_HARNESS__ = {
     if (!board || !operation) throw new Error("Teaching observation requires at least one playback operation");
     return collectTeachingObservation({
       viewport: mountedBoard.elements.viewport, world: mountedBoard.elements.world, board, operation, cursor: session.cursor,
+      insets: viewportInsets,
     });
   },
   evaluate: evaluateTeachingObservation,

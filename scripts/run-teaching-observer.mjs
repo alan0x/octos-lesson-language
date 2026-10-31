@@ -89,8 +89,12 @@ function markdown(report) {
 const root = process.cwd();
 const lesson = argument("lesson", "geometry");
 const output = resolve(root, argument("output", "evals/teaching-playback/latest/report.json"));
-const width = Number(argument("width", "1280"));
-const height = Number(argument("height", "720"));
+// The harness surrounds the board with a 320 px status panel and 112 px of
+// header, so --board WxH sizes the page to give the board that exact area.
+const HARNESS_SIDE = 320, HARNESS_TOP = 112;
+const board = (process.argv.includes("--width") ? argument("board", undefined) : argument("board", "1366x768"))?.split("x").map(Number);
+const width = board ? board[0] + HARNESS_SIDE : Number(argument("width", "1280"));
+const height = board ? board[1] + HARNESS_TOP : Number(argument("height", "720"));
 const expectedResult = argument("expect", "pass");
 const screenshotMode = argument("screenshots", "failures");
 if (!["pass", "fail"].includes(expectedResult)) throw new Error("--expect must be 'pass' or 'fail'");
