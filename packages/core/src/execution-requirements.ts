@@ -22,6 +22,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:numeric_answer": "0.5.0",
   "reflections": "0.3.0",
   "binding-hide-undefined": "0.3.0",
+  "lesson-mode:learner_taught": "0.6.0",
 });
 
 export interface ExecutionRequirements {
@@ -79,6 +80,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
   for (const [index, event] of events.entries()) {
     const path = `/events/${index}`;
     add(`canonical:${event.version}`, `${path}/version`);
+    if (event.lesson?.mode === "learner_taught") add("lesson-mode:learner_taught", `${path}/lesson/mode`);
     if (event.lesson?.variables?.length) add("variables", `${path}/lesson/variables`);
     if (event.lesson?.reflections?.length) add("reflections", `${path}/lesson/reflections`);
     for (const task of event.lesson?.tasks ?? []) {

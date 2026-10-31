@@ -113,6 +113,25 @@ function requireVariableAlias(value: unknown, path: string): asserts value is st
   }
 }
 
+// A learner-taught lesson names its learner author; any other lesson must not
+// claim one, so lesson modes cannot be mixed up by a generator or a host.
+function validateLessonAuthor(document: AuthoringLesson): void {
+  const { mode, author } = document.lesson;
+  if (mode !== "explain" && mode !== "learner_taught") {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/mode", `Unknown lesson mode '${String(mode)}'`);
+  }
+  if (mode === "learner_taught" && !author) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/author", "A learner-taught lesson must name its learner author");
+  }
+  if (mode !== "learner_taught" && author) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/author", "Only learner-taught lessons have a learner author");
+  }
+}
+
+function isLearnerTaught(document: AuthoringLesson): boolean {
+  return document.lesson.mode === "learner_taught";
+}
+
 function validateLessonVariables(document: AuthoringLesson): Map<string, number> {
   const values = new Map<string, number>();
   for (const [index, variable] of (document.lesson.variables ?? []).entries()) {
@@ -1194,6 +1213,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   }
   requireObject(document.lesson, "/lesson");
   requireArray(document.lesson.goals, "/lesson/goals");
+  validateLessonAuthor(document);
   const lessonVariables = validateLessonVariables(document);
   const availableStudentControls = new Map<string, Set<string>>();
   const scene3dCameras = new Map<string, { yaw: number; pitch: number; zoom: number }>();

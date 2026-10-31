@@ -216,13 +216,24 @@ export interface AuthoringReflection {
   };
 }
 
+export type LessonMode = "explain" | "learner_taught";
+
+/** A learner who taught the lesson, by opaque reference only, and how it is presented. */
+export interface LessonAuthor {
+  kind: "learner";
+  learner_ref: string;
+  presented_by: { avatar_ref: string; voice_ref: string };
+}
+
 export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
   profile: "authoring";
   board_context?: AuthoringBoardContext;
   lesson: {
-    mode: "explain";
+    mode: LessonMode;
+    /** Present exactly when a learner authored the lesson (`learner_taught`). */
+    author?: LessonAuthor;
     language: string;
     title: string;
     goals: string[];

@@ -28,7 +28,25 @@
       "required": ["mode", "language", "title", "goals"],
       "additionalProperties": false,
       "properties": {
-        "mode": {"const": "explain"},
+        "mode": {"enum": ["explain", "learner_taught"]},
+        "author": {
+          "type": "object",
+          "required": ["kind", "learner_ref", "presented_by"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "learner"},
+            "learner_ref": {"type": "string", "pattern": "^learner:[A-Za-z0-9_-]{1,64}$"},
+            "presented_by": {
+              "type": "object",
+              "required": ["avatar_ref", "voice_ref"],
+              "additionalProperties": false,
+              "properties": {
+                "avatar_ref": {"type": "string", "pattern": "^avatar:[a-z0-9-]{1,48}$"},
+                "voice_ref": {"type": "string", "pattern": "^voice:[a-z0-9-]{1,48}$"}
+              }
+            }
+          }
+        },
         "language": {"type": "string", "minLength": 2, "maxLength": 32},
         "title": {"type": "string", "minLength": 1, "maxLength": 160},
         "goals": {"type": "array", "minItems": 1, "maxItems": 8, "items": {"type": "string"}},
