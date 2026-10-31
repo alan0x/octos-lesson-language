@@ -32,8 +32,13 @@ test("teaching observer reports independent browser rendering failures", () => {
   }));
   assert.equal(result.passed, false);
   assert.deepEqual(result.issues.map((issue) => issue.code), [
-    "G3_CONTENT_OVERFLOW", "G1_LABEL_NODE_OVERLAP", "G3_FOCUS_TOO_SMALL", "G3_TEXT_TOO_SMALL",
+    "G3_CONTENT_OVERFLOW", "G1_LABEL_NODE_OVERLAP", "G3_TEXT_TOO_SMALL",
   ]);
+});
+
+test("a narrow focused card with readable text passes", () => {
+  const result = evaluateTeachingObservation(observation({ min_focal_node_width: 96, min_focal_body_font_px: 24 }));
+  assert.deepEqual(result, { passed: true, issues: [] });
 });
 
 test("action frames require their active target to be visible", () => {

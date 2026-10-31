@@ -242,9 +242,9 @@ export function evaluateTeachingObservation(observation: TeachingFrameObservatio
     if (!observation.focus_targets.length) add("G1_MISSING_BEAT_FOCUS", "Beat ends without an explicit teaching focus");
     const outOfView = observation.focal_nodes.filter((node) => !node.fully_in_view).map((node) => node.id);
     if (outOfView.length) add("G3_FOCUS_OUT_OF_VIEW", "Focused board node is outside the viewport", outOfView);
-    if (observation.min_focal_node_width !== null && observation.min_focal_node_width < 239.5) {
-      add("G3_FOCUS_TOO_SMALL", `Smallest focused card is ${observation.min_focal_node_width}px; expected at least 240px`);
-    }
+    // Cards are sized to their content, so a short formula is a narrow card
+    // that is still readable. Card width is recorded, not gated; readability
+    // is judged by on-screen text size and diagram edge length.
     if (observation.min_focal_body_font_px !== null && observation.min_focal_body_font_px < 14) {
       add("G3_TEXT_TOO_SMALL", `Smallest focused body text is ${observation.min_focal_body_font_px}px; expected at least 14px`);
     }
