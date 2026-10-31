@@ -18,3 +18,16 @@ test("controlled science asset resolves to a local image and normalized regions"
     assert.ok(bounds.y + bounds.height <= 1);
   }
 });
+
+test("learner ink snapshot assets resolve to local SVGs with normalized regions", async () => {
+  for (const id of ["asset-learner-ink-card1", "asset-learner-ink-card3"]) {
+    const asset = resolveHarnessAsset(id);
+    assert.ok(asset);
+    await access(resolve(process.cwd(), asset.src.slice(1)));
+    assert.equal(Object.keys(asset.regions).length, 2);
+    for (const bounds of Object.values(asset.regions)) {
+      assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.width > 0 && bounds.height > 0);
+      assert.ok(bounds.x + bounds.width <= 1 && bounds.y + bounds.height <= 1);
+    }
+  }
+});

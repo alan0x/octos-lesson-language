@@ -31,6 +31,8 @@ const fixtures = [
   { id: "science", label: "科学 · 植物蒸腾作用 V2", path: "/examples/science-transpiration-v2/lesson.canonical.jsonl" },
   { id: "english", label: "语言 · 英语定语从句 V2", path: "/examples/english-relative-clause-v2/lesson.canonical.jsonl" },
   { id: "english-v1", label: "探针 · 英语定语从句 V1", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
+  { id: "learner-slope", label: "学生讲课 · 两点求斜率", path: "/examples/learner-taught-slope-v1/lesson.canonical.jsonl" },
+  { id: "learner-unit-circle", label: "学生讲课 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v1/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
 const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");
