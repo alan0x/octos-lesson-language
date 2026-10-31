@@ -132,6 +132,13 @@ try {
     if (!operation) break;
     if (operation.type !== "action.apply" && operation.type !== "beat.end") continue;
     await page.waitForFunction(() => [...document.querySelectorAll("img.lesson-image")].every((image) => image.complete), undefined, { timeout: 3000 });
+    // A formula that first uses a KaTeX font is measured with fallback metrics;
+    // the board re-measures on the frame after the font loads. Observe that
+    // settled frame, as for images, rather than the transient one.
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((settled) => requestAnimationFrame(() => requestAnimationFrame(settled)));
+    });
     const observation = await page.evaluate(() => globalThis.__OLL_HARNESS__.observe());
     observation.remounted_nodes = [];
     for (const [nodeId, instanceId] of Object.entries(observation.node_instances)) {
