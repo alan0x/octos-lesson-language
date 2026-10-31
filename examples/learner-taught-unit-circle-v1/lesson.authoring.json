@@ -1,0 +1,156 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "en-US",
+    "title": "How the unit circle turns into a sine wave",
+    "goals": [
+      "See that the height of the point on the unit circle is sin θ",
+      "Watch that height draw the sine wave"
+    ],
+    "variables": [
+      {
+        "as": "theta",
+        "initial": 0,
+        "min": 0,
+        "max": 6.283185307179586,
+        "label": "angle θ",
+        "unit": "rad",
+        "control": {"kind": "slider", "step": 0.01}
+      }
+    ],
+    "tasks": [
+      {
+        "as": "make-sine-negative-one",
+        "prompt": "Your turn: drag the point so sine equals −1.",
+        "availability": {"kind": "after_lesson"},
+        "allowed_operations": [
+          {"kind": "variable_change", "variable": "theta", "controls": ["slider", "geometry_point"]}
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "sin(theta)",
+          "value": -1,
+          "tolerance": 0.01
+        },
+        "hints": [
+          "Where is the point lowest on the circle?"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "Yes! At the bottom of the circle, sine is −1."
+      }
+    ],
+    "adaptation": {
+      "strategies": ["learner-taught", "one-card-per-beat"]
+    }
+  },
+  "steps": [
+    {
+      "key": "teach-sine",
+      "purpose": "Riley shows that the point's height on the unit circle is sin θ and that sweeping θ draws the sine wave",
+      "beats": [
+        {
+          "key": "card-1-the-arm",
+          "say": "This is the unit circle. This arm is always length 1.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "unit-circle",
+              "kind": "geometry",
+              "role": "diagram",
+              "content": {
+                "title": "Unit circle",
+                "axes": {
+                  "x": {"min": -1.25, "max": 1.25, "label": "x"},
+                  "y": {"min": -1.25, "max": 1.25, "label": "y"},
+                  "equal_scale": true
+                },
+                "points": [
+                  {"as": "origin", "x": 0, "y": 0, "label": "O"},
+                  {"as": "point-p", "x": 1, "y": 0, "label": "P", "interaction": {"kind": "angle_control", "variable": "theta", "center": "origin"}},
+                  {"as": "foot", "x": 1, "y": 0, "label": ""}
+                ],
+                "circles": [
+                  {"as": "circle", "center": "origin", "radius": 1, "label": "r = 1"}
+                ],
+                "segments": [
+                  {"as": "radius", "from": "origin", "to": "point-p", "label": "1", "style": "solid"},
+                  {"as": "height", "from": "point-p", "to": "foot", "label": "sin θ", "style": "projection"}
+                ],
+                "arcs": [
+                  {"as": "angle", "center": "origin", "radius": 0.28, "start_angle": 0, "end_angle": 0, "label": "θ"}
+                ],
+                "bindings": [
+                  {"target": "point-p.x", "expression": "cos(theta)"},
+                  {"target": "point-p.y", "expression": "sin(theta)"},
+                  {"target": "foot.x", "expression": "cos(theta)"},
+                  {"target": "angle.end_angle", "expression": "theta"}
+                ]
+              },
+              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+            },
+            {"do": "point", "target": "unit-circle#radius"},
+            {"do": "focus", "when": "after_speech", "targets": ["unit-circle"], "intent": "introduce_unit_circle"}
+          ]
+        },
+        {
+          "key": "card-2-height-is-sine",
+          "say": "Watch the point as I turn the angle. Its height is sin θ. It goes up, comes back a little, and at 90 degrees the height is 1.",
+          "actions": [
+            {"do": "animate", "variable": "theta", "value": 1.2, "easing": "ease_in_out", "duration_intent": "normal"},
+            {"do": "animate", "variable": "theta", "value": 0.6, "easing": "ease_in_out", "duration_intent": "brief"},
+            {"do": "animate", "variable": "theta", "value": 1.5707963267948966, "easing": "ease_in_out", "duration_intent": "normal"},
+            {"do": "emphasize", "target": "unit-circle#height", "emphasis": "focus"},
+            {"do": "focus", "when": "after_speech", "targets": ["unit-circle"], "intent": "read_height_as_sine"}
+          ]
+        },
+        {
+          "key": "card-3-height-draws-wave",
+          "say": "Now I put the angle on a graph. When I turn all the way around, the height draws the wave.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "sine-plot",
+              "kind": "plot",
+              "role": "diagram",
+              "content": {
+                "title": "y = sin x",
+                "axes": {
+                  "x": {"min": 0, "max": 6.2831853072, "label": "angle"},
+                  "y": {"min": -1.2, "max": 1.2, "label": "height"}
+                },
+                "curves": [
+                  {"as": "sine-curve", "expression": "sin(x)", "label": "y = sin x"}
+                ],
+                "points": [
+                  {"as": "current-angle", "x": 0, "y": 0, "label": "θ now"}
+                ],
+                "bindings": [
+                  {"target": "current-angle.x", "expression": "theta"},
+                  {"target": "current-angle.y", "expression": "sin(theta)"}
+                ]
+              },
+              "place": {"relation": "right_of", "anchor": "unit-circle", "align": "center", "gap": "spacious"}
+            },
+            {"do": "connect", "as": "height-to-wave", "from": "unit-circle#point-p", "to": "sine-plot#current-angle", "relation": "maps_to", "label": "same height"},
+            {"do": "animate", "variable": "theta", "value": 6.283185307179586, "easing": "linear", "duration_intent": "extended"},
+            {"do": "focus", "when": "after_speech", "targets": ["unit-circle", "sine-plot"], "intent": "compare_circle_height_with_wave"}
+          ]
+        },
+        {
+          "key": "card-4-your-turn",
+          "say": "Your turn! After the lesson, drag the point so sine equals negative 1.",
+          "actions": [
+            {"do": "focus", "targets": ["unit-circle", "sine-plot"], "intent": "invite_learner_task"}
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "The point's height on the unit circle is sin θ; sweeping θ once around draws one period of the sine wave.",
+    "focus": ["unit-circle", "sine-plot"]
+  }
+}

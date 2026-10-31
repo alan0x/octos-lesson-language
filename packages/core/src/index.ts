@@ -24,10 +24,12 @@ import type {
   CanonicalAction,
   CanonicalEvent,
   CanonicalTarget,
+  EmphasizeAction,
   JsonObject,
   NormalizationHost,
   Placement,
   PhaseStartPolicy,
+  PointAction,
   AuthoringVariable,
   RegistryEntry,
   RegistryEntryType,
@@ -59,12 +61,12 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
-const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay"]);
+const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
   "intent", "expression", "reason",
-  "variable", "value", "easing", "duration_intent",
+  "variable", "value", "easing", "duration_intent", "source", "show", "preset",
 ]);
 
 export class OllError extends Error {
@@ -113,6 +115,25 @@ function requireVariableAlias(value: unknown, path: string): asserts value is st
   }
 }
 
+// A learner-taught lesson names its learner author; any other lesson must not
+// claim one, so lesson modes cannot be mixed up by a generator or a host.
+function validateLessonAuthor(document: AuthoringLesson): void {
+  const { mode, author } = document.lesson;
+  if (mode !== "explain" && mode !== "learner_taught") {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/mode", `Unknown lesson mode '${String(mode)}'`);
+  }
+  if (mode === "learner_taught" && !author) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/author", "A learner-taught lesson must name its learner author");
+  }
+  if (mode !== "learner_taught" && author) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", "/lesson/author", "Only learner-taught lessons have a learner author");
+  }
+}
+
+function isLearnerTaught(document: AuthoringLesson): boolean {
+  return document.lesson.mode === "learner_taught";
+}
+
 function validateLessonVariables(document: AuthoringLesson): Map<string, number> {
   const values = new Map<string, number>();
   for (const [index, variable] of (document.lesson.variables ?? []).entries()) {
@@ -144,6 +165,45 @@ function scene3dViewDirection(
     y: cosPitch * Math.cos(view.yaw),
     z: Math.sin(view.pitch),
   };
+}
+
+const SCENE3D_PRESET_VIEWS = {
+  front: { yaw: 0, pitch: 0 },
+  side: { yaw: Math.PI / 2, pitch: 0 },
+  top: { yaw: 0, pitch: Math.PI / 2 },
+  isometric: { yaw: 0.72, pitch: 0.55 },
+} as const;
+
+/**
+ * The camera a 3D view intent turns a scene to. A preset is a named direction;
+ * showing a highlighted part looks at it from the side it faces, measured from
+ * the centre of the scene's objects. Zoom is kept, and an intent that names no
+ * direction (a part at the centre) keeps the current view.
+ */
+export function scene3dViewForIntent(
+  content: JsonObject,
+  intent: { show?: { fragment_id?: string }; preset?: keyof typeof SCENE3D_PRESET_VIEWS },
+  current: { yaw: number; pitch: number; zoom: number },
+): { yaw: number; pitch: number; zoom: number } {
+  if (intent.preset) return { ...SCENE3D_PRESET_VIEWS[intent.preset], zoom: current.zoom };
+  const highlight = ((content.highlights ?? []) as JsonObject[]).find((candidate) => candidate.id === intent.show?.fragment_id);
+  const points = (highlight?.points ?? []) as Array<{ x: number; y: number; z: number }>;
+  if (!points.length) return { ...current };
+  const average = (values: Array<{ x: number; y: number; z: number }>) => values.reduce(
+    (sum, point) => ({ x: sum.x + point.x / values.length, y: sum.y + point.y / values.length, z: sum.z + point.z / values.length }),
+    { x: 0, y: 0, z: 0 },
+  );
+  const centres = ((content.objects ?? []) as JsonObject[]).map((object) => object.center).filter(Boolean) as Array<{ x: number; y: number; z: number }>;
+  const centre = centres.length ? average(centres) : { x: 0, y: 0, z: 0 };
+  const part = average(points);
+  const direction = { x: part.x - centre.x, y: part.y - centre.y, z: part.z - centre.z };
+  const length = Math.hypot(direction.x, direction.y, direction.z);
+  if (length < 1e-9) return { ...current };
+  const pitch = Math.asin(Math.max(-1, Math.min(1, direction.z / length)));
+  const horizontal = Math.hypot(direction.x, direction.y);
+  // Straight above or below, square the part to the screen as the top preset does.
+  const yaw = horizontal < 1e-9 ? 0 : Math.atan2(direction.x, direction.y);
+  return { yaw, pitch, zoom: current.zoom };
 }
 
 /**
@@ -623,7 +683,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject): string[] {
   const result = validateContentFragments(content, "/content");
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
@@ -1066,6 +1126,29 @@ function validateImageResource(action: WriteAction, path: string, resourceContex
   });
 }
 
+// Learner ink is shown from a frozen snapshot of the learner's own selection,
+// never from the live ink document, so replay cannot change with later writing.
+function validateInkResource(action: WriteAction, path: string, resourceContext: ResourceContext | null): void {
+  if (action.kind !== "ink") return;
+  const content = action.content;
+  if (content.annotation !== undefined && action.place.relation !== "annotates") {
+    fail("OLL_INVALID_PLACEMENT", `${path}/content/annotation`, "Only an annotation carries a position on its anchor");
+  }
+  if (action.place.relation === "annotates" && content.annotation === undefined) {
+    fail("OLL_INVALID_PLACEMENT", `${path}/content/annotation`, "An annotation needs its position on the anchor");
+  }
+  if (!resourceContext) return;
+  const snapshot = resourceContext.ink_snapshots?.find((candidate) => candidate.snapshot_id === content.snapshot_id);
+  if (!snapshot) fail("OLL_RESOURCE_DENIED", `${path}/content/snapshot_id`, `Ink snapshot '${content.snapshot_id}' is not available in Session Context`);
+  if (snapshot.sha256 !== content.sha256) fail("OLL_RESOURCE_DENIED", `${path}/content/sha256`, `Ink snapshot '${content.snapshot_id}' does not match its checksum`);
+  const allowed = new Set(snapshot.selection_ids ?? []);
+  (content.selections ?? []).forEach((selection: JsonObject, index: number) => {
+    if (!allowed.has(selection.selection_id)) {
+      fail("OLL_RESOURCE_DENIED", `${path}/content/selections/${index}/selection_id`, `Selection '${selection.selection_id}' is not part of '${content.snapshot_id}'`);
+    }
+  });
+}
+
 function validatePlacement(place: Placement, path: string, registry: Registry): void {
   requireObject(place, path);
   if (!PLACEMENT_RELATIONS.has(place.relation)) {
@@ -1076,6 +1159,9 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
   }
   if (place.relation === "new_region") {
     if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
+  } else if (place.relation === "annotates" || place.relation === "replaces") {
+    // Both attach to one card: an annotation moves with it; a replacement takes its place.
+    resolveLocal(registry, place.anchor, `${path}/anchor`, ["node"]);
   } else {
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node", "group"]);
   }
@@ -1084,6 +1170,9 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
 function validateActionPayload(action: AuthoringAction, path: string): void {
   for (const field of Object.keys(action)) {
     if (!ACTION_FIELDS.has(field)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/${field}`, `Unknown action field '${field}'`);
+  }
+  if (action.do !== "write" && "source" in action) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/source`, "Only a new card has a source");
   }
   if (action.do === "write") {
     requireAlias(action.as, `${path}/as`);
@@ -1114,8 +1203,13 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
   } else if (action.do === "focus") {
     requireArray(action.targets, `${path}/targets`);
     requireString(action.intent, `${path}/intent`);
-  } else if (action.do === "point") {
+  } else if (action.do === "point" || action.do === "hide") {
     requireString(action.target, `${path}/target`);
+  } else if (action.do === "view") {
+    requireString(action.target, `${path}/target`);
+    if ((action.show === undefined) === (action.preset === undefined)) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", path, "A view shows either one highlighted part or one preset");
+    }
   } else if (action.do === "expression") {
     requireString(action.expression, `${path}/expression`);
   } else if (action.do === "animate") {
@@ -1194,6 +1288,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   }
   requireObject(document.lesson, "/lesson");
   requireArray(document.lesson.goals, "/lesson/goals");
+  validateLessonAuthor(document);
   const lessonVariables = validateLessonVariables(document);
   const availableStudentControls = new Map<string, Set<string>>();
   const scene3dCameras = new Map<string, { yaw: number; pitch: number; zoom: number }>();
@@ -1207,6 +1302,22 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   requireArray(document.close.focus, "/close/focus");
 
   const registry: Registry = new Map();
+  // Learner-taught lessons may hide or replace the learner's own cards; hidden
+  // cards cannot be referenced again, and ink revisions must stay ink.
+  const hidden = new Set<string>();
+  const inkNodes = new Set<string>();
+  // Highlighted parts of each 3D scene, which a view can turn to show.
+  const scene3dHighlights = new Map<string, Set<string>>();
+  // A card made from ink names a selection the lesson's ink or Session Context provides.
+  const knownSelections = new Set<string>((resourceContext?.ink_snapshots ?? []).flatMap((snapshot) => snapshot.selection_ids ?? []));
+  const requireLearnerTaught = (path: string, what: string) => {
+    if (!isLearnerTaught(document)) fail("OLL_INVALID_OPERATION", path, `${what} is only available in learner-taught lessons`);
+  };
+  const requireVisible = (value: unknown, path: string) => {
+    if (typeof value !== "string") return;
+    const alias = value.split("#")[0]!;
+    if (hidden.has(alias)) fail("OLL_INVALID_REFERENCE", path, `'${alias}' is hidden`);
+  };
   if (document.board_context) {
     requireString(document.board_context.board_id, "/board_context/board_id");
     if (!Number.isSafeInteger(document.board_context.revision)
@@ -1286,6 +1397,30 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           requireAlias(action.as, `${actionPath}/as`);
           requireObject(action.content, `${actionPath}/content`);
           validatePlacement(action.place, `${actionPath}/place`, registry);
+          if (action.kind === "ink") requireLearnerTaught(`${actionPath}/kind`, "Learner ink");
+          if (action.place.relation === "annotates") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Annotating a card");
+            if (action.kind !== "ink") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink annotates a card");
+          }
+          if (action.place.anchor !== undefined) requireVisible(action.place.anchor, `${actionPath}/place/anchor`);
+          if (action.place.relation === "replaces") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Replacing a card");
+            if (registry.get(action.place.anchor!)?.external) {
+              fail("OLL_INVALID_REFERENCE", `${actionPath}/place/anchor`, "External board references are read-only");
+            }
+            hidden.add(action.place.anchor!);
+          }
+          validateInkResource(action, actionPath, resourceContext);
+          if (action.kind === "ink") {
+            inkNodes.add(action.as);
+            for (const selection of (action.content.selections ?? []) as JsonObject[]) knownSelections.add(selection.selection_id);
+          }
+          if (action.source !== undefined) {
+            requireLearnerTaught(`${actionPath}/source`, "A learner-confirmed source");
+            if (!knownSelections.has(action.source.selection)) {
+              fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/source/selection`, `Selection '${action.source.selection}' is not part of this lesson's ink`);
+            }
+          }
           const fragments = collectAddressableContent(action.content);
           const uniqueFragments = new Set<string>();
           for (const fragment of fragments) {
@@ -1299,6 +1434,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validatePlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === "scene3d") {
+            scene3dHighlights.set(action.as, new Set(((action.content.highlights ?? []) as JsonObject[]).map((highlight) => highlight.as as string)));
             const camera = action.content.camera as UnknownRecord;
             scene3dCameras.set(action.as, {
               yaw: camera.yaw as number,
@@ -1330,7 +1466,34 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         }
 
         if (["emphasize", "point"].includes(action.do)) {
-          resolveLocal(registry, action.target, `${actionPath}/target`, ["node", "connection", "group"]);
+          resolveLocal(registry, (action as EmphasizeAction | PointAction).target, `${actionPath}/target`, ["node", "connection", "group"]);
+          requireVisible((action as EmphasizeAction | PointAction).target, `${actionPath}/target`);
+          return;
+        }
+
+        if (action.do === "view") {
+          const target = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          const highlights = scene3dHighlights.get(target.alias);
+          if (!highlights || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "A view turns a whole 3D scene of this lesson");
+          requireVisible(action.target, `${actionPath}/target`);
+          if (action.show !== undefined) {
+            const shown = resolveLocal(registry, action.show, `${actionPath}/show`, ["node"]);
+            if (shown.alias !== target.alias || !shown.fragment || !highlights.has(shown.fragment)) {
+              fail("OLL_INVALID_REFERENCE", `${actionPath}/show`, "A view shows a highlighted part of the same scene");
+            }
+          }
+          return;
+        }
+
+        if (action.do === "hide") {
+          requireLearnerTaught(`${actionPath}/do`, "Hiding a card");
+          const resolved = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          if (resolved.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "Hide a whole card, not part of it");
+          if (registry.get(resolved.alias)?.external) {
+            fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "External board references are read-only");
+          }
+          requireVisible(action.target, `${actionPath}/target`);
+          hidden.add(resolved.alias);
           return;
         }
 
@@ -1339,12 +1502,19 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (registry.get(resolved.alias)?.external) {
             fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "External board references are read-only");
           }
+          requireVisible(action.target, `${actionPath}/target`);
+          if (inkNodes.has(resolved.alias)) {
+            // Erasing and rewriting shows a newer snapshot of the same ink.
+            validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: "new_region" } }, actionPath, resourceContext);
+          }
           return;
         }
 
         if (action.do === "connect") {
           resolveLocal(registry, action.from, `${actionPath}/from`);
           resolveLocal(registry, action.to, `${actionPath}/to`);
+          requireVisible(action.from, `${actionPath}/from`);
+          requireVisible(action.to, `${actionPath}/to`);
           register(registry, action.as, "connection", `${actionPath}/as`);
           return;
         }
@@ -1362,6 +1532,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           requireArray(action.targets, `${actionPath}/targets`);
           for (let index = 0; index < action.targets.length; index += 1) {
             resolveLocal(registry, action.targets[index], `${actionPath}/targets/${index}`, ["node", "group", "connection"]);
+            requireVisible(action.targets[index], `${actionPath}/targets/${index}`);
           }
         }
       });
@@ -1374,6 +1545,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   if (document.close?.focus) {
     for (let index = 0; index < document.close.focus.length; index += 1) {
       resolveLocal(registry, document.close.focus[index], `/close/focus/${index}`, ["node", "group", "connection"]);
+      requireVisible(document.close.focus[index], `/close/focus/${index}`);
     }
   }
 
@@ -1386,7 +1558,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1533,6 +1705,7 @@ function normalizeAction(
         role: action.role,
         content: normalizeAddressableContent(host, nodeId, action.content),
         placement: normalizePlacement(registry, action.place),
+        ...(action.source ? { source: structuredClone(action.source) } : {}),
         ...(host.regionId ? { region_id: host.regionId } : {}),
       },
     };
@@ -1597,6 +1770,17 @@ function normalizeAction(
         }),
         intent: action.intent,
       },
+    };
+  }
+  if (action.do === "hide") {
+    return { action_id: actionId, op: "board.hide", target: canonicalTarget(registry, action.target) };
+  }
+  if (action.do === "view") {
+    return {
+      action_id: actionId,
+      op: "scene3d.view",
+      target: canonicalTarget(registry, action.target),
+      view: action.show !== undefined ? { show: canonicalTarget(registry, action.show) } : { preset: action.preset! },
     };
   }
   if (action.do === "revise") {
@@ -1831,6 +2015,13 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     const node = structuredClone(action.node);
     node.content = evaluateContentBindings(node.content, bindingValues(state));
     state.nodes[action.node.id] = node;
+    if (action.node.placement?.relation === "replaces") {
+      const replaced = state.nodes[anchor!];
+      if (!replaced) fail("OLL_REFERENCE_NOT_FOUND", "action.node.placement.anchor", `Replaced node '${anchor}' not found`);
+      replaced.hidden = true;
+      replaced.replaced_by = action.node.id;
+      state.focus = state.focus.filter((id) => id !== anchor);
+    }
   } else if (action.op === "board.connect") {
     if (!action.connection) fail("OLL_INVALID_EVENT", "action.connection", "board.connect requires connection");
     if (state.connections[action.connection.id]) fail("OLL_DUPLICATE_CONNECTION_ID", "action.connection.id", `Connection '${action.connection.id}' already exists`);
@@ -1866,6 +2057,15 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
           : undefined;
     if (!target) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Emphasis target not found");
     target.emphasis = [...(target.emphasis ?? []), { target: action.target, emphasis: action.emphasis }];
+  } else if (action.op === "board.hide") {
+    const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
+    if (!node) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Hidden node not found");
+    node.hidden = true;
+    state.focus = state.focus.filter((id) => id !== node.id);
+  } else if (action.op === "scene3d.view") {
+    const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
+    if (!node || node.kind !== "scene3d" || !action.view) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "View target is not a 3D scene");
+    node.view_intent = structuredClone(action.view);
   } else if (action.op === "teacher.point") {
     if (!canonicalTargetExists(state, action.target)) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "Point target not found");
   } else if (action.op === "teacher.expression") {

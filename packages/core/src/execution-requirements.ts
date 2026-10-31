@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.5.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.6.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -22,6 +22,13 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:numeric_answer": "0.5.0",
   "reflections": "0.3.0",
   "binding-hide-undefined": "0.3.0",
+  "lesson-mode:learner_taught": "0.6.0",
+  "node:ink": "0.6.0",
+  "placement:annotates": "0.6.0",
+  "placement:replaces": "0.6.0",
+  "action:board.hide": "0.6.0",
+  "write-source": "0.6.0",
+  "action:scene3d.view": "0.6.0",
 });
 
 export interface ExecutionRequirements {
@@ -79,6 +86,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
   for (const [index, event] of events.entries()) {
     const path = `/events/${index}`;
     add(`canonical:${event.version}`, `${path}/version`);
+    if (event.lesson?.mode === "learner_taught") add("lesson-mode:learner_taught", `${path}/lesson/mode`);
     if (event.lesson?.variables?.length) add("variables", `${path}/lesson/variables`);
     if (event.lesson?.reflections?.length) add("reflections", `${path}/lesson/reflections`);
     for (const task of event.lesson?.tasks ?? []) {
@@ -91,6 +99,9 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
         add(`action:${action.op}`, actionPath);
         if (action.node) {
           add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
+          const relation = action.node.placement?.relation;
+          if (relation === "annotates" || relation === "replaces") add(`placement:${relation}`, `${actionPath}/node/placement`);
+          if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
           content(action.node.content, `${actionPath}/node/content`);
         }
         if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);

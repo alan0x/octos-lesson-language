@@ -60,7 +60,9 @@
 - 公式、表格和 diagram 不得依赖学生手动放大才能读；
 - overview 缩小只能在完整讲解之后发生。
 
-参考基线：桌面 1280×720 下，active 卡片屏幕宽度至少 240 px；diagram 主要边长至少 120 px；正文等效字号至少 14 px。低于基线必须由人工验收解释。
+参考基线：白板区域 1366×768（学校常见 Chromebook）与 1920×1080 两种尺寸下，课程进行中每个 Beat 结束时 diagram 主要边长至少 120 px，正文**屏幕**字号至少 12.5 px（桌面阅读缩放 0.9 下 14 px 正文约 12.6 px；2026-10-31 用户决定）。课程结束后的全览只记录、不作门槛。低于基线必须由人工验收解释。
+
+卡片屏幕宽度只记录、不作为门槛（2026-10-31 用户决定）：白板改为按内容确定卡片尺寸后，短公式就是窄卡片，宽度不再代表可读性。
 
 ### G4 Visual correspondence：对应关系必须在共同视野中表达
 
@@ -135,7 +137,7 @@ Harness 必须为固定课程输出关键帧观测：
 npm run teaching:observe -- --lesson geometry --output evals/teaching-playback/geometry-v2/report.json
 ```
 
-当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、最小卡片宽度、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查节点是否被意外销毁重挂、KaTeX 错误、所有卡片类型的横向与纵向内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染、图片 pending/加载失败和 console warning/error。当前四个正向基准分别为几何 11 Beat/51 动作帧、二次函数 11/45、图片科学 11/37、英语文本 11/47。
+当前 Observer 在真实 Chrome 中逐操作采样：`action.apply` 帧负责检查当前动作目标可见；`beat.end` 帧负责检查显式 focus、焦点节点完整入镜、正文等效字号、diagram 主要边长和每 Beat 新增节点数。所有采样帧共同检查节点是否被意外销毁重挂、KaTeX 错误、所有卡片类型的横向与纵向内容裁切、外部 connection label 与节点相交、diagram connection 内外重复渲染、图片 pending/加载失败和 console warning/error。当前四个正向基准分别为几何 11 Beat/51 动作帧、二次函数 11/45、图片科学 11/37、英语文本 11/47。
 
 ## 5. 人工盲测协议
 

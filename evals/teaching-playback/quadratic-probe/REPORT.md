@@ -1,8 +1,8 @@
 # Teaching playback observer report
 
 - Lesson: `lesson-quadratic-001`
-- Viewport: 1280 × 720
-- Browser: 150.0.7871.184
+- Viewport: 1686 × 880
+- Browser: 156.0.8078.74
 - Result: **FAIL**
 - Expected result: **FAIL** (met)
 - Beat keyframes: 10
@@ -10,16 +10,16 @@
 
 | Beat | Cursor | Scale | Min card | Min text | Min diagram edge | New nodes | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| write-problem | 14 | 0.78 | — | — | — | 2 | G1_MISSING_BEAT_FOCUS |
-| preview-meaning | 26 | 0.78 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
-| focus-linear-term | 40 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| construct-identity | 52 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| add-and-subtract-nine | 68 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| combine-result | 80 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| draw-parabola | 96 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| explain-translation | 108 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| group-derivation | 122 | 0.78 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
-| write-summary | 135 | 0.42 | 116.58 | 14 | — | 1 | G3_FOCUS_TOO_SMALL |
+| write-problem | 14 | 1.1 | — | — | — | 2 | G1_MISSING_BEAT_FOCUS |
+| preview-meaning | 26 | 1.1 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
+| focus-linear-term | 40 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| construct-identity | 52 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| add-and-subtract-nine | 68 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| combine-result | 80 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| draw-parabola | 96 | 0.9 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| explain-translation | 108 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| group-derivation | 122 | 1.1 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
+| write-summary | 135 | 0.9 | 243.9 | 12.62 | — | 1 | PASS |
 
 ## Gate failures
 
@@ -58,7 +58,3 @@
 ### Cursor 122: beat.end
 
 - G1_MISSING_BEAT_FOCUS: Beat ends without an explicit teaching focus
-
-### Cursor 135: beat.end
-
-- G3_FOCUS_TOO_SMALL: Smallest focused card is 116.58px; expected at least 240px

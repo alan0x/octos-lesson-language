@@ -325,6 +325,8 @@ test("authoring schema declares each action payload required by the validator", 
     point: ["target"],
     expression: ["expression"],
     animate: ["variable", "value"],
+    hide: ["target"],
+    view: ["target"],
   });
 });
 

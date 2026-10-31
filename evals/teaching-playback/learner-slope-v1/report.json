@@ -1,0 +1,1346 @@
+{
+  "profile": "octos.teaching-playback.report",
+  "version": "0.1",
+  "generated_at": "2026-10-31T16:51:50.271Z",
+  "lesson_id": "lesson-learner-taught-slope-v1-001",
+  "fixture": "learner-slope",
+  "viewport": {
+    "width": 1686,
+    "height": 880
+  },
+  "browser": "156.0.8078.74",
+  "passed": true,
+  "expected_result": "pass",
+  "expectation_met": true,
+  "console_messages": [],
+  "beats": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 15,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-1-what-is-slope",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 496,
+            "y": 204.65,
+            "width": 374,
+            "height": 238.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 374,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 29,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-2-pick-points",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 44,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 2,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 522.4,
+            "y": 270.1,
+            "width": 353.1,
+            "height": 107.8,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 353.1,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 58,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-4-check-graph",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 5,
+        "connection_count": 1,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:line-plot"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:line-plot",
+            "kind": "plot",
+            "x": 485,
+            "y": 165.15,
+            "width": 396,
+            "height": 317.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4",
+          "lesson-learner-taught-slope-v1-001:node:line-plot": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ],
+  "action_frames": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 8,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-1-what-is-slope",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 496,
+            "y": 204.65,
+            "width": 374,
+            "height": 238.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 9,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-1-what-is-slope",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps:fragment:steep-ramp",
+            "kind": "image-region",
+            "x": 699.6,
+            "y": 276.85,
+            "width": 126.22,
+            "height": 124.58,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 13,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-1-what-is-slope",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 496,
+            "y": 204.65,
+            "width": 374,
+            "height": 238.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 496,
+            "y": 204.65,
+            "width": 374,
+            "height": 238.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 374,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 21,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-2-pick-points",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 164.6,
+            "y": 153,
+            "width": 306,
+            "height": 195.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 306,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 22,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-2-pick-points",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 164.6,
+            "y": 153,
+            "width": 306,
+            "height": 195.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid:fragment:point-a",
+            "kind": "geometry-point",
+            "x": 653.98,
+            "y": 377.84,
+            "width": 8.06,
+            "height": 8.06,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 306,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 23,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-2-pick-points",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-ramps",
+            "kind": "image",
+            "x": 164.6,
+            "y": 153,
+            "width": 306,
+            "height": 195.3,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid:fragment:point-b",
+            "kind": "geometry-point",
+            "x": 720.07,
+            "y": 245.66,
+            "width": 8.06,
+            "height": 8.06,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 306,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 27,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-2-pick-points",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 35,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.04,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 34.31,
+            "y": 180.48,
+            "width": 455.95,
+            "height": 393.77,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-fraction",
+            "kind": "image",
+            "x": 506.84,
+            "y": 180.48,
+            "width": 352.32,
+            "height": 287.04,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 455.95,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 16.58,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 36,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.04,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 34.31,
+            "y": 180.48,
+            "width": 455.95,
+            "height": 393.77,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-fraction:fragment:rise",
+            "kind": "image-region",
+            "x": 573.47,
+            "y": 229.41,
+            "width": 225.32,
+            "height": 87.61,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 455.95,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 16.58,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 37,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.04,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 34.31,
+            "y": 180.48,
+            "width": 455.95,
+            "height": 393.77,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:ink-fraction:fragment:run",
+            "kind": "image-region",
+            "x": 573.47,
+            "y": 345.5,
+            "width": 225.32,
+            "height": 87.61,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 455.95,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 16.58,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 38,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:grid"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:grid",
+            "kind": "geometry",
+            "x": 914,
+            "y": -187.5,
+            "width": 484,
+            "height": 418,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 522.4,
+            "y": 270.1,
+            "width": 353.1,
+            "height": 107.8,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 484,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 42,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-3-rise-over-run",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 522.4,
+            "y": 270.1,
+            "width": 353.1,
+            "height": 107.8,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 522.4,
+            "y": 270.1,
+            "width": 353.1,
+            "height": 107.8,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 353.1,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 50,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-4-check-graph",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 485,
+            "y": 515.25,
+            "width": 288.9,
+            "height": 88.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:line-plot",
+            "kind": "plot",
+            "x": 485,
+            "y": 165.15,
+            "width": 396,
+            "height": 317.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 288.9,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 21.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4",
+          "lesson-learner-taught-slope-v1-001:node:line-plot": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 51,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-4-check-graph",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 5,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 485,
+            "y": 515.25,
+            "width": 288.9,
+            "height": 88.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:line-plot:fragment:line",
+            "kind": "plot-curve",
+            "x": 528.97,
+            "y": 207.07,
+            "width": 324.18,
+            "height": 229.09,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 288.9,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 21.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4",
+          "lesson-learner-taught-slope-v1-001:node:line-plot": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 52,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-4-check-graph",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 5,
+        "connection_count": 1,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:neat-fraction",
+            "kind": "math",
+            "x": 485,
+            "y": 515.25,
+            "width": 288.9,
+            "height": 88.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:connection:slope-to-line",
+            "kind": "connection-line",
+            "x": 629.45,
+            "y": 482.85,
+            "width": 53.55,
+            "height": 32.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 288.9,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 21.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4",
+          "lesson-learner-taught-slope-v1-001:node:line-plot": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-slope-v1-001",
+        "cursor": 56,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-slope-v1-001:step:teach-slope:beat:card-4-check-graph",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 5,
+        "connection_count": 1,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-slope-v1-001:node:line-plot"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:line-plot",
+            "kind": "plot",
+            "x": 485,
+            "y": 165.15,
+            "width": 396,
+            "height": 317.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-slope-v1-001:node:line-plot",
+            "kind": "plot",
+            "x": 485,
+            "y": 165.15,
+            "width": 396,
+            "height": 317.7,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-slope-v1-001:node:ink-ramps": "node-instance-1",
+          "lesson-learner-taught-slope-v1-001:node:grid": "node-instance-2",
+          "lesson-learner-taught-slope-v1-001:node:ink-fraction": "node-instance-3",
+          "lesson-learner-taught-slope-v1-001:node:neat-fraction": "node-instance-4",
+          "lesson-learner-taught-slope-v1-001:node:line-plot": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ]
+}

@@ -3,6 +3,8 @@ import { regularPolygonGeometry } from "../../core/src/regular-polygon.js";
 import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
+import { visibleBoard } from "./visible-board.js";
+import { prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
@@ -276,6 +278,7 @@ const PRIMARY_TEACHING_VISUAL_KINDS = new Set([
   "scene3d",
   "diagram",
   "image",
+  "ink",
   "table",
 ]);
 
@@ -1407,6 +1410,53 @@ function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsse
   parent.append(frame);
 }
 
+// A learner's own ink, shown from the frozen snapshot the host resolves. A
+// missing snapshot is shown as a failure, never silently dropped.
+function renderInk(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver, replay: boolean): void {
+  const content = node.content ?? {};
+  const asset = resolveAsset(text(content.snapshot_id));
+  const svg = asset?.svg ? sanitizeInkSvg(asset.svg, parent.ownerDocument) : undefined;
+  if (!asset || (asset.svg !== undefined && !svg)) {
+    const missing = appendText(parent, "", "lesson-ink-missing");
+    missing.dataset.snapshotId = text(content.snapshot_id);
+    bindUi(parent, missing, "text", () => { missing.textContent = ui(parent, "这段手写暂时无法显示：{description}", { description: text(content.alt) }); });
+    return;
+  }
+  const frame = document.createElement("figure");
+  frame.className = "lesson-ink-frame";
+  frame.style.aspectRatio = `${asset.intrinsic_width} / ${asset.intrinsic_height}`;
+  frame.setAttribute("role", "img");
+  bindUi(parent, frame, "aria-label", () => { frame.setAttribute("aria-label", text(content.alt)); });
+  if (svg) {
+    svg.classList.add("lesson-ink");
+    svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+    if (replay && content.replay === "stroke_order") prepareStrokeReplay(svg);
+    frame.append(svg);
+  } else {
+    const image = document.createElement("img");
+    image.className = "lesson-image lesson-ink";
+    image.src = asset.src;
+    image.alt = "";
+    image.draggable = false;
+    frame.append(image);
+  }
+  for (const selection of Array.isArray(content.selections) ? content.selections : []) {
+    const bounds = asset.regions[text(selection.selection_id)];
+    if (!bounds) continue;
+    const overlay = document.createElement("div");
+    overlay.className = "image-region";
+    overlay.dataset.id = text(selection.id);
+    overlay.dataset.label = text(selection.label);
+    Object.assign(overlay.style, {
+      left: `${bounds.x * 100}%`, top: `${bounds.y * 100}%`,
+      width: `${bounds.width * 100}%`, height: `${bounds.height * 100}%`,
+    });
+    applyEmphasisClass(overlay, latestEmphasis(node, text(selection.id)));
+    frame.append(overlay);
+  }
+  parent.append(frame);
+}
+
 function renderContent(
   parent: HTMLElement,
   node: Record<string, any>,
@@ -1414,9 +1464,11 @@ function renderContent(
   sceneView?: Scene3dViewState,
   sceneInput?: Scene3dViewInputHandler,
   variables: Record<string, number> = {},
+  replayInk = false,
 ): void {
   const content = node.content ?? {};
-  const title = text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
+  // Learner ink speaks for itself; its role is not a card title.
+  const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot); return; }
@@ -1433,6 +1485,9 @@ function renderContent(
   if (node.kind === "math") { renderMath(parent, node); if (content.caption) appendText(parent, text(content.caption), "node-caption"); return; }
   if (node.kind === "image") {
     renderImage(parent, node, resolveAsset); return;
+  }
+  if (node.kind === "ink") {
+    renderInk(parent, node, resolveAsset, replayInk); return;
   }
   if (node.kind === "table") {
     const table = document.createElement("table"); table.className = "content-table";
@@ -1649,7 +1704,9 @@ export class InfiniteBoardView {
    */
   get layoutRevision(): number { return this.layoutRevisionCounter; }
 
-  render(board: SemanticBoardState | null, operation?: PlaybackOperation): void {
+  render(semanticBoard: SemanticBoardState | null, operation?: PlaybackOperation): void {
+    // Hidden and replaced cards leave the board the learner sees.
+    const board = semanticBoard ? visibleBoard(semanticBoard) : semanticBoard;
     const teachingCameraChanged = this.cameraAuthority.observeRender(
       board?.board_id,
       operation?.operation_id,
@@ -2294,7 +2351,8 @@ export class InfiniteBoardView {
     for (const node of Object.values(board.nodes)) {
       const kind = String(node.kind ?? "text");
       const fixedVisualSize = kind === "geometry" || kind === "scene3d"
-        || (kind === "diagram" && Array.isArray(node.content?.elements));
+        || (kind === "diagram" && Array.isArray(node.content?.elements))
+        || node.placement?.relation === "annotates";
       let element = this.nodeElements.get(node.id);
       const created = !element;
       if (!element) {
@@ -2304,7 +2362,7 @@ export class InfiniteBoardView {
         this.nodeElements.set(node.id, element);
         this.nodes.append(element);
       }
-      element.className = `board-node kind-${kind}`;
+      element.className = `board-node kind-${kind}${node.placement?.relation === "annotates" ? " annotation" : ""}`;
       element.dataset.kind = kind;
       element.dataset.plotViewScope = board.board_id;
       if (created && node.id === activeCreateId) element.classList.add("active");
@@ -2333,6 +2391,7 @@ export class InfiniteBoardView {
           renderContent(
             element, node, this.resolveAsset,
             this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
+            created && node.id === activeCreateId,
           );
         }
         // A plot redrawn in place keeps its frame while a variable changes
@@ -2680,25 +2739,68 @@ export class InfiniteBoardView {
     if (step.length) result = extend(result, step, STEP_CONTEXT_MIN_SCALE_SHARE, false);
     return result;
   }
+  /**
+   * Keeps an automatic teaching frame at or above the host's readability
+   * floor. When related cards cannot all fit at that floor, the earliest are
+   * left beside the frame so the newest stay readable. Without a host floor
+   * the minimum is the runtime default and every card is kept.
+   */
+  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect): Rect[] {
+    const floor = this.automaticCameraMinimumScale;
+    const fits = (candidate: Rect[]) => planFocusCamera(
+      candidate, current, viewport, "relationship", this.viewportInsets, floor, this.automaticCameraMaximumScale,
+    ).scale >= floor - .000_001;
+    let kept = rects;
+    while (kept.length > 1 && !fits(kept)) kept = kept.slice(1);
+    return kept;
+  }
+  /**
+   * Moves a narrowed frame toward the cards it left out, as far as the kept
+   * cards stay fully inside the usable viewport, so earlier related cards
+   * remain partly or wholly visible.
+   */
+  private towardLeftContext(camera: CameraState, kept: Rect[], all: Rect[], viewport: DOMRect): CameraState {
+    const keptRect = unionRects(kept); const allRect = unionRects(all);
+    const margin = 16; const insets = this.viewportInsets;
+    const left = (insets.left ?? 0) + margin; const right = viewport.width - (insets.right ?? 0) - margin;
+    const top = (insets.top ?? 0) + margin; const bottom = viewport.height - (insets.bottom ?? 0) - margin;
+    const toward = (pan: number, low: number, high: number, start: number, end: number, keptStart: number, keptEnd: number) => {
+      const centred = (low + high) / 2 - ((start + end) / 2) * camera.scale;
+      const min = low - keptStart * camera.scale; const max = high - keptEnd * camera.scale;
+      return min <= max ? Math.min(max, Math.max(min, centred)) : pan;
+    };
+    return {
+      scale: camera.scale,
+      panX: toward(camera.panX, left, right, allRect.x, allRect.x + allRect.width, keptRect.x, keptRect.x + keptRect.width),
+      panY: toward(camera.panY, top, bottom, allRect.y, allRect.y + allRect.height, keptRect.y, keptRect.y + keptRect.height),
+    };
+  }
   private focusRects(targetIds: string[], requestedRects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
-    const rects = this.withTeachingContext(targetIds, requestedRects, board);
     const viewport = this.viewport.getBoundingClientRect();
-    const mode: AttentionMode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
-      ? "relationship"
-      : targetIds.some((id) => Boolean(board.groups[id]))
-        ? "overview"
-        : "detail";
     const current = { panX: this.panX, panY: this.panY, scale: this.scale };
-    const camera = planFocusCamera(
+    const composed = this.withTeachingContext(targetIds, requestedRects, board);
+    const rects = this.readableRects(composed, current, viewport);
+    const narrowed = rects.length < composed.length;
+    const mode: AttentionMode = narrowed
+      ? (rects.length > 1 ? "relationship" : "detail")
+      : rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
+        ? "relationship"
+        : targetIds.some((id) => Boolean(board.groups[id]))
+          ? "overview"
+          : "detail";
+    // A narrowed frame stays at the floor so the cards left beside it remain
+    // as visible as possible, instead of zooming in on what was kept.
+    const planned = planFocusCamera(
       rects,
       current,
       viewport,
       mode,
       this.viewportInsets,
       this.automaticCameraMinimumScale,
-      this.automaticCameraMaximumScale,
+      narrowed ? this.automaticCameraMinimumScale : this.automaticCameraMaximumScale,
     );
+    const camera = narrowed ? this.towardLeftContext(planned, rects, composed, viewport) : planned;
     // Every automatic teaching request passes through here. When the scene
     // is already fully visible, close to the planned scale and near the
     // centre, keep the camera still instead of re-centring on each pointer,

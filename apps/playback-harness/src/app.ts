@@ -21,6 +21,7 @@ import {
   type TeachingGateResult,
 } from "../../../packages/web-runtime/src/testing.js";
 import { resolveHarnessAsset } from "./assets.js";
+import { withInkMarkup } from "./ink-markup.js";
 
 const fixtures = [
   { id: "quadratic", label: "数学 · 二次函数配方法 V2", path: "/examples/quadratic-v2/lesson.canonical.jsonl" },
@@ -31,6 +32,11 @@ const fixtures = [
   { id: "science", label: "科学 · 植物蒸腾作用 V2", path: "/examples/science-transpiration-v2/lesson.canonical.jsonl" },
   { id: "english", label: "语言 · 英语定语从句 V2", path: "/examples/english-relative-clause-v2/lesson.canonical.jsonl" },
   { id: "english-v1", label: "探针 · 英语定语从句 V1", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
+  { id: "learner-slope", label: "学生讲课 · 两点求斜率", path: "/examples/learner-taught-slope-v1/lesson.canonical.jsonl" },
+  { id: "learner-unit-circle", label: "学生讲课 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v1/lesson.canonical.jsonl" },
+  { id: "learner-slope-v2", label: "学生讲课 V2 · 两点求斜率（笔迹）", path: "/examples/learner-taught-slope-v2/lesson.canonical.jsonl" },
+  { id: "learner-unit-circle-v2", label: "学生讲课 V2 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v2/lesson.canonical.jsonl" },
+  { id: "learner-box", label: "学生讲课 · 长方体表面积（3D）", path: "/examples/learner-taught-box-v1/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
 const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");
@@ -71,9 +77,16 @@ for (const fixture of fixtures) { const option = document.createElement("option"
 const restoredLessonId = localStorage.getItem(selectedLessonKey);
 lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId) ? requestedLessonId!
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
-const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), resolveHarnessAsset);
+const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), withInkMarkup(resolveHarnessAsset));
 const boardView = mountedBoard.view;
-boardView.setViewportInsets({ top: 70, bottom: 190 });
+const viewportInsets = { top: 70, bottom: 190 };
+boardView.setViewportInsets(viewportInsets);
+// Match the desktop Learn host: lessons use the teaching layout sized for its
+// reading scale, and the automatic teaching camera stays between that scale
+// and a modest close-up.
+const desktopReadingScale = .9;
+boardView.setAutomaticCameraMaximumScale(1.1);
+boardView.setAutomaticCameraMinimumScale(desktopReadingScale);
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
 const handleStudentVariableInput = (
@@ -190,15 +203,45 @@ async function loadLesson(id: string): Promise<void> {
   session = new BrowserLessonSession(events, store, `oll-harness:${events[0]!.lesson_id}`, {
     reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
   });
+  applyTeachingLayout();
   unsubscribe = session.subscribe(render);
   if (inkEnabled) await mountInkForCurrentLesson("navigate");
   render();
   requestAnimationFrame(() => boardView.fit());
 }
 
+// Every node is assigned to the Step that created it, as the Learn host does
+// for packaged lessons, so the teaching layout can form step columns.
+function nodeSections(lessonEvents: CanonicalEvent[]): Record<string, string> {
+  const sections: Record<string, string> = {};
+  for (const event of lessonEvents) {
+    const step = event.step as { id: string; beats?: Array<{ stage?: Record<string, Array<{ node?: { id?: string } }>> }> } | undefined;
+    for (const beat of step?.beats ?? []) {
+      for (const actions of Object.values(beat.stage ?? {})) {
+        for (const action of actions) if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = step!.id;
+      }
+    }
+  }
+  return sections;
+}
+
+function applyTeachingLayout(): void {
+  const viewport = requireElement<HTMLElement>("#viewport");
+  boardView.setRegionLayouts({
+    __legacy__: {
+      x: 20, y: 20, flow: "teaching", nodeSections: nodeSections(events),
+      composition: {
+        width: viewport.clientWidth, height: viewport.clientHeight, mode: "progressive",
+        insets: viewportInsets, readingScale: desktopReadingScale,
+      },
+    },
+  });
+}
+
 function render(): void {
   const projection = session.projection;
   const operation = session.currentOperation;
+  boardView.setScene3dViews(session.scene3dViews);
   boardView.render(projection.board, operation);
   variableControls.render(projection.board, session.activeVariableAnimation);
   const title = events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL Lesson";
@@ -278,6 +321,7 @@ const harnessApi: Window["__OLL_HARNESS__"] = window.__OLL_HARNESS__ = {
     if (!board || !operation) throw new Error("Teaching observation requires at least one playback operation");
     return collectTeachingObservation({
       viewport: mountedBoard.elements.viewport, world: mountedBoard.elements.world, board, operation, cursor: session.cursor,
+      insets: viewportInsets,
     });
   },
   evaluate: evaluateTeachingObservation,
@@ -325,6 +369,6 @@ requireElement<HTMLInputElement>("#ink-pen-color").addEventListener("input", (ev
 requireElement<HTMLInputElement>("#ink-selection-color").addEventListener("input", (event) => {
   void inkRuntime?.setSelectionColor((event.target as HTMLInputElement).value);
 });
-window.addEventListener("resize", () => boardView.fit());
+window.addEventListener("resize", () => { applyTeachingLayout(); boardView.fit(); });
 
 void harnessApi.loadLesson(lessonSelect.value).catch((error) => { requireElement("#lesson-title").textContent = error instanceof Error ? error.message : String(error); });

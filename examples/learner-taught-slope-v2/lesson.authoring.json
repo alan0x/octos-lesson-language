@@ -1,0 +1,332 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "learner_taught",
+    "language": "en-US",
+    "title": "Finding slope from two points",
+    "goals": [
+      "Find the slope from any two points"
+    ],
+    "adaptation": {
+      "strategies": [
+        "learner-taught",
+        "one-card-per-beat"
+      ]
+    },
+    "author": {
+      "kind": "learner",
+      "learner_ref": "learner:demo-jordan",
+      "presented_by": {
+        "avatar_ref": "avatar:fox",
+        "voice_ref": "voice:learner-warm-1"
+      }
+    }
+  },
+  "steps": [
+    {
+      "key": "teach-slope",
+      "purpose": "Jordan explains slope as steepness, then computes it from two points and checks it on a graph",
+      "beats": [
+        {
+          "key": "card-1-what-is-slope",
+          "say": "Slope is how steep a line is. Like a ramp. A steep ramp has a big slope.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "ink-ramps",
+              "kind": "ink",
+              "role": "example",
+              "content": {
+                "snapshot_id": "ink-snap:card1@v4",
+                "sha256": "25900c0d2d9c6a24512e2410eaa4a795c80baee6e41702f6b32e1c0671fb242f",
+                "replay": "stroke_order",
+                "alt": "Jordan's hand-drawn ramps: a gentle ramp and a steep ramp",
+                "selections": [
+                  {
+                    "as": "gentle-ramp",
+                    "selection_id": "sel-card1-gentle",
+                    "label": "gentle ramp"
+                  },
+                  {
+                    "as": "steep-ramp",
+                    "selection_id": "sel-card1-steep",
+                    "label": "steep ramp"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "lesson-origin"
+              }
+            },
+            {
+              "do": "point",
+              "target": "ink-ramps#steep-ramp"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "ink-ramps"
+              ],
+              "intent": "compare_ramp_steepness"
+            }
+          ]
+        },
+        {
+          "key": "card-2-pick-points",
+          "say": "Let's pick two points on a line. Point A is at 1 comma 2, and point B is at 4 comma 8.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "grid",
+              "kind": "geometry",
+              "role": "diagram",
+              "content": {
+                "title": "Two points",
+                "axes": {
+                  "x": {
+                    "min": -1,
+                    "max": 6,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -1,
+                    "max": 9,
+                    "label": "y"
+                  },
+                  "equal_scale": true
+                },
+                "points": [
+                  {
+                    "as": "point-a",
+                    "x": 1,
+                    "y": 2,
+                    "label": "A (1, 2)"
+                  },
+                  {
+                    "as": "point-b",
+                    "x": 4,
+                    "y": 8,
+                    "label": "B (4, 8)"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "ink-ramps",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "point",
+              "target": "grid#point-a"
+            },
+            {
+              "do": "write",
+              "as": "circle-a",
+              "kind": "ink",
+              "role": "annotation",
+              "when": "during_speech",
+              "content": {
+                "snapshot_id": "ink-snap:card2-circle-a@v4",
+                "sha256": "abab2e7d170eaf827209c033a6ce4ffba51799d538f85f81657b95802d74f4b1",
+                "replay": "stroke_order",
+                "alt": "Jordan circles point A",
+                "annotation": {
+                  "x": 0.36,
+                  "y": 0.59,
+                  "width": 0.16,
+                  "height": 0.16
+                }
+              },
+              "place": {
+                "relation": "annotates",
+                "anchor": "grid"
+              }
+            },
+            {
+              "do": "point",
+              "target": "grid#point-b"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "grid"
+              ],
+              "intent": "show_two_points"
+            }
+          ]
+        },
+        {
+          "key": "card-3-rise-over-run",
+          "say": "Rise is 8 minus 2, which is 6. Run is 4 minus 1, which is 3. So the slope is 6 over 3, which is 2.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "ink-fraction",
+              "kind": "ink",
+              "role": "derivation",
+              "content": {
+                "snapshot_id": "ink-snap:card3@v4",
+                "sha256": "a637f0197d070fc324ef0c11eacec0ff7b3bfab4b3fbd9b7fce6fdf065cdc632",
+                "replay": "stroke_order",
+                "alt": "Jordan's handwritten fraction: 8 minus 2 over 4 minus 1",
+                "selections": [
+                  {
+                    "as": "rise",
+                    "selection_id": "sel-card3-rise",
+                    "label": "8 − 2"
+                  },
+                  {
+                    "as": "run",
+                    "selection_id": "sel-card3-run",
+                    "label": "4 − 1"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "grid",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "ink-fraction#rise",
+              "emphasis": "focus"
+            },
+            {
+              "do": "emphasize",
+              "target": "ink-fraction#run",
+              "emphasis": "focus"
+            },
+            {
+              "do": "write",
+              "as": "neat-fraction",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "fragments": [
+                  {
+                    "as": "definition",
+                    "latex": "m=\\dfrac{\\text{rise}}{\\text{run}}"
+                  },
+                  {
+                    "as": "substitution",
+                    "latex": "=\\dfrac{8-2}{4-1}"
+                  },
+                  {
+                    "as": "result",
+                    "latex": "=\\dfrac{6}{3}=2"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "replaces",
+                "anchor": "ink-fraction"
+              },
+              "when": "after_speech",
+              "source": {
+                "selection": "sel-card3-all",
+                "confirmed_by": "learner"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "neat-fraction"
+              ],
+              "intent": "compute_slope"
+            }
+          ]
+        },
+        {
+          "key": "card-4-check-graph",
+          "say": "Now let's check it on the graph. The line goes through A and B, and it goes up 2 every time you go right 1.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "line-plot",
+              "kind": "plot",
+              "role": "diagram",
+              "content": {
+                "title": "The line through A and B",
+                "axes": {
+                  "x": {
+                    "min": -1,
+                    "max": 6
+                  },
+                  "y": {
+                    "min": -1,
+                    "max": 10
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "line",
+                    "expression": "2*x",
+                    "label": "slope 2"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "point-a",
+                    "x": 1,
+                    "y": 2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "point-b",
+                    "x": 4,
+                    "y": 8,
+                    "label": "B"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "right_of",
+                "anchor": "grid",
+                "align": "center",
+                "gap": "spacious"
+              }
+            },
+            {
+              "do": "point",
+              "target": "line-plot#line"
+            },
+            {
+              "do": "connect",
+              "as": "slope-to-line",
+              "from": "neat-fraction#result",
+              "to": "line-plot#line",
+              "relation": "determines",
+              "label": "slope 2"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "line-plot"
+              ],
+              "intent": "check_slope_on_graph"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "Slope is steepness: rise over run. From A (1, 2) to B (4, 8), rise 6 over run 3 gives slope 2, and the graph agrees.",
+    "focus": [
+      "neat-fraction",
+      "line-plot"
+    ]
+  }
+}
