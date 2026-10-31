@@ -40,16 +40,19 @@
               "role": "example",
               "content": {
                 "snapshot_id": "ink-snap:card1@v4",
+                "sha256": "25900c0d2d9c6a24512e2410eaa4a795c80baee6e41702f6b32e1c0671fb242f",
                 "replay": "stroke_order",
                 "alt": "Jordan's hand-drawn ramps: a gentle ramp and a steep ramp",
                 "selections": [
                   {
                     "as": "gentle-ramp",
-                    "selection_id": "sel-card1-gentle-ramp"
+                    "selection_id": "sel-card1-gentle",
+                    "label": "gentle ramp"
                   },
                   {
                     "as": "steep-ramp",
-                    "selection_id": "sel-card1-steep-ramp"
+                    "selection_id": "sel-card1-steep",
+                    "label": "steep ramp"
                   }
                 ]
               },
@@ -123,6 +126,29 @@
               "target": "grid#point-a"
             },
             {
+              "do": "write",
+              "as": "circle-a",
+              "kind": "ink",
+              "role": "annotation",
+              "when": "during_speech",
+              "content": {
+                "snapshot_id": "ink-snap:card2-circle-a@v4",
+                "sha256": "abab2e7d170eaf827209c033a6ce4ffba51799d538f85f81657b95802d74f4b1",
+                "replay": "stroke_order",
+                "alt": "Jordan circles point A",
+                "annotation": {
+                  "x": 0.36,
+                  "y": 0.59,
+                  "width": 0.16,
+                  "height": 0.16
+                }
+              },
+              "place": {
+                "relation": "annotates",
+                "anchor": "grid"
+              }
+            },
+            {
               "do": "point",
               "target": "grid#point-b"
             },
@@ -147,16 +173,19 @@
               "role": "derivation",
               "content": {
                 "snapshot_id": "ink-snap:card3@v4",
+                "sha256": "a637f0197d070fc324ef0c11eacec0ff7b3bfab4b3fbd9b7fce6fdf065cdc632",
                 "replay": "stroke_order",
                 "alt": "Jordan's handwritten fraction: 8 minus 2 over 4 minus 1",
                 "selections": [
                   {
                     "as": "rise",
-                    "selection_id": "sel-card3-rise"
+                    "selection_id": "sel-card3-rise",
+                    "label": "8 − 2"
                   },
                   {
                     "as": "run",
-                    "selection_id": "sel-card3-run"
+                    "selection_id": "sel-card3-run",
+                    "label": "4 − 1"
                   }
                 ]
               },
@@ -199,9 +228,10 @@
                 ]
               },
               "place": {
-                "relation": "in_place_of",
+                "relation": "replaces",
                 "anchor": "ink-fraction"
               },
+              "when": "after_speech",
               "source": {
                 "selection": "sel-card3-all",
                 "confirmed_by": "learner"
@@ -298,6 +328,5 @@
       "neat-fraction",
       "line-plot"
     ]
-  },
-  "$comment": "PROPOSAL ONLY. Not valid OLL v0.1. Shows the fields drafts A-E would add; see docs/LEARNER-TAUGHT-V1-FINDINGS.md."
+  }
 }

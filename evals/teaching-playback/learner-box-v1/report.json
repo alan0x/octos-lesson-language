@@ -1,0 +1,1037 @@
+{
+  "profile": "octos.teaching-playback.report",
+  "version": "0.1",
+  "generated_at": "2026-10-31T16:51:57.589Z",
+  "lesson_id": "lesson-learner-taught-box-v1-001",
+  "fixture": "learner-box",
+  "viewport": {
+    "width": 1686,
+    "height": 880
+  },
+  "browser": "156.0.8078.74",
+  "passed": true,
+  "expected_result": "pass",
+  "expectation_met": true,
+  "console_messages": [],
+  "beats": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 15,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-1-the-box",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 28,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-2-the-bottom",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 41,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-3-the-front",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 54,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-4-add-them-up",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:total"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total",
+            "kind": "math",
+            "x": 374.45,
+            "y": 284.4,
+            "width": 602.8,
+            "height": 79.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 602.8,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1",
+          "lesson-learner-taught-box-v1-001:node:total": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ],
+  "action_frames": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 8,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-1-the-box",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 9,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-1-the-box",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:top-face",
+            "kind": "scene3d-highlight",
+            "x": 571.59,
+            "y": 217.27,
+            "width": 222.82,
+            "height": 114.31,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 13,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-1-the-box",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 21,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-2-the-bottom",
+        "action_op": "scene3d.view",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 22,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-2-the-bottom",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:bottom-face",
+            "kind": "scene3d-highlight",
+            "x": 593.54,
+            "y": 252.06,
+            "width": 178.92,
+            "height": 134.19,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 26,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-2-the-bottom",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 34,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-3-the-front",
+        "action_op": "scene3d.view",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 35,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-3-the-front",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:front-face",
+            "kind": "scene3d-highlight",
+            "x": 593.54,
+            "y": 229.69,
+            "width": 178.92,
+            "height": 89.46,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 39,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-3-the-front",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 47,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-4-add-them-up",
+        "action_op": "scene3d.view",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 0.9,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": 476,
+            "y": 162,
+            "width": 414,
+            "height": 324,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 414,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 48,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-4-add-them-up",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:box"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box",
+            "kind": "scene3d",
+            "x": -162.35,
+            "y": 284.4,
+            "width": 506,
+            "height": 396,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total",
+            "kind": "math",
+            "x": 374.45,
+            "y": 284.4,
+            "width": 602.8,
+            "height": 79.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 506,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1",
+          "lesson-learner-taught-box-v1-001:node:total": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-taught-box-v1-001",
+        "cursor": 52,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-taught-box-v1-001:step:teach-surface-area:beat:card-4-add-them-up",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-taught-box-v1-001:node:total"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total",
+            "kind": "math",
+            "x": 374.45,
+            "y": 284.4,
+            "width": 602.8,
+            "height": 79.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total",
+            "kind": "math",
+            "x": 374.45,
+            "y": 284.4,
+            "width": 602.8,
+            "height": 79.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 602.8,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-taught-box-v1-001:node:box": "node-instance-1",
+          "lesson-learner-taught-box-v1-001:node:total": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ]
+}

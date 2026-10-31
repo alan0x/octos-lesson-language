@@ -31,3 +31,14 @@ test("learner ink snapshot assets resolve to local SVGs with normalized regions"
     }
   }
 });
+
+test("learner ink snapshots resolve to local SVGs whose selections lie inside them", async () => {
+  for (const id of ["ink-snap:card1@v4", "ink-snap:card2-circle-a@v4", "ink-snap:card3@v4"]) {
+    const asset = resolveHarnessAsset(id);
+    assert.ok(asset, id);
+    await access(resolve(process.cwd(), asset.src.slice(1)));
+    for (const bounds of Object.values(asset.regions)) {
+      assert.ok(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= 1 && bounds.y + bounds.height <= 1);
+    }
+  }
+});

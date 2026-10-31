@@ -1,6 +1,6 @@
 # 学生讲课样例 V1：发现
 
-日期：2026-10-31。状态：探针，不改变 v0.1 合同。产品计划见 `octos-learn/docs/LEARNER_TEACHING_MODE_PLAN.md`。
+日期：2026-10-31。状态：探针，结论已由决定记录 0005–0008 实现（见文末）。产品计划见 `octos-learn/docs/LEARNER_TEACHING_MODE_PLAN.md`。
 
 ## 目的
 
@@ -129,3 +129,19 @@ npm run check:examples
 npm run teaching:observe:learner-slope
 npm run teaching:observe:learner-unit-circle
 ```
+
+
+## 实现（2026-10-31）
+
+用户批准决定记录 0005–0008 后实现，播放器执行版本升为 0.6.0：
+
+| 决定 | Core | Web Runtime | 证据 |
+|---|---|---|---|
+| 0005 学生讲课课程 | `mode: learner_taught`、不透明作者；`explain` 不能带 learner 作者 | 无新渲染 | 三个 V2/新样例；`packages/core/test/learner-taught.test.ts` |
+| 0006 笔迹 | `ink` 节点（快照 + 校验值 + 选区）、`annotates`、`replaces`、`hide`、以新快照 `revise`；仅限学生讲课课程；被隐藏卡片不能再引用 | 快照渲染与笔画重现（SVG 只保留绘图元素）、缺失快照显式失败、可见白板投影（替换占位、隐藏离开）、标注附着锚点 | `learner-taught-slope-v2`；`scripts/check-learner-ink-browser.mjs`；`visible-board.test.ts` |
+| 0007 来源 | `write.source`，必须是本课笔迹的选区 | 无新渲染 | 斜率 V2 卡片 3 |
+| 0008 3D 视角 | `view`（`show` 高亮部件或 `preset`） | 由意图计算相机；之后学生旋转优先，更晚的意图再生效；学生旋转记录播放位置 | `learner-taught-box-v1`；`learner-view-intent.test.ts` |
+
+与批准文本的一处形式调整：替换用 `place.relation: "replaces"` 表达，而不是独立的 `replaces` 字段，因为 `write` 本就必须带 `place`；行为不变，决定记录 0006 已同步。
+
+浏览器教学播放检查：新样例与全部原有正向样例在 1366 × 768 与 1920 × 1080 白板下全部通过。

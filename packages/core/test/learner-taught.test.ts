@@ -243,6 +243,7 @@ test("a view intent turns to look at a highlighted part from the side it faces, 
   const node = reduceCanonicalEvents(events).nodes["lesson-learner-001:node:box"]!;
   const view = scene3dViewForIntent(node.content, node.view_intent, { yaw: 0.7, pitch: 0.5, zoom: 1.4 });
   assert.ok(Math.abs(view.pitch + Math.PI / 2) < 1e-9, "the bottom face is seen from below");
+  assert.equal(view.yaw, 0, "and squared to the screen");
   assert.equal(view.zoom, 1.4);
   assert.deepEqual(scene3dViewForIntent(node.content, { preset: "front" }, { yaw: 2, pitch: 1, zoom: 0.8 }), { yaw: 0, pitch: 0, zoom: 0.8 });
 });

@@ -1,5 +1,6 @@
 import type { ImageAssetResolver, ResolvedImageAsset } from "../../../packages/web-runtime/src/index.js";
 
+
 const assets: Record<string, ResolvedImageAsset> = {
   "asset-transpiration-control-001": {
     src: "/examples/science-transpiration-v2/assets/transpiration-control.png",
@@ -29,6 +30,29 @@ const assets: Record<string, ResolvedImageAsset> = {
     regions: {
       "asset-learner-ink-card3#region-rise": { x: 0.15, y: 0.02, width: 0.72, height: 0.40 },
       "asset-learner-ink-card3#region-run": { x: 0.15, y: 0.55, width: 0.72, height: 0.40 }
+    }
+  },
+  // Learner ink snapshots: selections in fractions of the snapshot. The
+  // browser harness adds their markup (ink-markup.ts) for stroke replay.
+  "ink-snap:card1@v4": {
+    src: "/examples/learner-taught-slope-v2/assets/ink-ramps.svg",
+    intrinsic_width: 320, intrinsic_height: 160,
+    regions: {
+      "sel-card1-gentle": { x: 0.03, y: 0.62, width: 0.45, height: 0.28 },
+      "sel-card1-steep": { x: 0.55, y: 0.15, width: 0.38, height: 0.75 }
+    }
+  },
+  "ink-snap:card2-circle-a@v4": {
+    src: "/examples/learner-taught-slope-v2/assets/ink-circle-a.svg",
+    intrinsic_width: 100, intrinsic_height: 100, regions: {}
+  },
+  "ink-snap:card3@v4": {
+    src: "/examples/learner-taught-slope-v2/assets/ink-fraction.svg",
+    intrinsic_width: 200, intrinsic_height: 140,
+    regions: {
+      "sel-card3-rise": { x: 0.15, y: 0.02, width: 0.72, height: 0.40 },
+      "sel-card3-run": { x: 0.15, y: 0.55, width: 0.72, height: 0.40 },
+      "sel-card3-all": { x: 0.1, y: 0.02, width: 0.82, height: 0.95 }
     }
   }
 };

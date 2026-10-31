@@ -21,6 +21,7 @@ import {
   type TeachingGateResult,
 } from "../../../packages/web-runtime/src/testing.js";
 import { resolveHarnessAsset } from "./assets.js";
+import { withInkMarkup } from "./ink-markup.js";
 
 const fixtures = [
   { id: "quadratic", label: "数学 · 二次函数配方法 V2", path: "/examples/quadratic-v2/lesson.canonical.jsonl" },
@@ -33,6 +34,9 @@ const fixtures = [
   { id: "english-v1", label: "探针 · 英语定语从句 V1", path: "/examples/english-relative-clause/lesson.canonical.jsonl" },
   { id: "learner-slope", label: "学生讲课 · 两点求斜率", path: "/examples/learner-taught-slope-v1/lesson.canonical.jsonl" },
   { id: "learner-unit-circle", label: "学生讲课 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v1/lesson.canonical.jsonl" },
+  { id: "learner-slope-v2", label: "学生讲课 V2 · 两点求斜率（笔迹）", path: "/examples/learner-taught-slope-v2/lesson.canonical.jsonl" },
+  { id: "learner-unit-circle-v2", label: "学生讲课 V2 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v2/lesson.canonical.jsonl" },
+  { id: "learner-box", label: "学生讲课 · 长方体表面积（3D）", path: "/examples/learner-taught-box-v1/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
 const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");
@@ -73,7 +77,7 @@ for (const fixture of fixtures) { const option = document.createElement("option"
 const restoredLessonId = localStorage.getItem(selectedLessonKey);
 lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId) ? requestedLessonId!
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
-const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), resolveHarnessAsset);
+const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), withInkMarkup(resolveHarnessAsset));
 const boardView = mountedBoard.view;
 const viewportInsets = { top: 70, bottom: 190 };
 boardView.setViewportInsets(viewportInsets);
@@ -237,6 +241,7 @@ function applyTeachingLayout(): void {
 function render(): void {
   const projection = session.projection;
   const operation = session.currentOperation;
+  boardView.setScene3dViews(session.scene3dViews);
   boardView.render(projection.board, operation);
   variableControls.render(projection.board, session.activeVariableAnimation);
   const title = events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL Lesson";

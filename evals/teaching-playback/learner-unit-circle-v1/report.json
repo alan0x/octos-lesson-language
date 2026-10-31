@@ -1,12 +1,12 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-10-31T14:34:46.525Z",
+  "generated_at": "2026-10-31T16:51:52.690Z",
   "lesson_id": "lesson-learner-taught-unit-circle-v1-001",
   "fixture": "learner-unit-circle",
   "viewport": {
-    "width": 1280,
-    "height": 720
+    "width": 1686,
+    "height": 880
   },
   "browser": "156.0.8078.74",
   "passed": true,
@@ -23,10 +23,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-1-the-arm",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -40,17 +40,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -77,10 +79,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -94,17 +96,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -131,10 +135,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-3-height-draws-wave",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -149,27 +153,29 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -197,10 +203,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-4-your-turn",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -215,27 +221,29 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -266,10 +274,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-1-the-arm",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -282,15 +290,17 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -319,10 +329,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-1-the-arm",
         "action_op": "teacher.point",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -335,15 +345,17 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle:fragment:radius",
             "kind": "geometry-segment",
-            "x": 484.88,
-            "y": 252.37,
-            "width": 53.41,
+            "x": 691.06,
+            "y": 337.81,
+            "width": 88.12,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -372,10 +384,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-1-the-arm",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -389,10 +401,10 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
@@ -401,16 +413,18 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -438,10 +452,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "action_op": "lesson.variable.animate",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -455,17 +469,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -493,10 +509,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "action_op": "lesson.variable.animate",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -510,17 +526,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -548,10 +566,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "action_op": "lesson.variable.animate",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -565,17 +583,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -603,10 +623,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -620,10 +640,10 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
@@ -632,16 +652,18 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle:fragment:height",
             "kind": "geometry-segment",
-            "x": 484.88,
-            "y": 198.96,
+            "x": 691.06,
+            "y": 249.69,
             "width": 0,
-            "height": 53.41,
+            "height": 88.12,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -669,10 +691,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-2-height-is-sine",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -686,10 +708,10 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
@@ -698,16 +720,18 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 360,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 485,
+            "y": 153,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -735,10 +759,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-3-height-draws-wave",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -752,10 +776,10 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 72,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
@@ -764,16 +788,18 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 360,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -802,10 +828,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-3-height-draws-wave",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -819,10 +845,10 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 72,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
@@ -831,16 +857,18 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:connection:height-to-wave",
             "kind": "connection-line",
-            "x": 312,
-            "y": 244,
-            "width": 48,
-            "height": 0,
+            "x": 470.6,
+            "y": 324,
+            "width": 14.4,
+            "height": 13.5,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -869,10 +897,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-3-height-draws-wave",
         "action_op": "lesson.variable.animate",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -886,17 +914,19 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -925,10 +955,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-3-height-draws-wave",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -943,20 +973,20 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
@@ -965,26 +995,28 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -1013,10 +1045,10 @@
         "beat_id": "lesson-learner-taught-unit-circle-v1-001:step:teach-sine:beat:card-4-your-turn",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.55,
+        "world_scale": 0.9,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -1031,20 +1063,20 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
@@ -1053,26 +1085,28 @@
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:unit-circle",
             "kind": "geometry",
-            "x": 216,
-            "y": 140.36,
-            "width": 240,
-            "height": 207.27,
+            "x": 74.6,
+            "y": 166.5,
+            "width": 396,
+            "height": 342,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-learner-taught-unit-circle-v1-001:node:sine-plot",
             "kind": "plot",
-            "x": 504,
-            "y": 148.55,
-            "width": 240,
-            "height": 190.91,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 16,
+        "min_focal_node_width": 396,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],

@@ -201,7 +201,8 @@ export function scene3dViewForIntent(
   if (length < 1e-9) return { ...current };
   const pitch = Math.asin(Math.max(-1, Math.min(1, direction.z / length)));
   const horizontal = Math.hypot(direction.x, direction.y);
-  const yaw = horizontal < 1e-9 ? current.yaw : Math.atan2(direction.x, direction.y);
+  // Straight above or below, square the part to the screen as the top preset does.
+  const yaw = horizontal < 1e-9 ? 0 : Math.atan2(direction.x, direction.y);
   return { yaw, pitch, zoom: current.zoom };
 }
 
