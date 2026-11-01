@@ -50,3 +50,10 @@ test("a chain of replacements shows only the last one, in the first card's place
   assert.deepEqual(Object.keys(shown.nodes), ["grid", "second"]);
   assert.deepEqual(shown.nodes.second!.placement, { relation: "below", anchor: "grid" });
 });
+
+test("neat math that replaces handwriting drawn on a card sits over that handwriting", () => {
+  const box = { x: 0.1, y: 0.6, width: 0.3, height: 0.2 };
+  const drawn = { id: "ink", kind: "ink", content: { annotation: box }, placement: { relation: "annotates", anchor: "grid" }, hidden: true, replaced_by: "neat" };
+  const shown = visibleBoard(board([grid, drawn, neat]));
+  assert.deepEqual(shown.nodes.neat!.placement, { relation: "annotates", anchor: "grid", annotation: box });
+});

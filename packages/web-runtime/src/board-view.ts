@@ -2352,7 +2352,7 @@ export class InfiniteBoardView {
       const kind = String(node.kind ?? "text");
       const fixedVisualSize = kind === "geometry" || kind === "scene3d"
         || (kind === "diagram" && Array.isArray(node.content?.elements))
-        || node.placement?.relation === "annotates";
+        || (node.placement?.relation === "annotates" && node.content?.annotation !== undefined);
       let element = this.nodeElements.get(node.id);
       const created = !element;
       if (!element) {

@@ -31,7 +31,8 @@ function reanchored(state: SemanticBoardState, placement: JsonObject | undefined
 
 /**
  * The board as the learner shows it. Hidden cards leave the board; a card that
- * replaced another takes that card's place in creation order and its placement;
+ * replaced another takes that card's place in creation order and its placement
+ * (over the handwriting's box when it replaced ink drawn on a card);
  * cards, groups, connections and focus that referred to hidden cards follow the
  * replacement or drop out. A board without hidden cards is returned unchanged.
  */
@@ -48,9 +49,12 @@ export function visibleBoard(state: SemanticBoardState): SemanticBoardState {
     const replacementId = shownInPlaceOf(state, node.id);
     if (!replacementId || shown[replacementId]) continue;
     const replacement = state.nodes[replacementId]!;
+    const placement = reanchored(state, node.placement);
+    // Neat math that replaces handwriting drawn on a card sits where the ink was.
+    const inkBox = placement?.relation === "annotates" ? node.content?.annotation ?? node.placement?.annotation : undefined;
     shown[replacementId] = {
       ...replacement,
-      placement: reanchored(state, node.placement),
+      placement: inkBox ? { ...placement, annotation: inkBox } : placement,
       ...(node.region_id !== undefined ? { region_id: node.region_id } : {}),
     };
   }
