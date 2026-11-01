@@ -69,6 +69,18 @@ try {
     check(getComputedStyle(strokes[0]).animationName === 'ink-stroke', 'replay animates the strokes');
     check(viewport.querySelector('.board-node[data-id="ink"] .image-region[data-id="ink:fragment:top"]'), 'selections are addressable overlays');
     check(viewport.querySelector('.board-node[data-id="missing"] .lesson-ink-missing'), 'a missing snapshot fails visibly');
+    // The pointer lands on a pointed part itself, and on a whole card at its corner.
+    const pointer = viewport.querySelector('.teacher-pointer');
+    const centre = (element) => { const box = element.getBoundingClientRect(); return { x: box.left + box.width / 2, y: box.top + box.height / 2 }; };
+    mounted.view.showPointer({ node_id: 'ink', fragment_id: 'ink:fragment:top' });
+    const part = centre(viewport.querySelector('.image-region[data-id="ink:fragment:top"]'));
+    const shown = centre(pointer);
+    check(!pointer.hidden && Math.abs(shown.x - part.x) < 2 && Math.abs(shown.y - part.y) < 2, `the pointer sits on the pointed part (${JSON.stringify({ shown, part })})`);
+    mounted.view.showPointer({ node_id: 'ink' });
+    const card = viewport.querySelector('.board-node[data-id="ink"]').getBoundingClientRect();
+    check(!pointer.hidden && centre(pointer).y < card.top + 10, 'a whole card is pointed at its corner');
+    mounted.view.showPointer(undefined);
+    check(pointer.hidden, 'the pointer can be hidden');
     await new Promise((done) => setTimeout(done, 2500));
     const settled = getComputedStyle(strokes[2]).strokeDashoffset;
     check(settled === '0px' || settled === '0', `strokes end fully drawn (${settled})`);

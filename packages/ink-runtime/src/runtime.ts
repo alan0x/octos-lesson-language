@@ -4,6 +4,7 @@ import {
   Stroke,
   Editor,
   EditorEventType,
+  Erase,
   EraserTool,
   getLocalizationTable,
   isRestylableComponent,
@@ -1087,6 +1088,14 @@ export class InkRuntime {
   }
 
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
+
+  /** Removes the selected strokes, for example once something neat replaces them. Undo restores them. */
+  async deleteSelection(): Promise<void> {
+    const components = this.selectedComponents;
+    if (!components.length) return;
+    this.clearSelection();
+    await this.editor.dispatch(new Erase(components));
+  }
 
   setSelectionMode(mode: InkSelectionMode): void {
     this.selectionMode = mode;

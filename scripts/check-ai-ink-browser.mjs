@@ -10,10 +10,10 @@ const outfile = join(temp, 'probe.js');
 await build({ stdin: { contents: `
 import './packages/ink-runtime/styles.css';
 import { InkRuntime } from './packages/ink-runtime/src/runtime.ts';
-import { Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands } from 'js-draw';
+import { Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands, SelectionTool } from 'js-draw';
 import { assertInkSelectionIntegrity } from './packages/ink-runtime/src/selection-record.ts';
 import { inkComponentOrigin } from './packages/ink-runtime/src/component-identity.ts';
-Object.assign(window, { InkRuntime, Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands, inkComponentOrigin, assertInkSelectionIntegrity });
+Object.assign(window, { SelectionToolForProbe: SelectionTool, InkRuntime, Stroke, Color4, Path, Mat33, Vec2, Erase, uniteCommands, inkComponentOrigin, assertInkSelectionIntegrity });
 `, resolveDir: process.cwd(), loader: 'ts' }, bundle: true, format: 'esm', platform: 'browser', outfile });
 const bundle = await readFile(outfile);
 const styles = await readFile(join(temp, 'probe.css'));
@@ -105,8 +105,15 @@ try {
   await ink.destroy();ink=mountFault();await ink.ready;
   check(ink.state.component_count===2,'concurrent transactions reload');
   check(!await ink.writeAiPaths('parallel-A',['M1 1 L2 1 L2 2 Z']),'parallel ledger preserved');
+  // Deleting a selection removes only the selected strokes, and undo restores them.
+  const [keep,drop]=ink.editor.image.getAllComponents().filter(c=>c.isSelectable());
+  ink.setMode('select');ink.getTool(window.SelectionToolForProbe).setSelection([drop]);
+  await ink.deleteSelection();await ink.saveNow();
+  check(ink.state.component_count===1 && ink.state.selected_count===0,'delete selection removes the selected stroke');
+  check(ink.editor.image.getAllComponents().includes(keep),'delete selection keeps other strokes');
+  await ink.undo();await ink.saveNow();check(ink.state.component_count===2,'undo restores deleted selection');
   await ink.destroy();
-  return {passed:['write','origin','idempotency','undo','redo','reload','capture during save','v5 integrity','save failure retry','undo reload','concurrent writers','legacy write protection','move','copy','partial erase undo redo reload']};
+  return {passed:['delete selection','write','origin','idempotency','undo','redo','reload','capture during save','v5 integrity','save failure retry','undo reload','concurrent writers','legacy write protection','move','copy','partial erase undo redo reload']};
  });
  const move = await page.evaluate(async () => {
    const viewport=document.querySelector('#board'), camera={panX:0,panY:0,scale:1};

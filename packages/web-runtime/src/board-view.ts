@@ -5,7 +5,7 @@ import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-expl
 import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
 import { prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
-import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
+import { referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
@@ -2573,8 +2573,46 @@ export class InfiniteBoardView {
 
   private renderPointer(board: SemanticBoardState, layout: BoardLayout, operation?: PlaybackOperation): void {
     if (operation?.type !== "action.apply" || operation.action?.op !== "teacher.point") return;
-    const rect = targetRect(board, layout, operation.action.target); if (!rect) return;
+    this.placePointer(board, layout, operation.action.target);
+  }
+
+  /**
+   * Shows the teacher's pointer on a target of the board as rendered now, as a
+   * point action does in playback; a hosted recorder uses it to show where the
+   * learner pointed. Undefined hides it.
+   */
+  showPointer(target: CanonicalTarget | undefined): void {
+    this.pointer.hidden = true;
+    if (target && this.board && this.layout) this.placePointer(this.board, this.layout, target);
+  }
+
+  /** A part of a card (a point, a curve, a term) is pointed at itself; a whole card at its corner. */
+  private placePointer(board: SemanticBoardState, layout: BoardLayout, target: CanonicalTarget | undefined): void {
+    const part = typeof target?.fragment_id === "string" ? this.fragmentRect(target.fragment_id) : undefined;
+    if (part) {
+      this.pointer.style.left = `${part.x + part.width / 2 - 13}px`; this.pointer.style.top = `${part.y + part.height / 2 - 13}px`; this.pointer.hidden = false;
+      return;
+    }
+    const rect = targetRect(board, layout, target); if (!rect) return;
     this.pointer.style.left = `${rect.x + rect.width - 8}px`; this.pointer.style.top = `${rect.y - 18}px`; this.pointer.hidden = false;
+  }
+
+  /**
+   * Where a rendered fragment sits on the board, in board coordinates. Its box
+   * is taken as fractions of its card's drawn box, so the camera moving or the
+   * card's own arrival animation does not shift it.
+   */
+  private fragmentRect(fragmentId: string): Rect | undefined {
+    const element = [...this.nodes.querySelectorAll<Element>("[data-id]")].find((candidate) => candidate.getAttribute("data-id") === fragmentId);
+    const card = element?.closest<HTMLElement>(".board-node");
+    if (!element || !card) return undefined;
+    const box = element.getBoundingClientRect();
+    const drawn = card.getBoundingClientRect();
+    const left = parseFloat(card.style.left), top = parseFloat(card.style.top);
+    const width = card.offsetWidth, height = card.offsetHeight;
+    if (!(drawn.width > 0 && drawn.height > 0) || !(box.width > 0 || box.height > 0) || !Number.isFinite(left) || !Number.isFinite(top)) return undefined;
+    const sx = width / drawn.width, sy = height / drawn.height;
+    return { x: left + (box.left - drawn.left) * sx, y: top + (box.top - drawn.top) * sy, width: box.width * sx, height: box.height * sy };
   }
 
   private transform(): void {
