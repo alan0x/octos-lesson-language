@@ -188,17 +188,19 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
 
   // A visual the lesson declares as a comparison/supporting view right_of a
   // visual from an earlier step joins that visual's row instead of opening a
-  // new stage, so the compared figures stay side by side.
-  const anchorVisuals = (id: string): Item[] => {
+  // new stage, so the compared figures stay side by side. A supporting view may
+  // also be declared right_of a card (a formula) in the current row, so what
+  // it shows sits beside what it supports.
+  const anchorItems = (id: string, supporting: boolean): Item[] => {
     const direct = byId.get(id);
-    if (direct) return direct.visual ? [direct] : [];
+    if (direct) return direct.visual || supporting ? [direct] : [];
     return members(id).map(member => byId.get(member)!).filter(item => item?.visual);
   };
   const joinsEarlierRow = (item: Item, stageSections: string[]) => {
     const node = state.nodes[item.id]!;
     if (!item.visual || node.placement?.relation !== 'right_of'
       || !['comparison_visual', 'supporting_visual'].includes(String(node.role ?? ''))) return false;
-    const anchors = anchorVisuals(node.placement?.anchor ?? '');
+    const anchors = anchorItems(node.placement?.anchor ?? '', node.role === 'supporting_visual');
     return anchors.length > 0 && anchors.every(anchor => anchor.section !== item.section && stageSections.includes(anchor.section));
   };
   const joiners = new Set<string>();

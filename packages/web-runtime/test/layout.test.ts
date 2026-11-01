@@ -1026,6 +1026,23 @@ test("a later comparison visual declared right_of an earlier visual joins that r
   assert.ok(plain.nodes.other!.y > plain.nodes.circle!.y + plain.nodes.circle!.height, "an undeclared new visual still opens a new row");
 });
 
+test("a supporting visual declared right_of a formula in the current row joins that row beside it", () => {
+  const board = emptyBoard({ grid: card("grid", "geometry"), slope: card("slope", "math"),
+    graph: card("graph", "plot", { role: "supporting_visual", placement: { relation: "right_of", anchor: "slope" } }) });
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { grid: "card-2", slope: "card-3", graph: "card-4" }, composition: wideComposition };
+  const layout = computeBoardLayout(board, {}, { regions: { r: region } });
+  const n = layout.nodes;
+  assert.equal(n.slope!.y, n.grid!.y, "the formula's card continues the grid's row");
+  assert.equal(n.graph!.y, n.grid!.y, "the graph joins that row");
+  assert.ok(n.graph!.x > n.slope!.x + n.slope!.width, "right after the formula");
+  assert.ok(n.graph!.x - (n.slope!.x + n.slope!.width) <= 80, "and close to it");
+  const plain = computeBoardLayout(emptyBoard({ grid: card("grid", "geometry"), slope: card("slope", "math"), graph: card("graph", "plot") }), {}, { regions: { r: region } });
+  assert.ok(plain.nodes.graph!.y > plain.nodes.grid!.y + plain.nodes.grid!.height, "without the declaration a new graph opens the next row");
+  const comparison = computeBoardLayout(emptyBoard({ grid: card("grid", "geometry"), slope: card("slope", "math"),
+    graph: card("graph", "plot", { role: "comparison_visual", placement: { relation: "right_of", anchor: "slope" } }) }), {}, { regions: { r: region } });
+  assert.ok(comparison.nodes.graph!.y > comparison.nodes.grid!.y, "a comparison view still compares figures only");
+});
+
 test("a lead-in column never splits a comparison pair that fits the reading width", () => {
   const board = emptyBoard({ f: card("f", "math"), a: card("a", "scene3d"),
     b: card("b", "scene3d", { role: "comparison_visual", placement: { relation: "right_of", anchor: "a" } }) });
