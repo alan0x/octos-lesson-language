@@ -2587,6 +2587,11 @@ export class InfiniteBoardView {
     if (target && this.board && this.layout) this.placePointer(this.board, this.layout, target);
   }
 
+  /** Shows the teacher's pointer at a board point, such as on a stroke still being written. */
+  showPointerAt(point: BoardPoint): void {
+    this.pointer.style.left = `${point.x - 13}px`; this.pointer.style.top = `${point.y - 13}px`; this.pointer.hidden = false;
+  }
+
   /** A part of a card (a point, a curve, a term) is pointed at itself; a whole card at its corner. */
   private placePointer(board: SemanticBoardState, layout: BoardLayout, target: CanonicalTarget | undefined): void {
     const part = typeof target?.fragment_id === "string" ? this.fragmentRect(target.fragment_id) : undefined;

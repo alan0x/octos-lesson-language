@@ -107,6 +107,9 @@ try {
   check(!await ink.writeAiPaths('parallel-A',['M1 1 L2 1 L2 2 Z']),'parallel ledger preserved');
   // Deleting a selection removes only the selected strokes, and undo restores them.
   const [keep,drop]=ink.editor.image.getAllComponents().filter(c=>c.isSelectable());
+  {const box=drop.getExactBBox();const found=ink.strokeBoundsAt({x:box.center.x,y:box.center.y},0);
+   check(found&&Math.abs(found.x-box.x)<.01&&Math.abs(found.width-box.width)<.01,'stroke under a point is found');
+   check(ink.strokeBoundsAt({x:5000,y:5000})===null,'no stroke where nothing is drawn');}
   ink.setMode('select');ink.getTool(window.SelectionToolForProbe).setSelection([drop]);
   await ink.deleteSelection();await ink.saveNow();
   check(ink.state.component_count===1 && ink.state.selected_count===0,'delete selection removes the selected stroke');

@@ -81,6 +81,8 @@ try {
     check(!pointer.hidden && centre(pointer).y < card.top + 10, 'a whole card is pointed at its corner');
     mounted.view.showPointer(undefined);
     check(pointer.hidden, 'the pointer can be hidden');
+    mounted.view.showPointerAt({ x: 200, y: 150 });
+    check(!pointer.hidden && pointer.style.left === '187px' && pointer.style.top === '137px', 'the pointer can sit at a board point');
     await new Promise((done) => setTimeout(done, 2500));
     const settled = getComputedStyle(strokes[2]).strokeDashoffset;
     check(settled === '0px' || settled === '0', `strokes end fully drawn (${settled})`);

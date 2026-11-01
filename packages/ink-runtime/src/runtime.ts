@@ -1089,6 +1089,23 @@ export class InkRuntime {
 
   clearSelection(): void { this.getTool(SelectionTool).clearSelection(); }
 
+  /**
+   * The box of the stroke under a board point (within `tolerance` board units),
+   * the smallest when strokes overlap; null when no stroke is there. Lets a
+   * host point at one stroke of live handwriting.
+   */
+  strokeBoundsAt(point: { x: number; y: number }, tolerance = 12): InkSelectionBounds | null {
+    let best: Rect2 | null = null;
+    for (const component of this.editor.image.getAllComponents()) {
+      if (!component.isSelectable()) continue;
+      const box = component.getExactBBox();
+      const near = box.grownBy(tolerance);
+      if (!near.containsPoint(Vec2.of(point.x, point.y))) continue;
+      if (!best || box.area < best.area) best = box;
+    }
+    return best ? { x: best.x, y: best.y, width: best.width, height: best.height } : null;
+  }
+
   /** Removes the selected strokes, for example once something neat replaces them. Undo restores them. */
   async deleteSelection(): Promise<void> {
     const components = this.selectedComponents;
