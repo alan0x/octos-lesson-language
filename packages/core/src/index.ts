@@ -1507,6 +1507,20 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             // Erasing and rewriting shows a newer snapshot of the same ink.
             validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: "new_region" } }, actionPath, resourceContext);
           }
+          // A revision that declares addressable parts (a point added to a
+          // grid) makes exactly those parts addressable from then on; one that
+          // declares none keeps the card's existing parts.
+          const revisedFragments = collectAddressableContent(action.content);
+          if (revisedFragments.length) {
+            const unique = new Set<string>();
+            for (const fragment of revisedFragments) {
+              requireAlias(fragment, `${actionPath}/content`);
+              if (unique.has(fragment)) fail("OLL_DUPLICATE_ALIAS", `${actionPath}/content`, `Fragment '${fragment}' is duplicated`);
+              unique.add(fragment);
+            }
+            validateStructuredContent(action.content, `${actionPath}/content`, unique);
+            registry.get(resolved.alias)!.fragments = unique;
+          }
           return;
         }
 
@@ -1784,12 +1798,13 @@ function normalizeAction(
     };
   }
   if (action.do === "revise") {
+    const target = canonicalTarget(registry, action.target);
     return {
       action_id: actionId,
       op: "board.revise",
-      target: canonicalTarget(registry, action.target),
+      target,
       revision: {
-        content: action.content,
+        content: normalizeAddressableContent(host, target.node_id!, action.content),
         reason: action.reason,
       },
     };

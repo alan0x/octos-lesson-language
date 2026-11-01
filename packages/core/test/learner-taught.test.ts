@@ -247,3 +247,16 @@ test("a view intent turns to look at a highlighted part from the side it faces, 
   assert.equal(view.zoom, 1.4);
   assert.deepEqual(scene3dViewForIntent(node.content, { preset: "front" }, { yaw: 2, pitch: 1, zoom: 0.8 }), { yaw: 0, pitch: 0, zoom: 0.8 });
 });
+
+// ---- revising addressable content
+
+test("a revision that adds a point to a grid makes the new point addressable", () => {
+  const withC = { ...grid.content, points: [...grid.content.points, { as: "point-c", x: 2, y: 4, label: "C" }] };
+  const lesson = inkLesson([grid, { do: "revise", target: "grid", reason: "the learner placed a point", content: withC }, { do: "point", target: "grid#point-c" }]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const state = reduceCanonicalEvents(events);
+  const points = state.nodes["lesson-learner-001:node:grid"]!.content.points as Array<{ id: string }>;
+  assert.deepEqual(points.map((point) => point.id), ["lesson-learner-001:node:grid:fragment:point-a", "lesson-learner-001:node:grid:fragment:point-c"]);
+  rejectsWith(inkLesson([grid, { do: "point", target: "grid#point-c" }]), "OLL_REFERENCE_NOT_FOUND");
+});
