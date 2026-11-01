@@ -2421,7 +2421,8 @@ export class InfiniteBoardView {
         height: fixedVisualSize
           ? provisional.height
           : kind === "math"
-            ? Math.max(72, element.offsetHeight)
+            // Math over a card (neat writing) is as tall as itself, not a flow card's minimum.
+            ? Math.max(node.placement?.relation === "annotates" ? 0 : 72, element.offsetHeight)
             : Math.max(72, Math.ceil(element.scrollHeight + 8)),
       };
       this.nodeMeasurements.set(node.id, { key: measureKey, size: { ...measured[node.id]! } });
