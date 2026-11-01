@@ -72,6 +72,7 @@ export {
   type Rect,
   type RegionLayoutConstraint,
 } from "./layout.js";
+export { visibleBoard } from "./visible-board.js";
 export {
   boardInputTargetsInteractiveUi,
   boardKeyboardTargetsTextInput,
