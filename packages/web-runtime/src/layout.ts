@@ -80,7 +80,7 @@ const TOPIC_GUTTER = 180;
 const MAX_READING_COLUMN_HEIGHT = 760;
 const MAX_READING_COLUMN_ITEMS = 4;
 const MAX_AUTHORED_COLUMN_HEIGHT = 1_150;
-const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "diagram"]);
+const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "ink", "diagram"]);
 
 interface RegionCursor {
   x: number;
@@ -120,6 +120,7 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
+  if (kind === "ink") return { width: 340, height: 230 };
   if (kind === "table") {
     const columns = Array.isArray(content.columns) ? content.columns.length : 3;
     const rows = Array.isArray(content.rows) ? content.rows.length : 2;
@@ -165,7 +166,52 @@ function union(rects: Rect[], padding = 0): Rect | undefined {
   return { x: minX - padding, y: minY - padding, width: maxX - minX + padding * 2, height: maxY - minY + padding * 2 };
 }
 
+/** Where an annotation sits on its anchor, as fractions of the anchor's box. */
+interface AnnotationBox { x: number; y: number; width: number; height: number }
+
+function annotationBox(node: SemanticBoardState["nodes"][string]): AnnotationBox | undefined {
+  const box = (node.content?.annotation ?? node.placement?.annotation) as Partial<AnnotationBox> | undefined;
+  return box && [box.x, box.y, box.width, box.height].every((value) => typeof value === "number") ? box as AnnotationBox : undefined;
+}
+
+/**
+ * Lays out the board. Learner ink that annotates a card does not take part in
+ * the flow: it is drawn on its anchor at the position stored with the ink, so
+ * it moves and scales with that card. A card shown in place of such ink keeps
+ * its own measured size, centred where the ink was. An annotation whose anchor
+ * is not on the board joins the flow instead, so every card has a place.
+ */
 export function computeBoardLayout(
+  state: SemanticBoardState,
+  measuredNodeSizes: MeasuredNodeSizes = {},
+  options: BoardLayoutOptions = {},
+): BoardLayout {
+  const onAnchor = (node: SemanticBoardState["nodes"][string]) => {
+    const anchor = state.nodes[String(node.placement?.anchor)];
+    return node.placement?.relation === "annotates" && Boolean(annotationBox(node)) && Boolean(anchor) && anchor!.placement?.relation !== "annotates";
+  };
+  const annotations = Object.values(state.nodes).filter(onAnchor);
+  if (!annotations.length) return computeFlowLayout(state, measuredNodeSizes, options);
+  const flowNodes = Object.fromEntries(Object.entries(state.nodes).filter(([, node]) => !onAnchor(node)));
+  const layout = computeFlowLayout({ ...state, nodes: flowNodes }, measuredNodeSizes, options);
+  for (const node of annotations) {
+    const anchor = layout.nodes[String(node.placement?.anchor)]!;
+    const box = annotationBox(node)!;
+    const ink = {
+      x: anchor.x + box.x * anchor.width,
+      y: anchor.y + box.y * anchor.height,
+      width: box.width * anchor.width,
+      height: box.height * anchor.height,
+    };
+    const size = node.content?.annotation ? undefined : measuredNodeSizes[node.id];
+    layout.nodes[node.id] = size
+      ? { x: ink.x + (ink.width - size.width) / 2, y: ink.y + (ink.height - size.height) / 2, width: size.width, height: size.height }
+      : ink;
+  }
+  return layout;
+}
+
+function computeFlowLayout(
   state: SemanticBoardState,
   measuredNodeSizes: MeasuredNodeSizes = {},
   options: BoardLayoutOptions = {},

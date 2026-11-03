@@ -1,0 +1,28 @@
+{
+  "session_id": "session-learner-taught-slope-v2-001",
+  "request": "Learner-taught lesson submitted by the host from Jordan's card-by-card recording.",
+  "ink_snapshots": [
+    {
+      "snapshot_id": "ink-snap:card1@v4",
+      "sha256": "25900c0d2d9c6a24512e2410eaa4a795c80baee6e41702f6b32e1c0671fb242f",
+      "selection_ids": [
+        "sel-card1-gentle",
+        "sel-card1-steep"
+      ]
+    },
+    {
+      "snapshot_id": "ink-snap:card2-circle-a@v4",
+      "sha256": "abab2e7d170eaf827209c033a6ce4ffba51799d538f85f81657b95802d74f4b1",
+      "selection_ids": []
+    },
+    {
+      "snapshot_id": "ink-snap:card3@v4",
+      "sha256": "a637f0197d070fc324ef0c11eacec0ff7b3bfab4b3fbd9b7fce6fdf065cdc632",
+      "selection_ids": [
+        "sel-card3-rise",
+        "sel-card3-run",
+        "sel-card3-all"
+      ]
+    }
+  ]
+}

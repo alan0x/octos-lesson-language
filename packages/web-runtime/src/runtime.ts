@@ -1,4 +1,4 @@
-import { checkNumericAnswer, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
+import { checkNumericAnswer, scene3dViewForIntent, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -240,7 +240,7 @@ function actionBaseDelay(operation: PlaybackOperation): number {
     const length = visibleContentLength(action.node?.content);
     if (kind === "math") return 1_100 + Math.min(2_200, length * 55);
     if (kind === "table") return 1_600 + Math.min(1_800, length * 12);
-    if (["diagram", "plot", "image", "shape"].includes(kind)) return 1_800;
+    if (["diagram", "plot", "image", "ink", "shape"].includes(kind)) return 1_800;
     if (kind === "text" || kind === "note") {
       return 700 + Math.min(1_700, length * 28);
     }
@@ -478,15 +478,29 @@ export class BrowserLessonSession {
     return [];
   }
   get studentOperations(): StudentOperation[] { return structuredClone(this.studentOperationLog.operations); }
+  /**
+   * Each scene shows its authored camera, then the latest lesson view intent
+   * played so far, then any later turn by the learner. A learner turn recorded
+   * before that intent played gives way to it; older records without a
+   * playback position count as after it.
+   */
   get scene3dViews(): Record<string, StudentScene3dViewState> {
     const views: Record<string, StudentScene3dViewState> = {};
+    const intentPlayedAt = new Map<string, number>();
+    for (let index = 0; index < this.player.cursor; index += 1) {
+      const action = this.player.operations[index]?.action;
+      if (action?.op === "scene3d.view" && action.target?.node_id) intentPlayedAt.set(action.target.node_id, index);
+    }
     for (const node of Object.values(this.player.snapshot.board?.nodes ?? {})) {
-      if (node.kind === "scene3d") views[node.id] = structuredClone(node.content.camera);
+      if (node.kind !== "scene3d") continue;
+      const camera = structuredClone(node.content.camera) as StudentScene3dViewState;
+      views[node.id] = node.view_intent ? scene3dViewForIntent(node.content, node.view_intent, camera) : camera;
     }
     for (const operation of this.studentOperationLog.operations) {
-      if (operation.kind === "scene3d_view") {
-        views[operation.target.node_id] = structuredClone(operation.after);
-      }
+      if (operation.kind !== "scene3d_view") continue;
+      const playedAt = intentPlayedAt.get(operation.target.node_id);
+      if (playedAt !== undefined && operation.playback_cursor !== undefined && operation.playback_cursor <= playedAt) continue;
+      views[operation.target.node_id] = structuredClone(operation.after);
     }
     return views;
   }
@@ -1139,6 +1153,7 @@ export class BrowserLessonSession {
       control: pending.control,
       input: pending.input,
       operationId: id,
+      playbackCursor: this.player.cursor,
     });
     const previousProgress = structuredClone(this.studentTaskProgressLog);
     try {

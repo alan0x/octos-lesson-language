@@ -1,0 +1,226 @@
+{
+  "board_id": "board-session-learner-taught-box-v1-001",
+  "revision": 1,
+  "nodes": {
+    "lesson-learner-taught-box-v1-001:node:box": {
+      "id": "lesson-learner-taught-box-v1-001:node:box",
+      "kind": "scene3d",
+      "role": "diagram",
+      "content": {
+        "title": "A 4 × 3 × 2 box",
+        "fallback": "A rectangular box 4 units long, 3 wide and 2 tall.",
+        "axes": false,
+        "camera": {
+          "yaw": 0.72,
+          "pitch": 0.55,
+          "zoom": 1
+        },
+        "objects": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:prism",
+            "kind": "box",
+            "label": "box",
+            "center": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "size": {
+              "x": 4,
+              "y": 3,
+              "z": 2
+            }
+          }
+        ],
+        "highlights": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:top-face",
+            "kind": "face",
+            "label": "top 4 × 3",
+            "points": [
+              {
+                "x": -2,
+                "y": -1.5,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "y": 1.5,
+                "z": 2
+              },
+              {
+                "x": -2,
+                "y": 1.5,
+                "z": 2
+              }
+            ]
+          },
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:bottom-face",
+            "kind": "face",
+            "label": "bottom 4 × 3",
+            "points": [
+              {
+                "x": -2,
+                "y": -1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": 1.5,
+                "z": 0
+              },
+              {
+                "x": -2,
+                "y": 1.5,
+                "z": 0
+              }
+            ]
+          },
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:front-face",
+            "kind": "face",
+            "label": "front 4 × 2",
+            "points": [
+              {
+                "x": -2,
+                "y": -1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 2
+              },
+              {
+                "x": -2,
+                "y": -1.5,
+                "z": 2
+              }
+            ]
+          },
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:box:fragment:side-face",
+            "kind": "face",
+            "label": "side 3 × 2",
+            "points": [
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": 1.5,
+                "z": 0
+              },
+              {
+                "x": 2,
+                "y": 1.5,
+                "z": 2
+              },
+              {
+                "x": 2,
+                "y": -1.5,
+                "z": 2
+              }
+            ]
+          }
+        ]
+      },
+      "placement": {
+        "relation": "new_region",
+        "region_role": "lesson-origin"
+      },
+      "emphasis": [
+        {
+          "target": {
+            "node_id": "lesson-learner-taught-box-v1-001:node:box",
+            "fragment_id": "lesson-learner-taught-box-v1-001:node:box:fragment:top-face"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-learner-taught-box-v1-001:node:box",
+            "fragment_id": "lesson-learner-taught-box-v1-001:node:box:fragment:bottom-face"
+          },
+          "emphasis": "focus"
+        },
+        {
+          "target": {
+            "node_id": "lesson-learner-taught-box-v1-001:node:box",
+            "fragment_id": "lesson-learner-taught-box-v1-001:node:box:fragment:front-face"
+          },
+          "emphasis": "focus"
+        }
+      ],
+      "view_intent": {
+        "preset": "isometric"
+      }
+    },
+    "lesson-learner-taught-box-v1-001:node:total": {
+      "id": "lesson-learner-taught-box-v1-001:node:total",
+      "kind": "math",
+      "role": "conclusion",
+      "content": {
+        "fragments": [
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total:fragment:pairs",
+            "latex": "2(4\\cdot3)+2(4\\cdot2)+2(3\\cdot2)"
+          },
+          {
+            "id": "lesson-learner-taught-box-v1-001:node:total:fragment:result",
+            "latex": "=24+16+12=52"
+          }
+        ]
+      },
+      "placement": {
+        "relation": "below",
+        "align": "start",
+        "gap": "normal",
+        "anchor": "lesson-learner-taught-box-v1-001:node:box"
+      }
+    }
+  },
+  "connections": {},
+  "groups": {},
+  "focus": [
+    "lesson-learner-taught-box-v1-001:node:total"
+  ],
+  "applied_lessons": [
+    "lesson-learner-taught-box-v1-001"
+  ],
+  "applied_steps": [
+    "lesson-learner-taught-box-v1-001:step:teach-surface-area"
+  ],
+  "applied_actions": [
+    "lesson-learner-taught-box-v1-001:action:1:1:1",
+    "lesson-learner-taught-box-v1-001:action:1:1:2",
+    "lesson-learner-taught-box-v1-001:action:1:1:3",
+    "lesson-learner-taught-box-v1-001:action:1:2:1",
+    "lesson-learner-taught-box-v1-001:action:1:2:2",
+    "lesson-learner-taught-box-v1-001:action:1:2:3",
+    "lesson-learner-taught-box-v1-001:action:1:3:1",
+    "lesson-learner-taught-box-v1-001:action:1:3:2",
+    "lesson-learner-taught-box-v1-001:action:1:3:3",
+    "lesson-learner-taught-box-v1-001:action:1:4:1",
+    "lesson-learner-taught-box-v1-001:action:1:4:2",
+    "lesson-learner-taught-box-v1-001:action:1:4:3"
+  ]
+}

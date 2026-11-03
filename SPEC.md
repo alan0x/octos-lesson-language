@@ -625,6 +625,22 @@ v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表�
 
 暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
 
+### 9.10 `board.hide`（0.6，仅学生讲课课程）
+
+```json
+{"action_id": "…", "op": "board.hide", "target": {"node_id": "…"}}
+```
+
+把孩子自己的一张卡片标记为 `hidden`。之后的动作不能再引用它；显示时它离开白板，以它为锚点的卡片改为锚定在它原来的锚点上。`board.create` 的 `placement.relation: "replaces"` 同样隐藏锚点卡片，并在其上记录 `replaced_by`，新卡片在显示时占用被替换卡片的位置。
+
+### 9.11 `scene3d.view`（0.6）
+
+```json
+{"action_id": "…", "op": "scene3d.view", "target": {"node_id": "…"}, "view": {"show": {"node_id": "…", "fragment_id": "…"}}}
+```
+
+`view` 为 `{"show": <高亮部件>}` 或 `{"preset": "front" | "top" | "side" | "isometric"}`。Reducer 把意图记录为场景节点的 `view_intent`；Runtime 由意图计算相机（从场景物体中心朝向该部件；正上方或正下方时与屏幕对齐），保持缩放。之后学生手动旋转优先，更晚的 `view` 再次生效。
+
 ## 10. 相对布局
 
 `placement` 的规范关系：

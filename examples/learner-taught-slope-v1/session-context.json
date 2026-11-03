@@ -1,0 +1,24 @@
+{
+  "session_id": "session-learner-taught-slope-v1-001",
+  "request": "Learner-taught lesson submitted by the host from a card-by-card recording. Handwriting is carried as frozen ink snapshots because OLL v0.1 has no learner-ink node.",
+  "assets": [
+    {
+      "asset_id": "asset-learner-ink-card1",
+      "media_type": "image/svg+xml",
+      "alt": "Jordan's hand-drawn ramps: a gentle ramp and a steep ramp",
+      "regions": [
+        {"region_id": "asset-learner-ink-card1#region-gentle-ramp", "label": "gentle ramp", "confidence": "high"},
+        {"region_id": "asset-learner-ink-card1#region-steep-ramp", "label": "steep ramp", "confidence": "high"}
+      ]
+    },
+    {
+      "asset_id": "asset-learner-ink-card3",
+      "media_type": "image/svg+xml",
+      "alt": "Jordan's handwritten fraction: 8 minus 2 over 4 minus 1",
+      "regions": [
+        {"region_id": "asset-learner-ink-card3#region-rise", "label": "8 − 2", "confidence": "high"},
+        {"region_id": "asset-learner-ink-card3#region-run", "label": "4 − 1", "confidence": "high"}
+      ]
+    }
+  ]
+}

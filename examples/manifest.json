@@ -64,5 +64,42 @@
     "baseRevision": 0,
     "regionIntent": "new_topic",
     "contextFile": "session-context.json"
+  },
+  {
+    "name": "learner-taught-slope-v1",
+    "lessonId": "lesson-learner-taught-slope-v1-001",
+    "boardId": "board-session-learner-taught-slope-v1-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic",
+    "contextFile": "session-context.json"
+  },
+  {
+    "name": "learner-taught-unit-circle-v1",
+    "lessonId": "lesson-learner-taught-unit-circle-v1-001",
+    "boardId": "board-session-learner-taught-unit-circle-v1-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
+    "name": "learner-taught-slope-v2",
+    "lessonId": "lesson-learner-taught-slope-v2-001",
+    "boardId": "board-session-learner-taught-slope-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic",
+    "contextFile": "session-context.json"
+  },
+  {
+    "name": "learner-taught-unit-circle-v2",
+    "lessonId": "lesson-learner-taught-unit-circle-v2-001",
+    "boardId": "board-session-learner-taught-unit-circle-v2-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
+  },
+  {
+    "name": "learner-taught-box-v1",
+    "lessonId": "lesson-learner-taught-box-v1-001",
+    "boardId": "board-session-learner-taught-box-v1-001",
+    "baseRevision": 0,
+    "regionIntent": "new_topic"
   }
 ]

@@ -1,0 +1,73 @@
+{
+  "profile": "octos.learner-recording",
+  "status": "illustrative-host-input",
+  "note": "Hand-written example of what the host would capture before submission. Not an OLL document and not validated by OLL tooling. Times are milliseconds from the start of each take.",
+  "learner_ref": "learner:demo-riley",
+  "avatar_ref": "avatar:owl",
+  "voice_ref": "voice:learner-bright-2",
+  "topic": {"text": "unit circle and sine", "course_topic": "trig-unit-circle-to-sine", "topic_type": "on_map_lit"},
+  "cards": [
+    {
+      "key": "card-1-the-arm",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "corrected_text": "This is the unit circle. This arm is always length 1.",
+          "events": [
+            {"t": 0, "type": "component.insert", "panel": "unit_circle", "alias": "unit-circle", "creates_variable": {"as": "theta", "initial": 0, "control": "slider"}},
+            {"t": 2600, "type": "tool.laser", "target": {"node": "unit-circle", "part": "radius"}}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "card-2-height-is-sine",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "corrected_text": "Watch the point as I turn the angle. Its height is sin θ. It goes up, comes back a little, and at 90 degrees the height is 1.",
+          "events": [
+            {"t": 800, "type": "variable.drag", "variable": "theta", "via": "geometry_point", "samples_summary": {"from": 0, "to": 1.2, "duration_ms": 2100}},
+            {"t": 2900, "type": "variable.drag", "variable": "theta", "via": "geometry_point", "samples_summary": {"from": 1.2, "to": 0.6, "duration_ms": 800}},
+            {"t": 3700, "type": "variable.drag", "variable": "theta", "via": "geometry_point", "samples_summary": {"from": 0.6, "to": 1.5708, "duration_ms": 1700}, "snapped_to": 1.5707963267948966},
+            {"t": 6100, "type": "tool.highlighter", "target": {"node": "unit-circle", "part": "height"}}
+          ],
+          "segmentation": "Host splits continuous drag samples at direction reversals and pauses ≥ 300 ms; each segment becomes one animate action with duration_intent from its length (< 1.2 s brief, < 3.5 s normal, else extended)."
+        }
+      ]
+    },
+    {
+      "key": "card-3-height-draws-wave",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "corrected_text": "Now I put the angle on a graph. When I turn all the way around, the height draws the wave.",
+          "events": [
+            {"t": 0, "type": "component.insert", "panel": "graph", "alias": "sine-plot", "expression": "sin(x)", "linked_to": {"variable": "theta", "readout": "current-angle"}},
+            {"t": 1500, "type": "tool.arrow", "from": "unit-circle#point-p", "to": "sine-plot#current-angle", "label": "same height"},
+            {"t": 2400, "type": "variable.drag", "variable": "theta", "via": "slider", "samples_summary": {"from": 1.5708, "to": 6.2832, "duration_ms": 6200}}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "card-4-your-turn",
+      "kind": "your_turn",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "corrected_text": "Your turn! After the lesson, drag the point so sine equals negative 1.",
+          "events": [
+            {"t": 3000, "type": "your_turn.demonstrated", "variable": "theta", "value": 4.7124},
+            {"t": 3600, "type": "your_turn.check_picked", "readout": "sin(theta)", "offered": ["theta", "sin(theta)", "cos(theta)"], "target_value": -1},
+            {"t": 4800, "type": "your_turn.hint_spoken", "text": "Where is the point lowest on the circle?"}
+          ]
+        }
+      ]
+    }
+  ]
+}

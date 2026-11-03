@@ -12,7 +12,7 @@ export type JsonObject = { [key: string]: any };
 export type Delivery = "neutral" | "patient" | "encouraging" | "careful" | "emphatic";
 export type ActionPhase = "before_speech" | "during_speech" | "after_speech";
 export type NodeKind = OllNodeKind;
-export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay";
+export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay" | "annotates" | "replaces";
 export type RegistryEntryType = "node" | "connection" | "group";
 
 export interface Placement {
@@ -34,6 +34,8 @@ export interface WriteAction extends BaseAction {
   role: string;
   content: JsonObject;
   place: Placement;
+  /** The learner ink selection this card was made from, as the learner confirmed it. */
+  source?: { selection: string; confirmed_by: "learner" };
 }
 
 export interface ReviseAction extends BaseAction {
@@ -90,7 +92,23 @@ export interface AnimateVariableAction extends BaseAction {
   duration_intent?: "brief" | "normal" | "extended";
 }
 
+/** A learner hides their own card in a learner-taught lesson. */
+export interface HideAction extends BaseAction {
+  do: "hide";
+  target: LocalReference;
+}
+
+/** Turns a 3D scene to show one of its highlighted parts, or to a named view. */
+export interface ViewAction extends BaseAction {
+  do: "view";
+  target: LocalReference;
+  show?: LocalReference;
+  preset?: "front" | "top" | "side" | "isometric";
+}
+
 export type AuthoringAction =
+  | ViewAction
+  | HideAction
   | WriteAction
   | ReviseAction
   | EmphasizeAction
@@ -216,13 +234,24 @@ export interface AuthoringReflection {
   };
 }
 
+export type LessonMode = "explain" | "learner_taught";
+
+/** A learner who taught the lesson, by opaque reference only, and how it is presented. */
+export interface LessonAuthor {
+  kind: "learner";
+  learner_ref: string;
+  presented_by: { avatar_ref: string; voice_ref: string };
+}
+
 export interface AuthoringLesson {
   dsl: "octos.lesson";
   version: "0.1";
   profile: "authoring";
   board_context?: AuthoringBoardContext;
   lesson: {
-    mode: "explain";
+    mode: LessonMode;
+    /** Present exactly when a learner authored the lesson (`learner_taught`). */
+    author?: LessonAuthor;
     language: string;
     title: string;
     goals: string[];
@@ -268,10 +297,18 @@ export interface SessionAsset {
   regions?: SessionRegion[];
 }
 
+/** A frozen selection of the learner's own ink that a learner-taught lesson may show. */
+export interface SessionInkSnapshot {
+  snapshot_id: string;
+  sha256: string;
+  selection_ids?: string[];
+}
+
 export interface ResourceContext {
   session_id?: string;
   request?: string;
   assets?: SessionAsset[];
+  ink_snapshots?: SessionInkSnapshot[];
 }
 
 export interface NormalizationHost {
@@ -320,6 +357,8 @@ export interface CanonicalAction {
     duration_intent: "brief" | "normal" | "extended";
   };
   revision?: { content: JsonObject; reason: string };
+  /** scene3d.view: a highlighted part to show, or a named view. */
+  view?: { show?: CanonicalTarget; preset?: "front" | "top" | "side" | "isometric" };
 }
 
 export interface CanonicalEvent {

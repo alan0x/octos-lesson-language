@@ -1,0 +1,102 @@
+{
+  "profile": "octos.learner-recording",
+  "status": "illustrative-host-input",
+  "note": "Hand-written example of what the host would capture before submission. Not an OLL document and not validated by OLL tooling. Times are milliseconds from the start of each take.",
+  "learner_ref": "learner:demo-jordan",
+  "avatar_ref": "avatar:fox",
+  "voice_ref": "voice:learner-warm-1",
+  "topic": {"text": "slope", "course_topic": "linear-intro-and-slope", "topic_type": "on_map_lit"},
+  "goals_utterance": "Find the slope from any two points",
+  "cards": [
+    {
+      "key": "card-1-what-is-slope",
+      "title": "What is slope?",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "duration_ms": 9400,
+          "asr_text": "Slope is how steep a line is. Like a ramp. A steep ramp has a big soap.",
+          "corrected_text": "Slope is how steep a line is. Like a ramp. A steep ramp has a big slope.",
+          "speech_span_ms": [600, 8700],
+          "events": [
+            {"t": 900, "type": "ink.stroke", "component_ids": ["c1", "c2", "c3"], "note": "ground and gentle ramp"},
+            {"t": 4100, "type": "ink.stroke", "component_ids": ["c4", "c5"], "note": "steep ramp"},
+            {"t": 7300, "type": "tool.laser", "target": {"ink_selection": "sel-card1-steep", "components": ["c4", "c5"]}}
+          ],
+          "ink_snapshot": {"snapshot_id": "ink-snap:card1@v4", "format": "selection-snapshot-v4", "sha256": "…"}
+        }
+      ],
+      "octo_question_after": {
+        "question": "Can a slope be zero? What would that look like?",
+        "answer_text": "Yeah, a flat line. Like the floor.",
+        "published": false
+      }
+    },
+    {
+      "key": "card-2-pick-points",
+      "title": "Pick two points",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "duration_ms": 8200,
+          "corrected_text": "Let's pick two points on a line. Point A is at 1 comma 2, and point B is at 4 comma 8.",
+          "speech_span_ms": [300, 7900],
+          "events": [
+            {"t": 0, "type": "component.insert", "panel": "coordinate_grid", "alias": "grid", "defaults": {"x": [-1, 6], "y": [-1, 9]}},
+            {"t": 2100, "type": "point_tool.place", "node": "grid", "point": "point-a", "x": 1, "y": 2, "label": "A", "label_source": "auto_letter"},
+            {"t": 5200, "type": "point_tool.place", "node": "grid", "point": "point-b", "x": 4, "y": 8, "label": "B", "label_source": "auto_letter"}
+          ]
+        }
+      ]
+    },
+    {
+      "key": "card-3-rise-over-run",
+      "title": "Rise over run",
+      "takes": [
+        {
+          "take": 1,
+          "status": "superseded",
+          "corrected_text": "Rise over run is 3 over 6, so the slope is one half.",
+          "superseded_by_review": "review:card-3-swapped-rise-run"
+        },
+        {
+          "take": 2,
+          "status": "kept",
+          "duration_ms": 11800,
+          "corrected_text": "Rise is 8 minus 2, which is 6. Run is 4 minus 1, which is 3. So the slope is 6 over 3, which is 2.",
+          "speech_span_ms": [400, 11200],
+          "events": [
+            {"t": -1, "type": "ink.carried", "note": "fraction strokes written during take 1 are kept; only speech and pointer actions were re-recorded"},
+            {"t": 1200, "type": "tool.highlighter", "target": {"ink_selection": "sel-card3-rise"}},
+            {"t": 5000, "type": "tool.highlighter", "target": {"ink_selection": "sel-card3-run"}},
+            {"t": 9000, "type": "make_neat.confirmed", "selection": "sel-card3-all", "recognized_latex": "m=\\dfrac{\\text{rise}}{\\text{run}}=\\dfrac{8-2}{4-1}=\\dfrac{6}{3}=2", "learner_edited": true}
+          ],
+          "ink_snapshot": {"snapshot_id": "ink-snap:card3@v4", "format": "selection-snapshot-v4", "sha256": "…"}
+        }
+      ]
+    },
+    {
+      "key": "card-4-check-graph",
+      "title": "Check it on the graph",
+      "takes": [
+        {
+          "take": 1,
+          "status": "kept",
+          "duration_ms": 9100,
+          "corrected_text": "Now let's check it on the graph. The line goes through A and B, and it goes up 2 every time you go right 1.",
+          "speech_span_ms": [200, 8800],
+          "events": [
+            {"t": 300, "type": "graph_it.confirmed", "from": ["grid#point-a", "grid#point-b"], "expression": "2*x", "alias": "line-plot"},
+            {"t": 4200, "type": "tool.laser", "target": {"node": "line-plot", "part": "line"}},
+            {"t": 6500, "type": "tool.arrow", "from": "neat-fraction#result", "to": "line-plot#line", "label": "slope 2"}
+          ]
+        }
+      ]
+    }
+  ],
+  "review": [
+    {"id": "review:card-3-swapped-rise-run", "card": "card-3-rise-over-run", "finding": "Said 3 over 6; rise is 6 and run is 3, so slope is 2. Handwriting was correct, so this is a slip of the tongue.", "resolved_by": "re-record take 2"}
+  ]
+}

@@ -65,6 +65,8 @@ export interface StudentScene3dViewOperation {
   after: StudentScene3dViewState;
   control: StudentScene3dControl;
   input: StudentInputMethod;
+  /** Playback position when the learner turned the scene; later lesson views turn it again. */
+  playback_cursor?: number;
 }
 
 /** A typed answer submitted to a numeric answer task. */
@@ -162,6 +164,7 @@ export function parseStudentOperationLog(
         || !finiteView(operation.after)
         || !scene3dControls.has(operation.control as StudentScene3dControl)
         || !inputMethods.has(operation.input as StudentInputMethod)
+        || (operation.playback_cursor !== undefined && (!Number.isInteger(operation.playback_cursor) || operation.playback_cursor < 0))
       ) return undefined;
       ids.add(operation.id);
       lastSequence = operation.sequence as number;
@@ -281,6 +284,7 @@ export function createStudentScene3dViewOperation(options: {
   control: StudentScene3dControl;
   input: StudentInputMethod;
   operationId?: string;
+  playbackCursor?: number;
 }): StudentScene3dViewOperation {
   const operation: StudentScene3dViewOperation = {
     profile: "octos.student.operation",
@@ -294,6 +298,7 @@ export function createStudentScene3dViewOperation(options: {
     after: structuredClone(options.after),
     control: options.control,
     input: options.input,
+    ...(options.playbackCursor !== undefined ? { playback_cursor: options.playbackCursor } : {}),
   };
   const parsed = parseStudentOperationLog({
     ...emptyStudentOperationLog(options.lessonId),

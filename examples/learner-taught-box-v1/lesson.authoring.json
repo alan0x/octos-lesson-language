@@ -1,0 +1,298 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "learner_taught",
+    "language": "en-US",
+    "title": "Surface area of a box",
+    "author": {
+      "kind": "learner",
+      "learner_ref": "learner:demo-morgan",
+      "presented_by": {
+        "avatar_ref": "avatar:otter",
+        "voice_ref": "voice:learner-calm-3"
+      }
+    },
+    "goals": [
+      "Find the surface area of a box by adding its six faces"
+    ],
+    "adaptation": {
+      "strategies": [
+        "learner-taught",
+        "one-card-per-beat"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "teach-surface-area",
+      "purpose": "Morgan shows each pair of faces of a box and adds their areas",
+      "beats": [
+        {
+          "key": "card-1-the-box",
+          "say": "This box is 4 long, 3 wide and 2 tall. Surface area means the area of all six faces.",
+          "actions": [
+            {
+              "do": "write",
+              "as": "box",
+              "kind": "scene3d",
+              "role": "diagram",
+              "place": {
+                "relation": "new_region",
+                "region_role": "lesson-origin"
+              },
+              "content": {
+                "title": "A 4 × 3 × 2 box",
+                "fallback": "A rectangular box 4 units long, 3 wide and 2 tall.",
+                "axes": false,
+                "camera": {
+                  "yaw": 0.72,
+                  "pitch": 0.55,
+                  "zoom": 1
+                },
+                "objects": [
+                  {
+                    "as": "prism",
+                    "kind": "box",
+                    "label": "box",
+                    "center": {
+                      "x": 0,
+                      "y": 0,
+                      "z": 1
+                    },
+                    "size": {
+                      "x": 4,
+                      "y": 3,
+                      "z": 2
+                    }
+                  }
+                ],
+                "highlights": [
+                  {
+                    "as": "top-face",
+                    "kind": "face",
+                    "label": "top 4 × 3",
+                    "points": [
+                      {
+                        "x": -2,
+                        "y": -1.5,
+                        "z": 2
+                      },
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 2
+                      },
+                      {
+                        "x": 2,
+                        "y": 1.5,
+                        "z": 2
+                      },
+                      {
+                        "x": -2,
+                        "y": 1.5,
+                        "z": 2
+                      }
+                    ]
+                  },
+                  {
+                    "as": "bottom-face",
+                    "kind": "face",
+                    "label": "bottom 4 × 3",
+                    "points": [
+                      {
+                        "x": -2,
+                        "y": -1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": 1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": -2,
+                        "y": 1.5,
+                        "z": 0
+                      }
+                    ]
+                  },
+                  {
+                    "as": "front-face",
+                    "kind": "face",
+                    "label": "front 4 × 2",
+                    "points": [
+                      {
+                        "x": -2,
+                        "y": -1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 2
+                      },
+                      {
+                        "x": -2,
+                        "y": -1.5,
+                        "z": 2
+                      }
+                    ]
+                  },
+                  {
+                    "as": "side-face",
+                    "kind": "face",
+                    "label": "side 3 × 2",
+                    "points": [
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": 1.5,
+                        "z": 0
+                      },
+                      {
+                        "x": 2,
+                        "y": 1.5,
+                        "z": 2
+                      },
+                      {
+                        "x": 2,
+                        "y": -1.5,
+                        "z": 2
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "do": "emphasize",
+              "target": "box#top-face",
+              "emphasis": "focus"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "box"
+              ],
+              "intent": "introduce_box"
+            }
+          ]
+        },
+        {
+          "key": "card-2-the-bottom",
+          "say": "Turn it over. The bottom is a 4 by 3 rectangle, the same as the top. That's 12 twice.",
+          "actions": [
+            {
+              "do": "view",
+              "target": "box",
+              "show": "box#bottom-face"
+            },
+            {
+              "do": "emphasize",
+              "target": "box#bottom-face",
+              "emphasis": "focus"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "box"
+              ],
+              "intent": "show_bottom_face"
+            }
+          ]
+        },
+        {
+          "key": "card-3-the-front",
+          "say": "From the front, this face is 4 by 2, so 8. The back is the same.",
+          "actions": [
+            {
+              "do": "view",
+              "target": "box",
+              "preset": "front"
+            },
+            {
+              "do": "emphasize",
+              "target": "box#front-face",
+              "emphasis": "focus"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "box"
+              ],
+              "intent": "show_front_face"
+            }
+          ]
+        },
+        {
+          "key": "card-4-add-them-up",
+          "say": "The two sides are 3 by 2, so 6 each. Add all six: 24 plus 16 plus 12 is 52.",
+          "actions": [
+            {
+              "do": "view",
+              "target": "box",
+              "preset": "isometric"
+            },
+            {
+              "do": "write",
+              "as": "total",
+              "kind": "math",
+              "role": "conclusion",
+              "content": {
+                "fragments": [
+                  {
+                    "as": "pairs",
+                    "latex": "2(4\\cdot3)+2(4\\cdot2)+2(3\\cdot2)"
+                  },
+                  {
+                    "as": "result",
+                    "latex": "=24+16+12=52"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "box",
+                "align": "start",
+                "gap": "normal"
+              }
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "total"
+              ],
+              "intent": "add_faces"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "A box has three pairs of matching faces; add all six areas: 52 square units.",
+    "focus": [
+      "total"
+    ]
+  }
+}

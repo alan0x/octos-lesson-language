@@ -30,6 +30,7 @@ const EN: Readonly<Record<string, string>> = {
   "{label}：拖动改变角度": "{label}: drag to change the angle",
   "{label} · {sides} 边 · 周长 {perimeter} · 周长÷直径 {ratio}": "{label} · {sides} sides · Perimeter {perimeter} · Perimeter ÷ diameter {ratio}",
   "受控课程图片": "Lesson image", "课程图片": "Lesson image", "知识组": "Knowledge group",
+  "这段手写暂时无法显示：{description}": "This handwriting can't be shown right now: {description}",
   "请结合旁白理解空间关系。": "Use the narration to understand the spatial relationships.",
   "三维场景暂时无法交互。静态说明：{description}": "The 3D scene is temporarily unavailable for interaction. Static description: {description}",
 };

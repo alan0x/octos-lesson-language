@@ -308,9 +308,23 @@ new_region, below, above, left_of, right_of, near, inside, overlay
 
 Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学内容，不自动补充缺失讲解，也不修复学科错误。
 
-## 10. 当前限制
+## 10. 学生讲课课程（执行版本 0.6）
 
-学生笔迹不是 Authoring Profile 的节点类型。模型可以在后续增强请求中收到宿主提供的只读 `source_id`，但不能输出“修改、规整、纠正、移动或删除原稿”的动作。所有建议和新图必须成为独立白板内容。
+学生讲课课程由宿主从孩子的逐卡录制确定性生成，不由模型生成（决定记录 0005–0008）。
+
+- `lesson.mode: "learner_taught"`，并且必须带 `lesson.author`：`{"kind": "learner", "learner_ref": "learner:<不透明标识>", "presented_by": {"avatar_ref": "avatar:…", "voice_ref": "voice:…"}}`。`explain` 课程不能带 learner 作者。
+- `write kind: "ink"`：`content` 为 `snapshot_id`、`sha256`、`alt`，可选 `replay`（`stroke_order` / `static`）与 `selections`（`[{"as", "selection_id", "label"}]`，成为可寻址 fragment）。快照必须出现在 Session Context 的 `ink_snapshots` 中且校验值一致。
+- `place.relation: "annotates"`：笔迹标注附着在一张卡片上，`content.annotation` 给出它在锚点卡片上的相对位置（0–1）。
+- `place.relation: "replaces"`：新卡片占用被替换卡片的位置，被替换卡片隐藏（“整理一下”）。
+- `{"do": "hide", "target": "<卡片>"}`：隐藏孩子自己的整张卡片。擦除重写用 `revise` 指向新的快照。被隐藏或替换的卡片之后不能再被引用。
+- `write.source`：`{"selection": "sel-…", "confirmed_by": "learner"}`，记录卡片由哪段笔迹选区派生。
+- 以上笔迹、标注、替换、隐藏与来源只允许出现在 `learner_taught` 课程中。
+
+`{"do": "view", "target": "<3D 场景>", "show": "<场景>#<高亮部件>"}` 或 `"preset": "front" | "top" | "side" | "isometric"`：把 3D 场景转到能看到某个高亮部件或某个预设视角，二者选一；不写相机数值。任何课程都可以使用。
+
+## 11. 当前限制
+
+学生笔迹不是 AI 生成课程（`explain`）的节点类型。模型可以在后续增强请求中收到宿主提供的只读 `source_id`，但不能输出“修改、规整、纠正、移动或删除原稿”的动作。所有建议和新图必须成为独立白板内容。
 
 - `image`、`diagram` 和 `table` 已在几何示例中完成第一轮表达验证，但还没有前端视觉 Runtime 证明；
 - `shape` 和复杂科学流程图仍待完整示例；
