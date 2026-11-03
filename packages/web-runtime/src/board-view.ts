@@ -2680,25 +2680,68 @@ export class InfiniteBoardView {
     if (step.length) result = extend(result, step, STEP_CONTEXT_MIN_SCALE_SHARE, false);
     return result;
   }
+  /**
+   * Keeps an automatic teaching frame at or above the host's readability
+   * floor. When related cards cannot all fit at that floor, the earliest are
+   * left beside the frame so the newest stay readable. Without a host floor
+   * the minimum is the runtime default and every card is kept.
+   */
+  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect): Rect[] {
+    const floor = this.automaticCameraMinimumScale;
+    const fits = (candidate: Rect[]) => planFocusCamera(
+      candidate, current, viewport, "relationship", this.viewportInsets, floor, this.automaticCameraMaximumScale,
+    ).scale >= floor - .000_001;
+    let kept = rects;
+    while (kept.length > 1 && !fits(kept)) kept = kept.slice(1);
+    return kept;
+  }
+  /**
+   * Moves a narrowed frame toward the cards it left out, as far as the kept
+   * cards stay fully inside the usable viewport, so earlier related cards
+   * remain partly or wholly visible.
+   */
+  private towardLeftContext(camera: CameraState, kept: Rect[], all: Rect[], viewport: DOMRect): CameraState {
+    const keptRect = unionRects(kept); const allRect = unionRects(all);
+    const margin = 16; const insets = this.viewportInsets;
+    const left = (insets.left ?? 0) + margin; const right = viewport.width - (insets.right ?? 0) - margin;
+    const top = (insets.top ?? 0) + margin; const bottom = viewport.height - (insets.bottom ?? 0) - margin;
+    const toward = (pan: number, low: number, high: number, start: number, end: number, keptStart: number, keptEnd: number) => {
+      const centred = (low + high) / 2 - ((start + end) / 2) * camera.scale;
+      const min = low - keptStart * camera.scale; const max = high - keptEnd * camera.scale;
+      return min <= max ? Math.min(max, Math.max(min, centred)) : pan;
+    };
+    return {
+      scale: camera.scale,
+      panX: toward(camera.panX, left, right, allRect.x, allRect.x + allRect.width, keptRect.x, keptRect.x + keptRect.width),
+      panY: toward(camera.panY, top, bottom, allRect.y, allRect.y + allRect.height, keptRect.y, keptRect.y + keptRect.height),
+    };
+  }
   private focusRects(targetIds: string[], requestedRects: Rect[], board: SemanticBoardState): void {
     if (targetIds.length) this.lastAttentionTargets = [...targetIds];
-    const rects = this.withTeachingContext(targetIds, requestedRects, board);
     const viewport = this.viewport.getBoundingClientRect();
-    const mode: AttentionMode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
-      ? "relationship"
-      : targetIds.some((id) => Boolean(board.groups[id]))
-        ? "overview"
-        : "detail";
     const current = { panX: this.panX, panY: this.panY, scale: this.scale };
-    const camera = planFocusCamera(
+    const composed = this.withTeachingContext(targetIds, requestedRects, board);
+    const rects = this.readableRects(composed, current, viewport);
+    const narrowed = rects.length < composed.length;
+    const mode: AttentionMode = narrowed
+      ? (rects.length > 1 ? "relationship" : "detail")
+      : rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
+        ? "relationship"
+        : targetIds.some((id) => Boolean(board.groups[id]))
+          ? "overview"
+          : "detail";
+    // A narrowed frame stays at the floor so the cards left beside it remain
+    // as visible as possible, instead of zooming in on what was kept.
+    const planned = planFocusCamera(
       rects,
       current,
       viewport,
       mode,
       this.viewportInsets,
       this.automaticCameraMinimumScale,
-      this.automaticCameraMaximumScale,
+      narrowed ? this.automaticCameraMinimumScale : this.automaticCameraMaximumScale,
     );
+    const camera = narrowed ? this.towardLeftContext(planned, rects, composed, viewport) : planned;
     // Every automatic teaching request passes through here. When the scene
     // is already fully visible, close to the planned scale and near the
     // centre, keep the camera still instead of re-centring on each pointer,

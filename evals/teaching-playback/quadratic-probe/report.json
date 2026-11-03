@@ -1,14 +1,14 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T15:09:01.491Z",
+  "generated_at": "2026-10-31T15:43:30.420Z",
   "lesson_id": "lesson-quadratic-001",
   "fixture": "quadratic-v1",
   "viewport": {
-    "width": 1280,
-    "height": 720
+    "width": 1686,
+    "height": 880
   },
-  "browser": "150.0.7871.184",
+  "browser": "156.0.8078.74",
   "passed": false,
   "expected_result": "fail",
   "expectation_met": true,
@@ -23,10 +23,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:write-problem",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -37,6 +37,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -70,10 +72,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:preview-meaning",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -84,6 +86,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -117,10 +121,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:find-square:beat:focus-linear-term",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 3,
         "connection_count": 0,
         "group_count": 0,
@@ -131,6 +135,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -165,10 +171,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:find-square:beat:construct-identity",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 0,
@@ -179,6 +185,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -214,10 +222,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:add-and-subtract-nine",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 2,
         "group_count": 0,
@@ -228,6 +236,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -264,10 +274,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:combine-result",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 3,
         "group_count": 0,
@@ -278,6 +288,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -315,10 +327,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:draw-parabola",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 0.9,
         "node_count": 7,
         "connection_count": 5,
         "group_count": 0,
@@ -329,6 +341,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -367,10 +381,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:explain-translation",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 6,
         "group_count": 0,
@@ -381,6 +395,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -420,10 +436,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:group-derivation",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 6,
         "group_count": 2,
@@ -434,6 +450,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -473,10 +491,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:write-summary",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.42,
+        "world_scale": 0.9,
         "node_count": 9,
         "connection_count": 6,
         "group_count": 3,
@@ -490,87 +508,89 @@
           {
             "id": "lesson-quadratic-001:node:original",
             "kind": "math",
-            "x": 332.6,
-            "y": 98.31,
-            "width": 116.58,
-            "height": 39.97,
-            "visible": true,
-            "fully_in_view": true
+            "x": 343.61,
+            "y": -126.5,
+            "width": 247.5,
+            "height": 64.8,
+            "visible": false,
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:half-coefficient",
             "kind": "math",
-            "x": 332.6,
-            "y": 160.77,
-            "width": 116.58,
-            "height": 48.3,
+            "x": 343.61,
+            "y": 58,
+            "width": 247.5,
+            "height": 68.4,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:square-identity",
             "kind": "math",
-            "x": 332.6,
-            "y": 231.55,
-            "width": 116.58,
-            "height": 39.97,
+            "x": 343.61,
+            "y": 140.8,
+            "width": 247.5,
+            "height": 64.8,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:balanced-expression",
             "kind": "math",
-            "x": 332.6,
-            "y": 308.16,
-            "width": 116.58,
-            "height": 39.97,
-            "visible": true,
-            "fully_in_view": true
+            "x": 627.11,
+            "y": -126.5,
+            "width": 243.9,
+            "height": 64.8,
+            "visible": false,
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:vertex-form",
             "kind": "math",
-            "x": 332.6,
-            "y": 370.62,
-            "width": 116.58,
-            "height": 39.97,
+            "x": 627.11,
+            "y": -47.3,
+            "width": 243.9,
+            "height": 64.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:parabola",
             "kind": "plot",
-            "x": 485.83,
-            "y": 280.27,
-            "width": 141.57,
-            "height": 95.77,
+            "x": 343.61,
+            "y": 270.4,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:translation-note",
             "kind": "note",
-            "x": 498.03,
-            "y": 398.26,
-            "width": 117.16,
-            "height": 56.3,
+            "x": 764.55,
+            "y": 269.84,
+            "width": 258.09,
+            "height": 121.72,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:summary",
             "kind": "note",
-            "x": 318.31,
-            "y": 461.13,
-            "width": 119.43,
-            "height": 62.97,
+            "x": 764.52,
+            "y": 426.44,
+            "width": 258.16,
+            "height": 136.12,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 116.58,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 243.9,
+        "focus_fits_readably": false,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.62,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -592,13 +612,8 @@
         "remounted_nodes": []
       },
       "gate": {
-        "passed": false,
-        "issues": [
-          {
-            "code": "G3_FOCUS_TOO_SMALL",
-            "message": "Smallest focused card is 116.58px; expected at least 240px"
-          }
-        ]
+        "passed": true,
+        "issues": []
       }
     }
   ],
@@ -613,10 +628,10 @@
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:write-problem",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -629,15 +644,17 @@
           {
             "id": "lesson-quadratic-001:node:original",
             "kind": "math",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 218.4,
-            "height": 74.88,
+            "x": 589.5,
+            "y": 284.4,
+            "width": 207.9,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -666,10 +683,10 @@
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:write-problem",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -682,15 +699,17 @@
           {
             "id": "lesson-quadratic-001:node:target-form",
             "kind": "math",
-            "x": 460.64,
-            "y": 153.6,
-            "width": 218.4,
-            "height": 90.48,
+            "x": 563.1,
+            "y": 281.65,
+            "width": 239.8,
+            "height": 84.7,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -720,10 +739,10 @@
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:preview-meaning",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -736,15 +755,17 @@
           {
             "id": "lesson-quadratic-001:node:target-form:fragment:template",
             "kind": "math-fragment",
-            "x": 499.93,
-            "y": 176.63,
-            "width": 139.82,
-            "height": 24.13,
+            "x": 584.41,
+            "y": 295.98,
+            "width": 197.17,
+            "height": 34.03,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -774,10 +795,10 @@
         "beat_id": "lesson-quadratic-001:step:establish-goal:beat:preview-meaning",
         "action_op": "teacher.point",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -790,15 +811,17 @@
           {
             "id": "lesson-quadratic-001:node:target-form",
             "kind": "math",
-            "x": 460.64,
-            "y": 153.6,
-            "width": 218.4,
-            "height": 90.48,
+            "x": 563.1,
+            "y": 281.65,
+            "width": 239.8,
+            "height": 84.7,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -828,10 +851,10 @@
         "beat_id": "lesson-quadratic-001:step:find-square:beat:focus-linear-term",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -844,15 +867,17 @@
           {
             "id": "lesson-quadratic-001:node:original:fragment:linear",
             "kind": "math-fragment",
-            "x": 278.32,
-            "y": 184.43,
-            "width": 36.03,
-            "height": 24.13,
+            "x": 676.67,
+            "y": 306.98,
+            "width": 50.81,
+            "height": 34.03,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -882,10 +907,10 @@
         "beat_id": "lesson-quadratic-001:step:find-square:beat:focus-linear-term",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 3,
         "connection_count": 0,
         "group_count": 0,
@@ -898,15 +923,17 @@
           {
             "id": "lesson-quadratic-001:node:half-coefficient",
             "kind": "math",
-            "x": 173.6,
-            "y": 278.4,
-            "width": 218.4,
-            "height": 90.48,
+            "x": 563.1,
+            "y": 282.2,
+            "width": 239.8,
+            "height": 83.6,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -937,10 +964,10 @@
         "beat_id": "lesson-quadratic-001:step:find-square:beat:construct-identity",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 0,
         "group_count": 0,
@@ -953,15 +980,17 @@
           {
             "id": "lesson-quadratic-001:node:square-identity",
             "kind": "math",
-            "x": 173.6,
-            "y": 411,
-            "width": 218.4,
-            "height": 74.88,
+            "x": 531.75,
+            "y": 284.4,
+            "width": 302.5,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -993,10 +1022,10 @@
         "beat_id": "lesson-quadratic-001:step:find-square:beat:construct-identity",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 0,
@@ -1009,15 +1038,17 @@
           {
             "id": "lesson-quadratic-001:connection:half-to-square",
             "kind": "connection-line",
-            "x": 282.8,
-            "y": 368.88,
-            "width": 101.79,
-            "height": 42.12,
+            "x": 683,
+            "y": 266.8,
+            "width": 0,
+            "height": 17.6,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1049,10 +1080,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:add-and-subtract-nine",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 0,
@@ -1065,15 +1096,17 @@
           {
             "id": "lesson-quadratic-001:node:balanced-expression",
             "kind": "math",
-            "x": 173.6,
-            "y": 479.12,
-            "width": 218.4,
-            "height": 74.88,
+            "x": 533.95,
+            "y": 284.4,
+            "width": 298.1,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1106,10 +1139,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:add-and-subtract-nine",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 0,
@@ -1122,15 +1155,17 @@
           {
             "id": "lesson-quadratic-001:node:balanced-expression:fragment:add-nine",
             "kind": "math-fragment",
-            "x": 294.23,
-            "y": 502.54,
-            "width": 24.89,
-            "height": 23.35,
+            "x": 699.12,
+            "y": 307.53,
+            "width": 35.1,
+            "height": 32.93,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1163,10 +1198,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:add-and-subtract-nine",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 0,
@@ -1179,15 +1214,17 @@
           {
             "id": "lesson-quadratic-001:node:balanced-expression:fragment:subtract-nine",
             "kind": "math-fragment",
-            "x": 321.36,
-            "y": 502.54,
-            "width": 24.89,
-            "height": 23.35,
+            "x": 737.38,
+            "y": 307.53,
+            "width": 35.1,
+            "height": 32.93,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1220,10 +1257,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:add-and-subtract-nine",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 2,
         "group_count": 0,
@@ -1236,15 +1273,17 @@
           {
             "id": "lesson-quadratic-001:connection:cancel-nine",
             "kind": "connection-line",
-            "x": 282.8,
-            "y": 479.12,
+            "x": 683,
+            "y": 324,
             "width": 0,
-            "height": 37.44,
+            "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1277,10 +1316,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:combine-result",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 0,
@@ -1293,15 +1332,17 @@
           {
             "id": "lesson-quadratic-001:node:vertex-form",
             "kind": "math",
-            "x": 173.6,
-            "y": 479.12,
-            "width": 218.4,
-            "height": 74.88,
+            "x": 533.95,
+            "y": 284.4,
+            "width": 298.1,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1335,10 +1376,10 @@
         "beat_id": "lesson-quadratic-001:step:preserve-equality:beat:combine-result",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 3,
         "group_count": 0,
@@ -1351,15 +1392,17 @@
           {
             "id": "lesson-quadratic-001:connection:identity-to-result",
             "kind": "connection-line",
-            "x": 282.8,
-            "y": 293.48,
-            "width": 101.79,
-            "height": 185.64,
+            "x": 489.95,
+            "y": 324,
+            "width": 44,
+            "height": 229.9,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1393,10 +1436,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:draw-parabola",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 0.9,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 0,
@@ -1409,15 +1452,17 @@
           {
             "id": "lesson-quadratic-001:node:parabola",
             "kind": "plot",
-            "x": 460.64,
-            "y": 309.86,
-            "width": 265.2,
-            "height": 179.4,
+            "x": 485,
+            "y": 166.5,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1452,10 +1497,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:draw-parabola",
         "action_op": "teacher.point",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 0.9,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 0,
@@ -1468,15 +1513,17 @@
           {
             "id": "lesson-quadratic-001:node:parabola:fragment:vertex",
             "kind": "plot-point",
-            "x": 579.77,
-            "y": 449.03,
-            "width": 7.8,
-            "height": 7.8,
+            "x": 671.85,
+            "y": 390.96,
+            "width": 8.96,
+            "height": 8.96,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1511,10 +1558,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:draw-parabola",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 0.9,
         "node_count": 7,
         "connection_count": 4,
         "group_count": 0,
@@ -1527,15 +1574,17 @@
           {
             "id": "lesson-quadratic-001:connection:square-to-horizontal",
             "kind": "connection-line",
-            "x": 382.14,
-            "y": 178.72,
-            "width": 78.5,
-            "height": 300.4,
+            "x": 881,
+            "y": -118.8,
+            "width": 156.6,
+            "height": 442.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1570,10 +1619,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:draw-parabola",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 0.9,
         "node_count": 7,
         "connection_count": 5,
         "group_count": 0,
@@ -1586,15 +1635,17 @@
           {
             "id": "lesson-quadratic-001:connection:constant-to-vertical",
             "kind": "connection-line",
-            "x": 382.14,
-            "y": 178.72,
-            "width": 78.5,
-            "height": 300.4,
+            "x": 881,
+            "y": -118.8,
+            "width": 156.6,
+            "height": 442.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1629,10 +1680,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:explain-translation",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 5,
         "group_count": 0,
@@ -1645,15 +1696,17 @@
           {
             "id": "lesson-quadratic-001:node:translation-note",
             "kind": "note",
-            "x": 483.5,
-            "y": 449,
-            "width": 219.48,
-            "height": 105.47,
+            "x": 528.24,
+            "y": 249.63,
+            "width": 309.52,
+            "height": 148.75,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1689,10 +1742,10 @@
         "beat_id": "lesson-quadratic-001:step:interpret-graph:beat:explain-translation",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 6,
         "group_count": 0,
@@ -1705,15 +1758,17 @@
           {
             "id": "lesson-quadratic-001:connection:graph-to-translation",
             "kind": "connection-line",
-            "x": 593.24,
-            "y": 407.36,
-            "width": 119.34,
-            "height": 42.12,
+            "x": 497.76,
+            "y": 324,
+            "width": 30.8,
+            "height": 118.8,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1749,10 +1804,10 @@
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:group-derivation",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 6,
         "group_count": 1,
@@ -1764,16 +1819,18 @@
         "active_targets": [
           {
             "id": "lesson-quadratic-001:group:derivation-group",
-            "kind": "board-group",
-            "x": 173.6,
-            "y": -120.7,
-            "width": 271.44,
-            "height": 638.04,
+            "kind": "group-members",
+            "x": 13.76,
+            "y": -234.8,
+            "width": 644.6,
+            "height": 405.9,
             "visible": true,
             "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1809,10 +1866,10 @@
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:group-derivation",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 6,
         "group_count": 2,
@@ -1825,15 +1882,17 @@
           {
             "id": "lesson-quadratic-001:group:graph-group",
             "kind": "board-group",
-            "x": 460.64,
-            "y": 220.16,
-            "width": 318.24,
-            "height": 379.08,
+            "x": -23.64,
+            "y": 212.9,
+            "width": 898.48,
+            "height": 459.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1869,10 +1928,10 @@
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:write-summary",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 6,
         "group_count": 2,
@@ -1885,15 +1944,17 @@
           {
             "id": "lesson-quadratic-001:node:summary",
             "kind": "note",
-            "x": 173.35,
-            "y": 436.51,
-            "width": 223.73,
-            "height": 117.97,
+            "x": 525.23,
+            "y": 240.81,
+            "width": 315.52,
+            "height": 166.37,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1930,10 +1991,10 @@
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:write-summary",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 6,
         "group_count": 3,
@@ -1945,16 +2006,18 @@
         "active_targets": [
           {
             "id": "lesson-quadratic-001:group:lesson-map",
-            "kind": "board-group",
-            "x": 173.6,
-            "y": -269.68,
-            "width": 658.32,
-            "height": 876.72,
+            "kind": "group-members",
+            "x": 10.79,
+            "y": -435,
+            "width": 829.96,
+            "height": 870.1,
             "visible": true,
             "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1991,10 +2054,10 @@
         "beat_id": "lesson-quadratic-001:step:organize-lesson:beat:write-summary",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.42,
+        "world_scale": 0.9,
         "node_count": 9,
         "connection_count": 6,
         "group_count": 3,
@@ -2008,80 +2071,80 @@
           {
             "id": "lesson-quadratic-001:node:original",
             "kind": "math",
-            "x": 332.6,
-            "y": 98.31,
-            "width": 116.58,
-            "height": 39.97,
-            "visible": true,
-            "fully_in_view": true
+            "x": 343.61,
+            "y": -126.5,
+            "width": 247.5,
+            "height": 64.8,
+            "visible": false,
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:half-coefficient",
             "kind": "math",
-            "x": 332.6,
-            "y": 160.77,
-            "width": 116.58,
-            "height": 48.3,
+            "x": 343.61,
+            "y": 58,
+            "width": 247.5,
+            "height": 68.4,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:square-identity",
             "kind": "math",
-            "x": 332.6,
-            "y": 231.55,
-            "width": 116.58,
-            "height": 39.97,
+            "x": 343.61,
+            "y": 140.8,
+            "width": 247.5,
+            "height": 64.8,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:balanced-expression",
             "kind": "math",
-            "x": 332.6,
-            "y": 308.16,
-            "width": 116.58,
-            "height": 39.97,
-            "visible": true,
-            "fully_in_view": true
+            "x": 627.11,
+            "y": -126.5,
+            "width": 243.9,
+            "height": 64.8,
+            "visible": false,
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:vertex-form",
             "kind": "math",
-            "x": 332.6,
-            "y": 370.62,
-            "width": 116.58,
-            "height": 39.97,
+            "x": 627.11,
+            "y": -47.3,
+            "width": 243.9,
+            "height": 64.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-quadratic-001:node:parabola",
             "kind": "plot",
-            "x": 485.83,
-            "y": 280.27,
-            "width": 141.57,
-            "height": 95.77,
+            "x": 343.61,
+            "y": 270.4,
+            "width": 396,
+            "height": 315,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:translation-note",
             "kind": "note",
-            "x": 498.03,
-            "y": 398.26,
-            "width": 117.16,
-            "height": 56.3,
+            "x": 764.55,
+            "y": 269.84,
+            "width": 258.09,
+            "height": 121.72,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-quadratic-001:node:summary",
             "kind": "note",
-            "x": 318.31,
-            "y": 461.13,
-            "width": 119.43,
-            "height": 62.97,
+            "x": 764.52,
+            "y": 426.44,
+            "width": 258.16,
+            "height": 136.12,
             "visible": true,
             "fully_in_view": true
           }
@@ -2089,17 +2152,19 @@
         "active_targets": [
           {
             "id": "lesson-quadratic-001:group:lesson-map",
-            "kind": "board-group",
-            "x": 304.29,
-            "y": 70,
-            "width": 351.42,
-            "height": 468,
+            "kind": "group-members",
+            "x": 343.61,
+            "y": -126.5,
+            "width": 679.07,
+            "height": 711.9,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
-        "min_focal_node_width": 116.58,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 243.9,
+        "focus_fits_readably": false,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.62,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],

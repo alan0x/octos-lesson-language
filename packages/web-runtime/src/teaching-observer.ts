@@ -32,6 +32,10 @@ export interface TeachingFrameObservation {
   focal_nodes: TeachingRectObservation[];
   active_targets: TeachingRectObservation[];
   min_focal_node_width: number | null;
+  /** Whether every focused card fits on screen at once with body text of at least 12.5 px. */
+  focus_fits_readably: boolean;
+  /** The same, for the current action's targets. */
+  active_targets_fit_readably: boolean;
   min_focal_body_font_px: number | null;
   min_focal_diagram_edge_px: number | null;
   math_errors: number;
@@ -101,7 +105,7 @@ function activeTargetIds(action: CanonicalAction | undefined): string[] {
   return direct ? [direct] : [];
 }
 
-function focalNodeIds(board: SemanticBoardState): string[] {
+function memberNodeIds(board: SemanticBoardState, targets: readonly string[]): string[] {
   const result = new Set<string>();
   const visit = (id: string, seen = new Set<string>()) => {
     if (seen.has(id)) return;
@@ -110,8 +114,50 @@ function focalNodeIds(board: SemanticBoardState): string[] {
     const group = board.groups[id];
     for (const member of (group?.members as string[] | undefined) ?? []) visit(member, seen);
   };
-  for (const target of board.focus) visit(target);
+  for (const target of targets) visit(target);
   return [...result];
+}
+
+function focalNodeIds(board: SemanticBoardState): string[] {
+  return memberNodeIds(board, board.focus);
+}
+
+// A group whose frame would cover unrelated cards is drawn without a frame,
+// so what the learner sees of it is its member cards.
+function observeFramelessGroup(world: HTMLElement, board: SemanticBoardState, viewport: DOMRect, id: string): TeachingRectObservation | undefined {
+  if (!board.groups[id]) return undefined;
+  const members = memberNodeIds(board, [id]).map((member) => elementById(world, member)).filter(Boolean) as Element[];
+  if (!members.length) return undefined;
+  const rects = members.map((element) => observeRect(element, viewport, id));
+  const left = Math.min(...rects.map((rect) => rect.x)); const top = Math.min(...rects.map((rect) => rect.y));
+  return {
+    id, kind: "group-members", x: left, y: top,
+    width: rounded(Math.max(...rects.map((rect) => rect.x + rect.width)) - left),
+    height: rounded(Math.max(...rects.map((rect) => rect.y + rect.height)) - top),
+    visible: rects.some((rect) => rect.visible), fully_in_view: rects.every((rect) => rect.fully_in_view),
+  };
+}
+
+// The computed font size ignores the board camera and fitted-math transforms,
+// so a 14 px card text at camera scale 0.3 still reads as 14. Compare the
+// rendered box with its layout box to get the size the learner actually sees.
+function onScreenScale(element: Element): number {
+  if (!(element instanceof HTMLElement) || element.offsetWidth <= 0) return 1;
+  return element.getBoundingClientRect().width / element.offsetWidth;
+}
+
+export const MIN_READABLE_TEXT_PX = 12.5;
+
+// Cards that cannot share the screen without shrinking text below the
+// readable size may be framed one at a time: the teaching camera keeps the
+// newest readable and leaves earlier ones beside the frame.
+function fitsReadably(rects: TeachingRectObservation[], usable: { width: number; height: number }, minimumFont: number | null): boolean {
+  if (rects.length < 2 || minimumFont === null) return true;
+  const left = Math.min(...rects.map((rect) => rect.x)); const top = Math.min(...rects.map((rect) => rect.y));
+  const width = Math.max(...rects.map((rect) => rect.x + rect.width)) - left;
+  const height = Math.max(...rects.map((rect) => rect.y + rect.height)) - top;
+  const shrink = Math.min(1, usable.width / Math.max(1, width), usable.height / Math.max(1, height));
+  return minimumFont * shrink >= MIN_READABLE_TEXT_PX;
 }
 
 function minimumFontSize(nodes: Element[]): number | null {
@@ -122,7 +168,7 @@ function minimumFontSize(nodes: Element[]): number | null {
     );
     for (const element of candidates) {
       if (!element.textContent?.trim()) continue;
-      const size = Number.parseFloat(getComputedStyle(element).fontSize);
+      const size = Number.parseFloat(getComputedStyle(element).fontSize) * onScreenScale(element);
       if (Number.isFinite(size)) sizes.push(size);
     }
   }
@@ -149,16 +195,22 @@ export function collectTeachingObservation(input: {
   board: SemanticBoardState;
   operation: PlaybackOperation;
   cursor: number;
+  /** Host chrome over the board; content beneath it is not visible to the learner. */
+  insets?: { top?: number; right?: number; bottom?: number; left?: number };
 }): TeachingFrameObservation {
-  const { viewport, world, board, operation, cursor } = input;
+  const { viewport, world, board, operation, cursor, insets = {} } = input;
   const viewportRect = viewport.getBoundingClientRect();
+  const usable = {
+    width: viewportRect.width - (insets.left ?? 0) - (insets.right ?? 0),
+    height: viewportRect.height - (insets.top ?? 0) - (insets.bottom ?? 0),
+  };
   const focalPairs = focalNodeIds(board).map((id) => ({ id, element: elementById(world, id) })).filter((pair) => pair.element) as Array<{ id: string; element: Element }>;
   const focalElements = focalPairs.map((pair) => pair.element);
   const focalNodes = focalPairs.map((pair) => observeRect(pair.element, viewportRect, pair.id));
   const activeIds = activeTargetIds(operation.action);
   const activeTargets = activeIds.map((id) => {
     const element = elementById(world, id);
-    return element ? observeRect(element, viewportRect, id) : {
+    return element ? observeRect(element, viewportRect, id) : observeFramelessGroup(world, board, viewportRect, id) ?? {
       id, kind: "missing", x: 0, y: 0, width: 0, height: 0, visible: false, fully_in_view: false,
     };
   });
@@ -213,6 +265,8 @@ export function collectTeachingObservation(input: {
     new_nodes: 0, new_connections: 0, new_groups: 0,
     focus_targets: [...board.focus], focal_nodes: focalNodes, active_targets: activeTargets,
     min_focal_node_width: focalNodes.length ? rounded(Math.min(...focalNodes.map((node) => node.width))) : null,
+    focus_fits_readably: fitsReadably(focalNodes, usable, minimumFontSize(focalElements)),
+    active_targets_fit_readably: fitsReadably(activeTargets, usable, minimumFontSize(activeIds.map((id) => elementById(world, id)).filter(Boolean) as Element[])),
     min_focal_body_font_px: minimumFontSize(focalElements), min_focal_diagram_edge_px: minimumDiagramEdge(focalElements),
     math_errors: world.querySelectorAll(".katex-error").length, content_overflows: [...new Set(contentOverflows)],
     label_node_overlaps: labelNodeOverlaps, duplicate_internal_connections: duplicateInternalConnections,
@@ -235,18 +289,24 @@ export function evaluateTeachingObservation(observation: TeachingFrameObservatio
 
   if (observation.operation_type === "action.apply" && observation.active_targets.length) {
     const missing = observation.active_targets.filter((target) => !target.visible).map((target) => target.id);
-    if (missing.length) add("G1_ACTIVE_TARGET_NOT_VISIBLE", "The current action target is not visible", missing);
+    const framedOneAtATime = observation.active_targets_fit_readably === false
+      && observation.active_targets.some((target) => target.visible);
+    if (missing.length && !framedOneAtATime) add("G1_ACTIVE_TARGET_NOT_VISIBLE", "The current action target is not visible", missing);
   }
 
   if (observation.operation_type === "beat.end") {
     if (!observation.focus_targets.length) add("G1_MISSING_BEAT_FOCUS", "Beat ends without an explicit teaching focus");
     const outOfView = observation.focal_nodes.filter((node) => !node.fully_in_view).map((node) => node.id);
-    if (outOfView.length) add("G3_FOCUS_OUT_OF_VIEW", "Focused board node is outside the viewport", outOfView);
-    if (observation.min_focal_node_width !== null && observation.min_focal_node_width < 239.5) {
-      add("G3_FOCUS_TOO_SMALL", `Smallest focused card is ${observation.min_focal_node_width}px; expected at least 240px`);
-    }
-    if (observation.min_focal_body_font_px !== null && observation.min_focal_body_font_px < 14) {
-      add("G3_TEXT_TOO_SMALL", `Smallest focused body text is ${observation.min_focal_body_font_px}px; expected at least 14px`);
+    const framedOneAtATime = observation.focus_fits_readably === false
+      && observation.focal_nodes.some((node) => node.fully_in_view);
+    if (outOfView.length && !framedOneAtATime) add("G3_FOCUS_OUT_OF_VIEW", "Focused board node is outside the viewport", outOfView);
+    // Cards are sized to their content, so a short formula is a narrow card
+    // that is still readable. Card width is recorded, not gated; readability
+    // is judged by on-screen text size and diagram edge length.
+    // Desktop hosts read teaching rows at camera scale 0.9, which shows 14 px
+    // body text at about 12.6 px on screen.
+    if (observation.min_focal_body_font_px !== null && observation.min_focal_body_font_px < MIN_READABLE_TEXT_PX) {
+      add("G3_TEXT_TOO_SMALL", `Smallest focused body text is ${observation.min_focal_body_font_px}px on screen; expected at least 12.5px`);
     }
     if (observation.min_focal_diagram_edge_px !== null && observation.min_focal_diagram_edge_px < 120) {
       add("G3_DIAGRAM_TOO_SMALL", `Smallest focused diagram edge is ${observation.min_focal_diagram_edge_px}px; expected at least 120px`);

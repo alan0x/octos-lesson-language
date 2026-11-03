@@ -73,7 +73,14 @@ lessonSelect.value = fixtures.some((fixture) => fixture.id === requestedLessonId
   : fixtures.some((fixture) => fixture.id === restoredLessonId) ? restoredLessonId! : fixtures[0]!.id;
 const mountedBoard = mountInfiniteBoard(requireElement("#viewport"), resolveHarnessAsset);
 const boardView = mountedBoard.view;
-boardView.setViewportInsets({ top: 70, bottom: 190 });
+const viewportInsets = { top: 70, bottom: 190 };
+boardView.setViewportInsets(viewportInsets);
+// Match the desktop Learn host: lessons use the teaching layout sized for its
+// reading scale, and the automatic teaching camera stays between that scale
+// and a modest close-up.
+const desktopReadingScale = .9;
+boardView.setAutomaticCameraMaximumScale(1.1);
+boardView.setAutomaticCameraMinimumScale(desktopReadingScale);
 const store = new LocalPlaybackStore();
 let session: BrowserLessonSession;
 const handleStudentVariableInput = (
@@ -190,10 +197,39 @@ async function loadLesson(id: string): Promise<void> {
   session = new BrowserLessonSession(events, store, `oll-harness:${events[0]!.lesson_id}`, {
     reducedMotion: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false,
   });
+  applyTeachingLayout();
   unsubscribe = session.subscribe(render);
   if (inkEnabled) await mountInkForCurrentLesson("navigate");
   render();
   requestAnimationFrame(() => boardView.fit());
+}
+
+// Every node is assigned to the Step that created it, as the Learn host does
+// for packaged lessons, so the teaching layout can form step columns.
+function nodeSections(lessonEvents: CanonicalEvent[]): Record<string, string> {
+  const sections: Record<string, string> = {};
+  for (const event of lessonEvents) {
+    const step = event.step as { id: string; beats?: Array<{ stage?: Record<string, Array<{ node?: { id?: string } }>> }> } | undefined;
+    for (const beat of step?.beats ?? []) {
+      for (const actions of Object.values(beat.stage ?? {})) {
+        for (const action of actions) if (action.node?.id && !sections[action.node.id]) sections[action.node.id] = step!.id;
+      }
+    }
+  }
+  return sections;
+}
+
+function applyTeachingLayout(): void {
+  const viewport = requireElement<HTMLElement>("#viewport");
+  boardView.setRegionLayouts({
+    __legacy__: {
+      x: 20, y: 20, flow: "teaching", nodeSections: nodeSections(events),
+      composition: {
+        width: viewport.clientWidth, height: viewport.clientHeight, mode: "progressive",
+        insets: viewportInsets, readingScale: desktopReadingScale,
+      },
+    },
+  });
 }
 
 function render(): void {
@@ -278,6 +314,7 @@ const harnessApi: Window["__OLL_HARNESS__"] = window.__OLL_HARNESS__ = {
     if (!board || !operation) throw new Error("Teaching observation requires at least one playback operation");
     return collectTeachingObservation({
       viewport: mountedBoard.elements.viewport, world: mountedBoard.elements.world, board, operation, cursor: session.cursor,
+      insets: viewportInsets,
     });
   },
   evaluate: evaluateTeachingObservation,
@@ -325,6 +362,6 @@ requireElement<HTMLInputElement>("#ink-pen-color").addEventListener("input", (ev
 requireElement<HTMLInputElement>("#ink-selection-color").addEventListener("input", (event) => {
   void inkRuntime?.setSelectionColor((event.target as HTMLInputElement).value);
 });
-window.addEventListener("resize", () => boardView.fit());
+window.addEventListener("resize", () => { applyTeachingLayout(); boardView.fit(); });
 
 void harnessApi.loadLesson(lessonSelect.value).catch((error) => { requireElement("#lesson-title").textContent = error instanceof Error ? error.message : String(error); });

@@ -1,14 +1,14 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-28T05:43:46.903Z",
+  "generated_at": "2026-10-31T15:42:51.842Z",
   "lesson_id": "lesson-geometry-v2-001",
   "fixture": "geometry",
   "viewport": {
-    "width": 1280,
-    "height": 720
+    "width": 1686,
+    "height": 880
   },
-  "browser": "150.0.7871.187",
+  "browser": "156.0.8078.74",
   "passed": true,
   "expected_result": "pass",
   "expectation_met": true,
@@ -23,10 +23,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 1,
@@ -40,28 +40,30 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -88,10 +90,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -106,28 +108,30 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 240.47,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.46,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -155,10 +159,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.9,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -173,28 +177,30 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 310.4,
+            "y": 120.15,
+            "width": 432,
+            "height": 234,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 767.6,
+            "y": 408.15,
+            "width": 288,
+            "height": 119.7,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 288,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.6,
+        "min_focal_diagram_edge_px": 169.19,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -223,10 +229,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -241,28 +247,30 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -291,10 +299,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -309,28 +317,30 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 79,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -359,10 +369,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:conclude-sss",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -377,27 +387,29 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 255.75,
-            "y": 135.52,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 499.29,
+            "y": 168.35,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 255.75,
-            "y": 378.72,
-            "width": 448.49,
-            "height": 93.76,
+            "x": 499.29,
+            "y": 400.45,
+            "width": 367.4,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -428,10 +440,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -445,17 +457,19 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 217.6,
-            "y": 262.35,
-            "width": 524.8,
-            "height": 83.3,
+            "x": 461.89,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -487,10 +501,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -504,17 +518,19 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "x": 461.9,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -547,10 +563,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:use-straight-angle",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.77,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -564,17 +580,19 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 248.05,
-            "width": 524.8,
-            "height": 111.91,
+            "x": 461.9,
+            "y": 251.95,
+            "width": 442.2,
+            "height": 144.1,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -607,10 +625,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:conclude-perpendicular",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.88,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -624,17 +642,19 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 261.56,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 461.9,
+            "y": 272.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 524.79,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -667,10 +687,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-geometry-v2-001:step:organize-proof:beat:show-proof-route",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -684,27 +704,29 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 358,
-            "y": 149.75,
-            "width": 244.01,
-            "height": 123.75,
+            "x": 362.13,
+            "y": 237.1,
+            "width": 308,
+            "height": 156.2,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 357.7,
-            "y": 320.03,
-            "width": 240.59,
-            "height": 138.74,
+            "x": 700.55,
+            "y": 236.44,
+            "width": 303.69,
+            "height": 175.12,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 240.59,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 303.69,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -742,10 +764,10 @@
         "beat_id": "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -758,15 +780,17 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 374.4,
-            "height": 202.8,
+            "x": 419,
+            "y": 181,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -795,10 +819,10 @@
         "beat_id": "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -811,15 +835,17 @@
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 589.9,
-            "y": 203.88,
-            "width": 194.19,
-            "height": 102.24,
+            "x": 546.07,
+            "y": 251.9,
+            "width": 273.85,
+            "height": 144.19,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -849,10 +875,10 @@
         "beat_id": "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 1,
@@ -865,15 +891,17 @@
           {
             "id": "lesson-geometry-v2-001:group:task-group",
             "kind": "board-group",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 663.3,
-            "height": 255.84,
+            "x": -49.82,
+            "y": 215.1,
+            "width": 906.83,
+            "height": 360.8,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -903,10 +931,10 @@
         "beat_id": "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 1,
@@ -920,20 +948,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -942,17 +970,19 @@
           {
             "id": "lesson-geometry-v2-001:group:task-group",
             "kind": "board-group",
-            "x": 70,
-            "y": 145.86,
-            "width": 819.99,
-            "height": 316.27,
+            "x": 284.74,
+            "y": 165.55,
+            "width": 796.51,
+            "height": 316.91,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -980,10 +1010,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 1,
@@ -997,20 +1027,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -1019,17 +1049,19 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 334.21,
-            "y": 244.71,
+            "x": 549.47,
+            "y": 264.59,
             "width": 0,
-            "height": 143.52,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1057,10 +1089,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 1,
@@ -1074,20 +1106,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -1096,17 +1128,19 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 334.21,
-            "y": 244.71,
+            "x": 549.47,
+            "y": 264.59,
             "width": 0,
-            "height": 143.52,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1134,10 +1168,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 1,
@@ -1151,20 +1185,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -1173,17 +1207,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
             "kind": "diagram-region",
-            "x": 223.49,
-            "y": 244.71,
-            "width": 110.72,
-            "height": 143.52,
+            "x": 438.54,
+            "y": 264.59,
+            "width": 110.94,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1211,10 +1247,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 1,
@@ -1228,20 +1264,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -1250,17 +1286,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
             "kind": "diagram-region",
-            "x": 334.21,
-            "y": 244.71,
-            "width": 110.72,
-            "height": 143.52,
+            "x": 549.47,
+            "y": 264.59,
+            "width": 110.94,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1288,10 +1326,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.96,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -1305,20 +1343,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 102.78,
-            "y": 178.65,
-            "width": 462.84,
-            "height": 250.71,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:task-card",
             "kind": "note",
-            "x": 617.42,
-            "y": 240.8,
-            "width": 240.06,
-            "height": 126.4,
+            "x": 808.14,
+            "y": 197.87,
+            "width": 240.54,
+            "height": 126.65,
             "visible": true,
             "fully_in_view": true
           }
@@ -1327,17 +1365,19 @@
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 617.46,
-            "y": 418.24,
-            "width": 231.9,
-            "height": 110.93,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.06,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 181.26,
+        "min_focal_node_width": 240.54,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.57,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1366,10 +1406,10 @@
         "beat_id": "lesson-geometry-v2-001:step:construct-auxiliary-line:beat:draw-ad",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -1384,20 +1424,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
@@ -1406,27 +1446,29 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 240.47,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.46,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1455,10 +1497,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -1473,20 +1515,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
@@ -1495,17 +1537,19 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 333,
-            "y": 191.02,
+            "x": 549.47,
+            "y": 264.59,
             "width": 0,
-            "height": 148.84,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 240.47,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.46,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1534,10 +1578,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -1552,20 +1596,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
@@ -1574,17 +1618,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab",
             "kind": "diagram-edge",
-            "x": 218.18,
-            "y": 191.02,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 438.54,
+            "y": 264.59,
+            "width": 110.94,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 240.47,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.46,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1613,10 +1659,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 0.97,
         "node_count": 3,
         "connection_count": 1,
         "group_count": 1,
@@ -1631,20 +1677,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 93,
-            "y": 122.5,
-            "width": 480,
-            "height": 260,
+            "x": 317.59,
+            "y": 198.4,
+            "width": 463.77,
+            "height": 251.21,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 626.75,
-            "y": 370.98,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 808.17,
+            "y": 362.12,
+            "width": 240.47,
+            "height": 111.19,
             "visible": true,
             "fully_in_view": true
           }
@@ -1653,17 +1699,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac",
             "kind": "diagram-edge",
-            "x": 333,
-            "y": 191.02,
-            "width": 114.82,
-            "height": 148.84,
+            "x": 549.47,
+            "y": 264.59,
+            "width": 110.94,
+            "height": 143.81,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 240.47,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.46,
+        "min_focal_diagram_edge_px": 181.63,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1692,10 +1740,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1710,20 +1758,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 36,
-            "y": -12,
-            "width": 480,
-            "height": 260,
+            "x": -51.8,
+            "y": -101.15,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:construction-note",
             "kind": "note",
-            "x": 569.75,
-            "y": 236.48,
-            "width": 240.5,
-            "height": 115.05,
+            "x": 506.74,
+            "y": 85.08,
+            "width": 352.52,
+            "height": 122.53,
             "visible": true,
             "fully_in_view": true
           }
@@ -1732,17 +1780,19 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 570,
-            "y": 405,
-            "width": 320,
-            "height": 133,
+            "x": 507,
+            "y": 250.85,
+            "width": 352,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.5,
-        "min_focal_body_font_px": 16,
-        "min_focal_diagram_edge_px": 187.98,
+        "min_focal_node_width": 352.52,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1772,10 +1822,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-isosceles-sides",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.9,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1790,20 +1840,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 310.4,
+            "y": 120.15,
+            "width": 432,
+            "height": 234,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 767.6,
+            "y": 408.15,
+            "width": 288,
+            "height": 119.7,
             "visible": true,
             "fully_in_view": true
           }
@@ -1812,27 +1862,29 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 310.4,
+            "y": 120.15,
+            "width": 432,
+            "height": 234,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 767.6,
+            "y": 408.15,
+            "width": 288,
+            "height": 119.7,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 288,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.6,
+        "min_focal_diagram_edge_px": 169.19,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1862,10 +1914,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1880,20 +1932,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 419,
+            "y": 181,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 977.8,
+            "y": 533,
+            "width": 352,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
@@ -1902,17 +1954,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ab",
             "kind": "diagram-edge",
-            "x": 253.63,
-            "y": 149.14,
-            "width": 86.12,
-            "height": 111.63,
+            "x": 556.7,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -1942,10 +1996,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -1960,20 +2014,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 419,
+            "y": 181,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 977.8,
+            "y": 533,
+            "width": 352,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
@@ -1982,17 +2036,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:side-ac",
             "kind": "diagram-edge",
-            "x": 339.75,
-            "y": 149.14,
-            "width": 86.12,
-            "height": 111.63,
+            "x": 683,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2022,10 +2078,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2040,20 +2096,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 419,
+            "y": 181,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 977.8,
+            "y": 533,
+            "width": 352,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
@@ -2062,17 +2118,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd",
             "kind": "diagram-edge",
-            "x": 253.63,
-            "y": 260.77,
-            "width": 86.12,
+            "x": 556.7,
+            "y": 420.09,
+            "width": 126.3,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2102,10 +2160,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2120,20 +2178,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 419,
+            "y": 181,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 99.75,
+            "x": 977.8,
+            "y": 533,
+            "width": 352,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
@@ -2142,17 +2200,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc",
             "kind": "diagram-edge",
-            "x": 339.75,
-            "y": 260.77,
-            "width": 86.12,
+            "x": 683,
+            "y": 420.09,
+            "width": 126.3,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2182,10 +2242,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.revise",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2200,20 +2260,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": -369.04,
+            "y": 233.8,
+            "width": 528,
+            "height": 286,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 506.99,
+            "y": 233.8,
+            "width": 352,
+            "height": 180.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -2222,17 +2282,19 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 506.99,
+            "y": 233.8,
+            "width": 352,
+            "height": 180.4,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 352,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2262,10 +2324,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:match-midpoint-halves",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2280,20 +2342,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
@@ -2302,27 +2364,29 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2352,10 +2416,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2370,20 +2434,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
@@ -2392,17 +2456,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-bd",
             "kind": "diagram-edge",
-            "x": 253.63,
-            "y": 260.77,
-            "width": 86.12,
+            "x": 278.8,
+            "y": 405.54,
+            "width": 107.18,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2432,10 +2498,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2450,20 +2516,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
@@ -2472,17 +2538,19 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:segment-dc",
             "kind": "diagram-edge",
-            "x": 339.75,
-            "y": 260.77,
-            "width": 86.12,
+            "x": 385.98,
+            "y": 405.54,
+            "width": 107.18,
             "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2512,10 +2580,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2530,20 +2598,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 97.75,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 410.5,
-            "width": 240,
-            "height": 123,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 153.09,
             "visible": true,
             "fully_in_view": true
           }
@@ -2552,17 +2620,19 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 339.75,
-            "y": 149.14,
+            "x": 385.98,
+            "y": 266.61,
             "width": 0,
-            "height": 111.63,
+            "height": 138.94,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2592,10 +2662,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "action_op": "board.revise",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2610,20 +2680,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 79,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
@@ -2632,17 +2702,19 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2672,10 +2744,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:mark-common-side",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2690,20 +2762,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 79,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
@@ -2712,27 +2784,29 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 79,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2762,10 +2836,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:conclude-sss",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 0.93,
         "node_count": 4,
         "connection_count": 1,
         "group_count": 1,
@@ -2780,20 +2854,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 159.75,
-            "y": 79,
-            "width": 360,
-            "height": 195,
+            "x": 161.95,
+            "y": 202.65,
+            "width": 448.05,
+            "height": 242.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 560.25,
-            "y": 391.75,
-            "width": 240,
-            "height": 146.25,
+            "x": 905.34,
+            "y": 202.65,
+            "width": 298.7,
+            "height": 182.02,
             "visible": true,
             "fully_in_view": true
           }
@@ -2802,17 +2876,19 @@
           {
             "id": "lesson-geometry-v2-001:connection:auxiliary-ad",
             "kind": "diagram-connection",
-            "x": 339.75,
-            "y": 130.39,
+            "x": 385.98,
+            "y": 266.61,
             "width": 0,
-            "height": 111.63,
+            "height": 138.94,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 298.7,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 13.07,
+        "min_focal_diagram_edge_px": 175.47,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2842,10 +2918,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:conclude-sss",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 1,
@@ -2860,20 +2936,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 145.1,
-            "y": -33.5,
-            "width": 360,
-            "height": 195,
+            "x": -370.69,
+            "y": 52.3,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 545.6,
-            "y": 279.25,
-            "width": 240,
-            "height": 146.25,
+            "x": 505.34,
+            "y": 52.3,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": true
           }
@@ -2882,17 +2958,19 @@
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 545.6,
-            "y": 466,
-            "width": 344.39,
-            "height": 72,
+            "x": 505.34,
+            "y": 284.4,
+            "width": 367.4,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -2923,10 +3001,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:conclude-sss",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.75,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -2941,20 +3019,20 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram",
             "kind": "diagram",
-            "x": 145.1,
-            "y": -33.5,
-            "width": 360,
-            "height": 195,
+            "x": -370.69,
+            "y": 52.3,
+            "width": 528,
+            "height": 286,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 545.6,
-            "y": 279.25,
-            "width": 240,
-            "height": 146.25,
+            "x": 505.34,
+            "y": 52.3,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": true
           }
@@ -2962,18 +3040,20 @@
         "active_targets": [
           {
             "id": "lesson-geometry-v2-001:group:sss-proof",
-            "kind": "board-group",
-            "x": 119.6,
-            "y": -59,
-            "width": 795.89,
-            "height": 622.5,
+            "kind": "group-members",
+            "x": -370.69,
+            "y": 52.3,
+            "width": 1243.43,
+            "height": 311.3,
             "visible": true,
             "fully_in_view": false
           }
         ],
-        "min_focal_node_width": 240,
-        "min_focal_body_font_px": 14,
-        "min_focal_diagram_edge_px": 140.99,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
+        "min_focal_diagram_edge_px": 206.78,
         "math_errors": 0,
         "content_overflows": [],
         "label_node_overlaps": [],
@@ -3004,10 +3084,10 @@
         "beat_id": "lesson-geometry-v2-001:step:collect-sss-evidence:beat:conclude-sss",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3022,20 +3102,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 255.75,
-            "y": 135.52,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 499.29,
+            "y": 168.35,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 255.75,
-            "y": 378.72,
-            "width": 448.49,
-            "height": 93.76,
+            "x": 499.29,
+            "y": 400.45,
+            "width": 367.4,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
@@ -3044,26 +3124,28 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 255.75,
-            "y": 135.52,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 499.29,
+            "y": 168.35,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 255.75,
-            "y": 378.72,
-            "width": 448.49,
-            "height": 93.76,
+            "x": 499.29,
+            "y": 400.45,
+            "width": 367.4,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3095,10 +3177,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3113,21 +3195,21 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 591.56,
-            "y": 477.28,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 1295.03,
+            "y": 181,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 591.56,
-            "y": 720.48,
-            "width": 448.49,
-            "height": 93.76,
-            "visible": false,
+            "x": 1295.03,
+            "y": 413.1,
+            "width": 367.4,
+            "height": 79.2,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -3135,16 +3217,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
             "kind": "diagram-region",
-            "x": 192.26,
-            "y": 136.92,
-            "width": 112.15,
-            "height": 145.37,
+            "x": 556.7,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3176,10 +3260,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 1,
         "group_count": 2,
@@ -3194,21 +3278,21 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 591.56,
-            "y": 477.28,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 1295.03,
+            "y": 181,
+            "width": 367.4,
+            "height": 214.5,
             "visible": true,
             "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 591.56,
-            "y": 720.48,
-            "width": 448.49,
-            "height": 93.76,
-            "visible": false,
+            "x": 1295.03,
+            "y": 413.1,
+            "width": 367.4,
+            "height": 79.2,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -3216,16 +3300,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
             "kind": "diagram-region",
-            "x": 304.41,
-            "y": 136.92,
-            "width": 112.15,
-            "height": 145.37,
+            "x": 683,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 367.4,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3257,10 +3343,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 1,
         "group_count": 2,
@@ -3275,20 +3361,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 299.29,
-            "y": 54.54,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 461.89,
+            "y": -70.9,
+            "width": 442.2,
+            "height": 214.5,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 299.29,
-            "y": 297.73,
-            "width": 448.49,
-            "height": 93.76,
+            "x": 461.89,
+            "y": 161.2,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
@@ -3297,16 +3383,18 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 299.29,
-            "y": 444.24,
-            "width": 590.7,
-            "height": 93.76,
+            "x": 461.89,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3339,10 +3427,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.98,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3357,20 +3445,20 @@
           {
             "id": "lesson-geometry-v2-001:node:sss-table",
             "kind": "table",
-            "x": 299.29,
-            "y": 54.54,
-            "width": 312.54,
-            "height": 190.46,
+            "x": 461.89,
+            "y": -70.9,
+            "width": 442.2,
+            "height": 214.5,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           },
           {
             "id": "lesson-geometry-v2-001:node:congruence-result",
             "kind": "math",
-            "x": 299.29,
-            "y": 297.73,
-            "width": 448.49,
-            "height": 93.76,
+            "x": 461.89,
+            "y": 161.2,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
@@ -3379,16 +3467,18 @@
           {
             "id": "lesson-geometry-v2-001:connection:sss-to-angle",
             "kind": "connection-line",
-            "x": 546.3,
-            "y": 391.5,
-            "width": 285.97,
-            "height": 52.74,
+            "x": 683,
+            "y": 240.4,
+            "width": 0,
+            "height": 44,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 312.54,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3421,10 +3511,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:derive-angle-bisector",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3438,10 +3528,10 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 217.6,
-            "y": 262.35,
-            "width": 524.8,
-            "height": 83.3,
+            "x": 461.89,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
@@ -3450,16 +3540,18 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 217.6,
-            "y": 262.35,
-            "width": 524.8,
-            "height": 83.3,
+            "x": 461.89,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3492,10 +3584,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3509,11 +3601,11 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 533.37,
-            "y": 778.06,
-            "width": 524.8,
-            "height": 83.3,
-            "visible": false,
+            "x": 1295.03,
+            "y": 536.3,
+            "width": 442.2,
+            "height": 79.2,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -3521,16 +3613,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-abd",
             "kind": "diagram-region",
-            "x": 178.62,
-            "y": 129.45,
-            "width": 99.63,
-            "height": 129.15,
+            "x": 556.7,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3563,10 +3657,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3580,11 +3674,11 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 533.37,
-            "y": 778.06,
-            "width": 524.8,
-            "height": 83.3,
-            "visible": false,
+            "x": 1295.03,
+            "y": 536.3,
+            "width": 442.2,
+            "height": 79.2,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -3592,16 +3686,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:triangle-acd",
             "kind": "diagram-region",
-            "x": 278.25,
-            "y": 129.45,
-            "width": 99.63,
-            "height": 129.15,
+            "x": 683,
+            "y": 256.37,
+            "width": 126.3,
+            "height": 163.73,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3634,10 +3730,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 6,
         "connection_count": 2,
         "group_count": 2,
@@ -3651,11 +3747,11 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 533.37,
-            "y": 778.06,
-            "width": 524.8,
-            "height": 83.3,
-            "visible": false,
+            "x": 1295.03,
+            "y": 536.3,
+            "width": 442.2,
+            "height": 79.2,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -3663,16 +3759,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 272.72,
-            "y": 253.07,
-            "width": 11.07,
-            "height": 11.07,
+            "x": 675.98,
+            "y": 413.08,
+            "width": 14.03,
+            "height": 14.03,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3705,10 +3803,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 2,
         "group_count": 2,
@@ -3722,28 +3820,30 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 533.37,
-            "y": 324.54,
-            "width": 524.8,
-            "height": 83.3,
+            "x": 461.9,
+            "y": 187.6,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
-            "fully_in_view": false
+            "fully_in_view": true
           }
         ],
         "active_targets": [
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 533.37,
-            "y": 454.7,
-            "width": 242.96,
-            "height": 83.3,
+            "x": 461.9,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3777,10 +3877,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -3794,28 +3894,30 @@
           {
             "id": "lesson-geometry-v2-001:node:angle-result",
             "kind": "math",
-            "x": 533.37,
-            "y": 324.54,
-            "width": 524.8,
-            "height": 83.3,
+            "x": 461.9,
+            "y": 187.6,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
-            "fully_in_view": false
+            "fully_in_view": true
           }
         ],
         "active_targets": [
           {
             "id": "lesson-geometry-v2-001:connection:sss-to-d-angles",
             "kind": "connection-line",
-            "x": 667.29,
-            "y": 277.68,
-            "width": 227.63,
-            "height": 177.02,
+            "x": 904.1,
+            "y": 107.3,
+            "width": 832.04,
+            "height": 216.7,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3849,10 +3951,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:compare-d-angles",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -3866,10 +3968,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "x": 461.9,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
@@ -3878,16 +3980,18 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 340,
-            "y": 256,
-            "width": 280,
-            "height": 96,
+            "x": 461.9,
+            "y": 284.4,
+            "width": 442.2,
+            "height": 79.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3921,10 +4025,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:use-straight-angle",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -3938,28 +4042,30 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 604,
-            "y": 1036,
-            "width": 280,
-            "height": 96,
-            "visible": false,
-            "fully_in_view": false
+            "x": 419,
+            "y": 629.8,
+            "width": 442.2,
+            "height": 79.2,
+            "visible": true,
+            "fully_in_view": true
           }
         ],
         "active_targets": [
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 303.62,
-            "y": 280.98,
-            "width": 12.76,
-            "height": 12.76,
+            "x": 675.98,
+            "y": 413.08,
+            "width": 14.03,
+            "height": 14.03,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 280,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -3993,10 +4099,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:use-straight-angle",
         "action_op": "board.revise",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 1,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4010,10 +4116,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 210,
-            "y": 393,
-            "width": 680,
-            "height": 145,
+            "x": 461.9,
+            "y": 251.95,
+            "width": 442.2,
+            "height": 144.1,
             "visible": true,
             "fully_in_view": true
           }
@@ -4022,16 +4128,18 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 210,
-            "y": 393,
-            "width": 680,
-            "height": 145,
+            "x": 461.9,
+            "y": 251.95,
+            "width": 442.2,
+            "height": 144.1,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 680,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4065,10 +4173,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:use-straight-angle",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.77,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4082,10 +4190,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 248.05,
-            "width": 524.8,
-            "height": 111.91,
+            "x": 461.9,
+            "y": 251.95,
+            "width": 442.2,
+            "height": 144.1,
             "visible": true,
             "fully_in_view": true
           }
@@ -4094,16 +4202,18 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 248.05,
-            "width": 524.8,
-            "height": 111.91,
+            "x": 461.9,
+            "y": 251.95,
+            "width": 442.2,
+            "height": 144.1,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4137,10 +4247,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:conclude-perpendicular",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.77,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4154,11 +4264,11 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 482.12,
-            "y": 815.52,
-            "width": 524.8,
-            "height": 111.91,
-            "visible": false,
+            "x": 419,
+            "y": 629.8,
+            "width": 442.2,
+            "height": 144.1,
+            "visible": true,
             "fully_in_view": false
           }
         ],
@@ -4166,16 +4276,18 @@
           {
             "id": "lesson-geometry-v2-001:node:clean-diagram:fragment:point-d",
             "kind": "diagram-point",
-            "x": 251.94,
-            "y": 234.47,
-            "width": 6.56,
-            "height": 6.56,
+            "x": 678.32,
+            "y": 415.42,
+            "width": 9.36,
+            "height": 9.36,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.8,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4209,10 +4321,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:conclude-perpendicular",
         "action_op": "board.revise",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.77,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4226,10 +4338,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 431.88,
-            "y": 463.91,
-            "width": 458.11,
-            "height": 74.09,
+            "x": 461.9,
+            "y": 272.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -4238,16 +4350,18 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 431.88,
-            "y": 463.91,
-            "width": 458.11,
-            "height": 74.09,
+            "x": 461.9,
+            "y": 272.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 458.11,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4281,10 +4395,10 @@
         "beat_id": "lesson-geometry-v2-001:step:derive-conclusions:beat:conclude-perpendicular",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.88,
+        "world_scale": 1.1,
         "node_count": 7,
         "connection_count": 3,
         "group_count": 2,
@@ -4298,10 +4412,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 261.56,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 461.9,
+            "y": 272.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -4310,16 +4424,18 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 261.56,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 461.9,
+            "y": 272.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.79,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4353,10 +4469,10 @@
         "beat_id": "lesson-geometry-v2-001:step:organize-proof:beat:show-proof-route",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.88,
+        "world_scale": 1.1,
         "node_count": 8,
         "connection_count": 3,
         "group_count": 2,
@@ -4370,10 +4486,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 249.78,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 529,
+            "y": 63.3,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -4382,16 +4498,18 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 217.6,
-            "y": 412.46,
-            "width": 247.55,
-            "height": 125.54,
+            "x": 529,
+            "y": 245.9,
+            "width": 308,
+            "height": 156.2,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.79,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4426,10 +4544,10 @@
         "beat_id": "lesson-geometry-v2-001:step:organize-proof:beat:show-proof-route",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.88,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 2,
@@ -4443,10 +4561,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 62.36,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 192.73,
+            "y": 54.5,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -4455,16 +4573,18 @@
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 217.3,
-            "y": 397.78,
-            "width": 244.08,
-            "height": 140.75,
+            "x": 531.15,
+            "y": 236.44,
+            "width": 303.69,
+            "height": 175.12,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.79,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4500,10 +4620,10 @@
         "beat_id": "lesson-geometry-v2-001:step:organize-proof:beat:show-proof-route",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.88,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -4517,10 +4637,10 @@
           {
             "id": "lesson-geometry-v2-001:node:perpendicular-derivation",
             "kind": "math",
-            "x": 217.6,
-            "y": 62.36,
-            "width": 524.79,
-            "height": 84.87,
+            "x": 192.73,
+            "y": 54.5,
+            "width": 442.2,
+            "height": 103.4,
             "visible": true,
             "fully_in_view": true
           }
@@ -4529,16 +4649,18 @@
           {
             "id": "lesson-geometry-v2-001:group:summary-group",
             "kind": "board-group",
-            "x": 187.54,
-            "y": 194.97,
-            "width": 307.67,
-            "height": 373.09,
+            "x": 155.33,
+            "y": 199.7,
+            "width": 716.53,
+            "height": 248.6,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 524.79,
-        "min_focal_body_font_px": 24,
+        "min_focal_node_width": 442.2,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -4574,10 +4696,10 @@
         "beat_id": "lesson-geometry-v2-001:step:organize-proof:beat:show-proof-route",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.87,
+        "world_scale": 1.1,
         "node_count": 9,
         "connection_count": 3,
         "group_count": 3,
@@ -4591,20 +4713,20 @@
           {
             "id": "lesson-geometry-v2-001:node:proof-route",
             "kind": "diagram",
-            "x": 358,
-            "y": 149.75,
-            "width": 244.01,
-            "height": 123.75,
+            "x": 362.13,
+            "y": 237.1,
+            "width": 308,
+            "height": 156.2,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-geometry-v2-001:node:takeaway",
             "kind": "note",
-            "x": 357.7,
-            "y": 320.03,
-            "width": 240.59,
-            "height": 138.74,
+            "x": 700.55,
+            "y": 236.44,
+            "width": 303.69,
+            "height": 175.12,
             "visible": true,
             "fully_in_view": true
           }
@@ -4613,16 +4735,18 @@
           {
             "id": "lesson-geometry-v2-001:group:summary-group",
             "kind": "board-group",
-            "x": 328.37,
-            "y": 120.12,
-            "width": 303.27,
-            "height": 367.76,
+            "x": 324.73,
+            "y": 199.7,
+            "width": 716.53,
+            "height": 248.6,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 240.59,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 303.69,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.4,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],

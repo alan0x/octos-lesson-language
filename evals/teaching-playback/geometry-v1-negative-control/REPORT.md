@@ -1,8 +1,8 @@
 # Teaching playback observer report
 
 - Lesson: `lesson-geometry-001`
-- Viewport: 1280 × 720
-- Browser: 150.0.7871.184
+- Viewport: 1686 × 880
+- Browser: 156.0.8078.74
 - Result: **FAIL**
 - Expected result: **FAIL** (met)
 - Beat keyframes: 10
@@ -10,16 +10,16 @@
 
 | Beat | Cursor | Scale | Min card | Min text | Min diagram edge | New nodes | Result |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| place-source | 15 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| state-visual-uncertainty | 26 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| draw-abstract-triangle | 40 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| draw-ad | 56 | 0.78 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
-| state-motive | 67 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| collect-three-sides | 85 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| state-congruence | 96 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| derive-angle-bisector | 110 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| derive-perpendicular | 122 | 0.78 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
-| organize-proof | 137 | 0.41 | 98.93 | 14 | 77.31 | 0 | G3_FOCUS_TOO_SMALL, G3_DIAGRAM_TOO_SMALL |
+| place-source | 15 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| state-visual-uncertainty | 26 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| draw-abstract-triangle | 40 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| draw-ad | 56 | 1.1 | — | — | — | 0 | G1_MISSING_BEAT_FOCUS |
+| state-motive | 67 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| collect-three-sides | 85 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| state-congruence | 96 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| derive-angle-bisector | 110 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| derive-perpendicular | 122 | 1.1 | — | — | — | 1 | G1_MISSING_BEAT_FOCUS |
+| organize-proof | 137 | 0.9 | 300.6 | 12.6 | 169.19 | 0 | PASS |
 
 ## Gate failures
 
@@ -58,8 +58,3 @@
 ### Cursor 122: beat.end
 
 - G1_MISSING_BEAT_FOCUS: Beat ends without an explicit teaching focus
-
-### Cursor 137: beat.end
-
-- G3_FOCUS_TOO_SMALL: Smallest focused card is 98.93px; expected at least 240px
-- G3_DIAGRAM_TOO_SMALL: Smallest focused diagram edge is 77.31px; expected at least 120px

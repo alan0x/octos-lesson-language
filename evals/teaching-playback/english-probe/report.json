@@ -1,14 +1,14 @@
 {
   "profile": "octos.teaching-playback.report",
   "version": "0.1",
-  "generated_at": "2026-07-27T15:08:58.649Z",
+  "generated_at": "2026-10-31T15:43:33.143Z",
   "lesson_id": "lesson-english-001",
   "fixture": "english-v1",
   "viewport": {
-    "width": 1280,
-    "height": 720
+    "width": 1686,
+    "height": 880
   },
-  "browser": "150.0.7871.184",
+  "browser": "156.0.8078.74",
   "passed": false,
   "expected_result": "fail",
   "expectation_met": true,
@@ -23,10 +23,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -37,6 +37,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -69,10 +71,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 2,
         "group_count": 0,
@@ -83,6 +85,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -116,10 +120,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 3,
         "connection_count": 3,
         "group_count": 0,
@@ -130,6 +134,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -164,10 +170,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 4,
         "group_count": 0,
@@ -178,6 +184,8 @@
         "focal_nodes": [],
         "active_targets": [],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -213,10 +221,10 @@
         "operation_type": "beat.end",
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.76,
+        "world_scale": 0.9,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 3,
@@ -230,57 +238,59 @@
           {
             "id": "lesson-english-001:node:original-sentence",
             "kind": "text",
-            "x": 263.88,
-            "y": 121.75,
-            "width": 182.63,
-            "height": 101.21,
+            "x": 382.04,
+            "y": 178.2,
+            "width": 216,
+            "height": 119.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
-            "x": 263.88,
-            "y": 264.05,
-            "width": 182.63,
-            "height": 82.19,
+            "x": 382.04,
+            "y": 333.9,
+            "width": 216,
+            "height": 97.2,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 513.3,
-            "y": 130.1,
-            "width": 183,
-            "height": 84.5,
+            "x": 633.87,
+            "y": 177.44,
+            "width": 350.26,
+            "height": 80.73,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
-            "x": 513.48,
-            "y": 255.3,
-            "width": 182.63,
-            "height": 63.92,
+            "x": 634.04,
+            "y": 271.8,
+            "width": 349.92,
+            "height": 75.6,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
-            "x": 263.67,
-            "y": 412.55,
-            "width": 296.29,
-            "height": 100.22,
+            "x": 633.79,
+            "y": 382.64,
+            "width": 350.42,
+            "height": 118.53,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "active_targets": [],
-        "min_focal_node_width": 182.63,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 216,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.6,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
@@ -298,13 +308,8 @@
         "remounted_nodes": []
       },
       "gate": {
-        "passed": false,
-        "issues": [
-          {
-            "code": "G3_FOCUS_TOO_SMALL",
-            "message": "Smallest focused card is 182.63px; expected at least 240px"
-          }
-        ]
+        "passed": true,
+        "issues": []
       }
     }
   ],
@@ -319,10 +324,10 @@
         "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -335,15 +340,17 @@
           {
             "id": "lesson-english-001:node:original-sentence",
             "kind": "text",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 187.2,
-            "height": 103.74,
+            "x": 551,
+            "y": 250.85,
+            "width": 264,
+            "height": 146.3,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -372,10 +379,10 @@
         "beat_id": "lesson-english-001:step:present-sentence:beat:write-original",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -388,15 +395,17 @@
           {
             "id": "lesson-english-001:node:original-sentence:fragment:relative-clause",
             "kind": "text-fragment",
-            "x": 188.42,
-            "y": 204.6,
-            "width": 110.85,
-            "height": 15.6,
+            "x": 571.9,
+            "y": 322.78,
+            "width": 156.32,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -425,10 +434,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -441,15 +450,17 @@
           {
             "id": "lesson-english-001:node:original-sentence:fragment:subject-head",
             "kind": "text-fragment",
-            "x": 188.42,
-            "y": 185.58,
-            "width": 60.64,
-            "height": 15.6,
+            "x": 571.9,
+            "y": 295.95,
+            "width": 85.52,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -478,10 +489,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -494,15 +505,17 @@
           {
             "id": "lesson-english-001:node:original-sentence:fragment:main-verb",
             "kind": "text-fragment",
-            "x": 302.69,
-            "y": 204.6,
-            "width": 24.38,
-            "height": 15.6,
+            "x": 733.05,
+            "y": 322.78,
+            "width": 34.38,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -531,10 +544,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 1,
         "connection_count": 0,
         "group_count": 0,
@@ -547,15 +560,17 @@
           {
             "id": "lesson-english-001:node:original-sentence:fragment:subject-complement",
             "kind": "text-fragment",
-            "x": 188.42,
-            "y": 223.63,
-            "width": 75.47,
-            "height": 15.6,
+            "x": 571.9,
+            "y": 349.61,
+            "width": 106.42,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -584,10 +599,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 0,
         "group_count": 0,
@@ -600,15 +615,17 @@
           {
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
-            "x": 173.6,
-            "y": 299.46,
-            "width": 187.2,
-            "height": 84.24,
+            "x": 551,
+            "y": 264.6,
+            "width": 264,
+            "height": 118.8,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -638,10 +655,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 1,
         "group_count": 0,
@@ -654,15 +671,17 @@
           {
             "id": "lesson-english-001:connection:subject-correspondence",
             "kind": "connection-line",
-            "x": 267.2,
-            "y": 257.34,
-            "width": 90.09,
-            "height": 42.12,
+            "x": 683,
+            "y": 220.6,
+            "width": 0,
+            "height": 44,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -692,10 +711,10 @@
         "beat_id": "lesson-english-001:step:find-main-clause:beat:identify-subject-predicate",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 2,
         "group_count": 0,
@@ -708,15 +727,17 @@
           {
             "id": "lesson-english-001:connection:predicate-correspondence",
             "kind": "connection-line",
-            "x": 267.2,
-            "y": 255.78,
-            "width": 90.09,
-            "height": 43.68,
+            "x": 683,
+            "y": 220.6,
+            "width": 0,
+            "height": 44,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -746,10 +767,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 2,
         "connection_count": 3,
         "group_count": 0,
@@ -762,15 +783,17 @@
           {
             "id": "lesson-english-001:connection:clause-modifies-book",
             "kind": "connection-line",
-            "x": 267.2,
-            "y": 149.31,
+            "x": 683,
+            "y": 147.45,
             "width": 0,
-            "height": 56.16,
+            "height": 0,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -800,10 +823,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:attach-clause-to-book",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 3,
         "connection_count": 3,
         "group_count": 0,
@@ -816,15 +839,17 @@
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 429.25,
-            "y": 162.16,
-            "width": 187.57,
-            "height": 86.62,
+            "x": 550.74,
+            "y": 262.92,
+            "width": 264.53,
+            "height": 122.15,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -855,10 +880,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 3,
         "group_count": 0,
@@ -871,15 +896,17 @@
           {
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
-            "x": 429.44,
-            "y": 290.49,
-            "width": 187.2,
-            "height": 65.52,
+            "x": 551,
+            "y": 277.8,
+            "width": 264,
+            "height": 92.4,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -911,10 +938,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
         "action_op": "board.connect",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 4,
         "group_count": 0,
@@ -927,15 +954,17 @@
           {
             "id": "lesson-english-001:connection:that-replaces-book",
             "kind": "connection-line",
-            "x": 360.8,
-            "y": 124.82,
-            "width": 91.08,
-            "height": 165.67,
+            "x": 507,
+            "y": 212.35,
+            "width": 44,
+            "height": 111.65,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -967,10 +996,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 4,
         "group_count": 0,
@@ -983,15 +1012,17 @@
           {
             "id": "lesson-english-001:node:relative-structure:fragment:inner-subject",
             "kind": "text-fragment",
-            "x": 475.03,
-            "y": 322.47,
-            "width": 23.39,
-            "height": 15.6,
+            "x": 615.3,
+            "y": 322.9,
+            "width": 32.98,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1023,10 +1054,10 @@
         "beat_id": "lesson-english-001:step:explain-relative-clause:beat:split-inner-clause",
         "action_op": "board.emphasize",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 4,
         "connection_count": 4,
         "group_count": 0,
@@ -1039,15 +1070,17 @@
           {
             "id": "lesson-english-001:node:relative-structure:fragment:inner-verb",
             "kind": "text-fragment",
-            "x": 501.85,
-            "y": 322.47,
-            "width": 29.51,
-            "height": 15.6,
+            "x": 653.11,
+            "y": 322.9,
+            "width": 41.61,
+            "height": 22,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1079,10 +1112,10 @@
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "action_op": "board.create",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 0,
@@ -1095,15 +1128,17 @@
           {
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
-            "x": 173.38,
-            "y": 451.68,
-            "width": 303.7,
-            "height": 102.72,
+            "x": 468.85,
+            "y": 251.57,
+            "width": 428.3,
+            "height": 144.86,
             "visible": true,
             "fully_in_view": true
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1136,10 +1171,10 @@
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 1,
@@ -1152,15 +1187,17 @@
           {
             "id": "lesson-english-001:group:main-structure-group",
             "kind": "board-group",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 240.24,
-            "height": 283.14,
+            "x": 123.76,
+            "y": -35.7,
+            "width": 338.8,
+            "height": 383.9,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1193,10 +1230,10 @@
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 2,
@@ -1209,15 +1246,17 @@
           {
             "id": "lesson-english-001:group:relative-clause-group",
             "kind": "board-group",
-            "x": 429.44,
-            "y": 162.57,
-            "width": 240.24,
-            "height": 246.48,
+            "x": 431.76,
+            "y": -35.7,
+            "width": 502.48,
+            "height": 281.6,
             "visible": true,
-            "fully_in_view": true
+            "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1250,10 +1289,10 @@
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "action_op": "board.group",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.78,
+        "world_scale": 1.1,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 3,
@@ -1266,15 +1305,17 @@
           {
             "id": "lesson-english-001:group:lesson-map",
             "kind": "board-group",
-            "x": 173.6,
-            "y": 153.6,
-            "width": 549.12,
-            "height": 479.7,
+            "x": 86.36,
+            "y": -73.1,
+            "width": 885.28,
+            "height": 506,
             "visible": true,
             "fully_in_view": false
           }
         ],
         "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
         "min_focal_body_font_px": null,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
@@ -1307,10 +1348,10 @@
         "beat_id": "lesson-english-001:step:reassemble-meaning:beat:show-layered-meaning",
         "action_op": "board.focus",
         "viewport": {
-          "width": 960,
-          "height": 608
+          "width": 1366,
+          "height": 768
         },
-        "world_scale": 0.76,
+        "world_scale": 0.9,
         "node_count": 5,
         "connection_count": 4,
         "group_count": 3,
@@ -1324,50 +1365,50 @@
           {
             "id": "lesson-english-001:node:original-sentence",
             "kind": "text",
-            "x": 263.88,
-            "y": 121.75,
-            "width": 182.63,
-            "height": 101.21,
+            "x": 382.04,
+            "y": 178.2,
+            "width": 216,
+            "height": 119.7,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:main-clause",
             "kind": "text",
-            "x": 263.88,
-            "y": 264.05,
-            "width": 182.63,
-            "height": 82.19,
+            "x": 382.04,
+            "y": 333.9,
+            "width": 216,
+            "height": 97.2,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:modifier-note",
             "kind": "note",
-            "x": 513.3,
-            "y": 130.1,
-            "width": 183,
-            "height": 84.5,
+            "x": 633.87,
+            "y": 177.44,
+            "width": 350.26,
+            "height": 80.73,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:relative-structure",
             "kind": "text",
-            "x": 513.48,
-            "y": 255.3,
-            "width": 182.63,
-            "height": 63.92,
+            "x": 634.04,
+            "y": 271.8,
+            "width": 349.92,
+            "height": 75.6,
             "visible": true,
             "fully_in_view": true
           },
           {
             "id": "lesson-english-001:node:meaning-summary",
             "kind": "note",
-            "x": 263.67,
-            "y": 412.55,
-            "width": 296.29,
-            "height": 100.22,
+            "x": 633.79,
+            "y": 382.64,
+            "width": 350.42,
+            "height": 118.53,
             "visible": true,
             "fully_in_view": true
           }
@@ -1376,16 +1417,18 @@
           {
             "id": "lesson-english-001:group:lesson-map",
             "kind": "board-group",
-            "x": 212.14,
-            "y": 70,
-            "width": 535.73,
-            "height": 468,
+            "x": 320.84,
+            "y": 117,
+            "width": 724.32,
+            "height": 414,
             "visible": true,
             "fully_in_view": true
           }
         ],
-        "min_focal_node_width": 182.63,
-        "min_focal_body_font_px": 14,
+        "min_focal_node_width": 216,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 12.6,
         "min_focal_diagram_edge_px": null,
         "math_errors": 0,
         "content_overflows": [],
