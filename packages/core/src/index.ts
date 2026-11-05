@@ -1387,7 +1387,11 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       requireAlias(beat.key, `${beatPath}/key`);
       if (beatKeys.has(beat.key)) fail("OLL_DUPLICATE_ALIAS", `${beatPath}/key`, `Beat '${beat.key}' is duplicated`);
       beatKeys.add(beat.key);
-      requireArray(beat.actions, `${beatPath}/actions`);
+      if (!Array.isArray(beat.actions)) fail("OLL_INVALID_TYPE", `${beatPath}/actions`, "Expected an array");
+      // A learner says each sentence as its own beat; one with nothing done on the board is words only.
+      if (!beat.actions.length && !(isLearnerTaught(document) && beat.say?.trim())) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions`, "A beat needs at least one action; only a learner-taught beat may be words alone");
+      }
       if (beat.start) {
         if (beat.start.kind === "practice") fail("OLL_INVALID_PHASE_START", `${beatPath}/start`, "Practice belongs on a student task");
         resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`);

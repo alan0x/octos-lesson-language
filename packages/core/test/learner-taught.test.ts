@@ -243,6 +243,18 @@ test("writing appears stroke by stroke as it was written: a card shows its first
   validate(inkLesson([grid, circle, { do: "revise", target: "circle-a", reason: "the learner wrote more", content: { ...circle.content, shown_strokes: 3 } }]));
 });
 
+test("a learner-taught beat may be words alone; any other beat needs an action", () => {
+  const lesson = inkLesson([grid]);
+  lesson.steps[0]!.beats.push({ key: "just-words", say: "And that is the whole idea.", actions: [] });
+  validate(lesson);
+  const silent = inkLesson([grid]);
+  silent.steps[0]!.beats.push({ key: "nothing", actions: [] });
+  rejectsWith(silent, "OLL_INVALID_OPERATION_PAYLOAD", "/steps/0/beats/1/actions");
+  const explain = inkLesson([grid], "explain");
+  explain.steps[0]!.beats.push({ key: "just-words", say: "Words.", actions: [] });
+  assert.throws(() => validateAuthoringLesson(explain), (error: unknown) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD");
+});
+
 // ---- 0007: a card's source
 
 test("a card made from ink records the selection the learner confirmed", () => {
