@@ -2514,29 +2514,6 @@ export class InfiniteBoardView {
     }
   }
 
-  /**
-   * Where a part of a card (a geometry point, a curve, a segment) is drawn, in
-   * board coordinates, so a connection starts or ends at the part itself
-   * rather than at its card's edge. Undefined when the part is not drawn as
-   * its own element or has no size yet (the card's rectangle is used).
-   */
-  private renderedPartRect(layout: BoardLayout, target: Record<string, any> | undefined): Rect | undefined {
-    const nodeId = target?.node_id; const fragmentId = target?.fragment_id;
-    const nodeRect = nodeId ? layout.nodes[nodeId] : undefined;
-    if (!nodeRect || !fragmentId) return undefined;
-    const nodeElement = [...this.nodes.querySelectorAll<HTMLElement>(".board-node[data-id]")].find((element) => element.dataset.id === nodeId);
-    const part = nodeElement && [...nodeElement.querySelectorAll<HTMLElement | SVGElement>("[data-id]")].find((element) => element.dataset.id === fragmentId);
-    if (!nodeElement || !part) return undefined;
-    const card = nodeElement.getBoundingClientRect(); const box = part.getBoundingClientRect();
-    if (!(card.width > 0) || !(card.height > 0) || !(box.width > 0 || box.height > 0)) return undefined;
-    const scaleX = nodeRect.width / card.width; const scaleY = nodeRect.height / card.height;
-    // A thin line or a point still needs an area for the route to start from.
-    const width = Math.max(8, box.width * scaleX); const height = Math.max(8, box.height * scaleY);
-    const x = nodeRect.x + (box.left - card.left) * scaleX + (box.width * scaleX - width) / 2;
-    const y = nodeRect.y + (box.top - card.top) * scaleY + (box.height * scaleY - height) / 2;
-    return { x, y, width, height };
-  }
-
   private renderConnections(board: SemanticBoardState, layout: BoardLayout): void {
     this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     for (const element of this.nodes.querySelectorAll(".diagram-connection, .diagram-connection-badge")) element.remove();
@@ -2546,9 +2523,7 @@ export class InfiniteBoardView {
     const occupiedLabels: Rect[] = Object.values(layout.nodes).map((rect) => ({ ...rect }));
     for (const connection of Object.values(board.connections)) {
       if (this.renderInternalDiagramConnection(board, connection)) continue;
-      const fromPart = this.renderedPartRect(layout, connection.from); const toPart = this.renderedPartRect(layout, connection.to);
-      const fromRect = fromPart ?? connectionTargetRect(board, layout, connection.from);
-      const toRect = toPart ?? connectionTargetRect(board, layout, connection.to);
+      const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
       const labelText = connectionDisplayLabel(connection);
       const internalFragments = connection.from.node_id === connection.to.node_id && Boolean(connection.from.fragment_id && connection.to.fragment_id);
@@ -2561,9 +2536,7 @@ export class InfiniteBoardView {
             occupiedLabels,
           )
         : computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles);
-      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route));
-      // Starting inside a card, the line is drawn over the cards so it is seen leaving the part.
-      if (fromPart || toPart) { path.classList.add("connection-from-part"); this.connectionLabels.prepend(path); } else this.connections.append(path);
+      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);
       if (this.operation?.action?.op === "board.focus" && this.operation.action.focus?.targets.includes(connection.id)) path.classList.add("focus-arrive");
       if (labelText && !route.label.hidden) {
         const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("connection-label-badge"); badge.dataset.id = connection.id;
