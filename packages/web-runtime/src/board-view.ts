@@ -443,10 +443,12 @@ function renderedMathIntrinsicWidth(parent: HTMLElement): number | undefined {
   if (!Number.isFinite(viewportScale) || viewportScale <= 0) return undefined;
   // A display-mode .katex is a block and stretches to the current card width.
   // Its scrollWidth therefore measures the provisional card, not the formula.
-  // KaTeX's direct .katex-base children are intrinsic-width inline blocks;
-  // cancel the board camera transform without rounding each fragment to pixels.
+  // KaTeX's direct .base children of .katex-html are intrinsic-width inline
+  // blocks (KaTeX names them "base"; an earlier ".katex-base" never matched, so
+  // every math card kept its estimated width and long formulas wrapped).
+  // Cancel the board camera transform without rounding each fragment to pixels.
   const widths = formulas.map((formula) => {
-    const bases = formula.querySelectorAll<HTMLElement>(".katex-html > .katex-base");
+    const bases = formula.querySelectorAll<HTMLElement>(".katex-html > .base");
     return [...bases].reduce(
       (width, base) => width + base.getBoundingClientRect().width / viewportScale,
       0,

@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Math cards are sized to their rendered formula (up to 680 px) as intended: the measurement looked for `.katex-html > .katex-base`, which KaTeX never produces (its class is `base`), so every math card kept its length estimate (at least 280 px) and longer one-line formulas wrapped.
 - Teaching layout: a card that replaced another (Neat math over the learner's handwriting) keeps the replaced card's turn and section, so it stays where the handwriting was instead of moving below handwriting written after it. `visibleBoard` marks the replacement with `in_place_of`.
 - Teaching camera: when a composed frame cannot be readable at the host floor, cards and controls the current Beat is not about are dropped first (oldest first), so a long variable demonstration on an earlier card no longer leaves only that card's slider in the frame while the Beat's new card stays off screen.
 - Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
