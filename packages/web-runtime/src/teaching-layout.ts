@@ -143,11 +143,13 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   const targetsOf = (id: string) => relations[id] ?? [];
 
   const creationOrder = new Map(Object.keys(region.nodeSections ?? {}).map((id, index) => [id, index]));
+  // A card that replaced another (visibleBoard) takes that card's turn and section.
+  const turnOf = (id: string) => { const place = state.nodes[id]?.in_place_of; return typeof place === 'string' ? place : id; };
   const items: Item[] = [...ids]
-    .sort((a, b) => (creationOrder.get(a) ?? 1e9) - (creationOrder.get(b) ?? 1e9))
+    .sort((a, b) => (creationOrder.get(turnOf(a)) ?? 1e9) - (creationOrder.get(turnOf(b)) ?? 1e9))
     .map(id => {
       const kind = String(state.nodes[id]!.kind ?? 'text');
-      return { id, section: region.nodeSections?.[id] ?? 'legacy', kind, visual: visualKinds.has(kind),
+      return { id, section: region.nodeSections?.[turnOf(id)] ?? region.nodeSections?.[id] ?? 'legacy', kind, visual: visualKinds.has(kind),
         w: sizes[id]!.width, h: sizes[id]!.height };
     });
   const byId = new Map(items.map(item => [item.id, item]));

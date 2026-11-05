@@ -918,6 +918,22 @@ test("each stage is one row and each step opens its own column in narration orde
   assert.deepEqual(computeBoardLayout(board, {}, { regions: { r: region } }), layout, "layout is deterministic");
 });
 
+test("neat math that replaced handwriting keeps the handwriting's turn above later writing", async () => {
+  const { visibleBoard } = await import("../src/visible-board.js");
+  // A formula, two pieces of handwriting below it, and Neat math that replaced the first one.
+  const state = emptyBoard({
+    formula: card("formula", "math", { placement: { relation: "new_region" } }),
+    ink: card("ink", "ink", { hidden: true, replaced_by: "neat", placement: { relation: "below", anchor: "formula" } }),
+    ink2: card("ink2", "ink", { placement: { relation: "below", anchor: "ink" } }),
+    neat: card("neat", "math", { placement: { relation: "replaces", anchor: "ink" } }),
+  });
+  const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { formula: "1", ink: "2", ink2: "2", neat: "2" }, composition: wideComposition };
+  const shown = visibleBoard(state);
+  assert.equal(shown.nodes.neat!.in_place_of, "ink");
+  const n = computeBoardLayout(shown, {}, { regions: { r: region } }).nodes;
+  assert.ok(n.neat!.y < n.ink2!.y, "the Neat math stays where the handwriting was, above the later writing");
+});
+
 test("arriving cards never move existing cards; widths may only grow", () => {
   const kinds: Record<string, string> = { a: "scene3d", b: "math", c: "note", d: "math", e: "plot", f: "note" };
   const sections: Record<string, string> = { a: "1", b: "1", c: "2", d: "2", e: "3", f: "3" };
