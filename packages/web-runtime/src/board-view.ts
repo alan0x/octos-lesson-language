@@ -2868,7 +2868,10 @@ export class InfiniteBoardView {
     const viewport = this.viewport.getBoundingClientRect();
     const current = { panX: this.panX, panY: this.panY, scale: this.scale };
     const composed = this.withTeachingContext(targetIds, requestedRects, board);
-    const own = this.layout ? this.collectFocusRects(focusTargetsInRegion(board, this.beatTargets, this.activeRegionId), board, this.layout) : [];
+    // The Beat's own cards, without the controls attached under them: a shared slider is context.
+    const layout = this.layout;
+    const own = layout ? focusTargetsInRegion(board, this.beatTargets, this.activeRegionId)
+      .flatMap((id) => { const rect = targetRect(board, layout, id); return rect ? [rect] : []; }) : [];
     const rects = this.readableRects(composed, current, viewport, own);
     const narrowed = rects.length < composed.length;
     const mode: AttentionMode = narrowed
