@@ -39,5 +39,6 @@ test("a latent 3D face shows only when emphasized and is pointable only from the
   const styles = readFileSync(resolve("packages/web-runtime/styles.css"), "utf8");
   assert.match(styles, /\.scene3d-highlight-latent:not\(\[class\*="emphasis-"\]\)\s*\{[^}]*fill-opacity:\s*0/);
   assert.match(styles, /\.scene3d-highlight-latent\[data-facing="back"\]\s*\{[^}]*pointer-events:\s*none/);
+  assert.match(styles, /\.scene3d-highlight\.scene3d-highlight-latent\[data-facing="front"\]\s*\{[^}]*pointer-events:\s*all/);
   assert.match(styles, /\.board-node\[data-kind="scene3d"\] > \.scene3d-runtime\s*\{[^}]*flex:\s*1 1 auto/);
 });

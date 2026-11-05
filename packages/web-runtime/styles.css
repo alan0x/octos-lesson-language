@@ -102,6 +102,9 @@
 /* A face shown only when emphasized: invisible (but pointable while it faces
    the viewer) until a highlighter marks it; its label shows with it. */
 .scene3d-highlight-latent:not([class*="emphasis-"]) { fill-opacity: 0; stroke-opacity: 0; }
+/* Highlights are otherwise not pointable (.scene3d-highlight); a latent face is,
+   while it faces the viewer, so a tap marks that face rather than the solid. */
+.scene3d-highlight.scene3d-highlight-latent[data-facing="front"] { pointer-events: all; }
 .scene3d-highlight-latent[data-facing="back"] { pointer-events: none; }
 .scene3d-highlight-latent:not([class*="emphasis-"]) + .scene3d-highlight-label { display: none; }
 /* The scene fills what its card's title leaves, whatever the title's height,
