@@ -150,6 +150,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - `label`、`unit` 是可选显示元数据，不能触发隐式单位换算；
 - `lesson.open` 初始化 Semantic BoardState 中的变量当前值；Snapshot 必须保留该值。
 - 可选 `control: {"kind":"slider","step":0.01}` 允许 Web Runtime 显示学生可拖动滑杆；`step` 必须为正数且不大于变量范围。
+- 可选 `wrap: true`（0.7）表示 `min` 与 `max` 是同一个位置，例如一整圈的角度。取值仍在 `[min, max]` 内；`lesson.variable.animate` 走较短的一边，必要时从 `max` 跨到 `min`。录制拖动的宿主应把超过半圈的移动拆成几段，让回放沿原方向转。
 
 当前版本没有派生变量。表达式只能读取 Lesson 变量，因此不存在 binding 之间的执行顺序或依赖环。
 
@@ -530,6 +531,8 @@ Reducer 在创建节点时用当前变量值计算全部 binding。当前 Author
 
 `emphasis`：`focus`、`supporting`、`warning`、`resolved`。实现可以使用颜色、描边、下划线或动画，但不能只依赖颜色表达含义。
 
+`emphasis: "none"`（0.7）结束同一目标（同一 node 或同一 fragment）此前的强调，目标回到未强调的样子；它不吸引注意，Runtime 不为它移动镜头。例如孩子在一张卡片上用荧光笔标出的部件，到下一张卡片开始时结束强调。
+
 目标可以是 node、node fragment、connection 或 group。强调 connection 不复制连接，也不改变其端点和关系语义；强调 group 作用于组的视觉边界和成员整体，不改变成员内容。
 
 ### 9.4 `board.connect`
@@ -621,7 +624,7 @@ v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表�
 }
 ```
 
-动作把变量从执行前的当前值变到 `to`。`to` 必须在变量范围内。Headless Reducer 直接应用终值；Web Runtime 才生成中间帧。`duration_intent` 只表达 `brief`、`normal`、`extended` 三档教学节奏，不能换成毫秒。用户在动画中拖动变量控件时，Runtime 终止该自动动画并保存用户值。
+动作把变量从执行前的当前值变到 `to`（`wrap` 变量走较短的一边）。`to` 必须在变量范围内。Headless Reducer 直接应用终值；Web Runtime 才生成中间帧。`duration_intent` 只表达 `brief`、`normal`、`extended` 三档教学节奏，不能换成毫秒。用户在动画中拖动变量控件时，Runtime 终止该自动动画并保存用户值。
 
 暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
 
@@ -787,6 +790,8 @@ Runtime 在 `axes` 给出的有限范围内本地采样；表达式无效或没�
 - `display` 省略或为 `plane` 时只显示参考平面，保持旧课件行为；`intersection` 显示平面与目标对象的真实交集，`plane_and_intersection` 同时显示二者；
 - 使用真实交集时必须用 `targets` 指出被截的 `objects[].as`。实体显示截面轮廓与填充，函数曲面显示截线；
 - `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
+- 可选 `shown: "when_emphasized"`（0.7）：该部件平时不填色，被强调时才显示；面朝向观看者（面中心比场景实体中心更近）时显示它的标签、可以被点选，背面不显示标签、不能点选；适合让孩子在长方体上逐个指出面；
+- 长方体背向观看者的面只画虚线棱（隐藏线），使透明长方体只有一种读法；
 - `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
 - Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
 - 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角。`match: "view_direction"` 只判断学生是否从目标方向观察，不附加水平转角或缩放条件，俯视和仰视时也不会要求不可见的偏航角；`match: "camera_pose"` 判断精确的水平转角、俯仰角和缩放。旧课件省略 `match` 时保持 `camera_pose` 行为；

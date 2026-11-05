@@ -52,6 +52,48 @@ test("a learner-taught lesson names its learner author and needs player 0.6.0", 
   assert.equal(requirements.minimumPlayerVersion, "0.6.0");
 });
 
+test("a later card ends an earlier highlight with emphasis none, which needs player 0.7.0", () => {
+  const lesson = learnerLesson();
+  const later = lesson.steps[0]!.beats[2]!;
+  later.actions.unshift({ do: "emphasize", target: "unit-circle#height", emphasis: "none" } as (typeof later.actions)[number]);
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const state = reduceCanonicalEvents(events);
+  const entries = (state.nodes[Object.keys(state.nodes).find((id) => id.endsWith("unit-circle"))!]!.emphasis ?? []) as Array<{ emphasis: string }>;
+  assert.deepEqual(entries.map((entry) => entry.emphasis), ["focus", "none"]);
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("emphasis:none"));
+  assert.equal(requirements.minimumPlayerVersion, "0.7.0");
+});
+
+test("a wrapping angle variable is kept in the state and needs player 0.7.0", () => {
+  const lesson = learnerLesson();
+  lesson.lesson.variables = (lesson.lesson.variables ?? []).map((variable) => ({ ...variable, wrap: true as const }));
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const state = reduceCanonicalEvents(events);
+  assert.ok(Object.values(state.variables ?? {}).every((variable) => variable.wrap === true));
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("variables:wrap"));
+  const invalid = learnerLesson();
+  invalid.lesson.variables = (invalid.lesson.variables ?? []).map((variable) => ({ ...variable, wrap: false as unknown as true }));
+  rejects(invalid, "OLL_INVALID_VARIABLE");
+});
+
+test("3D highlights may be shown only when emphasized, which needs player 0.7.0", async () => {
+  const box = learnerLesson(JSON.parse(await readFile(resolve(root, "examples/learner-taught-box-v1/lesson.authoring.json"), "utf8")) as AuthoringLesson);
+  const scene = box.steps.flatMap((step) => step.beats).flatMap((beat) => beat.actions).find((action) => action.do === "write" && action.kind === "scene3d") as unknown as { content: { highlights: Array<Record<string, unknown>> } };
+  scene.content.highlights = scene.content.highlights.map((highlight) => ({ ...highlight, shown: "when_emphasized" }));
+  assertAuthoringSchema(box);
+  validateAuthoringLesson(box);
+  const requirements = deriveExecutionRequirements(normalizeAuthoringLesson(box, host));
+  assert.ok(requirements.requiredCapabilities.includes("scene3d:latent-highlights"));
+  scene.content.highlights[0]!.shown = "sometimes";
+  rejects(box, "OLL_INVALID_OPERATION_PAYLOAD");
+});
+
 test("lesson modes cannot be mixed up", () => {
   const withoutAuthor = learnerLesson();
   delete withoutAuthor.lesson.author;

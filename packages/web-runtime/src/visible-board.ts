@@ -54,6 +54,8 @@ export function visibleBoard(state: SemanticBoardState): SemanticBoardState {
     const inkBox = placement?.relation === "annotates" ? node.content?.annotation ?? node.placement?.annotation : undefined;
     shown[replacementId] = {
       ...replacement,
+      // Layout orders cards by creation; the replacement keeps the replaced card's turn.
+      in_place_of: node.id,
       placement: inkBox ? { ...placement, annotation: inkBox } : placement,
       ...(node.region_id !== undefined ? { region_id: node.region_id } : {}),
     };

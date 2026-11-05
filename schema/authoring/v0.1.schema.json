@@ -556,6 +556,7 @@
         "initial": {"type": "number"},
         "min": {"type": "number"},
         "max": {"type": "number"},
+        "wrap": {"const": true},
         "label": {"type": "string", "maxLength": 80},
         "unit": {"type": "string", "maxLength": 32},
         "control": {
@@ -666,7 +667,8 @@
                 "items": {"$ref": "#/$defs/point3d"}
               },
               "label": {"type": "string"},
-              "color": {"type": "string"}
+              "color": {"type": "string"},
+              "shown": {"enum": ["always", "when_emphasized"]}
             }
           }
         },

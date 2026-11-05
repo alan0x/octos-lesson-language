@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.6.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.7.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -29,6 +29,9 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "action:board.hide": "0.6.0",
   "write-source": "0.6.0",
   "action:scene3d.view": "0.6.0",
+  "emphasis:none": "0.7.0",
+  "variables:wrap": "0.7.0",
+  "scene3d:latent-highlights": "0.7.0",
 });
 
 export interface ExecutionRequirements {
@@ -67,6 +70,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
   const content = (value: Record<string, unknown> | undefined, path: string) => {
     if (!value) return;
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
+    if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     const bindings = value.bindings;
     if (Array.isArray(bindings) && bindings.length) {
       add("value-bindings", path);
@@ -88,6 +92,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
     add(`canonical:${event.version}`, `${path}/version`);
     if (event.lesson?.mode === "learner_taught") add("lesson-mode:learner_taught", `${path}/lesson/mode`);
     if (event.lesson?.variables?.length) add("variables", `${path}/lesson/variables`);
+    if (event.lesson?.variables?.some((variable) => variable.wrap)) add("variables:wrap", `${path}/lesson/variables`);
     if (event.lesson?.reflections?.length) add("reflections", `${path}/lesson/reflections`);
     for (const task of event.lesson?.tasks ?? []) {
       if (task.start) add("practice-start", `${path}/lesson/tasks/${task.as}/start`);
@@ -97,6 +102,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
       for (const actions of Object.values(beat.stage)) for (const action of actions) {
         const actionPath = `${path}/actions/${action.action_id}`;
         add(`action:${action.op}`, actionPath);
+        if (action.op === "board.emphasize" && action.emphasis === "none") add("emphasis:none", `${actionPath}/emphasis`);
         if (action.node) {
           add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;

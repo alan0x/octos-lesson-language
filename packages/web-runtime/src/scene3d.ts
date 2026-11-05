@@ -812,7 +812,7 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean }> = [];
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
       if (object.kind === "surface") {
@@ -827,10 +827,14 @@ function renderScene(
         continue;
       }
       if (object.kind === "box") {
+        // A see-through box reads two ways (near faces seen as far). Faces turned
+        // away are drawn as dashed hidden edges, as in a textbook, so the box
+        // reads one way: the way it is drawn and pointed at.
+        const centreDepth = projectScene3dPoint(object.center as Point3d, view).depth;
         for (const points of boxFaces(object)) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
+          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6 });
         }
         continue;
       }
@@ -870,7 +874,7 @@ function renderScene(
     }
     faces.sort((left, right) => left.depth - right.depth);
     for (const face of faces) {
-      const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+      const element = polygon(svg, face.points, view, face.color, .23, face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
       element.dataset.id = face.objectId;
     }
     endLayer(state.base);
@@ -907,6 +911,11 @@ function renderScene(
   if (state.highlightKey !== highlightKey) {
     beginLayer(state.highlights, state.highlightGeometryKey === highlightGeometryKey);
     const svg = state.highlights;
+    // A face shown only when emphasized can be pointed at only while it faces
+    // the viewer: its centre is nearer than the centre of the scene's solids.
+    const solidPoints = meshes.flatMap((mesh) => mesh.triangles.flatMap((triangle) => triangle.points));
+    const centreDepth = solidPoints.length
+      ? solidPoints.reduce((sum, point) => sum + projectScene3dPoint(point, view).depth, 0) / solidPoints.length : 0;
     for (const highlight of content.highlights ?? []) {
       const points = highlight.points as Point3d[];
       const color = safeColor(highlight.color, "#d04f45");
@@ -937,9 +946,14 @@ function renderScene(
         edge.dataset.id = id;
 
       } else {
-        const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
+        const latent = highlight.shown === "when_emphasized";
+        const face = polygon(svg, points, view, color, .42, `scene3d-highlight scene3d-highlight-face${latent ? " scene3d-highlight-latent" : ""}`);
         face.dataset.id = id;
         const projected = points.map((point) => projectScene3dPoint(point, view));
+        if (latent) {
+          const depth = projected.reduce((sum, point) => sum + point.depth, 0) / projected.length;
+          face.dataset.facing = depth > centreDepth + 1e-6 ? "front" : "back";
+        } else delete face.dataset.facing;
         labelPoint = {
           x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
           y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,

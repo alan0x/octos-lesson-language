@@ -193,6 +193,26 @@ function deliveryMultiplier(delivery?: Delivery): number {
  * parallel, while the Runtime guarantees that the caption and its Beat do not
  * disappear before a learner has had a reasonable chance to follow them.
  */
+/**
+ * A value part-way through a variable animation. A wrapping variable (an angle
+ * over one full turn) goes the shorter way round, crossing from max to min.
+ */
+export function animatedVariableValue(
+  from: number,
+  to: number,
+  eased: number,
+  variable?: { min: number; max: number; wrap?: true },
+): number {
+  if (!variable?.wrap) return from + (to - from) * eased;
+  const period = variable.max - variable.min;
+  let delta = to - from;
+  if (Math.abs(delta) > period / 2) delta -= Math.sign(delta) * period;
+  const value = from + delta * eased;
+  const inside = ((value - variable.min) % period + period) % period + variable.min;
+  // The end of the range is the same place as its start: keep an exact max.
+  return Math.abs(value - variable.max) < 1e-9 ? variable.max : inside;
+}
+
 export function narrationDuration(
   text: string,
   delivery?: Delivery,
@@ -1439,7 +1459,8 @@ export class BrowserLessonSession {
     if (!animation) return;
     const next = { ...animation, progress: Math.max(0, Math.min(1, progress)) };
     const eased = this.easedVariableProgress(next);
-    this.player.setVariable(animation.variable, animation.from + (animation.to - animation.from) * eased);
+    const declaration = this.player.snapshot.board?.variables?.[animation.variable];
+    this.player.setVariable(animation.variable, next.progress >= 1 ? animation.to : animatedVariableValue(animation.from, animation.to, eased, declaration));
     animation.progress = next.progress;
   }
 

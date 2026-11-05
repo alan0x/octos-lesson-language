@@ -4,6 +4,8 @@
 
 ### Added
 
+- Lesson variables accept `wrap: true` (min and max are the same place, e.g. an angle over one full turn); `animate` on such a variable takes the shorter way round. Capability `variables:wrap`, player 0.7.0 (decision 0010). Web runtime exports `animatedVariableValue`.
+- `emphasis: "none"` ends an earlier emphasis of the same target (node or fragment) without drawing attention (no camera move). Capability `emphasis:none`, player execution version 0.7.0 (decision 0009).
 - Numeric answer tasks (`completion.kind: "numeric_answer"`, `allowed_operations: [{"kind": "answer_entry"}]`, `student-tasks:numeric_answer`, player 0.5.0): the learner types a whole number, decimal, fraction or mixed number, checked exactly (or within `tolerance`), optionally in simplest form. The task carries an `anchor` board card, normalized to its Canonical node ID. Core exports `parseNumericAnswer`, `checkNumericAnswer` and `isSimplestFraction`.
 - Web session `submitStudentAnswer(taskId, text, input)`: records an `answer_submit` student operation and judges the open numeric answer task; text that is not a number returns `{ unreadable: true }` and is not an attempt. Attempts of numeric answer tasks keep the typed `answer`, and restored progress must repeat its own check.
 - Point bindings (plot and geometry x/y) accept `hide_when_undefined: true`: when the expression has no finite value (e.g. the intersection of parallel lines) the point is hidden instead of failing the lesson, and it returns once defined (`binding-hide-undefined`, player 0.3.0).
@@ -22,6 +24,12 @@
 
 ### Fixed
 
+- 3D highlights accept `shown: "when_emphasized"`: the part is filled only once emphasized; while a latent face faces the viewer its label shows and it can be pointed at.
+- 3D boxes draw the faces turned away from the viewer as dashed hidden edges, so a see-through box no longer reads two ways (near faces seen as far). Capability `scene3d:latent-highlights`, player 0.7.0.
+- 3D cards: the scene fills the space its card's title leaves instead of assuming a 24px title, so a titled 3D card no longer runs 8px past its bottom (reported as content overflowing the card).
+- Math cards are sized to their rendered formula (up to 680 px) as intended: the measurement looked for `.katex-html > .katex-base`, which KaTeX never produces (its class is `base`), so every math card kept its length estimate (at least 280 px) and longer one-line formulas wrapped.
+- Teaching layout: a card that replaced another (Neat math over the learner's handwriting) keeps the replaced card's turn and section, so it stays where the handwriting was instead of moving below handwriting written after it. `visibleBoard` marks the replacement with `in_place_of`.
+- Teaching camera: when a composed frame cannot be readable at the host floor, cards and controls the current Beat is not about are dropped first (oldest first), so a long variable demonstration on an earlier card no longer leaves only that card's slider in the frame while the Beat's new card stays off screen.
 - Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
 - Teaching layout: controls shared by several visuals dock under the first of them at its width (8 units below), like a single visual's controls; practice stays beside them, below any visual above it.
 - Board view: a card's measured size is reused while its content signature and width are unchanged, so a variable change re-measures only the visuals it drives instead of forcing a browser layout per card on every animation frame.

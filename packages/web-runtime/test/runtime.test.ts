@@ -1348,3 +1348,17 @@ test("the Beat composition includes cards it wrote and exposes the Step's earlie
   assert.deepEqual(session.stepContextTargets, created(step.start_cursor, second.start_cursor - 1),
     "cards written earlier in the same Step are camera context for the next Beat");
 });
+
+test("a wrapping angle animates the shorter way round, across the end of its range", async () => {
+  const { animatedVariableValue } = await import("../src/runtime.js");
+  const turn = Math.PI * 2;
+  const angle = { min: 0, max: turn, wrap: true as const };
+  // From just below a full turn to just past 0: forwards through 2π, not back round.
+  assert.ok(Math.abs(animatedVariableValue(6.2, 0.4, .5, angle) - ((6.2 + (0.4 + turn - 6.2) / 2) % turn)) < 1e-9);
+  const midway = animatedVariableValue(6.2, 0.4, .1, angle);
+  assert.ok(midway > 6.2 && midway <= turn, "starts by increasing");
+  assert.ok(animatedVariableValue(6.2, 0.4, .9, angle) < 0.4, "ends just below the target after wrapping");
+  // Without wrap the value goes straight there.
+  assert.ok(Math.abs(animatedVariableValue(6.2, 0.4, .5, { min: 0, max: turn }) - 3.3) < 1e-9);
+  assert.equal(animatedVariableValue(1, 2, .5, angle), 1.5);
+});

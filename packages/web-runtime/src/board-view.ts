@@ -178,9 +178,15 @@ function latestEmphasis(owner: Record<string, any>, fragmentId?: string): string
     : !entry.target?.fragment_id)?.emphasis;
 }
 
+/** An emphasis that ends an earlier one draws no attention, so the camera stays. */
+function isEndedEmphasis(action: Record<string, any> | undefined): boolean {
+  return action?.op === "board.emphasize" && String(action.emphasis ?? "").trim().toLowerCase() === "none";
+}
+
 export function emphasisClassName(emphasis: string | undefined): string | undefined {
   const normalized = emphasis?.trim().toLowerCase();
-  if (!normalized) return undefined;
+  // `none` ends an earlier emphasis of the same target (player 0.7.0).
+  if (!normalized || normalized === "none") return undefined;
   // The frozen OLL schema permits descriptive strings here, while the visual
   // runtime currently exposes four semantic emphasis styles. Unknown values
   // still mean "draw attention"; degrade them to focus instead of injecting
@@ -437,10 +443,12 @@ function renderedMathIntrinsicWidth(parent: HTMLElement): number | undefined {
   if (!Number.isFinite(viewportScale) || viewportScale <= 0) return undefined;
   // A display-mode .katex is a block and stretches to the current card width.
   // Its scrollWidth therefore measures the provisional card, not the formula.
-  // KaTeX's direct .katex-base children are intrinsic-width inline blocks;
-  // cancel the board camera transform without rounding each fragment to pixels.
+  // KaTeX's direct .base children of .katex-html are intrinsic-width inline
+  // blocks (KaTeX names them "base"; an earlier ".katex-base" never matched, so
+  // every math card kept its estimated width and long formulas wrapped).
+  // Cancel the board camera transform without rounding each fragment to pixels.
   const widths = formulas.map((formula) => {
-    const bases = formula.querySelectorAll<HTMLElement>(".katex-html > .katex-base");
+    const bases = formula.querySelectorAll<HTMLElement>(".katex-html > .base");
     return [...bases].reduce(
       (width, base) => width + base.getBoundingClientRect().width / viewportScale,
       0,
@@ -1828,7 +1836,8 @@ export class InfiniteBoardView {
       this.requestTeachingFocus(focusTargets, focusRects, board);
     }
     else if (teachingCameraChanged
-      && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
+      && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")
+      && !isEndedEmphasis(operation?.action)) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeId = operation?.action?.op === "board.create"
         ? operation.action.node?.id
@@ -2789,13 +2798,23 @@ export class InfiniteBoardView {
    * left beside the frame so the newest stay readable. Without a host floor
    * the minimum is the runtime default and every card is kept.
    */
-  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect): Rect[] {
+  /**
+   * The rects that can share the screen at the host's readable floor. What
+   * the current Beat is about (`own`) is kept longest: context and attached
+   * controls are dropped first, oldest first, so a long demonstration on an
+   * earlier card never leaves only its slider in the frame.
+   */
+  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect, own: Rect[] = []): Rect[] {
     const floor = this.automaticCameraMinimumScale;
     const fits = (candidate: Rect[]) => planFocusCamera(
       candidate, current, viewport, "relationship", this.viewportInsets, floor, this.automaticCameraMaximumScale,
     ).scale >= floor - .000_001;
+    const isOwn = (rect: Rect) => own.some((mine) => mine.x === rect.x && mine.y === rect.y && mine.width === rect.width && mine.height === rect.height);
     let kept = rects;
-    while (kept.length > 1 && !fits(kept)) kept = kept.slice(1);
+    while (kept.length > 1 && !fits(kept)) {
+      const context = kept.findIndex((rect) => !isOwn(rect));
+      kept = context >= 0 && kept.some(isOwn) ? kept.filter((_, index) => index !== context) : kept.slice(1);
+    }
     return kept;
   }
   /**
@@ -2824,7 +2843,11 @@ export class InfiniteBoardView {
     const viewport = this.viewport.getBoundingClientRect();
     const current = { panX: this.panX, panY: this.panY, scale: this.scale };
     const composed = this.withTeachingContext(targetIds, requestedRects, board);
-    const rects = this.readableRects(composed, current, viewport);
+    // The Beat's own cards, without the controls attached under them: a shared slider is context.
+    const layout = this.layout;
+    const own = layout ? focusTargetsInRegion(board, this.beatTargets, this.activeRegionId)
+      .flatMap((id) => { const rect = targetRect(board, layout, id); return rect ? [rect] : []; }) : [];
+    const rects = this.readableRects(composed, current, viewport, own);
     const narrowed = rects.length < composed.length;
     const mode: AttentionMode = narrowed
       ? (rects.length > 1 ? "relationship" : "detail")

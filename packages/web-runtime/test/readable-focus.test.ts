@@ -5,7 +5,7 @@ import type { CameraState } from "../src/camera.js";
 import type { Rect } from "../src/layout.js";
 
 interface ReadableFocus {
-  readableRects(rects: Rect[], current: CameraState, viewport: DOMRect): Rect[];
+  readableRects(rects: Rect[], current: CameraState, viewport: DOMRect, own?: Rect[]): Rect[];
   towardLeftContext(camera: CameraState, kept: Rect[], all: Rect[], viewport: DOMRect): CameraState;
 }
 
@@ -29,6 +29,17 @@ test("related cards that cannot share the screen at the host floor keep the newe
 
 test("without a host floor every related card stays in the frame", () => {
   assert.deepEqual(view(.18).readableRects([photo, note], camera, chromebook), [photo, note]);
+});
+
+test("what the Beat is about outlasts an earlier card and its controls when they cannot share the screen", () => {
+  // A unit circle with its slider underneath, and the graph the Beat adds beside it.
+  const circle: Rect = { x: 20, y: 20, width: 440, height: 380 };
+  const graph: Rect = { x: 488, y: 20, width: 440, height: 360 };
+  const slider: Rect = { x: 20, y: 408, width: 440, height: 34 };
+  const board = { ...chromebook, width: 1316, height: 498, right: 1316, bottom: 498 } as DOMRect;
+  const tight = Object.assign(view(.9), { viewportInsets: { top: 12, right: 12, bottom: 12, left: 12, focusMargin: 24 } });
+  assert.deepEqual(tight.readableRects([circle, graph, slider], camera, board), [slider], "by position alone only the slider would stay");
+  assert.deepEqual(tight.readableRects([circle, graph, slider], camera, board, [graph]), [graph]);
 });
 
 test("cards that fit together at the floor are all kept", () => {
