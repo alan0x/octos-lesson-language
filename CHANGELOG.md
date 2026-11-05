@@ -4,6 +4,7 @@
 
 ### Added
 
+- `emphasis: "none"` ends an earlier emphasis of the same target (node or fragment) without drawing attention (no camera move). Capability `emphasis:none`, player execution version 0.7.0 (decision 0009).
 - Numeric answer tasks (`completion.kind: "numeric_answer"`, `allowed_operations: [{"kind": "answer_entry"}]`, `student-tasks:numeric_answer`, player 0.5.0): the learner types a whole number, decimal, fraction or mixed number, checked exactly (or within `tolerance`), optionally in simplest form. The task carries an `anchor` board card, normalized to its Canonical node ID. Core exports `parseNumericAnswer`, `checkNumericAnswer` and `isSimplestFraction`.
 - Web session `submitStudentAnswer(taskId, text, input)`: records an `answer_submit` student operation and judges the open numeric answer task; text that is not a number returns `{ unreadable: true }` and is not an attempt. Attempts of numeric answer tasks keep the typed `answer`, and restored progress must repeat its own check.
 - Point bindings (plot and geometry x/y) accept `hide_when_undefined: true`: when the expression has no finite value (e.g. the intersection of parallel lines) the point is hidden instead of failing the lesson, and it returns once defined (`binding-hide-undefined`, player 0.3.0).
@@ -22,6 +23,7 @@
 
 ### Fixed
 
+- Connections whose endpoint is a part drawn on its own (a geometry point, segment or curve) start or end at that part instead of the card's edge.
 - Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
 - Teaching layout: controls shared by several visuals dock under the first of them at its width (8 units below), like a single visual's controls; practice stays beside them, below any visual above it.
 - Board view: a card's measured size is reused while its content signature and width are unchanged, so a variable change re-measures only the visuals it drives instead of forcing a browser layout per card on every animation frame.

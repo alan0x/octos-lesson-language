@@ -178,9 +178,15 @@ function latestEmphasis(owner: Record<string, any>, fragmentId?: string): string
     : !entry.target?.fragment_id)?.emphasis;
 }
 
+/** An emphasis that ends an earlier one draws no attention, so the camera stays. */
+function isEndedEmphasis(action: Record<string, any> | undefined): boolean {
+  return action?.op === "board.emphasize" && String(action.emphasis ?? "").trim().toLowerCase() === "none";
+}
+
 export function emphasisClassName(emphasis: string | undefined): string | undefined {
   const normalized = emphasis?.trim().toLowerCase();
-  if (!normalized) return undefined;
+  // `none` ends an earlier emphasis of the same target (player 0.7.0).
+  if (!normalized || normalized === "none") return undefined;
   // The frozen OLL schema permits descriptive strings here, while the visual
   // runtime currently exposes four semantic emphasis styles. Unknown values
   // still mean "draw attention"; degrade them to focus instead of injecting
@@ -1828,7 +1834,8 @@ export class InfiniteBoardView {
       this.requestTeachingFocus(focusTargets, focusRects, board);
     }
     else if (teachingCameraChanged
-      && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")) {
+      && ["board.create", "board.revise", "board.emphasize", "teacher.point"].includes(operation?.action?.op ?? "")
+      && !isEndedEmphasis(operation?.action)) {
       const activeTarget = operation?.action?.op === "board.create" ? operation.action.node?.id : operation?.action?.target;
       const activeId = operation?.action?.op === "board.create"
         ? operation.action.node?.id
@@ -2507,6 +2514,29 @@ export class InfiniteBoardView {
     }
   }
 
+  /**
+   * Where a part of a card (a geometry point, a curve, a segment) is drawn, in
+   * board coordinates, so a connection starts or ends at the part itself
+   * rather than at its card's edge. Undefined when the part is not drawn as
+   * its own element or has no size yet (the card's rectangle is used).
+   */
+  private renderedPartRect(layout: BoardLayout, target: Record<string, any> | undefined): Rect | undefined {
+    const nodeId = target?.node_id; const fragmentId = target?.fragment_id;
+    const nodeRect = nodeId ? layout.nodes[nodeId] : undefined;
+    if (!nodeRect || !fragmentId) return undefined;
+    const nodeElement = [...this.nodes.querySelectorAll<HTMLElement>(".board-node[data-id]")].find((element) => element.dataset.id === nodeId);
+    const part = nodeElement && [...nodeElement.querySelectorAll<HTMLElement | SVGElement>("[data-id]")].find((element) => element.dataset.id === fragmentId);
+    if (!nodeElement || !part) return undefined;
+    const card = nodeElement.getBoundingClientRect(); const box = part.getBoundingClientRect();
+    if (!(card.width > 0) || !(card.height > 0) || !(box.width > 0 || box.height > 0)) return undefined;
+    const scaleX = nodeRect.width / card.width; const scaleY = nodeRect.height / card.height;
+    // A thin line or a point still needs an area for the route to start from.
+    const width = Math.max(8, box.width * scaleX); const height = Math.max(8, box.height * scaleY);
+    const x = nodeRect.x + (box.left - card.left) * scaleX + (box.width * scaleX - width) / 2;
+    const y = nodeRect.y + (box.top - card.top) * scaleY + (box.height * scaleY - height) / 2;
+    return { x, y, width, height };
+  }
+
   private renderConnections(board: SemanticBoardState, layout: BoardLayout): void {
     this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
     for (const element of this.nodes.querySelectorAll(".diagram-connection, .diagram-connection-badge")) element.remove();
@@ -2516,7 +2546,8 @@ export class InfiniteBoardView {
     const occupiedLabels: Rect[] = Object.values(layout.nodes).map((rect) => ({ ...rect }));
     for (const connection of Object.values(board.connections)) {
       if (this.renderInternalDiagramConnection(board, connection)) continue;
-      const fromRect = connectionTargetRect(board, layout, connection.from); const toRect = connectionTargetRect(board, layout, connection.to);
+      const fromRect = this.renderedPartRect(layout, connection.from) ?? connectionTargetRect(board, layout, connection.from);
+      const toRect = this.renderedPartRect(layout, connection.to) ?? connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
       const labelText = connectionDisplayLabel(connection);
       const internalFragments = connection.from.node_id === connection.to.node_id && Boolean(connection.from.fragment_id && connection.to.fragment_id);

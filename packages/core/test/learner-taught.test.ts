@@ -52,6 +52,21 @@ test("a learner-taught lesson names its learner author and needs player 0.6.0", 
   assert.equal(requirements.minimumPlayerVersion, "0.6.0");
 });
 
+test("a later card ends an earlier highlight with emphasis none, which needs player 0.7.0", () => {
+  const lesson = learnerLesson();
+  const later = lesson.steps[0]!.beats[2]!;
+  later.actions.unshift({ do: "emphasize", target: "unit-circle#height", emphasis: "none" } as (typeof later.actions)[number]);
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const state = reduceCanonicalEvents(events);
+  const entries = (state.nodes[Object.keys(state.nodes).find((id) => id.endsWith("unit-circle"))!]!.emphasis ?? []) as Array<{ emphasis: string }>;
+  assert.deepEqual(entries.map((entry) => entry.emphasis), ["focus", "none"]);
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("emphasis:none"));
+  assert.equal(requirements.minimumPlayerVersion, "0.7.0");
+});
+
 test("lesson modes cannot be mixed up", () => {
   const withoutAuthor = learnerLesson();
   delete withoutAuthor.lesson.author;

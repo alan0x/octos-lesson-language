@@ -530,6 +530,8 @@ Reducer 在创建节点时用当前变量值计算全部 binding。当前 Author
 
 `emphasis`：`focus`、`supporting`、`warning`、`resolved`。实现可以使用颜色、描边、下划线或动画，但不能只依赖颜色表达含义。
 
+`emphasis: "none"`（0.7）结束同一目标（同一 node 或同一 fragment）此前的强调，目标回到未强调的样子；它不吸引注意，Runtime 不为它移动镜头。例如孩子在一张卡片上用荧光笔标出的部件，到下一张卡片开始时结束强调。
+
 目标可以是 node、node fragment、connection 或 group。强调 connection 不复制连接，也不改变其端点和关系语义；强调 group 作用于组的视觉边界和成员整体，不改变成员内容。
 
 ### 9.4 `board.connect`
@@ -548,7 +550,7 @@ Reducer 在创建节点时用当前变量值计算全部 binding。当前 Author
 }
 ```
 
-连接端点必须在动作执行时存在。
+连接端点必须在动作执行时存在。端点是 fragment 且该部件在卡片中单独绘制（几何点、线段、曲线）时，连线从部件本身出发或指向部件本身；否则使用卡片边界。
 
 ### 9.5 `board.group`
 

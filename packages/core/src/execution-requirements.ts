@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.6.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.7.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -29,6 +29,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "action:board.hide": "0.6.0",
   "write-source": "0.6.0",
   "action:scene3d.view": "0.6.0",
+  "emphasis:none": "0.7.0",
 });
 
 export interface ExecutionRequirements {
@@ -97,6 +98,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
       for (const actions of Object.values(beat.stage)) for (const action of actions) {
         const actionPath = `${path}/actions/${action.action_id}`;
         add(`action:${action.op}`, actionPath);
+        if (action.op === "board.emphasize" && action.emphasis === "none") add("emphasis:none", `${actionPath}/emphasis`);
         if (action.node) {
           add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;

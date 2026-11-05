@@ -247,6 +247,11 @@ test("model-authored emphasis prose degrades to a safe focus class", () => {
   assert.equal(emphasisClassName(undefined), undefined);
 });
 
+test("an emphasis of none ends the earlier emphasis", () => {
+  assert.equal(emphasisClassName("none"), undefined);
+  assert.equal(emphasisClassName(" None "), undefined);
+});
+
 test("beat boundaries preserve the latest visible teaching target", () => {
   const boundary = {
     operation_id: "lesson:beat:end",
