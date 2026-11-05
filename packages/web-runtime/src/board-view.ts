@@ -2823,13 +2823,23 @@ export class InfiniteBoardView {
    * left beside the frame so the newest stay readable. Without a host floor
    * the minimum is the runtime default and every card is kept.
    */
-  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect): Rect[] {
+  /**
+   * The rects that can share the screen at the host's readable floor. What
+   * the current Beat is about (`own`) is kept longest: context and attached
+   * controls are dropped first, oldest first, so a long demonstration on an
+   * earlier card never leaves only its slider in the frame.
+   */
+  private readableRects(rects: Rect[], current: CameraState, viewport: DOMRect, own: Rect[] = []): Rect[] {
     const floor = this.automaticCameraMinimumScale;
     const fits = (candidate: Rect[]) => planFocusCamera(
       candidate, current, viewport, "relationship", this.viewportInsets, floor, this.automaticCameraMaximumScale,
     ).scale >= floor - .000_001;
+    const isOwn = (rect: Rect) => own.some((mine) => mine.x === rect.x && mine.y === rect.y && mine.width === rect.width && mine.height === rect.height);
     let kept = rects;
-    while (kept.length > 1 && !fits(kept)) kept = kept.slice(1);
+    while (kept.length > 1 && !fits(kept)) {
+      const context = kept.findIndex((rect) => !isOwn(rect));
+      kept = context >= 0 && kept.some(isOwn) ? kept.filter((_, index) => index !== context) : kept.slice(1);
+    }
     return kept;
   }
   /**
@@ -2858,7 +2868,8 @@ export class InfiniteBoardView {
     const viewport = this.viewport.getBoundingClientRect();
     const current = { panX: this.panX, panY: this.panY, scale: this.scale };
     const composed = this.withTeachingContext(targetIds, requestedRects, board);
-    const rects = this.readableRects(composed, current, viewport);
+    const own = this.layout ? this.collectFocusRects(focusTargetsInRegion(board, this.beatTargets, this.activeRegionId), board, this.layout) : [];
+    const rects = this.readableRects(composed, current, viewport, own);
     const narrowed = rects.length < composed.length;
     const mode: AttentionMode = narrowed
       ? (rects.length > 1 ? "relationship" : "detail")

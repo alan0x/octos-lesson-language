@@ -23,6 +23,7 @@
 
 ### Fixed
 
+- Teaching camera: when a composed frame cannot be readable at the host floor, cards and controls the current Beat is not about are dropped first (oldest first), so a long variable demonstration on an earlier card no longer leaves only that card's slider in the frame while the Beat's new card stays off screen.
 - Connections whose endpoint is a part drawn on its own (a geometry point, segment or curve) start or end at that part instead of the card's edge.
 - Teaching camera: floating UI (occlusions) only narrows the safe area when the content, fitted and centred in the whole area, would actually overlap it (with 8px clearance). `focusWorldRect(rect, { parts })` / `planFocusCamera(..., parts)` let the host list the cards inside the rect, so a small corner avatar beside an empty corner of the course no longer shifts the course-end overview sideways.
 - Teaching layout: controls shared by several visuals dock under the first of them at its width (8 units below), like a single visual's controls; practice stays beside them, below any visual above it.
