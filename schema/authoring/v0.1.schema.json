@@ -746,6 +746,7 @@
         "snapshot_id": {"type": "string", "pattern": "^ink-snap:[A-Za-z0-9_.:@-]{1,96}$"},
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "replay": {"enum": ["stroke_order", "static"]},
+        "shown_strokes": {"type": "integer", "minimum": 1},
         "alt": {"type": "string", "minLength": 1, "maxLength": 480},
         "selections": {
           "type": "array",

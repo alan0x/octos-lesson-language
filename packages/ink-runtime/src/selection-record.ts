@@ -70,6 +70,12 @@ export interface InkSelectionSnapshot {
    * the saved SVG so source erasure can still be checked after a reload. */
   component_ids?: string[];
   component_origins?: Array<"student" | "ai">;
+  /**
+   * When each captured stroke was drawn (ms since the epoch), in the order of
+   * `component_ids` and of the SVG's `data-oll-stroke` groups. Absent when a
+   * stroke was drawn before the runtime recorded times. Not part of the checksum.
+   */
+  component_drawn_at?: number[];
   checksum: {
     algorithm: "sha-256";
     value: string;
@@ -170,6 +176,10 @@ export function validateInkSelectionSnapshot(value: unknown): InkSelectionSnapsh
         || snapshot.component_origins.length !== snapshot.component_ids?.length
         || snapshot.component_origins.some((origin) => origin !== "student" && origin !== "ai")
       : snapshot.component_origins !== undefined)
+    || (snapshot.component_drawn_at !== undefined
+      && (!Array.isArray(snapshot.component_drawn_at)
+        || snapshot.component_drawn_at.length !== snapshot.component_ids?.length
+        || snapshot.component_drawn_at.some((time) => !Number.isFinite(time) || time < 0)))
     || snapshot.checksum?.algorithm !== "sha-256"
     || !/^[a-f0-9]{64}$/.test(snapshot.checksum.value ?? "")
     || typeof snapshot.svg !== "string"

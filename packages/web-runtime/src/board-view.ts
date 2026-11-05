@@ -4,7 +4,7 @@ import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./p
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
-import { prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
+import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
@@ -1420,7 +1420,13 @@ function renderImage(parent: HTMLElement, node: Record<string, any>, resolveAsse
 
 // A learner's own ink, shown from the frozen snapshot the host resolves. A
 // missing snapshot is shown as a failure, never silently dropped.
-function renderInk(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver, replay: boolean): void {
+/** How many of an ink card's strokes it shows: its first `shown_strokes`, else all. */
+function shownStrokeCount(node: Record<string, any>): number {
+  const shown = node.content?.shown_strokes;
+  return Number.isInteger(shown) && shown >= 0 ? shown : Number.POSITIVE_INFINITY;
+}
+
+function renderInk(parent: HTMLElement, node: Record<string, any>, resolveAsset: ImageAssetResolver, replayFrom: number | undefined): void {
   const content = node.content ?? {};
   const asset = resolveAsset(text(content.snapshot_id));
   const svg = asset?.svg ? sanitizeInkSvg(asset.svg, parent.ownerDocument) : undefined;
@@ -1438,7 +1444,9 @@ function renderInk(parent: HTMLElement, node: Record<string, any>, resolveAsset:
   if (svg) {
     svg.classList.add("lesson-ink");
     svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-    if (replay && content.replay === "stroke_order") prepareStrokeReplay(svg);
+    const shown = shownStrokeCount(node);
+    if (Number.isFinite(shown)) limitInkStrokes(svg, shown);
+    if (replayFrom !== undefined && replayFrom < shown && content.replay === "stroke_order") prepareStrokeReplay(svg, undefined, replayFrom);
     frame.append(svg);
   } else {
     const image = document.createElement("img");
@@ -1472,7 +1480,8 @@ function renderContent(
   sceneView?: Scene3dViewState,
   sceneInput?: Scene3dViewInputHandler,
   variables: Record<string, number> = {},
-  replayInk = false,
+  /** Draw ink strokes from this stroke on, one after another; undefined shows it still. */
+  replayInkFrom?: number,
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
@@ -1495,7 +1504,7 @@ function renderContent(
     renderImage(parent, node, resolveAsset); return;
   }
   if (node.kind === "ink") {
-    renderInk(parent, node, resolveAsset, replayInk); return;
+    renderInk(parent, node, resolveAsset, replayInkFrom); return;
   }
   if (node.kind === "table") {
     const table = document.createElement("table"); table.className = "content-table";
@@ -1624,6 +1633,8 @@ export class InfiniteBoardView {
   private readonly cameraListeners = new Set<CameraListener>();
   private readonly nodeElements = new Map<string, HTMLElement>();
   private readonly nodeContentSignatures = new Map<string, string>();
+  /** How many strokes each ink card showed when it was last drawn (Infinity for all). */
+  private readonly inkShownStrokes = new Map<string, number>();
   /**
    * Last measured size of each card for its content signature and layout
    * width. A variable change re-renders only the visuals bound to it; reusing
@@ -2338,13 +2349,15 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
 
   private syncNodes(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction, constrainWidth = false): MeasuredNodeSizes {
     const activeCreateId = action?.op === "board.create" ? action.node?.id : undefined;
+    // Writing revised to show more of its strokes draws just the new ones.
+    const activeReviseId = action?.op === "board.revise" ? action.target?.node_id : undefined;
     const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     const variableValues = Object.fromEntries(Object.entries(board.variables ?? {}).map(
       ([alias, variable]) => [alias, variable.value],
@@ -2397,11 +2410,14 @@ export class InfiniteBoardView {
         if (!updated) {
           disposeScene3d(element);
           element.replaceChildren();
+          const shownBefore = this.inkShownStrokes.get(node.id);
           renderContent(
             element, node, this.resolveAsset,
             this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
-            created && node.id === activeCreateId,
+            created && node.id === activeCreateId ? 0
+              : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
           );
+          if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
         }
         // A plot redrawn in place keeps its frame while a variable changes
         // its curves and legend. Re-measuring it forces a synchronous browser

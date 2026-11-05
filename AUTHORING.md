@@ -313,7 +313,7 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 学生讲课课程由宿主从孩子的逐卡录制确定性生成，不由模型生成（决定记录 0005–0008）。
 
 - `lesson.mode: "learner_taught"`，并且必须带 `lesson.author`：`{"kind": "learner", "learner_ref": "learner:<不透明标识>", "presented_by": {"avatar_ref": "avatar:…", "voice_ref": "voice:…"}}`。`explain` 课程不能带 learner 作者。
-- `write kind: "ink"`：`content` 为 `snapshot_id`、`sha256`、`alt`，可选 `replay`（`stroke_order` / `static`）与 `selections`（`[{"as", "selection_id", "label"}]`，成为可寻址 fragment）。快照必须出现在 Session Context 的 `ink_snapshots` 中且校验值一致。
+- `write kind: "ink"`：`content` 为 `snapshot_id`、`sha256`、`alt`，可选 `replay`（`stroke_order` / `static`）、`shown_strokes`（只显示按书写顺序的前 N 笔；之后用 `revise` 同一快照、更大的 `shown_strokes` 显示更多笔，播放器只把新出现的笔画写出来，能力 `ink:shown-strokes`，播放器 0.8.0）与 `selections`（`[{"as", "selection_id", "label"}]`，成为可寻址 fragment）。快照必须出现在 Session Context 的 `ink_snapshots` 中且校验值一致。
 - `place.relation: "annotates"`：笔迹标注附着在一张卡片上，`content.annotation` 给出它在锚点卡片上的相对位置（0–1）。
 - `place.relation: "replaces"`：新卡片占用被替换卡片的位置，被替换卡片隐藏（“整理一下”）。
 - `{"do": "hide", "target": "<卡片>"}`：隐藏孩子自己的整张卡片。擦除重写用 `revise` 指向新的快照。被隐藏或替换的卡片之后不能再被引用。

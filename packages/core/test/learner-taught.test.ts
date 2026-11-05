@@ -226,6 +226,23 @@ test("erasing and rewriting revises ink to a newer snapshot", () => {
   rejectsWith(inkLesson([grid, fraction, { ...rewrite, content: { ...rewrite.content, sha256: SHA } }]), "OLL_RESOURCE_DENIED");
 });
 
+test("writing appears stroke by stroke as it was written: a card shows its first strokes, revisions show more", () => {
+  const first = { ...fraction, content: { ...fraction.content, replay: "stroke_order", shown_strokes: 2 } };
+  const more = { do: "revise", target: "ink-fraction", reason: "the learner wrote more", content: { ...first.content, shown_strokes: 5 } };
+  validate(inkLesson([grid, first, more]));
+  const events = normalizeAuthoringLesson(inkLesson([grid, first, more]), { ...host, resourceContext: inkContext });
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("ink:shown-strokes"));
+  assert.equal(requirements.minimumPlayerVersion, "0.8.0");
+  const state = reduceCanonicalEvents(events);
+  assert.equal(state.nodes["lesson-learner-001:node:ink-fraction"]!.content.shown_strokes, 5);
+  rejectsWith(inkLesson([grid, { ...first, content: { ...first.content, shown_strokes: 0 } }]), "OLL_SCHEMA_INVALID");
+  // Writing on a card keeps its place on the card when more of it is shown.
+  const circle = { do: "write", as: "circle-a", kind: "ink", role: "annotation", place: { relation: "annotates", anchor: "grid" },
+    content: { snapshot_id: "ink-snap:circle-a@v4", sha256: SHA, alt: "circle around point A", annotation: { x: 0.2, y: 0.6, width: 0.15, height: 0.15 }, shown_strokes: 1 } };
+  validate(inkLesson([grid, circle, { do: "revise", target: "circle-a", reason: "the learner wrote more", content: { ...circle.content, shown_strokes: 3 } }]));
+});
+
 // ---- 0007: a card's source
 
 test("a card made from ink records the selection the learner confirmed", () => {
