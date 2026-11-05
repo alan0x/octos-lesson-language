@@ -147,6 +147,7 @@ function validateLessonVariables(document: AuthoringLesson): Map<string, number>
     const max = requireFiniteNumber(variable.max, `${path}/max`);
     if (max <= min) fail("OLL_INVALID_VARIABLE", path, "Variable max must be greater than min");
     if (initial < min || initial > max) fail("OLL_INVALID_VARIABLE", `${path}/initial`, "Variable initial value is outside its range");
+    if (variable.wrap !== undefined && variable.wrap !== true) fail("OLL_INVALID_VARIABLE", `${path}/wrap`, "Variable wrap must be true when present");
     if (variable.control?.step !== undefined) {
       const step = requireFiniteNumber(variable.control.step, `${path}/control/step`);
       if (step <= 0 || step > max - min) fail("OLL_INVALID_VARIABLE", `${path}/control/step`, "Slider step must be greater than zero and no larger than the variable range");
@@ -1932,6 +1933,7 @@ export function createSemanticBoardState(open: CanonicalEvent): SemanticBoardSta
       initial: variable.initial,
       min: variable.min,
       max: variable.max,
+      ...(variable.wrap ? { wrap: true as const } : {}),
       ...(variable.label ? { label: variable.label } : {}),
       ...(variable.unit ? { unit: variable.unit } : {}),
       ...(variable.control ? { control: structuredClone(variable.control) } : {}),

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Lesson variables accept `wrap: true` (min and max are the same place, e.g. an angle over one full turn); `animate` on such a variable takes the shorter way round. Capability `variables:wrap`, player 0.7.0 (decision 0010). Web runtime exports `animatedVariableValue`.
 - `emphasis: "none"` ends an earlier emphasis of the same target (node or fragment) without drawing attention (no camera move). Capability `emphasis:none`, player execution version 0.7.0 (decision 0009).
 - Numeric answer tasks (`completion.kind: "numeric_answer"`, `allowed_operations: [{"kind": "answer_entry"}]`, `student-tasks:numeric_answer`, player 0.5.0): the learner types a whole number, decimal, fraction or mixed number, checked exactly (or within `tolerance`), optionally in simplest form. The task carries an `anchor` board card, normalized to its Canonical node ID. Core exports `parseNumericAnswer`, `checkNumericAnswer` and `isSimplestFraction`.
 - Web session `submitStudentAnswer(taskId, text, input)`: records an `answer_submit` student operation and judges the open numeric answer task; text that is not a number returns `{ unreadable: true }` and is not an attempt. Attempts of numeric answer tasks keep the typed `answer`, and restored progress must repeat its own check.

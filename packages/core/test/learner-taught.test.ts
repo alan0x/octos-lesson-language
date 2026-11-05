@@ -67,6 +67,21 @@ test("a later card ends an earlier highlight with emphasis none, which needs pla
   assert.equal(requirements.minimumPlayerVersion, "0.7.0");
 });
 
+test("a wrapping angle variable is kept in the state and needs player 0.7.0", () => {
+  const lesson = learnerLesson();
+  lesson.lesson.variables = (lesson.lesson.variables ?? []).map((variable) => ({ ...variable, wrap: true as const }));
+  assertAuthoringSchema(lesson);
+  validateAuthoringLesson(lesson);
+  const events = normalizeAuthoringLesson(lesson, host);
+  const state = reduceCanonicalEvents(events);
+  assert.ok(Object.values(state.variables ?? {}).every((variable) => variable.wrap === true));
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("variables:wrap"));
+  const invalid = learnerLesson();
+  invalid.lesson.variables = (invalid.lesson.variables ?? []).map((variable) => ({ ...variable, wrap: false as unknown as true }));
+  rejects(invalid, "OLL_INVALID_VARIABLE");
+});
+
 test("lesson modes cannot be mixed up", () => {
   const withoutAuthor = learnerLesson();
   delete withoutAuthor.lesson.author;

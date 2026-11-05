@@ -30,6 +30,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "write-source": "0.6.0",
   "action:scene3d.view": "0.6.0",
   "emphasis:none": "0.7.0",
+  "variables:wrap": "0.7.0",
 });
 
 export interface ExecutionRequirements {
@@ -89,6 +90,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
     add(`canonical:${event.version}`, `${path}/version`);
     if (event.lesson?.mode === "learner_taught") add("lesson-mode:learner_taught", `${path}/lesson/mode`);
     if (event.lesson?.variables?.length) add("variables", `${path}/lesson/variables`);
+    if (event.lesson?.variables?.some((variable) => variable.wrap)) add("variables:wrap", `${path}/lesson/variables`);
     if (event.lesson?.reflections?.length) add("reflections", `${path}/lesson/reflections`);
     for (const task of event.lesson?.tasks ?? []) {
       if (task.start) add("practice-start", `${path}/lesson/tasks/${task.as}/start`);

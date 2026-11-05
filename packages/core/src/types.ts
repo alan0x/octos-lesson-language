@@ -144,6 +144,12 @@ export interface AuthoringVariable {
   initial: number;
   min: number;
   max: number;
+  /**
+   * min and max are the same place, as for an angle over one full turn
+   * (player 0.7.0): values stay within [min, max] and an animation takes the
+   * shorter way round.
+   */
+  wrap?: true;
   label?: string;
   unit?: string;
   control?: {
@@ -406,6 +412,7 @@ export interface SemanticBoardState {
     initial: number;
     min: number;
     max: number;
+    wrap?: true;
     label?: string;
     unit?: string;
     control?: {
