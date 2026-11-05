@@ -150,7 +150,8 @@ Session Context 中的 `asset_id` 和 `region_id` 是受控资源标识，不是
 
 - `purpose` 是可审计的教学目标，不是思维链；
 - `say` 应能直接用于 TTS；
-- Beat 必须包含至少一个动作；
+- Beat 必须包含至少一个动作；例外：`learner_taught` 课中有 `say` 的 Beat 可以只有话（学生讲课时一句话一个 Beat）；
+- `pace: "continuous"` 表示这个 Beat 紧接上一个 Beat，像同一段话的下一句：播放时不加教学 Beat 之间的停顿（能力 `beat-pace:continuous`，播放器 0.8.0）；
 - 一轮必须完成用户请求范围，不以等待回答结束中间步骤。
 
 ### 5.1 数值变量和视图联动

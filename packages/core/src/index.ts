@@ -1907,6 +1907,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
           return {
             id: `${stableId(host, "step", step.key)}:beat:${beat.key}`,
             ...(beat.say ? { narration: { text: beat.say, ...(beat.delivery ? { delivery: beat.delivery } : {}) } } : {}),
+            ...(beat.pace ? { pace: beat.pace } : {}),
             stage,
           };
         }),

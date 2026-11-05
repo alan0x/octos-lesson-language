@@ -33,6 +33,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "variables:wrap": "0.7.0",
   "scene3d:latent-highlights": "0.7.0",
   "ink:shown-strokes": "0.8.0",
+  "beat-pace:continuous": "0.8.0",
 });
 
 export interface ExecutionRequirements {
@@ -100,6 +101,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
       add(`student-tasks:${task.completion.kind}`, `${path}/lesson/tasks/${task.as}`);
     }
     for (const beat of event.step?.beats ?? []) {
+      if (beat.pace === "continuous") add("beat-pace:continuous", `${path}/step/beats/${beat.id}/pace`);
       for (const actions of Object.values(beat.stage)) for (const action of actions) {
         const actionPath = `${path}/actions/${action.action_id}`;
         add(`action:${action.op}`, actionPath);

@@ -288,6 +288,7 @@
         "key": {"$ref": "#/$defs/alias"},
         "say": {"type": "string", "maxLength": 1200},
         "delivery": {"enum": ["neutral", "patient", "encouraging", "careful", "emphatic"]},
+        "pace": {"enum": ["continuous"]},
         "actions": {
           "type": "array",
           "minItems": 0,

@@ -14,6 +14,8 @@ import {
   type AuthoringLesson,
   type NormalizationHost,
 } from "../src/index.js";
+import { compilePlaybackOperations } from "../../player-core/src/index.js";
+import { operationDelay } from "../../web-runtime/src/runtime.js";
 
 const root = process.cwd();
 const unitCircle = JSON.parse(await readFile(resolve(root, "examples/learner-taught-unit-circle-v1/lesson.authoring.json"), "utf8")) as AuthoringLesson;
@@ -253,6 +255,26 @@ test("a learner-taught beat may be words alone; any other beat needs an action",
   const explain = inkLesson([grid], "explain");
   explain.steps[0]!.beats.push({ key: "just-words", say: "Words.", actions: [] });
   assert.throws(() => validateAuthoringLesson(explain), (error: unknown) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD");
+});
+
+test("a beat that follows straight on carries pace continuous into the canonical lesson and plays without teaching pauses", () => {
+  const lesson = inkLesson([grid]);
+  lesson.steps[0]!.beats.push({ key: "next-sentence", say: "And it keeps going.", pace: "continuous", actions: [] });
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const beats = events.flatMap((event) => event.step?.beats ?? []);
+  assert.equal(beats[0]!.pace, undefined);
+  assert.equal(beats[1]!.pace, "continuous");
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("beat-pace:continuous"));
+  assert.equal(requirements.minimumPlayerVersion, "0.8.0");
+  const operations = compilePlaybackOperations(events);
+  const ends = operations.filter((operation) => operation.type === "beat.end");
+  // The first beat's end leads straight into the next sentence; the last one ends as usual.
+  assert.deepEqual(ends.map((operation) => operation.continues ?? false), [true, false]);
+  assert.ok(operations.filter((operation) => operation.beat_id === beats[1]!.id && operation.type !== "beat.end" && operation.type !== "action.apply").every((operation) => operation.continues));
+  assert.equal(operationDelay(ends[0]!), 250);
+  assert.equal(operationDelay(ends[1]!), 700);
 });
 
 // ---- 0007: a card's source

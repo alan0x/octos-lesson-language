@@ -22,6 +22,8 @@ export interface PlaybackOperation {
   narration?: PlaybackNarration;
   action?: CanonicalAction;
   event_index: number;
+  /** Part of a beat that follows straight on (pace "continuous"), or the end of a beat such a beat follows: no teaching pause. */
+  continues?: true;
 }
 
 export interface PlaybackProjection {
