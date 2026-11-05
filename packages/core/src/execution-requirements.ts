@@ -31,6 +31,7 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "action:scene3d.view": "0.6.0",
   "emphasis:none": "0.7.0",
   "variables:wrap": "0.7.0",
+  "scene3d:latent-highlights": "0.7.0",
 });
 
 export interface ExecutionRequirements {
@@ -69,6 +70,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
   const content = (value: Record<string, unknown> | undefined, path: string) => {
     if (!value) return;
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
+    if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     const bindings = value.bindings;
     if (Array.isArray(bindings) && bindings.length) {
       add("value-bindings", path);

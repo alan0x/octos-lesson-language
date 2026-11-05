@@ -1020,6 +1020,9 @@ function validateScene3dContent(
       if (!["point", "edge", "face"].includes(String(highlight.kind))) {
         fail("OLL_INVALID_OPERATION_PAYLOAD", `${highlightPath}/kind`, `Unknown 3D highlight kind '${String(highlight.kind)}'`);
       }
+      if (highlight.shown !== undefined && highlight.shown !== "always" && highlight.shown !== "when_emphasized") {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${highlightPath}/shown`, "3D highlight shown must be 'always' or 'when_emphasized'");
+      }
       requireArray(highlight.points, `${highlightPath}/points`);
       const requiredCount = highlight.kind === "point" ? 1 : highlight.kind === "edge" ? 2 : 3;
       if (highlight.points.length < requiredCount

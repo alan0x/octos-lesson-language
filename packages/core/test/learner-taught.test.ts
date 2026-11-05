@@ -82,6 +82,18 @@ test("a wrapping angle variable is kept in the state and needs player 0.7.0", ()
   rejects(invalid, "OLL_INVALID_VARIABLE");
 });
 
+test("3D highlights may be shown only when emphasized, which needs player 0.7.0", async () => {
+  const box = learnerLesson(JSON.parse(await readFile(resolve(root, "examples/learner-taught-box-v1/lesson.authoring.json"), "utf8")) as AuthoringLesson);
+  const scene = box.steps.flatMap((step) => step.beats).flatMap((beat) => beat.actions).find((action) => action.do === "write" && action.kind === "scene3d") as unknown as { content: { highlights: Array<Record<string, unknown>> } };
+  scene.content.highlights = scene.content.highlights.map((highlight) => ({ ...highlight, shown: "when_emphasized" }));
+  assertAuthoringSchema(box);
+  validateAuthoringLesson(box);
+  const requirements = deriveExecutionRequirements(normalizeAuthoringLesson(box, host));
+  assert.ok(requirements.requiredCapabilities.includes("scene3d:latent-highlights"));
+  scene.content.highlights[0]!.shown = "sometimes";
+  rejects(box, "OLL_INVALID_OPERATION_PAYLOAD");
+});
+
 test("lesson modes cannot be mixed up", () => {
   const withoutAuthor = learnerLesson();
   delete withoutAuthor.lesson.author;

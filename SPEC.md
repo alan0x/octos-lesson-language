@@ -790,6 +790,7 @@ Runtime 在 `axes` 给出的有限范围内本地采样；表达式无效或没�
 - `display` 省略或为 `plane` 时只显示参考平面，保持旧课件行为；`intersection` 显示平面与目标对象的真实交集，`plane_and_intersection` 同时显示二者；
 - 使用真实交集时必须用 `targets` 指出被截的 `objects[].as`。实体显示截面轮廓与填充，函数曲面显示截线；
 - `highlights` 用明确的三维坐标标出点、棱或面；它们有稳定引用，可以被后续 `focus` 或 `emphasize` 指向；
+- 可选 `shown: "when_emphasized"`（0.7）：该部件平时不画出、不显示标签，被强调时才显示。面朝向观看者（面中心比场景实体中心更近）时可以被点选，背面不能；适合让孩子在长方体上逐个指出面；
 - `fallback` 是必填的静态说明。交互渲染失败时 Runtime 必须显示它，不能留下空白卡片；
 - Runtime 允许学生旋转、缩放、切换预设视角和复位。视角变化属于学生操作，不改变三维对象本身；
 - 课程任务可以用 `scene3d_view_target` 要求学生把指定场景转到目标视角。`match: "view_direction"` 只判断学生是否从目标方向观察，不附加水平转角或缩放条件，俯视和仰视时也不会要求不可见的偏航角；`match: "camera_pose"` 判断精确的水平转角、俯仰角和缩放。旧课件省略 `match` 时保持 `camera_pose` 行为；

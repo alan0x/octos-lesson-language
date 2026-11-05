@@ -667,7 +667,8 @@
                 "items": {"$ref": "#/$defs/point3d"}
               },
               "label": {"type": "string"},
-              "color": {"type": "string"}
+              "color": {"type": "string"},
+              "shown": {"enum": ["always", "when_emphasized"]}
             }
           }
         },
