@@ -812,7 +812,7 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean }> = [];
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
       if (object.kind === "surface") {
@@ -827,10 +827,14 @@ function renderScene(
         continue;
       }
       if (object.kind === "box") {
+        // A see-through box reads two ways (near faces seen as far). Faces turned
+        // away are drawn as dashed hidden edges, as in a textbook, so the box
+        // reads one way: the way it is drawn and pointed at.
+        const centreDepth = projectScene3dPoint(object.center as Point3d, view).depth;
         for (const points of boxFaces(object)) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
+          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6 });
         }
         continue;
       }
@@ -870,7 +874,7 @@ function renderScene(
     }
     faces.sort((left, right) => left.depth - right.depth);
     for (const face of faces) {
-      const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+      const element = polygon(svg, face.points, view, face.color, .23, face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
       element.dataset.id = face.objectId;
     }
     endLayer(state.base);

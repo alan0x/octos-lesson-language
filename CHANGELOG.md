@@ -24,7 +24,8 @@
 
 ### Fixed
 
-- 3D highlights accept `shown: "when_emphasized"`: the part (and its label) is drawn only once emphasized, and a latent face can be pointed at only while it faces the viewer. Capability `scene3d:latent-highlights`, player 0.7.0.
+- 3D highlights accept `shown: "when_emphasized"`: the part is filled only once emphasized; while a latent face faces the viewer its label shows and it can be pointed at.
+- 3D boxes draw the faces turned away from the viewer as dashed hidden edges, so a see-through box no longer reads two ways (near faces seen as far). Capability `scene3d:latent-highlights`, player 0.7.0.
 - 3D cards: the scene fills the space its card's title leaves instead of assuming a 24px title, so a titled 3D card no longer runs 8px past its bottom (reported as content overflowing the card).
 - Math cards are sized to their rendered formula (up to 680 px) as intended: the measurement looked for `.katex-html > .katex-base`, which KaTeX never produces (its class is `base`), so every math card kept its length estimate (at least 280 px) and longer one-line formulas wrapped.
 - Teaching layout: a card that replaced another (Neat math over the learner's handwriting) keeps the replaced card's turn and section, so it stays where the handwriting was instead of moving below handwriting written after it. `visibleBoard` marks the replacement with `in_place_of`.

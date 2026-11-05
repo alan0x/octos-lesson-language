@@ -106,7 +106,11 @@
    while it faces the viewer, so a tap marks that face rather than the solid. */
 .scene3d-highlight.scene3d-highlight-latent[data-facing="front"] { pointer-events: all; }
 .scene3d-highlight-latent[data-facing="back"] { pointer-events: none; }
-.scene3d-highlight-latent:not([class*="emphasis-"]) + .scene3d-highlight-label { display: none; }
+/* Its label names it while it faces the viewer, quietly until it is emphasized. */
+.scene3d-highlight-latent:not([class*="emphasis-"]) + .scene3d-highlight-label { opacity: .72; font-weight: 600; }
+.scene3d-highlight-latent[data-facing="back"]:not([class*="emphasis-"]) + .scene3d-highlight-label { display: none; }
+/* A box face turned away: only its edges, dashed, behind the faces in front. */
+.scene3d-face-hidden { fill-opacity: 0; stroke-dasharray: 4 3; stroke-opacity: .55; pointer-events: none; }
 /* The scene fills what its card's title leaves, whatever the title's height,
    instead of assuming a 24px title: a titled card ran 8px past its bottom. */
 .board-node[data-kind="scene3d"] { display: flex; flex-direction: column; }
