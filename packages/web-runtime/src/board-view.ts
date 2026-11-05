@@ -2546,8 +2546,9 @@ export class InfiniteBoardView {
     const occupiedLabels: Rect[] = Object.values(layout.nodes).map((rect) => ({ ...rect }));
     for (const connection of Object.values(board.connections)) {
       if (this.renderInternalDiagramConnection(board, connection)) continue;
-      const fromRect = this.renderedPartRect(layout, connection.from) ?? connectionTargetRect(board, layout, connection.from);
-      const toRect = this.renderedPartRect(layout, connection.to) ?? connectionTargetRect(board, layout, connection.to);
+      const fromPart = this.renderedPartRect(layout, connection.from); const toPart = this.renderedPartRect(layout, connection.to);
+      const fromRect = fromPart ?? connectionTargetRect(board, layout, connection.from);
+      const toRect = toPart ?? connectionTargetRect(board, layout, connection.to);
       if (!fromRect || !toRect) continue;
       const labelText = connectionDisplayLabel(connection);
       const internalFragments = connection.from.node_id === connection.to.node_id && Boolean(connection.from.fragment_id && connection.to.fragment_id);
@@ -2560,7 +2561,9 @@ export class InfiniteBoardView {
             occupiedLabels,
           )
         : computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles);
-      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);
+      const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route));
+      // Starting inside a card, the line is drawn over the cards so it is seen leaving the part.
+      if (fromPart || toPart) { path.classList.add("connection-from-part"); this.connectionLabels.prepend(path); } else this.connections.append(path);
       if (this.operation?.action?.op === "board.focus" && this.operation.action.focus?.targets.includes(connection.id)) path.classList.add("focus-arrive");
       if (labelText && !route.label.hidden) {
         const badge = document.createElementNS(SVG_NS, "g"); badge.classList.add("connection-label-badge"); badge.dataset.id = connection.id;
