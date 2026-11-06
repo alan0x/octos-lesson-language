@@ -61,6 +61,21 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
+/** Solids that open into a net (unfold, player 0.9.0). */
+const UNFOLDING_KINDS = new Set(["box", "prism", "pyramid", "cylinder", "cone"]);
+
+/** A convex polygon of 3–12 corners with an area (a prism's or pyramid's base). */
+function convexPolygon(base: unknown): boolean {
+  if (!Array.isArray(base) || base.length < 3 || base.length > 12) return false;
+  if (!base.every((point) => point && typeof point === "object" && Number.isFinite(point.x) && Number.isFinite(point.y))) return false;
+  const area = base.reduce((sum, point, index) => { const next = base[(index + 1) % base.length]; return sum + point.x * next.y - next.x * point.y; }, 0) / 2;
+  if (Math.abs(area) < 1e-9) return false;
+  return base.every((point, index) => {
+    const next = base[(index + 1) % base.length], after = base[(index + 2) % base.length];
+    return Math.sign(area) * ((next.x - point.x) * (after.y - next.y) - (next.y - point.y) * (after.x - next.x)) > -1e-9;
+  });
+}
+
 /** 3D solids with a center and a radius (and, per kind, height, sides, top_radius or tube). */
 const SOLID_KINDS = new Set(["sphere", "cylinder", "cone", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
 
@@ -895,8 +910,13 @@ function validateScene3dContent(
     aliases.add(object.as);
     objectAliases.add(object.as);
     const objectKind = String(object.kind);
-    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"].includes(objectKind)) {
+    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
+    }
+    if (object.unfold !== undefined) {
+      if (!UNFOLDING_KINDS.has(objectKind)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/unfold`, "Only a box, prism, pyramid, cylinder or cone unfolds into a net");
+      const unfold = requireFiniteNumber(object.unfold, `${objectPath}/unfold`);
+      if (unfold < 0 || unfold > 1) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/unfold`, "unfold is between 0 (closed) and 1 (a flat net)");
     }
     if (object.color !== undefined
       && (typeof object.color !== "string" || !/^(#[0-9a-fA-F]{6}|teal|blue|purple|orange|red|gray)$/.test(object.color))) {
@@ -905,18 +925,29 @@ function validateScene3dContent(
     if (objectKind === "box") {
       point(object.center, `${objectPath}/center`);
       size(object.size, `${objectPath}/size`);
+    } else if (objectKind === "ellipsoid") {
+      point(object.center, `${objectPath}/center`);
+      const radii = object.radii as Record<string, unknown> | undefined;
+      if (!radii || !["x", "y", "z"].every((axis) => typeof radii[axis] === "number" && (radii[axis] as number) > 0)) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radii`, "An ellipsoid needs three radii above zero");
+      }
     } else if (SOLID_KINDS.has(objectKind)) {
       point(object.center, `${objectPath}/center`);
-      const radius = requireFiniteNumber(object.radius, `${objectPath}/radius`);
+      const based = (objectKind === "prism" || objectKind === "pyramid") && object.base !== undefined;
+      const radius = based ? 1 : requireFiniteNumber(object.radius, `${objectPath}/radius`);
       if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radius`, "3D radius must be greater than zero");
       if (["cylinder", "cone", "prism", "pyramid", "frustum"].includes(objectKind)) {
         const height = requireFiniteNumber(object.height, `${objectPath}/height`);
         if (height <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/height`, "3D height must be greater than zero");
       }
-      if (objectKind === "prism" || objectKind === "pyramid") {
+      if (based) {
+        if (object.sides !== undefined) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/sides`, "A prism or pyramid has either sides (a regular base) or a base polygon, not both");
+        if (!convexPolygon(object.base)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/base`, "A base is a convex polygon of 3 to 12 corners with an area");
+      } else if (objectKind === "prism" || objectKind === "pyramid") {
         const sides = Number(object.sides);
         if (!Number.isInteger(sides) || sides < 3 || sides > 12) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/sides`, "A prism or pyramid has 3 to 12 sides");
       }
+      if (object.top_scale !== undefined && objectKind !== "pyramid") fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/top_scale`, "Only a pyramid is truncated (top_scale)");
       if (objectKind === "frustum") {
         const top = requireFiniteNumber(object.top_radius, `${objectPath}/top_radius`);
         if (top <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/top_radius`, "A frustum's top radius must be greater than zero");
@@ -2061,6 +2092,8 @@ export function evaluateContentBindings(content: JsonObject, variables: Record<s
       if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {
         throw new Error("Bound radius must be positive unless explicitly allowed to degenerate to zero");
       }
+      // A net opens from 0 (closed) to 1 (flat); a slider past either end stays there.
+      if (property === "unfold") record[property] = Math.min(1, Math.max(0, record[property]));
       if (property === "sides" && (record[property] < 3 || record[property] > 384)) {
         throw new Error("Bound polygon sides must be in 3..384");
       }

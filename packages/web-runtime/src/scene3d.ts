@@ -382,12 +382,12 @@ function radialPoint(
 }
 
 /** 3D solids added in player 0.9.0, drawn and sliced from their facets. */
-const FACETED_KINDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
+const FACETED_KINDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"]);
 
 function primitiveMesh(object: Record<string, any>): SceneMesh {
   const target = objectTarget(object);
   // Solids added later are sliced from the same facets they are drawn with.
-  if (FACETED_KINDS.has(String(object.kind))) return { target, solid: true, triangles: solidTriangles(object) };
+  if (FACETED_KINDS.has(String(object.kind)) || Number(object.unfold) > 0) return { target, solid: Number(object.unfold) > 0 ? false : true, triangles: solidTriangles(object) };
   if (object.kind === "box") {
     return {
       target,
@@ -840,7 +840,8 @@ function renderScene(
         if (mesh) renderImplicitSurface(svg, object, mesh, view);
         continue;
       }
-      if (object.kind === "box") {
+      const opening = Number(object.unfold) > 0;
+      if (object.kind === "box" && !opening) {
         // A see-through box reads two ways (near faces seen as far). Faces turned
         // away are drawn as dashed hidden edges, as in a textbook, so the box
         // reads one way: the way it is drawn and pointed at.
@@ -859,8 +860,9 @@ function renderScene(
         const centre = averagePoint(facet.points);
         const here = projectScene3dPoint(centre, view).depth;
         const toward = projectScene3dPoint({ x: centre.x + facet.normal.x * .01, y: centre.y + facet.normal.y * .01, z: centre.z + facet.normal.z * .01 }, view).depth - here;
-        if (toward <= 1e-9) continue;
-        const facing = Math.min(1, toward / .01);
+        // An opening net shows both sides of its faces (an opened face shows its inside).
+        if (toward <= 1e-9 && !opening) continue;
+        const facing = Math.min(1, Math.abs(toward) / .01);
         faces.push({ points: facet.points, color, depth: here, objectId: String(object.id ?? object.as ?? ""), opacity: .1 + .32 * facing, facet: facet.part });
       }
     }

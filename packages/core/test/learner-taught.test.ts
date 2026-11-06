@@ -413,3 +413,24 @@ test("more 3D solids: prisms, pyramids, frustums, hemispheres, tori and regular 
   rejectsWith(scene([{ ...objects[4], tube: 3 }]), "OLL_INVALID_OPERATION_PAYLOAD");
   rejectsWith(scene([{ as: "f", kind: "frustum", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 2 }]), "OLL_INVALID_OPERATION_PAYLOAD");
 });
+
+test("solids on any convex base, truncated pyramids, ellipsoids, and nets that unfold with a slider", () => {
+  const scene = (objects: unknown[], extra: Record<string, unknown> = {}) => inkLesson([grid, { do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+    content: { fallback: "Solids.", axes: false, camera: { yaw: 0.72, pitch: 0.55, zoom: 1 }, objects, ...extra } }]);
+  const triangle = [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 0, y: 4 }];
+  const objects = [
+    { as: "wedge", kind: "prism", center: { x: 0, y: 0, z: 0 }, base: triangle, height: 2 },
+    { as: "cut", kind: "pyramid", center: { x: 4, y: 0, z: 0 }, sides: 4, radius: 2, height: 2, top_scale: 0.5 },
+    { as: "egg", kind: "ellipsoid", center: { x: 8, y: 0, z: 0 }, radii: { x: 2, y: 1, z: 1 } },
+    { as: "net", kind: "box", center: { x: 12, y: 0, z: 0 }, size: { x: 2, y: 2, z: 2 }, unfold: 0 },
+  ];
+  validate(scene(objects));
+  const required = deriveExecutionRequirements(normalizeAuthoringLesson(scene(objects), { ...host, resourceContext: inkContext })).requiredCapabilities;
+  assert.ok(required.includes("scene3d:more-solids") && required.includes("scene3d:unfold"));
+  rejectsWith(scene([{ ...objects[0], base: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 0.2 }, { x: 1, y: 2 }] }]), "OLL_INVALID_OPERATION_PAYLOAD", "/steps/0/beats/0/actions/1/content/objects/0/base");
+  rejectsWith(scene([{ ...objects[0], sides: 3 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[1], kind: "prism" }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[2], radii: { x: 2, y: 0, z: 1 } }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(scene([{ ...objects[2], unfold: 0.5 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[3], unfold: 2 }]), "OLL_SCHEMA_INVALID");
+});

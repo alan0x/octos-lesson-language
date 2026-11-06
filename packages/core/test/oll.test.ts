@@ -512,6 +512,17 @@ test("validates and normalizes interactive 3D solids, surfaces, and sections", (
   ).nodes)[0]!;
   assert.equal(movedScene.content.sections[0].value, 1.25);
 
+  // A slider opens the cube into its net; past either end the net stays closed or flat.
+  const netLesson = structuredClone(sceneLesson) as any;
+  netLesson.lesson.variables.push({ as: "open", initial: 0, min: 0, max: 1, control: { kind: "slider", step: .1 } });
+  netLesson.steps[0].beats[0].actions[0].content.objects[0].unfold = 0;
+  netLesson.steps[0].beats[0].actions[0].content.bindings.push({ target: "cube.unfold", expression: "2*open" });
+  validateAuthoringLesson(netLesson);
+  const netState = reduceCanonicalEvents(normalizeAuthoringLesson(netLesson, { lessonId: "net-lesson", boardId: "net-board", baseRevision: 0 }));
+  const cubeAt = (value: number) => Object.values(setLessonVariable(netState, "open", value).nodes)[0]!.content.objects[0].unfold;
+  assert.equal(cubeAt(0.25), 0.5);
+  assert.equal(cubeAt(1), 1);
+
   const invalid = structuredClone(sceneLesson);
   (invalid.steps[0]!.beats[0]!.actions[0] as any).content.objects[1].expression = "fetch(x)";
   assert.throws(

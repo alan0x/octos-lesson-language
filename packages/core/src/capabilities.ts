@@ -52,6 +52,7 @@ export const OLL_BINDING_CAPABILITIES = {
   },
   scene3d: {
     sections: ["value"],
+    objects: ["unfold"],
   },
 } as const;
 

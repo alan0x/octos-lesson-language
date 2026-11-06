@@ -37,10 +37,11 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "placement:continues": "0.9.0",
   "ink:drawn-size": "0.9.0",
   "scene3d:more-solids": "0.9.0",
+  "scene3d:unfold": "0.9.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
-const MORE_SOLIDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
+const MORE_SOLIDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"]);
 
 export interface ExecutionRequirements {
   minimumPlayerVersion: string;
@@ -121,8 +122,14 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
           content(action.node.content, `${actionPath}/node/content`);
-          if (action.node.kind === "scene3d" && ((action.node.content as { objects?: Array<{ kind?: string }> }).objects ?? []).some((object) => MORE_SOLIDS.has(String(object.kind)))) {
-            add("scene3d:more-solids", `${actionPath}/node/content/objects`);
+          if (action.node.kind === "scene3d") {
+            const scene = action.node.content as { objects?: Array<Record<string, unknown>>; bindings?: Array<{ target?: string }> };
+            if ((scene.objects ?? []).some((object) => MORE_SOLIDS.has(String(object.kind)) || object.base !== undefined || object.top_scale !== undefined)) {
+              add("scene3d:more-solids", `${actionPath}/node/content/objects`);
+            }
+            if ((scene.objects ?? []).some((object) => object.unfold !== undefined) || (scene.bindings ?? []).some((binding) => String(binding.target).endsWith(".unfold"))) {
+              add("scene3d:unfold", `${actionPath}/node/content`);
+            }
           }
         }
         if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);
