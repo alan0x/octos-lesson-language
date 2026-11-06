@@ -2649,6 +2649,7 @@ export class InfiniteBoardView {
         ? stackConnectionLabel(
             computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles),
             occupiedLabels,
+            [fromRect, toRect],
           )
         : computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles);
       const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);

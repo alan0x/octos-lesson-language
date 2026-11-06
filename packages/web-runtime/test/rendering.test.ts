@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
 import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
-import { normalizeScene3dView, projectScene3dPoint, scene3dSectionIntersections } from "../src/scene3d.js";
+import { normalizeScene3dView, projectScene3dPoint, roundSolidFacets, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, HOLD_CENTER_SHARE_NEW, holdsTeachingFrame, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
   boardInputTargetsInteractiveUi,
@@ -1060,4 +1060,38 @@ test("a cycle of boxes is laid out on a ring, first at the top and clockwise, wi
   };
   assert.equal(diagramLayout(triangle).directed, undefined);
   assert.equal(diagramLayout(triangle).points.get("a")!.width, undefined);
+});
+
+test("round solids are facets with outward normals, and only those facing the viewer are drawn", () => {
+  const cylinder = roundSolidFacets({ kind: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 3 });
+  assert.equal(cylinder.filter((facet) => facet.part === "side").length, 40);
+  assert.equal(cylinder.filter((facet) => facet.part === "cap").length, 2);
+  for (const facet of cylinder) {
+    const centre = facet.points.reduce((sum, point) => ({ x: sum.x + point.x / facet.points.length, y: sum.y + point.y / facet.points.length, z: sum.z + point.z / facet.points.length }), { x: 0, y: 0, z: 0 });
+    assert.ok(centre.x * facet.normal.x + centre.y * facet.normal.y + centre.z * facet.normal.z > 0, "normals point outwards");
+  }
+  const facing = (view: { yaw: number; pitch: number; zoom: number }, facets: typeof cylinder) => facets.filter((facet) => {
+    const centre = facet.points[0]!;
+    // Clearly facing: more than a glancing angle.
+    return projectScene3dPoint({ x: centre.x + facet.normal.x, y: centre.y + facet.normal.y, z: centre.z + facet.normal.z }, view).depth - projectScene3dPoint(centre, view).depth > 0.05;
+  });
+  // From straight above only the top cap faces the viewer; from the side, about half the side and no caps.
+  const above = facing({ yaw: 0, pitch: Math.PI / 2 - 0.01, zoom: 1 }, cylinder);
+  assert.deepEqual(above.map((facet) => facet.part), ["cap"]);
+  const side = facing({ yaw: 0, pitch: 0, zoom: 1 }, cylinder);
+  assert.ok(side.every((facet) => facet.part === "side") && side.length >= 18 && side.length <= 22);
+  assert.equal(roundSolidFacets({ kind: "cone", center: { x: 0, y: 0, z: 0 }, radius: 1, height: 2 }).length, 41);
+  assert.equal(roundSolidFacets({ kind: "sphere", center: { x: 0, y: 0, z: 0 }, radius: 1 }).length, 640);
+});
+
+test("a label with no room on its arrow sits beside it, outside both cards", () => {
+  const top = { x: 100, y: 100, width: 260, height: 80 };
+  const bottom = { x: 100, y: 194, width: 260, height: 80 };
+  const route = computeConnectionRoute(top, bottom, "会让", false, []);
+  const crowded = stackConnectionLabel(route, [top, bottom]);
+  const placed = stackConnectionLabel(route, [top, bottom], [top, bottom]);
+  assert.equal(crowded.label.hidden, true, "without room and without the cards to step around, the label is dropped");
+  assert.notEqual(placed.label.hidden, true);
+  assert.ok(placed.label.x - placed.label.width / 2 >= 360, "beside the cards, not over them");
+  assert.ok(placed.label.y > 180 && placed.label.y < 194, "level with the arrow");
 });
