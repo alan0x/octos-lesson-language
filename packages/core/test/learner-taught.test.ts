@@ -394,3 +394,22 @@ test("continuing a card belongs only to learner-taught lessons", () => {
   const explainContinue = inkLesson([grid, { ...neat, place: { relation: "continues", anchor: "grid", offset: { x: 0, y: 400 } } }], "explain");
   rejectsWith(explainContinue, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/place/relation");
 });
+
+test("more 3D solids: prisms, pyramids, frustums, hemispheres, tori and regular polyhedra, which need player 0.9.0", () => {
+  const scene = (objects: unknown[]) => inkLesson([grid, { do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+    content: { fallback: "Solids.", axes: false, camera: { yaw: 0.72, pitch: 0.55, zoom: 1 }, objects } }]);
+  const objects = [
+    { as: "prism", kind: "prism", center: { x: 0, y: 0, z: 0 }, sides: 6, radius: 1, height: 2 },
+    { as: "pyramid", kind: "pyramid", center: { x: 3, y: 0, z: 0 }, sides: 4, radius: 1, height: 2 },
+    { as: "frustum", kind: "frustum", center: { x: 6, y: 0, z: 0 }, radius: 2, top_radius: 1, height: 2 },
+    { as: "dome", kind: "hemisphere", center: { x: 9, y: 0, z: 0 }, radius: 1 },
+    { as: "ring", kind: "torus", center: { x: 12, y: 0, z: 0 }, radius: 2, tube: 0.5 },
+    { as: "d20", kind: "icosahedron", center: { x: 15, y: 0, z: 0 }, radius: 1 },
+  ];
+  validate(scene(objects));
+  const events = normalizeAuthoringLesson(scene(objects), { ...host, resourceContext: inkContext });
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("scene3d:more-solids"));
+  rejectsWith(scene([{ ...objects[0]!, sides: 2 }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(scene([{ ...objects[4], tube: 3 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ as: "f", kind: "frustum", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 2 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+});

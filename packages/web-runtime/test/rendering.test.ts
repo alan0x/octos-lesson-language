@@ -1065,7 +1065,7 @@ test("a cycle of boxes is laid out on a ring, first at the top and clockwise, wi
 test("round solids are facets with outward normals, and only those facing the viewer are drawn", () => {
   const cylinder = roundSolidFacets({ kind: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 3 });
   assert.equal(cylinder.filter((facet) => facet.part === "side").length, 40);
-  assert.equal(cylinder.filter((facet) => facet.part === "cap").length, 2);
+  assert.equal(cylinder.filter((facet) => facet.part === "face").length, 2);
   for (const facet of cylinder) {
     const centre = facet.points.reduce((sum, point) => ({ x: sum.x + point.x / facet.points.length, y: sum.y + point.y / facet.points.length, z: sum.z + point.z / facet.points.length }), { x: 0, y: 0, z: 0 });
     assert.ok(centre.x * facet.normal.x + centre.y * facet.normal.y + centre.z * facet.normal.z > 0, "normals point outwards");
@@ -1077,7 +1077,7 @@ test("round solids are facets with outward normals, and only those facing the vi
   });
   // From straight above only the top cap faces the viewer; from the side, about half the side and no caps.
   const above = facing({ yaw: 0, pitch: Math.PI / 2 - 0.01, zoom: 1 }, cylinder);
-  assert.deepEqual(above.map((facet) => facet.part), ["cap"]);
+  assert.deepEqual(above.map((facet) => facet.part), ["face"]);
   const side = facing({ yaw: 0, pitch: 0, zoom: 1 }, cylinder);
   assert.ok(side.every((facet) => facet.part === "side") && side.length >= 18 && side.length <= 22);
   assert.equal(roundSolidFacets({ kind: "cone", center: { x: 0, y: 0, z: 0 }, radius: 1, height: 2 }).length, 41);

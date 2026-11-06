@@ -36,7 +36,11 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "beat-pace:continuous": "0.8.0",
   "placement:continues": "0.9.0",
   "ink:drawn-size": "0.9.0",
+  "scene3d:more-solids": "0.9.0",
 });
+
+/** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
+const MORE_SOLIDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
 
 export interface ExecutionRequirements {
   minimumPlayerVersion: string;
@@ -117,6 +121,9 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
           content(action.node.content, `${actionPath}/node/content`);
+          if (action.node.kind === "scene3d" && ((action.node.content as { objects?: Array<{ kind?: string }> }).objects ?? []).some((object) => MORE_SOLIDS.has(String(object.kind)))) {
+            add("scene3d:more-solids", `${actionPath}/node/content/objects`);
+          }
         }
         if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);
       }

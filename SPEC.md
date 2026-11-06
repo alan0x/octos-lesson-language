@@ -784,6 +784,7 @@ Runtime 在 `axes` 给出的有限范围内本地采样；表达式无效或没�
 规则：
 
 - `box` 使用 `center + size`；`sphere` 使用 `center + radius`；`cylinder/cone` 使用 `center + radius + height`；
+- （0.9）`prism/pyramid` 使用 `center + sides(3–12) + radius（底面外接圆半径）+ height`；`frustum`（圆台）使用 `center + radius（底）+ top_radius（顶）+ height`；`hemisphere` 使用 `center（平面的圆心）+ radius`，向上凸；`torus` 使用 `center + radius（环的半径）+ tube（管的半径，小于 radius）`；`tetrahedron/octahedron/dodecahedron/icosahedron` 使用 `center + radius（外接球半径）`。Runtime 用带外法线的小面绘制，只画朝向观看者的面并按朝向明暗；截面由同样的面切得。能力 `scene3d:more-solids`；
 - `surface` 只接受受限的 `z=f(x,y)` 表达式和有限采样范围，不能执行脚本；
 - `implicit_surface` 表示 `F(x,y,z)=level`，必须同时提供有限的 `x_range`、`y_range`、`z_range`；Runtime 用本地等值面采样生成可旋转曲面，不执行模型代码或任意脚本；
 - 隐式曲面采样数限制为 4 到 18。提高采样数会增加本地网格三角形数量，因此不能由模型无限放大；

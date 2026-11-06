@@ -61,6 +61,9 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
+/** 3D solids with a center and a radius (and, per kind, height, sides, top_radius or tube). */
+const SOLID_KINDS = new Set(["sphere", "cylinder", "cone", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
+
 const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces", "continues"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
@@ -892,7 +895,7 @@ function validateScene3dContent(
     aliases.add(object.as);
     objectAliases.add(object.as);
     const objectKind = String(object.kind);
-    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface"].includes(objectKind)) {
+    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
     }
     if (object.color !== undefined
@@ -902,13 +905,25 @@ function validateScene3dContent(
     if (objectKind === "box") {
       point(object.center, `${objectPath}/center`);
       size(object.size, `${objectPath}/size`);
-    } else if (["sphere", "cylinder", "cone"].includes(objectKind)) {
+    } else if (SOLID_KINDS.has(objectKind)) {
       point(object.center, `${objectPath}/center`);
       const radius = requireFiniteNumber(object.radius, `${objectPath}/radius`);
       if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radius`, "3D radius must be greater than zero");
-      if (objectKind !== "sphere") {
+      if (["cylinder", "cone", "prism", "pyramid", "frustum"].includes(objectKind)) {
         const height = requireFiniteNumber(object.height, `${objectPath}/height`);
         if (height <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/height`, "3D height must be greater than zero");
+      }
+      if (objectKind === "prism" || objectKind === "pyramid") {
+        const sides = Number(object.sides);
+        if (!Number.isInteger(sides) || sides < 3 || sides > 12) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/sides`, "A prism or pyramid has 3 to 12 sides");
+      }
+      if (objectKind === "frustum") {
+        const top = requireFiniteNumber(object.top_radius, `${objectPath}/top_radius`);
+        if (top <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/top_radius`, "A frustum's top radius must be greater than zero");
+      }
+      if (objectKind === "torus") {
+        const tube = requireFiniteNumber(object.tube, `${objectPath}/tube`);
+        if (tube <= 0 || tube >= radius) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/tube`, "A torus's tube must be thinner than its ring: 0 < tube < radius");
       }
     } else if (objectKind === "implicit_surface") {
       requireString(object.expression, `${objectPath}/expression`);

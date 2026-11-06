@@ -1,4 +1,5 @@
 import { bindUi, ui } from "./ui-localization.js";
+import { solidFacets, solidTriangles } from "./solids.js";
 import { compileMathExpression } from "../../core/src/index.js";
 import type { StudentInputMethod } from "./student-operations.js";
 
@@ -157,63 +158,13 @@ function line(
 
 }
 
-/** How many facets go round a cylinder, cone or sphere. */
-const ROUND_SEGMENTS = 40;
-const SPHERE_RINGS = 16;
-
 function averagePoint(points: Point3d[]): Point3d {
   const total = points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y, z: sum.z + point.z }), { x: 0, y: 0, z: 0 });
   return { x: total.x / points.length, y: total.y / points.length, z: total.z / points.length };
 }
 
-/**
- * A cylinder, cone or sphere as facets with outward normals (axis along z,
- * centred on its center): side facets meet smoothly; caps are flat faces.
- */
-export function roundSolidFacets(object: Record<string, any>): Array<{ points: Point3d[]; normal: Point3d; part: "side" | "cap" }> {
-  const c = object.center as Point3d;
-  const radius = Number(object.radius);
-  if (!(radius > 0)) return [];
-  const ring = (z: number, r: number) => Array.from({ length: ROUND_SEGMENTS }, (_, index) => {
-    const angle = (2 * Math.PI * index) / ROUND_SEGMENTS;
-    return { x: c.x + r * Math.cos(angle), y: c.y + r * Math.sin(angle), z };
-  });
-  const middle = (index: number) => (2 * Math.PI * (index + .5)) / ROUND_SEGMENTS;
-  const facets: Array<{ points: Point3d[]; normal: Point3d; part: "side" | "cap" }> = [];
-  if (object.kind === "sphere") {
-    for (let band = 0; band < SPHERE_RINGS; band += 1) {
-      const [low, high] = [band, band + 1].map((step) => -Math.PI / 2 + (Math.PI * step) / SPHERE_RINGS) as [number, number];
-      for (let index = 0; index < ROUND_SEGMENTS; index += 1) {
-        const [a, b] = [index, index + 1].map((step) => (2 * Math.PI * step) / ROUND_SEGMENTS) as [number, number];
-        const at = (lat: number, lon: number) => ({ x: c.x + radius * Math.cos(lat) * Math.cos(lon), y: c.y + radius * Math.cos(lat) * Math.sin(lon), z: c.z + radius * Math.sin(lat) });
-        const lat = (low + high) / 2, lon = (a + b) / 2;
-        facets.push({ points: [at(low, a), at(low, b), at(high, b), at(high, a)], normal: { x: Math.cos(lat) * Math.cos(lon), y: Math.cos(lat) * Math.sin(lon), z: Math.sin(lat) }, part: "side" });
-      }
-    }
-    return facets;
-  }
-  const height = Number(object.height);
-  if (!(height > 0)) return [];
-  const bottom = ring(c.z - height / 2, radius);
-  if (object.kind === "cone") {
-    const apex = { x: c.x, y: c.y, z: c.z + height / 2 };
-    const slant = Math.hypot(height, radius);
-    for (let index = 0; index < ROUND_SEGMENTS; index += 1) {
-      const angle = middle(index);
-      facets.push({ points: [bottom[index]!, bottom[(index + 1) % ROUND_SEGMENTS]!, apex],
-        normal: { x: Math.cos(angle) * height / slant, y: Math.sin(angle) * height / slant, z: radius / slant }, part: "side" });
-    }
-  } else {
-    const top = ring(c.z + height / 2, radius);
-    for (let index = 0; index < ROUND_SEGMENTS; index += 1) {
-      const next = (index + 1) % ROUND_SEGMENTS, angle = middle(index);
-      facets.push({ points: [bottom[index]!, bottom[next]!, top[next]!, top[index]!], normal: { x: Math.cos(angle), y: Math.sin(angle), z: 0 }, part: "side" });
-    }
-    facets.push({ points: top, normal: { x: 0, y: 0, z: 1 }, part: "cap" });
-  }
-  facets.push({ points: [...bottom].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "cap" });
-  return facets;
-}
+/** A cylinder, cone or sphere as facets (kept for callers of the first version; see solidFacets). */
+export const roundSolidFacets = solidFacets;
 
 function polygon(
   svg: SVGElement,
@@ -430,8 +381,13 @@ function radialPoint(
   };
 }
 
+/** 3D solids added in player 0.9.0, drawn and sliced from their facets. */
+const FACETED_KINDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
+
 function primitiveMesh(object: Record<string, any>): SceneMesh {
   const target = objectTarget(object);
+  // Solids added later are sliced from the same facets they are drawn with.
+  if (FACETED_KINDS.has(String(object.kind))) return { target, solid: true, triangles: solidTriangles(object) };
   if (object.kind === "box") {
     return {
       target,
@@ -870,7 +826,7 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "cap" }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "face" }> = [];
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
       if (object.kind === "surface") {
@@ -899,7 +855,7 @@ function renderScene(
       // Round solids are built from small facets, like the box: only facets
       // turned towards the viewer are drawn, shaded by how squarely they face
       // it, so a cylinder, cone or sphere turns and tilts correctly.
-      for (const facet of roundSolidFacets(object)) {
+      for (const facet of solidFacets(object)) {
         const centre = averagePoint(facet.points);
         const here = projectScene3dPoint(centre, view).depth;
         const toward = projectScene3dPoint({ x: centre.x + facet.normal.x * .01, y: centre.y + facet.normal.y * .01, z: centre.z + facet.normal.z * .01 }, view).depth - here;
