@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { solidFacets } from "../src/solids.js";
-import { scene3dSectionIntersections } from "../src/scene3d.js";
+import { gluedFaces, scene3dSectionIntersections } from "../src/scene3d.js";
 
 const c = { x: 0, y: 0, z: 0 };
 const centreOf = (points: Array<{ x: number; y: number; z: number }>) => points.reduce((sum, point) => ({ x: sum.x + point.x / points.length, y: sum.y + point.y / points.length, z: sum.z + point.z / points.length }), { x: 0, y: 0, z: 0 });
@@ -117,18 +117,33 @@ test("unfolding opens a solid into its net: closed at 0, flat at 1", () => {
   const cylinder = solidFacets({ kind: "cylinder", radius: 1, height: 2, center: c, unfold: 1 });
   const sides = allPoints(cylinder.filter((facet) => facet.part === "side"));
   assert.ok(sides.every((point) => Math.abs(point.y + 1) < 1e-9), "the unrolled side lies in one plane");
+  assert.equal(cylinder.filter((facet) => facet.part === "side").length, 1, "a flat net is one rectangle, not strips");
   const width = Math.max(...sides.map((point) => point.x)) - Math.min(...sides.map((point) => point.x));
   assert.ok(Math.abs(width - 2 * Math.PI) < 1e-6);
   assert.ok(allPoints(cylinder).every((point) => Math.abs(point.y + 1) < 1e-9), "the discs fold into the same plane");
   // A cone's side opens into a sector with the slant height as its radius.
   const cone = solidFacets({ kind: "cone", radius: 1, height: 2, center: c, unfold: 1 });
   const coneSide = cone.filter((facet) => facet.part === "side");
-  const apex = { x: 0, y: 0, z: 1 };
   const slant = Math.hypot(1, 2);
+  // Opened, the front line stands upright on its foot (0, −1, −1): the apex is one slant height above it, and the net lies in y = −1.
+  const apex = { x: 0, y: -1, z: -1 + slant };
+  assert.ok(allPoints(cone).every((point) => Math.abs(point.y + 1) < 1e-9), "the cone's net lies in the plane y = −1");
+  assert.equal(coneSide.length, 1, "a flat net is one sector, not strips");
   for (const point of allPoints(coneSide)) {
     const d = Math.hypot(point.x - apex.x, point.y - apex.y, point.z - apex.z);
     assert.ok(d < 1e-9 || Math.abs(d - slant) < 1e-6, "every rim point sits one slant height from the apex");
   }
   const normal = coneSide[0]!.normal;
   assert.ok(coneSide.every((facet) => Math.abs(facet.normal.x * normal.x + facet.normal.y * normal.y + facet.normal.z * normal.z - 1) < 1e-6), "the sector is flat");
+});
+
+test("where two solids are stacked, the face they share is found (and drawn as a seam only)", () => {
+  const cylinder = { kind: "cylinder", center: { x: 0, y: 0, z: -1 }, radius: 1, height: 4 };
+  assert.equal(gluedFaces([cylinder, { kind: "cone", center: { x: 0, y: 0, z: 2 }, radius: 1, height: 2 }]).size, 1);
+  assert.equal(gluedFaces([cylinder, { kind: "hemisphere", center: { x: 0, y: 0, z: 1 }, radius: 1 }]).size, 1);
+  assert.equal(gluedFaces([{ kind: "box", center: { x: 0, y: 0, z: -1 }, size: { x: 2, y: 2, z: 2 } }, { kind: "pyramid", center: { x: 0, y: 0, z: 0.5 }, sides: 4, radius: Math.SQRT2, height: 1 }]).size, 1);
+  // A smaller cylinder on a larger one: the larger one's top still shows round it.
+  assert.equal(gluedFaces([cylinder, { kind: "cylinder", center: { x: 0, y: 0, z: 2 }, radius: 0.5, height: 2 }]).size, 0);
+  // Two solids side by side share nothing.
+  assert.equal(gluedFaces([cylinder, { ...cylinder, center: { x: 5, y: 0, z: -1 } }]).size, 0);
 });

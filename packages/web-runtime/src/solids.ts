@@ -203,7 +203,10 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
       ? { x: c.x + s, y: c.y - radius, z }
       : { x: c.x + (radius / bend) * Math.sin((s * bend) / radius), y: c.y - radius + (radius / bend) * (1 - Math.cos((s * bend) / radius)), z });
     const normalAt = (s: number) => ({ x: Math.sin((s * bend) / radius), y: -Math.cos((s * bend) / radius), z: 0 });
-    for (let index = 0; index < ROUND; index += 1) {
+    if (bend < 1e-6) {
+      // Flat: one rectangle 2πr wide, not strips (whose edges would draw a grid).
+      facets.push({ points: [at(arc(0), c.z - half), at(arc(ROUND), c.z - half), at(arc(ROUND), c.z + half), at(arc(0), c.z + half)], normal: normalAt(0), part: "side" });
+    } else for (let index = 0; index < ROUND; index += 1) {
       const [s0, s1] = [arc(index), arc(index + 1)];
       facets.push({ points: [at(s0, c.z - half), at(s1, c.z - half), at(s1, c.z + half), at(s0, c.z + half)], normal: normalAt((s0 + s1) / 2), part: "side" });
     }
@@ -228,19 +231,27 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
   const axis = add(scale(g, Math.cos(beta)), scale(inward, Math.sin(beta)));
   const towardG = Math.sin(beta) > 1e-9 ? unit(sub(g, scale(axis, Math.cos(beta)))) : g;
   const direction = (psi: number) => add(scale(axis, Math.cos(beta)), scale(add(scale(towardG, Math.cos(psi)), scale(e1, Math.sin(psi))), Math.sin(beta)));
+  // As it opens, the whole net also tips back about the front line's foot until that line stands upright:
+  // the flat sector then faces the viewer as a cylinder's unrolled side does, instead of leaning away.
+  const tilt = { at: contact, axis: e1, angle: unfold * Math.atan2(radius, height) };
+  const strips: Facet[] = [];
   for (let index = 0; index < ROUND; index += 1) {
     const [s0, s1] = [arc(index), arc(index + 1)];
     const [p0, p1] = [s0 / reach, s1 / reach];
     const middle = direction((p0 + p1) / 2);
     const normal = unit(cross(sub(direction(p1), direction(p0)), middle));
-    facets.push({ points: [add(apex, scale(direction(p0), slant)), add(apex, scale(direction(p1), slant)), apex], normal: dot(normal, sub(middle, axis)) < 0 ? scale(normal, -1) : normal, part: "side" });
+    strips.push({ points: [add(apex, scale(direction(p0), slant)), add(apex, scale(direction(p1), slant)), apex], normal: dot(normal, sub(middle, axis)) < 0 ? scale(normal, -1) : normal, part: "side" });
   }
+  if (unfold >= 1 - 1e-9) {
+    // Flat: one sector, not strips (whose edges would draw a fan of lines).
+    facets.push(hinged({ points: [apex, ...strips.map((strip) => strip.points[0]!), strips.at(-1)!.points[1]!], normal: strips[0]!.normal, part: "side" }, [tilt]));
+  } else facets.push(...strips.map((strip) => hinged(strip, [tilt])));
   // The base disc swings about the line touching the base at the front, until its centre lies on the front line extended.
   const from = { x: 0, y: radius, z: 0 };
   const to = scale(g, radius);
   const full = Math.atan2(dot(cross(from, to), e1), dot(from, to));
   const hinge = { at: contact, axis: e1, angle: unfold * full };
-  facets.push(hinged({ points: [...circleRing(c, radius, c.z - half)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face" }, [hinge]));
+  facets.push(hinged({ points: [...circleRing(c, radius, c.z - half)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face" }, [hinge, tilt]));
   return facets;
 }
 

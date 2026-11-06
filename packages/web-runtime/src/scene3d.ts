@@ -166,6 +166,35 @@ function averagePoint(points: Point3d[]): Point3d {
 /** A cylinder, cone or sphere as facets (kept for callers of the first version; see solidFacets). */
 export const roundSolidFacets = solidFacets;
 
+/** A flat face's place: its centre and area, rounded, so the same face of two solids matches. */
+function faceKey(points: Point3d[]): string {
+  const centre = averagePoint(points);
+  let normal = { x: 0, y: 0, z: 0 };
+  points.forEach((point, index) => {
+    const next = points[(index + 1) % points.length]!;
+    normal = { x: normal.x + point.y * next.z - point.z * next.y, y: normal.y + point.z * next.x - point.x * next.z, z: normal.z + point.x * next.y - point.y * next.x };
+  });
+  const area = Math.hypot(normal.x, normal.y, normal.z) / 2;
+  return [centre.x, centre.y, centre.z, area].map((value) => (Math.abs(value) < 5e-4 ? 0 : value).toFixed(3)).join(",");
+}
+
+/** Faces two different solids share, facing opposite ways: a cone standing on a cylinder's top, a roof on a box. */
+export function gluedFaces(objects: Array<Record<string, any>>): Set<string> {
+  const seen = new Map<string, Array<{ object: number; normal: Point3d }>>();
+  const glued = new Set<string>();
+  objects.forEach((object, index) => {
+    if (Number(object.unfold) > 0) return;
+    for (const facet of solidFacets(object)) {
+      if (facet.part !== "face") continue;
+      const key = faceKey(facet.points);
+      const others = seen.get(key) ?? [];
+      if (others.some((other) => other.object !== index && other.normal.x * facet.normal.x + other.normal.y * facet.normal.y + other.normal.z * facet.normal.z < -.99)) glued.add(key);
+      seen.set(key, [...others, { object: index, normal: facet.normal }]);
+    }
+  });
+  return glued;
+}
+
 function polygon(
   svg: SVGElement,
   points: Point3d[],
@@ -826,7 +855,8 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "face" }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "face"; glued?: boolean }> = [];
+    const glued = gluedFaces(content.objects ?? []);
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
       if (object.kind === "surface") {
@@ -849,7 +879,7 @@ function renderScene(
         for (const points of boxFaces(object)) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6 });
+          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
         }
         continue;
       }
@@ -863,7 +893,7 @@ function renderScene(
         // An opening net shows both sides of its faces (an opened face shows its inside).
         if (toward <= 1e-9 && !opening) continue;
         const facing = Math.min(1, Math.abs(toward) / .01);
-        faces.push({ points: facet.points, color, depth: here, objectId: String(object.id ?? object.as ?? ""), opacity: .1 + .32 * facing, facet: facet.part });
+        faces.push({ points: facet.points, color, depth: here, objectId: String(object.id ?? object.as ?? ""), opacity: .1 + .32 * facing, facet: facet.part, glued: facet.part === "face" && glued.has(faceKey(facet.points)) });
       }
     }
     faces.sort((left, right) => left.depth - right.depth);
@@ -873,6 +903,8 @@ function renderScene(
       // A round solid's side has no edges of its own: its facets meet without lines.
       // A thin stroke at half the fill's strength closes hairline gaps between facets without drawing a grid.
       if (face.facet === "side") { element.setAttribute("stroke-opacity", String((face.opacity ?? .23) * .5)); element.setAttribute("stroke-width", ".6"); }
+      // Where two solids are stacked, the face they share is inside the composite: only its edge (the seam) is drawn.
+      if (face.glued) { element.setAttribute("fill-opacity", "0"); element.classList.add("scene3d-face-glued"); }
       element.dataset.id = face.objectId;
     }
     endLayer(state.base);
