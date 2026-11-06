@@ -115,20 +115,20 @@ test("unfolding opens a solid into its net: closed at 0, flat at 1", () => {
   }
   // A cylinder's side unrolls into a rectangle 2πr wide; its discs fold flat beside it.
   const cylinder = solidFacets({ kind: "cylinder", radius: 1, height: 2, center: c, unfold: 1 });
-  const sides = allPoints(cylinder.filter((facet) => facet.part === "side"));
+  const sides = cylinder[0]!.points;
   assert.ok(sides.every((point) => Math.abs(point.y + 1) < 1e-9), "the unrolled side lies in one plane");
-  assert.equal(cylinder.filter((facet) => facet.part === "side").length, 1, "a flat net is one rectangle, not strips");
+  assert.equal(cylinder.length, 3, "a flat net is one rectangle and two discs, not strips");
   const width = Math.max(...sides.map((point) => point.x)) - Math.min(...sides.map((point) => point.x));
   assert.ok(Math.abs(width - 2 * Math.PI) < 1e-6);
   assert.ok(allPoints(cylinder).every((point) => Math.abs(point.y + 1) < 1e-9), "the discs fold into the same plane");
   // A cone's side opens into a sector with the slant height as its radius.
   const cone = solidFacets({ kind: "cone", radius: 1, height: 2, center: c, unfold: 1 });
-  const coneSide = cone.filter((facet) => facet.part === "side");
+  const coneSide = [cone[0]!];
   const slant = Math.hypot(1, 2);
   // Opened, the front line stands upright on its foot (0, −1, −1): the apex is one slant height above it, and the net lies in y = −1.
   const apex = { x: 0, y: -1, z: -1 + slant };
   assert.ok(allPoints(cone).every((point) => Math.abs(point.y + 1) < 1e-9), "the cone's net lies in the plane y = −1");
-  assert.equal(coneSide.length, 1, "a flat net is one sector, not strips");
+  assert.equal(cone.length, 2, "a flat net is one sector and a disc, not strips");
   for (const point of allPoints(coneSide)) {
     const d = Math.hypot(point.x - apex.x, point.y - apex.y, point.z - apex.z);
     assert.ok(d < 1e-9 || Math.abs(d - slant) < 1e-6, "every rim point sits one slant height from the apex");

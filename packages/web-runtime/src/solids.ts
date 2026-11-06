@@ -204,8 +204,8 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
       : { x: c.x + (radius / bend) * Math.sin((s * bend) / radius), y: c.y - radius + (radius / bend) * (1 - Math.cos((s * bend) / radius)), z });
     const normalAt = (s: number) => ({ x: Math.sin((s * bend) / radius), y: -Math.cos((s * bend) / radius), z: 0 });
     if (bend < 1e-6) {
-      // Flat: one rectangle 2πr wide, not strips (whose edges would draw a grid).
-      facets.push({ points: [at(arc(0), c.z - half), at(arc(ROUND), c.z - half), at(arc(ROUND), c.z + half), at(arc(0), c.z + half)], normal: normalAt(0), part: "side" });
+      // Flat: one rectangle 2πr wide with its edges, not strips (whose edges would draw a grid).
+      facets.push({ points: [at(arc(0), c.z - half), at(arc(ROUND), c.z - half), at(arc(ROUND), c.z + half), at(arc(0), c.z + half)], normal: normalAt(0), part: "face" });
     } else for (let index = 0; index < ROUND; index += 1) {
       const [s0, s1] = [arc(index), arc(index + 1)];
       facets.push({ points: [at(s0, c.z - half), at(s1, c.z - half), at(s1, c.z + half), at(s0, c.z + half)], normal: normalAt((s0 + s1) / 2), part: "side" });
@@ -243,8 +243,8 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
     strips.push({ points: [add(apex, scale(direction(p0), slant)), add(apex, scale(direction(p1), slant)), apex], normal: dot(normal, sub(middle, axis)) < 0 ? scale(normal, -1) : normal, part: "side" });
   }
   if (unfold >= 1 - 1e-9) {
-    // Flat: one sector, not strips (whose edges would draw a fan of lines).
-    facets.push(hinged({ points: [apex, ...strips.map((strip) => strip.points[0]!), strips.at(-1)!.points[1]!], normal: strips[0]!.normal, part: "side" }, [tilt]));
+    // Flat: one sector with its edges, not strips (whose edges would draw a fan of lines).
+    facets.push(hinged({ points: [apex, ...strips.map((strip) => strip.points[0]!), strips.at(-1)!.points[1]!], normal: strips[0]!.normal, part: "face" }, [tilt]));
   } else facets.push(...strips.map((strip) => hinged(strip, [tilt])));
   // The base disc swings about the line touching the base at the front, until its centre lies on the front line extended.
   const from = { x: 0, y: radius, z: 0 };
