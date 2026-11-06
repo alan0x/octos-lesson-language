@@ -133,6 +133,7 @@
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }
+.diagram-arrowhead { fill: #526b67; }
 .diagram-edge.emphasis-focus { stroke: #e15d45; stroke-width: 5; }
 .diagram-edge.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .diagram-edge.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.4; }

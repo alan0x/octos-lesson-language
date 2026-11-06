@@ -45,6 +45,8 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
+  cycleDiagramAspect,
+  cycleDiagramPath,
   inkDrawnSize,
   measureSemanticNode,
   targetRect,
@@ -1196,11 +1198,31 @@ export interface DiagramLayout {
   height: number;
   points: Map<string, DiagramPointLayout>;
   ordered: boolean;
+  /** Boxes joined in order (a chain of steps or a cycle): each edge is drawn as an arrow from box to box. */
+  directed?: boolean;
 }
 
 export function diagramLayout(content: Record<string, any>): DiagramLayout {
   const elements = Array.isArray(content.elements) ? content.elements : [];
   const orderedPath = orderedDiagramPath(content);
+  const ring = orderedPath ? undefined : cycleDiagramPath(content);
+  if (ring) {
+    // Boxes round an ellipse, the first at the top, going clockwise.
+    const nodeWidth = ring.length <= 4 ? 150 : 124;
+    const elementById = new Map(elements.map((element: Record<string, any>) => [text(element.id), element]));
+    const lineSets = ring.map((id) => wrapDiagramLabel(text(elementById.get(id)?.label), ring.length <= 4 ? 10 : 8));
+    const nodeHeights = lineSets.map((lines) => Math.max(42, 18 + lines.length * 17));
+    const tallest = Math.max(...nodeHeights);
+    const width = 520, height = Math.round(520 * cycleDiagramAspect(ring.length));
+    const rx = width / 2 - nodeWidth / 2 - 14, ry = height / 2 - tallest / 2 - 12;
+    return {
+      width, height, ordered: true, directed: true,
+      points: new Map(ring.map((id, index) => {
+        const angle = -Math.PI / 2 + (2 * Math.PI * index) / ring.length;
+        return [id, { x: width / 2 + rx * Math.cos(angle), y: height / 2 + ry * Math.sin(angle), label: text(elementById.get(id)?.label), lines: lineSets[index]!, width: nodeWidth, height: nodeHeights[index]! }];
+      })),
+    };
+  }
   if (!orderedPath) {
     return {
       width: 300,
@@ -1241,6 +1263,7 @@ export function diagramLayout(content: Record<string, any>): DiagramLayout {
     width,
     height,
     ordered: true,
+    directed: true,
     points: new Map(elements.map((element: Record<string, any>) => {
       const index = orderedIndex.get(text(element.id))!;
       const row = Math.floor(index / columns);
@@ -1332,6 +1355,15 @@ export function diagramConnectionGeometry(content: Record<string, any>, connecti
   };
 }
 
+/** Where the line from a box's centre towards `toward` leaves the box, a few units out. */
+function boxEdgePoint(box: DiagramPointLayout, toward: { x: number; y: number }): { x: number; y: number } {
+  const dx = toward.x - box.x, dy = toward.y - box.y;
+  const halfWidth = (box.width ?? 0) / 2 + 4, halfHeight = (box.height ?? 0) / 2 + 4;
+  if ((!dx && !dy) || !(halfWidth > 4 && halfHeight > 4)) return { x: box.x, y: box.y };
+  const scale = Math.min(dx ? halfWidth / Math.abs(dx) : Infinity, dy ? halfHeight / Math.abs(dy) : Infinity);
+  return { x: box.x + dx * Math.min(1, scale), y: box.y + dy * Math.min(1, scale) };
+}
+
 function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
   const layout = diagramLayout(content);
@@ -1346,11 +1378,24 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
     polygon.setAttribute("points", members.map((point) => `${point.x},${point.y}`).join(" "));
     polygon.classList.add("diagram-region"); polygon.dataset.id = text(region.id); applyEmphasisClass(polygon, latestEmphasis(node, text(region.id))); svg.append(polygon);
   }
+  // Steps and cycles read in one direction: their edges are arrows from box edge to box edge.
+  const arrowId = layout.directed ? `diagram-arrow-${String(node.id ?? "").replace(/[^A-Za-z0-9_-]/g, "-")}` : "";
+  if (layout.directed) {
+    const defs = document.createElementNS(SVG_NS, "defs");
+    const marker = document.createElementNS(SVG_NS, "marker");
+    marker.setAttribute("id", arrowId); marker.setAttribute("viewBox", "0 0 10 10"); marker.setAttribute("refX", "9"); marker.setAttribute("refY", "5");
+    marker.setAttribute("markerWidth", "7"); marker.setAttribute("markerHeight", "7"); marker.setAttribute("orient", "auto-start-reverse");
+    const head = document.createElementNS(SVG_NS, "path"); head.setAttribute("d", "M0,0 L10,5 L0,10 Z"); head.classList.add("diagram-arrowhead");
+    marker.append(head); defs.append(marker); svg.append(defs);
+  }
   for (const edge of Array.isArray(content.edges) ? content.edges : []) {
-    const from = points.get(text(edge.from)); const to = points.get(text(edge.to));
-    if (!from || !to) continue;
+    const center = { from: points.get(text(edge.from)), to: points.get(text(edge.to)) };
+    if (!center.from || !center.to) continue;
+    const from = layout.directed ? boxEdgePoint(center.from, center.to) : center.from;
+    const to = layout.directed ? boxEdgePoint(center.to, center.from) : center.to;
     const line = document.createElementNS(SVG_NS, "line");
     line.setAttribute("x1", String(from.x)); line.setAttribute("y1", String(from.y)); line.setAttribute("x2", String(to.x)); line.setAttribute("y2", String(to.y));
+    if (layout.directed) line.setAttribute("marker-end", `url(#${arrowId})`);
     line.classList.add("diagram-edge"); line.dataset.id = text(edge.id); applyEmphasisClass(line, latestEmphasis(node, text(edge.id))); svg.append(line);
     if (edge.label) {
       const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String((from.x + to.x) / 2)); label.setAttribute("y", String((from.y + to.y) / 2 - 6));

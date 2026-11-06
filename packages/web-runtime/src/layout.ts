@@ -124,6 +124,40 @@ export function inkDrawnSize(content: Record<string, any> | undefined): Pick<Rec
   return { width: Math.max(MIN_DRAWN_INK, width * scale), height: Math.max(MIN_DRAWN_INK, height * scale) };
 }
 
+/**
+ * The boxes of a cycle in order, when a diagram's edges join 3–8 boxes (not
+ * geometry points, none with a semantic position) in one ring: every box has
+ * one arrow in and one arrow out.
+ */
+export function cycleDiagramPath(content: Record<string, any>): string[] | undefined {
+  const elements = Array.isArray(content.elements) ? content.elements : [];
+  const edges = Array.isArray(content.edges) ? content.edges : [];
+  if (elements.length < 3 || elements.length > 8 || edges.length !== elements.length) return undefined;
+  if (elements.some((element: Record<string, any>) => label(element.semantic_position) || label(element.kind) === "point")) return undefined;
+  const ids = new Set(elements.map((element: Record<string, any>) => label(element.id)).filter(Boolean));
+  if (ids.size !== elements.length) return undefined;
+  const next = new Map<string, string>();
+  const incoming = new Map<string, number>();
+  for (const edge of edges) {
+    const from = label(edge.from), to = label(edge.to);
+    if (!ids.has(from) || !ids.has(to) || from === to || next.has(from)) return undefined;
+    next.set(from, to);
+    incoming.set(to, (incoming.get(to) ?? 0) + 1);
+  }
+  if ([...ids].some((id) => incoming.get(id) !== 1)) return undefined;
+  const first = label(elements[0].id);
+  const ring: string[] = [];
+  for (let current: string | undefined = first; current && !ring.includes(current); current = next.get(current)) ring.push(current);
+  return ring.length === elements.length && next.get(ring.at(-1)!) === first ? ring : undefined;
+}
+
+const label = (value: unknown) => (typeof value === "string" || typeof value === "number" ? String(value) : "");
+
+/** The ring a cycle diagram is drawn on (board view), as a width-to-height ratio of its drawing. */
+export function cycleDiagramAspect(boxes: number): number {
+  return boxes <= 4 ? 300 / 520 : 360 / 520;
+}
+
 export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "width" | "height"> {
   const content = node.content ?? {};
   const length = visibleContentLength(content);
@@ -143,6 +177,9 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     const rows = Array.isArray(content.rows) ? content.rows.length : 2;
     return { width: Math.min(600, Math.max(320, columns * 100)), height: 90 + rows * 34 };
   }
+  // A cycle is drawn on a ring of its boxes: the card keeps the ring's proportions, plus its title.
+  const ring = kind === "diagram" ? cycleDiagramPath(content) : undefined;
+  if (ring) return { width: 480, height: Math.round(480 * cycleDiagramAspect(ring.length) + (content.title ? 78 : 44)) };
   if (kind === "diagram") return { width: Math.min(480, Math.max(280, length * 3.2)), height: Math.min(260, 105 + Math.ceil(length / 60) * 28) };
   if (
     kind === "math"

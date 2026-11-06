@@ -9,6 +9,7 @@ import {
   boardWheelTargetsInteractiveUi,
 } from "../src/input-routing.js";
 import { describeBoardTarget } from "../src/board-targets.js";
+import { measureSemanticNode } from "../src/layout.js";
 
 test("geometry polygons are addressable teaching targets", () => {
   assert.deepEqual(describeBoardTarget({
@@ -1033,4 +1034,30 @@ test("course framing prefers the centred clear area among near-equal fits", () =
   const left = camera.panX;
   const right = viewport.width - (camera.panX + course.width * camera.scale);
   assert.ok(Math.abs(left - right) < 2, `course sits centred (left ${left.toFixed(1)}, right ${right.toFixed(1)})`);
+});
+
+test("a cycle of boxes is laid out on a ring, first at the top and clockwise, with arrows", () => {
+  const content = {
+    title: "水的循环",
+    elements: [{ id: "sea", label: "海洋" }, { id: "vapour", label: "水蒸气" }, { id: "cloud", label: "云" }, { id: "rain", label: "下雨" }],
+    edges: [
+      { id: "e1", from: "sea", to: "vapour" }, { id: "e2", from: "vapour", to: "cloud" },
+      { id: "e3", from: "cloud", to: "rain" }, { id: "e4", from: "rain", to: "sea" },
+    ],
+  };
+  const layout = diagramLayout(content);
+  assert.equal(layout.directed, true);
+  const [sea, vapour, cloud, rain] = ["sea", "vapour", "cloud", "rain"].map((id) => layout.points.get(id)!);
+  assert.ok(sea!.width && sea!.height, "each step is a box");
+  assert.ok(sea!.y < cloud!.y, "the first box is at the top");
+  assert.ok(vapour!.x > rain!.x, "going round clockwise");
+  assert.equal(Math.round(sea!.x), layout.width / 2);
+  assert.ok(measureSemanticNode({ kind: "diagram", content }).height > 300, "the card keeps the ring's proportions");
+  // A geometry figure made of points keeps its own layout, with plain segments.
+  const triangle = {
+    elements: [{ id: "a", kind: "point", label: "A" }, { id: "b", kind: "point", label: "B" }, { id: "c", kind: "point", label: "C" }],
+    edges: [{ id: "ab", from: "a", to: "b" }, { id: "bc", from: "b", to: "c" }, { id: "ca", from: "c", to: "a" }],
+  };
+  assert.equal(diagramLayout(triangle).directed, undefined);
+  assert.equal(diagramLayout(triangle).points.get("a")!.width, undefined);
 });
