@@ -113,7 +113,7 @@ function visibleContentLength(value: unknown): number {
 
 /** The largest a card of learner ink drawn at its own size may be; larger ink is scaled down to fit. */
 export const MAX_DRAWN_INK_WIDTH = 1_200;
-const MIN_DRAWN_INK = 24;
+const MIN_DRAWN_INK = 1;
 
 /** Learner ink kept at the size it was drawn (player 0.9.0), within readable limits. */
 export function inkDrawnSize(content: Record<string, any> | undefined): Pick<Rect, "width" | "height"> | undefined {
