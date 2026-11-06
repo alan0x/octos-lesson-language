@@ -317,7 +317,7 @@ Normalizer 必须产生相同 Canonical Events。Normalization 不改写教学�
 - `write kind: "ink"`：`content` 为 `snapshot_id`、`sha256`、`alt`，可选 `replay`（`stroke_order` / `static`）、`shown_strokes`（只显示按书写顺序的前 N 笔；之后用 `revise` 同一快照、更大的 `shown_strokes` 显示更多笔，播放器只把新出现的笔画写出来，能力 `ink:shown-strokes`，播放器 0.8.0）与 `selections`（`[{"as", "selection_id", "label"}]`，成为可寻址 fragment）。快照必须出现在 Session Context 的 `ink_snapshots` 中且校验值一致。
 - `place.relation: "annotates"`：笔迹标注附着在一张卡片上，`content.annotation` 给出它在锚点卡片上的相对位置（0–1）。
 - `place.relation: "replaces"`：新卡片占用被替换卡片的位置，被替换卡片隐藏（“整理一下”）。
-- `place.relation: "continues"`（播放器 0.9.0，决定记录 0011）：笔迹或数学卡片接着写在一张卡片上，`place.offset: {"x", "y"}` 是它离锚点卡片左上角的距离（白板单位，即孩子写下时的位置）。锚点与所有接着写的卡片组成一个整体，一起排版、共用一个外框；接着写的数学卡片可以写 `align: "equals"`，让自己的“=”与块中上面最近一行数学的“=”对齐。能力 `placement:continues`。
+- `place.relation: "continues"`（播放器 0.9.0，决定记录 0011）：笔迹或数学卡片接着写在一张卡片上，`place.offset: {"x", "y"}` 是它离锚点卡片左上角的距离（白板单位，即孩子写下时的位置）。锚点与所有接着写的卡片组成一个整体，一起排版、共用一个外框；接着写的数学卡片（或替换接着写的笔迹的数学卡片）可以写 `align: "equals"`，让自己的“=”与块中上面最近一行数学的“=”对齐。能力 `placement:continues`。
 - 笔迹 `content.drawn_size: {"width", "height"}`（播放器 0.9.0）：按写下时的大小显示（白板单位，超过 1200 宽时等比缩小），不再放进固定大小的卡片。能力 `ink:drawn-size`。
 - `{"do": "hide", "target": "<卡片>"}`：隐藏孩子自己的整张卡片。擦除重写用 `revise` 指向新的快照。被隐藏或替换的卡片之后不能再被引用。
 - `write.source`：`{"selection": "sel-…", "confirmed_by": "learner"}`，记录卡片由哪段笔迹选区派生。

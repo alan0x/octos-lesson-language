@@ -384,6 +384,9 @@ test("a continuation has an offset, is ink or math, and only math lines up its '
   rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { ...step.place, align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/align");
   rejectsWith(inkLesson([grid, { ...fraction, place: { relation: "below", anchor: "grid", offset: { x: 0, y: 0 } } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/1/place/offset");
   rejectsWith(inkLesson([grid, fraction, { ...neat, place: { relation: "below", anchor: "ink-fraction", align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/2/place/align");
+  // Neat math replacing a continued line may line up; ink replacing anything may not.
+  validate(inkLesson([grid, fraction, neat, step, { ...nextLine, place: { relation: "replaces", anchor: "ink-step", align: "equals" } }]));
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { relation: "replaces", anchor: "neat-fraction", align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/align");
   rejectsWith(inkLesson([grid, fraction, neat, { ...step, content: { ...step.content, drawn_size: { width: 0, height: 10 } } }]), "OLL_SCHEMA_INVALID");
 });
 

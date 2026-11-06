@@ -1185,7 +1185,7 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
     }
   } else {
     if (place.offset !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/offset`, "Only a continuation has an offset");
-    if (place.align === "equals") fail("OLL_INVALID_PLACEMENT", `${path}/align`, "Only a continuation lines up its '='");
+    if (place.align === "equals" && place.relation !== "replaces") fail("OLL_INVALID_PLACEMENT", `${path}/align`, "Only a continuation, or what replaces one, lines up its '='");
   }
   if (place.relation === "new_region") {
     if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
@@ -1439,6 +1439,9 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             if (action.kind !== "ink") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink annotates a card");
           }
           if (action.place.anchor !== undefined) requireVisible(action.place.anchor, `${actionPath}/place/anchor`);
+          if (action.place.relation === "replaces" && action.place.align === "equals" && action.kind !== "math") {
+            fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/align`, "Only math lines up its '='");
+          }
           if (action.place.relation === "continues") {
             requireLearnerTaught(`${actionPath}/place/relation`, "Continuing a card");
             if (action.kind !== "ink" && action.kind !== "math") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink or math continues a card");

@@ -69,6 +69,10 @@ test("a continuation whose card left the board keeps its place (player 0.9.0)", 
   const neatSteps = { id: "neat-steps", kind: "math", placement: { relation: "replaces", anchor: "steps" } };
   shown = visibleBoard(board([formula, { ...steps, hidden: true, replaced_by: "neat-steps" }, neatSteps, result]));
   assert.deepEqual(shown.nodes["neat-steps"]!.placement, steps.placement);
+  // Asking to line up, the neat math continues the formula with its "=" lined up.
+  const aligned = { ...neatSteps, placement: { ...neatSteps.placement, align: "equals" } };
+  assert.deepEqual(visibleBoard(board([formula, { ...steps, hidden: true, replaced_by: "neat-steps" }, aligned])).nodes["neat-steps"]!.placement,
+    { ...steps.placement, align: "equals" });
   assert.deepEqual(shown.nodes.result!.placement, { relation: "continues", anchor: "neat-steps", offset: { x: 4, y: 60 } });
   // The first card is erased: the next one takes its place on the board.
   shown = visibleBoard(board([{ ...formula, hidden: true }, steps, result]));

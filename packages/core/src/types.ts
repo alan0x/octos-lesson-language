@@ -19,7 +19,10 @@ export interface Placement {
   relation: PlacementRelation;
   anchor?: Alias;
   region_role?: string;
-  /** "equals" (player 0.9.0): a math card that continues another lines its "=" up with the math above it. */
+  /**
+   * "equals" (player 0.9.0): a math card that continues another, or replaces
+   * a card that did, lines its "=" up with the math above it.
+   */
   align?: "start" | "center" | "end" | "equals";
   gap?: "compact" | "normal" | "spacious";
   /**

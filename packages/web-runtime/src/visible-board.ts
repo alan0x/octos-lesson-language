@@ -78,11 +78,13 @@ export function visibleBoard(state: SemanticBoardState): SemanticBoardState {
     const placement = reanchored(state, node.placement);
     // Neat math that replaces handwriting drawn on a card sits where the ink was.
     const inkBox = placement?.relation === "annotates" ? node.content?.annotation ?? node.placement?.annotation : undefined;
+    // Neat math that replaces a line continuing a card lines its "=" up when it asks to.
+    const aligned = placement?.relation === "continues" && replacement.placement?.align === "equals" ? { ...placement, align: "equals" } : placement;
     shown[replacementId] = {
       ...replacement,
       // Layout orders cards by creation; the replacement keeps the replaced card's turn.
       in_place_of: node.id,
-      placement: inkBox ? { ...placement, annotation: inkBox } : placement,
+      placement: inkBox ? { ...placement, annotation: inkBox } : aligned,
       ...(node.region_id !== undefined ? { region_id: node.region_id } : {}),
     };
   }
