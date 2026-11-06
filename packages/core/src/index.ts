@@ -61,7 +61,7 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
-const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]);
+const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces", "continues"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
@@ -1144,6 +1144,7 @@ function validateInkResource(action: WriteAction, path: string, resourceContext:
   if (content.shown_strokes !== undefined && (!Number.isInteger(content.shown_strokes) || content.shown_strokes < 1)) {
     fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/shown_strokes`, "shown_strokes is a whole number of strokes, at least 1");
   }
+  validateDrawnSize(content.drawn_size, `${path}/content/drawn_size`);
   if (!resourceContext) return;
   const snapshot = resourceContext.ink_snapshots?.find((candidate) => candidate.snapshot_id === content.snapshot_id);
   if (!snapshot) fail("OLL_RESOURCE_DENIED", `${path}/content/snapshot_id`, `Ink snapshot '${content.snapshot_id}' is not available in Session Context`);
@@ -1156,6 +1157,17 @@ function validateInkResource(action: WriteAction, path: string, resourceContext:
   });
 }
 
+/** Ink keeps the size it was drawn at, in board units (player 0.9.0). */
+function validateDrawnSize(size: unknown, path: string): void {
+  if (size === undefined) return;
+  const value = size as { width?: unknown; height?: unknown };
+  const fine = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n > 0 && n <= 4000;
+  if (!size || typeof size !== "object" || Array.isArray(size) || !fine(value.width) || !fine(value.height)
+    || Object.keys(size).some((key) => key !== "width" && key !== "height")) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", path, "drawn_size is { width, height } in board units, each above 0 and at most 4000");
+  }
+}
+
 function validatePlacement(place: Placement, path: string, registry: Registry): void {
   requireObject(place, path);
   if (!PLACEMENT_RELATIONS.has(place.relation)) {
@@ -1164,10 +1176,22 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
   for (const forbidden of ["x", "y", "width", "height", "zoom", "duration_ms"]) {
     if (forbidden in place) fail("OLL_INVALID_PLACEMENT", `${path}/${forbidden}`, `Authoring Profile cannot set '${forbidden}'`);
   }
+  if (place.relation === "continues") {
+    const offset = place.offset as { x?: unknown; y?: unknown } | undefined;
+    const fine = (n: unknown) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 4000;
+    if (!offset || typeof offset !== "object" || Array.isArray(offset) || !fine(offset.x) || !fine(offset.y)
+      || Object.keys(offset).some((key) => key !== "x" && key !== "y")) {
+      fail("OLL_INVALID_PLACEMENT", `${path}/offset`, "A continuation needs its offset { x, y } from the anchor's top-left, in board units within ±4000");
+    }
+  } else {
+    if (place.offset !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/offset`, "Only a continuation has an offset");
+    if (place.align === "equals") fail("OLL_INVALID_PLACEMENT", `${path}/align`, "Only a continuation lines up its '='");
+  }
   if (place.relation === "new_region") {
     if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
-  } else if (place.relation === "annotates" || place.relation === "replaces") {
-    // Both attach to one card: an annotation moves with it; a replacement takes its place.
+  } else if (place.relation === "annotates" || place.relation === "replaces" || place.relation === "continues") {
+    // All attach to one card: an annotation moves with it; a replacement takes
+    // its place; a continuation grows it, where the learner drew.
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node"]);
   } else {
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node", "group"]);
@@ -1415,6 +1439,11 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             if (action.kind !== "ink") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink annotates a card");
           }
           if (action.place.anchor !== undefined) requireVisible(action.place.anchor, `${actionPath}/place/anchor`);
+          if (action.place.relation === "continues") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Continuing a card");
+            if (action.kind !== "ink" && action.kind !== "math") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink or math continues a card");
+            if (action.place.align === "equals" && action.kind !== "math") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/align`, "Only math lines up its '='");
+          }
           if (action.place.relation === "replaces") {
             requireLearnerTaught(`${actionPath}/place/relation`, "Replacing a card");
             if (registry.get(action.place.anchor!)?.external) {

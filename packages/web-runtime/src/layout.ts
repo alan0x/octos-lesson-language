@@ -9,6 +9,8 @@ export interface BoardLayout {
   attachments: Record<string, Rect>;
   /** Actual rendered bounds for each logical course region. */
   regions?: Record<string, Rect>;
+  /** A card and the cards that continue it (player 0.9.0), framed as one block, by the first card's id. */
+  blocks?: Record<string, Rect>;
   bounds: Rect;
 }
 
@@ -73,6 +75,8 @@ export interface RegionLayoutConstraint {
 
 export interface BoardLayoutOptions {
   regions?: Record<string, RegionLayoutConstraint>;
+  /** Where each math card's first "=" is, from its left edge in board units, as the host measured it. */
+  equalsX?: Record<string, number>;
 }
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
@@ -107,6 +111,19 @@ function visibleContentLength(value: unknown): number {
     .reduce((total, [, item]) => total + visibleContentLength(item), 0);
 }
 
+/** The largest a card of learner ink drawn at its own size may be; larger ink is scaled down to fit. */
+export const MAX_DRAWN_INK_WIDTH = 1_200;
+const MIN_DRAWN_INK = 24;
+
+/** Learner ink kept at the size it was drawn (player 0.9.0), within readable limits. */
+export function inkDrawnSize(content: Record<string, any> | undefined): Pick<Rect, "width" | "height"> | undefined {
+  const size = content?.drawn_size;
+  const width = Number(size?.width), height = Number(size?.height);
+  if (!(width > 0 && height > 0 && Number.isFinite(width) && Number.isFinite(height))) return undefined;
+  const scale = Math.min(1, MAX_DRAWN_INK_WIDTH / width);
+  return { width: Math.max(MIN_DRAWN_INK, width * scale), height: Math.max(MIN_DRAWN_INK, height * scale) };
+}
+
 export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "width" | "height"> {
   const content = node.content ?? {};
   const length = visibleContentLength(content);
@@ -120,7 +137,7 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   if (kind === "scene3d") return { width: 460, height: 360 };
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
-  if (kind === "ink") return { width: 340, height: 230 };
+  if (kind === "ink") return inkDrawnSize(content) ?? { width: 340, height: 230 };
   if (kind === "table") {
     const columns = Array.isArray(content.columns) ? content.columns.length : 3;
     const rows = Array.isArray(content.rows) ? content.rows.length : 2;
@@ -191,11 +208,26 @@ export function computeBoardLayout(
     return node.placement?.relation === "annotates" && Boolean(annotationBox(node)) && Boolean(anchor) && anchor!.placement?.relation !== "annotates";
   };
   const annotations = Object.values(state.nodes).filter(onAnchor);
-  if (!annotations.length) return computeFlowLayout(state, measuredNodeSizes, options);
-  const flowNodes = Object.fromEntries(Object.entries(state.nodes).filter(([, node]) => !onAnchor(node)));
-  const layout = computeFlowLayout({ ...state, nodes: flowNodes }, measuredNodeSizes, options);
+  const blocks = continuationBlocks(state, measuredNodeSizes, options.equalsX ?? {});
+  if (!annotations.length && !blocks.size) return computeFlowLayout(state, measuredNodeSizes, options);
+  const members = new Set([...blocks.values()].flatMap((block) => [...block.members.keys()]));
+  const flowNodes = Object.fromEntries(Object.entries(state.nodes).filter(([id, node]) => !onAnchor(node) && !members.has(id)));
+  // A card that others continue takes part in the flow as the whole block.
+  const flowSizes: MeasuredNodeSizes = { ...measuredNodeSizes };
+  for (const [root, block] of blocks) flowSizes[root] = { width: block.maxX - block.minX, height: block.maxY - block.minY };
+  const layout = computeFlowLayout({ ...state, nodes: flowNodes }, flowSizes, options);
+  if (blocks.size) layout.blocks = {};
+  for (const [root, block] of blocks) {
+    const box = layout.nodes[root];
+    if (!box) continue;
+    layout.blocks![root] = box;
+    const origin = { x: box.x - block.minX, y: box.y - block.minY };
+    layout.nodes[root] = { x: origin.x, y: origin.y, ...block.rootSize };
+    for (const [id, rect] of block.members) layout.nodes[id] = { x: origin.x + rect.x, y: origin.y + rect.y, width: rect.width, height: rect.height };
+  }
   for (const node of annotations) {
-    const anchor = layout.nodes[String(node.placement?.anchor)]!;
+    const anchor = layout.nodes[String(node.placement?.anchor)];
+    if (!anchor) continue;
     const box = annotationBox(node)!;
     const ink = {
       x: anchor.x + box.x * anchor.width,
@@ -209,6 +241,67 @@ export function computeBoardLayout(
       : ink;
   }
   return layout;
+}
+
+interface ContinuationBlock {
+  rootSize: Pick<Rect, "width" | "height">;
+  /** Each continuing card's box relative to the first card's top-left. */
+  members: Map<string, Rect>;
+  minX: number; minY: number; maxX: number; maxY: number;
+}
+
+/**
+ * Cards that continue another (placement `continues`, player 0.9.0) sit at
+ * their offset from their anchor, as the learner drew them, so a worked
+ * solution grows in one place. A chain of continuations shares the first
+ * card's block. A math card with `align: "equals"` moves sideways so its "="
+ * lines up with the nearest math above it in the block whose "=" the host measured.
+ */
+function continuationBlocks(state: SemanticBoardState, sizes: MeasuredNodeSizes, equalsX: Record<string, number>): Map<string, ContinuationBlock> {
+  const size = (id: string) => sizes[id] ?? measureSemanticNode(state.nodes[id]!);
+  const continues = (id: string) => {
+    const node = state.nodes[id];
+    const anchor = String(node?.placement?.anchor);
+    return node?.placement?.relation === "continues" && Boolean(state.nodes[anchor])
+      && state.nodes[anchor]!.placement?.relation !== "annotates" && anchor !== id;
+  };
+  const rootOf = (id: string): string => {
+    const seen = new Set<string>();
+    let current = id;
+    while (continues(current) && !seen.has(current)) { seen.add(current); current = String(state.nodes[current]!.placement!.anchor); }
+    return current;
+  };
+  const blocks = new Map<string, ContinuationBlock>();
+  // Creation order, so every anchor is placed before the cards that continue it.
+  const order = Object.keys(state.nodes);
+  const position = new Map<string, { x: number; y: number }>();
+  for (const id of order) {
+    if (!continues(id)) continue;
+    const root = rootOf(id);
+    if (root === id) continue;
+    let block = blocks.get(root);
+    if (!block) {
+      const rootSize = size(root);
+      block = { rootSize: { width: rootSize.width, height: rootSize.height }, members: new Map(), minX: 0, minY: 0, maxX: rootSize.width, maxY: rootSize.height };
+      blocks.set(root, block);
+      position.set(root, { x: 0, y: 0 });
+    }
+    const node = state.nodes[id]!;
+    const anchor = String(node.placement!.anchor);
+    const from = position.get(anchor) ?? { x: 0, y: 0 };
+    const offset = node.placement!.offset as { x?: number; y?: number } | undefined;
+    const at = { x: from.x + (Number(offset?.x) || 0), y: from.y + (Number(offset?.y) || 0) };
+    if (node.placement!.align === "equals" && Number.isFinite(equalsX[id])) {
+      const above = [root, ...block.members.keys()].reverse().find((other) => Number.isFinite(equalsX[other]));
+      if (above) at.x = position.get(above)!.x + equalsX[above]! - equalsX[id]!;
+    }
+    const own = size(id);
+    position.set(id, at);
+    block.members.set(id, { x: at.x, y: at.y, width: own.width, height: own.height });
+    block.minX = Math.min(block.minX, at.x); block.minY = Math.min(block.minY, at.y);
+    block.maxX = Math.max(block.maxX, at.x + own.width); block.maxY = Math.max(block.maxY, at.y + own.height);
+  }
+  return blocks;
 }
 
 function computeFlowLayout(

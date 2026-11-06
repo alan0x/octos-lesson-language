@@ -57,3 +57,21 @@ test("neat math that replaces handwriting drawn on a card sits over that handwri
   const shown = visibleBoard(board([grid, drawn, neat]));
   assert.deepEqual(shown.nodes.neat!.placement, { relation: "annotates", anchor: "grid", annotation: box });
 });
+
+test("a continuation whose card left the board keeps its place (player 0.9.0)", () => {
+  const formula = { id: "formula", kind: "math", placement: { relation: "new_region" } };
+  const steps = { id: "steps", kind: "ink", placement: { relation: "continues", anchor: "formula", offset: { x: 10, y: 80 } } };
+  const result = { id: "result", kind: "ink", placement: { relation: "continues", anchor: "steps", offset: { x: 4, y: 60 } } };
+  // The middle card is erased: what continued it now continues the formula, at the same place.
+  let shown = visibleBoard(board([formula, { ...steps, hidden: true }, result]));
+  assert.deepEqual(shown.nodes.result!.placement, { relation: "continues", anchor: "formula", offset: { x: 14, y: 140 } });
+  // The middle card is made neat: what continued it continues the neat math.
+  const neatSteps = { id: "neat-steps", kind: "math", placement: { relation: "replaces", anchor: "steps" } };
+  shown = visibleBoard(board([formula, { ...steps, hidden: true, replaced_by: "neat-steps" }, neatSteps, result]));
+  assert.deepEqual(shown.nodes["neat-steps"]!.placement, steps.placement);
+  assert.deepEqual(shown.nodes.result!.placement, { relation: "continues", anchor: "neat-steps", offset: { x: 4, y: 60 } });
+  // The first card is erased: the next one takes its place on the board.
+  shown = visibleBoard(board([{ ...formula, hidden: true }, steps, result]));
+  assert.deepEqual(shown.nodes.steps!.placement, { relation: "new_region" });
+  assert.deepEqual(shown.nodes.result!.placement, result.placement);
+});

@@ -353,3 +353,41 @@ test("a revision that adds a point to a grid makes the new point addressable", (
   assert.deepEqual(points.map((point) => point.id), ["lesson-learner-001:node:grid:fragment:point-a", "lesson-learner-001:node:grid:fragment:point-c"]);
   rejectsWith(inkLesson([grid, { do: "point", target: "grid#point-c" }]), "OLL_REFERENCE_NOT_FOUND");
 });
+
+// ---- 0011: a card that grows where the learner writes
+
+const step = { do: "write", as: "ink-step", kind: "ink", role: "derivation", place: { relation: "continues", anchor: "neat-fraction", offset: { x: 12, y: 84 } },
+  content: { snapshot_id: "ink-snap:circle-a@v4", sha256: SHA, alt: "minus 5 on both sides", drawn_size: { width: 210, height: 48 } } };
+const nextLine = { do: "write", as: "next-line", kind: "math", role: "derivation", place: { relation: "continues", anchor: "ink-step", offset: { x: 0, y: 60 }, align: "equals" },
+  content: { fragments: [{ as: "line", latex: "3x=15" }] } };
+
+test("learner ink and math can continue a card at the offset they were drawn, which needs player 0.9.0", () => {
+  const lesson = inkLesson([grid, fraction, neat, step, nextLine]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const created = events[1]!.step!.beats[0]!.stage.during_speech.filter((action) => action.op === "board.create");
+  assert.deepEqual(created.at(-1)!.node!.placement, {
+    relation: "continues", anchor: "lesson-learner-001:node:ink-step", offset: { x: 0, y: 60 }, align: "equals",
+  });
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("placement:continues"));
+  assert.ok(requirements.requiredCapabilities.includes("ink:drawn-size"));
+  assert.equal(requirements.minimumPlayerVersion, "0.9.0");
+});
+
+test("a continuation has an offset, is ink or math, and only math lines up its '='", () => {
+  const { offset: _, ...noOffset } = step.place;
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: noOffset }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/offset");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { ...step.place, offset: { x: 5000, y: 0 } } }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(inkLesson([grid, { do: "write", as: "note", kind: "note", role: "note", place: { relation: "continues", anchor: "grid", offset: { x: 0, y: 10 } }, content: { title: "x" } }]),
+    "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/1/place/relation");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { ...step.place, align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/align");
+  rejectsWith(inkLesson([grid, { ...fraction, place: { relation: "below", anchor: "grid", offset: { x: 0, y: 0 } } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/1/place/offset");
+  rejectsWith(inkLesson([grid, fraction, { ...neat, place: { relation: "below", anchor: "ink-fraction", align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/2/place/align");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, content: { ...step.content, drawn_size: { width: 0, height: 10 } } }]), "OLL_SCHEMA_INVALID");
+});
+
+test("continuing a card belongs only to learner-taught lessons", () => {
+  const explainContinue = inkLesson([grid, { ...neat, place: { relation: "continues", anchor: "grid", offset: { x: 0, y: 400 } } }], "explain");
+  rejectsWith(explainContinue, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/place/relation");
+});

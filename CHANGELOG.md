@@ -4,6 +4,8 @@
 
 ### Added
 
+- A card can grow where the learner writes (decision 0011): `place.relation: "continues"` with `offset: {x, y}` (board units from the anchor's top-left, as drawn) attaches learner ink or math to an earlier card; the anchor and its continuations lay out as one block with one frame (`BoardLayout.blocks`). A math continuation with `align: "equals"` lines its "=" up with the nearest math above it in the block (the web runtime measures each math card's "=" and passes `equalsX` to the layout). Continuations of a hidden card move to its replacement, to what it continued, or into its place. Capability `placement:continues`, player 0.9.0.
+- Learner ink takes `drawn_size: {width, height}`: shown at the size it was written (scaled down past 1200 wide) instead of in a fixed 340×230 card. Capability `ink:drawn-size`, player 0.9.0.
 - Beats take `pace: "continuous"`: the beat follows straight on from the one before (the next sentence of the same speech). Playback marks its operations, and the end of the beat before it, `continues`; the web runtime plays them without the pauses that separate teaching beats (250 ms between the sentences instead of about 1.4 s). Capability `beat-pace:continuous`, player 0.8.0.
 - A learner-taught beat may be words alone (`say` with no actions); other beats still need an action.
 - Learner ink can appear stroke by stroke as it was written: `write kind: "ink"` takes `shown_strokes` (the first N strokes in drawing order); a `revise` of the same snapshot with a larger `shown_strokes` shows more, and the web runtime draws only the newly shown strokes. Revising ink keeps its placement (an annotation stays on its card). Capability `ink:shown-strokes`, player execution version 0.8.0.

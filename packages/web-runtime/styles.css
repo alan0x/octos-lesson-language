@@ -179,6 +179,13 @@
 .image-region.emphasis-resolved { border-color: #2f8f80; background: rgba(47,143,128,.08); }
 .image-region.emphasis-warning { border-color: #cc3447; background: rgba(204,52,71,.13); }
 .image-region[class*="emphasis-"]::after { content: attr(data-label); position: absolute; left: 4px; top: 4px; max-width: calc(100% - 8px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 6px; border-radius: 999px; background: rgba(255,253,247,.92); color: #594d43; font: 600 10px/1.2 ui-sans-serif, system-ui, sans-serif; }
+/* A card and the cards that continue it (player 0.9.0): one frame round the block; the cards inside keep only their content. */
+.board-continued { position: absolute; border: 1px solid #d8d0c2; border-radius: 18px; background: rgba(255,253,247,.97); box-shadow: 0 8px 24px rgba(68,57,41,.08); pointer-events: none; }
+.board-node.continued { border-color: transparent; background: none; box-shadow: none; }
+.board-node.continued::before { content: none; }
+.board-node.continued .lesson-ink-frame { background: none; }
+.board-node.kind-ink.drawn { min-height: 0; padding: 0; }
+.board-node.kind-ink.drawn .lesson-ink-frame { height: 100%; }
 .board-group { position: absolute; border: 2px dashed rgba(84,117,110,.28); border-radius: 24px; background: rgba(219,235,230,.08); pointer-events: none; }
 .board-group.focused { border-color: rgba(122,90,163,.55); background: rgba(122,90,163,.05); }
 .board-group.focus-arrive { animation: group-focus-arrive .72s cubic-bezier(.22,1,.36,1); }

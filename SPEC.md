@@ -674,7 +674,8 @@ overlay
 
 - 除 `new_region` 外必须提供 anchor；
 - anchor 必须是已有节点或组；
-- `align` 为 `start`、`center`、`end`；
+- `align` 为 `start`、`center`、`end`；`continues` 的数学卡片可以用 `equals`；
+- `continues`（0.9，仅学生讲课课程，决定记录 0011）：笔迹或数学卡片接着写在锚点卡片上，必须带 `offset: {"x", "y"}`（离锚点左上角的白板单位，范围 ±4000），只有它能带 `offset`。一串接着写的卡片共用第一张卡片的整体：整体参与排版，各卡片按 offset 摆放，Runtime 画一个外框；`align: "equals"` 的数学卡片横向移动，使它的“=”与整体中上面最近一行数学的“=”对齐。锚点被隐藏时，接着写的卡片接到替换它的卡片上，或接到它所接的卡片上（offset 相加），或占用它在白板上的位置；
 - `gap` 为 `compact`、`normal`、`spacious`；
 - Runtime 负责冲突消解和实际坐标；
 - 相同 Runtime 版本对相同语义状态和动作必须产生稳定布局结果。

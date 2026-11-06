@@ -45,6 +45,7 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
+  inkDrawnSize,
   measureSemanticNode,
   targetRect,
   type BoardLayout,
@@ -79,6 +80,8 @@ import {
 } from "./scene3d.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+/** Space between a growing card's frame and the cards inside it. */
+const BLOCK_PADDING = 14;
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
 const EMPHASIS_KINDS = new Set(["focus", "supporting", "warning", "resolved"]);
 
@@ -1591,6 +1594,9 @@ export class InfiniteBoardView {
   private scale = .78;
   private layout?: BoardLayout;
   private layoutMeasuredSizes?: MeasuredNodeSizes;
+  /** Each math card's first "=", from its left edge (board units). */
+  private readonly equalsX: Record<string, number> = {};
+  private readonly blockElements = new Map<string, HTMLElement>();
   private layoutSemanticSizes?: string;
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
@@ -1766,7 +1772,7 @@ export class InfiniteBoardView {
     this.pointer.hidden = true;
     this.layoutRevisionCounter += 1;
     if (!board) { this.clearBoard(); return; }
-    const layoutOptions = { regions: this.regionLayouts };
+    const layoutOptions = { regions: this.regionLayouts, equalsX: this.equalsX };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
     // Non-math cards report the width they were rendered at, which in a
     // teaching row may already be stretched to their column. Their layout
@@ -2349,7 +2355,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.blockElements.clear(); for (const id of Object.keys(this.equalsX)) delete this.equalsX[id]; this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2374,7 +2380,9 @@ export class InfiniteBoardView {
       const kind = String(node.kind ?? "text");
       const fixedVisualSize = kind === "geometry" || kind === "scene3d"
         || (kind === "diagram" && Array.isArray(node.content?.elements))
-        || (node.placement?.relation === "annotates" && node.content?.annotation !== undefined);
+        || (node.placement?.relation === "annotates" && node.content?.annotation !== undefined)
+        // Ink kept at the size it was drawn is exactly that size.
+        || (kind === "ink" && inkDrawnSize(node.content) !== undefined);
       let element = this.nodeElements.get(node.id);
       const created = !element;
       if (!element) {
@@ -2385,6 +2393,10 @@ export class InfiniteBoardView {
         this.nodes.append(element);
       }
       element.className = `board-node kind-${kind}${node.placement?.relation === "annotates" ? " annotation" : ""}`;
+      // Ink kept at its drawn size shows at exactly that size.
+      if (kind === "ink" && inkDrawnSize(node.content)) element.classList.add("drawn");
+      // A card that grows (or grows another) is framed with its block, not on its own.
+      if (layout.blocks?.[node.id] || (node.placement?.relation === "continues" && layout.blocks && !layout.blocks[node.id])) element.classList.add("continued");
       element.dataset.kind = kind;
       element.dataset.plotViewScope = board.board_id;
       if (created && node.id === activeCreateId) element.classList.add("active");
@@ -2438,6 +2450,7 @@ export class InfiniteBoardView {
       const measuredMathWidth = intrinsicMathWidth === undefined ? undefined
         : constrainWidth ? Math.min(intrinsicMathWidth, layout.nodes[node.id]!.width) : intrinsicMathWidth;
       if (measuredMathWidth) element.style.width = `${measuredMathWidth}px`;
+      if (kind === "math") this.measureEquals(element, node.id);
       if (!fixedVisualSize) element.style.height = "auto";
       if (kind === "math") fitRenderedMath(element);
       const provisional = layout.nodes[node.id]!;
@@ -2488,7 +2501,38 @@ export class InfiniteBoardView {
     }
   }
 
+  /**
+   * Where a math card's first "=" is, from its left edge in board units, so a
+   * line that continues it can line its "=" up (player 0.9.0).
+   */
+  private measureEquals(element: HTMLElement, id: string): void {
+    const relation = [...element.querySelectorAll<HTMLElement>(".katex-html .mrel")].find((candidate) => candidate.textContent?.trim() === "=");
+    const card = element.getBoundingClientRect();
+    const scale = element.offsetWidth > 0 ? card.width / element.offsetWidth : 0;
+    if (!relation || !(scale > 0)) { delete this.equalsX[id]; return; }
+    const sign = relation.getBoundingClientRect();
+    this.equalsX[id] = (sign.left + sign.width / 2 - card.left) / scale;
+  }
+
+  /** The frame of each card that others continue, around the whole block. */
+  private syncBlocks(layout: BoardLayout): void {
+    const blocks = layout.blocks ?? {};
+    for (const [id, element] of this.blockElements) {
+      if (blocks[id]) continue;
+      element.remove(); this.blockElements.delete(id);
+    }
+    for (const [id, rect] of Object.entries(blocks)) {
+      let element = this.blockElements.get(id);
+      if (!element) {
+        element = document.createElement("div"); element.className = "board-continued"; element.dataset.id = id;
+        this.blockElements.set(id, element); this.groups.append(element);
+      }
+      setRect(element, { x: rect.x - BLOCK_PADDING, y: rect.y - BLOCK_PADDING, width: rect.width + 2 * BLOCK_PADDING, height: rect.height + 2 * BLOCK_PADDING });
+    }
+  }
+
   private syncGroups(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): void {
+    this.syncBlocks(layout);
     const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     for (const [id, element] of this.groupElements) {
       if (board.groups[id]) continue;

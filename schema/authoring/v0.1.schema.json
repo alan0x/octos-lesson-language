@@ -748,6 +748,15 @@
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "replay": {"enum": ["stroke_order", "static"]},
         "shown_strokes": {"type": "integer", "minimum": 1},
+        "drawn_size": {
+          "type": "object",
+          "required": ["width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 4000},
+            "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 4000}
+          }
+        },
         "alt": {"type": "string", "minLength": 1, "maxLength": 480},
         "selections": {
           "type": "array",
@@ -810,10 +819,19 @@
       "required": ["relation"],
       "additionalProperties": false,
       "properties": {
-        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]},
+        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces", "continues"]},
         "anchor": {"$ref": "#/$defs/alias"},
         "region_role": {"type": "string"},
-        "align": {"enum": ["start", "center", "end"]},
+        "align": {"enum": ["start", "center", "end", "equals"]},
+        "offset": {
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "x": {"type": "number", "minimum": -4000, "maximum": 4000},
+            "y": {"type": "number", "minimum": -4000, "maximum": 4000}
+          }
+        },
         "gap": {"enum": ["compact", "normal", "spacious"]}
       }
     }
