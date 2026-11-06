@@ -127,7 +127,7 @@
 .scene3d-controls button:hover, .scene3d-controls button:focus-visible { border-color: #2a9386; background: #eef8f5; outline: none; }
 .scene3d-axis { stroke-width: 1.7; vector-effect: non-scaling-stroke; }
 .scene3d-axis-label { fill: #5f6f6b; font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.scene3d-face, .scene3d-solid, .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scene3d-face, .scene3d-solid:not(.scene3d-facet-side), .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .scene3d-surface-cell { stroke-opacity: .42; }
 .scene3d-section { stroke-dasharray: 5 4; stroke-width: 1.8; }
 .scene3d-intersection { stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }

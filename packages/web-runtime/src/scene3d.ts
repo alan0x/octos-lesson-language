@@ -913,7 +913,8 @@ function renderScene(
       const element = polygon(svg, face.points, view, face.color, face.opacity ?? .23,
         face.facet ? `scene3d-solid scene3d-facet scene3d-facet-${face.facet}` : face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
       // A round solid's side has no edges of its own: its facets meet without lines.
-      if (face.facet === "side") element.setAttribute("stroke-opacity", String(face.opacity));
+      // A thin stroke at half the fill's strength closes hairline gaps between facets without drawing a grid.
+      if (face.facet === "side") { element.setAttribute("stroke-opacity", String((face.opacity ?? .23) * .5)); element.setAttribute("stroke-width", ".6"); }
       element.dataset.id = face.objectId;
     }
     endLayer(state.base);
