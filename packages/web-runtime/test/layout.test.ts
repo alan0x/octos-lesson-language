@@ -1300,3 +1300,32 @@ test("an annotation without a card to sit on still gets a place on the board", (
   const layout = computeBoardLayout(board);
   assert.ok(layout.nodes.lost && layout.nodes.stacked);
 });
+
+test("a card grows with the cards that continue it, framed as one block, where they were drawn (player 0.9.0)", () => {
+  const node = (id: string, kind: string, placement: Record<string, unknown>, content: Record<string, unknown> = {}) =>
+    ({ id, kind, role: "derivation", content, placement });
+  const nodes = {
+    problem: node("problem", "math", { relation: "new_region" }, { fragments: [{ id: "f", latex: "3x+5=20" }] }),
+    steps: node("steps", "ink", { relation: "continues", anchor: "problem", offset: { x: 20, y: 90 } }, { drawn_size: { width: 260, height: 50 } }),
+    answer: node("answer", "math", { relation: "continues", anchor: "steps", offset: { x: 100, y: 70 }, align: "equals" }, { fragments: [{ id: "f", latex: "x=5" }] }),
+    after: node("after", "note", { relation: "below", anchor: "problem" }, { title: "Check it" }),
+  };
+  const board = { board_id: "b", revision: 1, focus: [], groups: {}, connections: {}, applied_lessons: [], applied_steps: [], applied_actions: [], nodes } as unknown as SemanticBoardState;
+  const sizes: MeasuredNodeSizes = { problem: { width: 200, height: 72 }, answer: { width: 90, height: 60 }, after: { width: 240, height: 80 } };
+  // The problem's "=" is 120 units in; the answer's is 30.
+  const layout = computeBoardLayout(board, sizes, { equalsX: { problem: 120, answer: 30 } });
+  const { problem, steps, answer, after } = layout.nodes;
+  assert.deepEqual([steps!.x - problem!.x, steps!.y - problem!.y], [20, 90]);
+  assert.deepEqual([steps!.width, steps!.height], [260, 50], "ink keeps its drawn size");
+  assert.equal(answer!.y - problem!.y, 160, "offsets add up along the chain");
+  assert.equal(answer!.x + 30, problem!.x + 120, "the answer's '=' lines up with the problem's");
+  const block = layout.blocks!.problem!;
+  assert.deepEqual(block, { x: problem!.x, y: problem!.y, width: 280, height: 220 });
+  assert.ok(after!.y >= block.y + block.height, "the next card goes below the whole block");
+  assert.equal(layout.blocks!.steps, undefined);
+});
+
+test("ink drawn very wide is scaled down to fit; ink without a drawn size keeps the old card", () => {
+  assert.deepEqual(measureSemanticNode({ kind: "ink", content: { drawn_size: { width: 2400, height: 300 } } }), { width: 1200, height: 150 });
+  assert.deepEqual(measureSemanticNode({ kind: "ink", content: {} }), { width: 340, height: 230 });
+});

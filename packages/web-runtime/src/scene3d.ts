@@ -1,4 +1,5 @@
 import { bindUi, ui } from "./ui-localization.js";
+import { solidFacets, solidTriangles } from "./solids.js";
 import { compileMathExpression } from "../../core/src/index.js";
 import type { StudentInputMethod } from "./student-operations.js";
 
@@ -155,6 +156,43 @@ function line(
   element.setAttribute("class", className);
   if (color) element.setAttribute("stroke", color);
 
+}
+
+function averagePoint(points: Point3d[]): Point3d {
+  const total = points.reduce((sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y, z: sum.z + point.z }), { x: 0, y: 0, z: 0 });
+  return { x: total.x / points.length, y: total.y / points.length, z: total.z / points.length };
+}
+
+/** A cylinder, cone or sphere as facets (kept for callers of the first version; see solidFacets). */
+export const roundSolidFacets = solidFacets;
+
+/** A flat face's place: its centre and area, rounded, so the same face of two solids matches. */
+function faceKey(points: Point3d[]): string {
+  const centre = averagePoint(points);
+  let normal = { x: 0, y: 0, z: 0 };
+  points.forEach((point, index) => {
+    const next = points[(index + 1) % points.length]!;
+    normal = { x: normal.x + point.y * next.z - point.z * next.y, y: normal.y + point.z * next.x - point.x * next.z, z: normal.z + point.x * next.y - point.y * next.x };
+  });
+  const area = Math.hypot(normal.x, normal.y, normal.z) / 2;
+  return [centre.x, centre.y, centre.z, area].map((value) => (Math.abs(value) < 5e-4 ? 0 : value).toFixed(3)).join(",");
+}
+
+/** Faces two different solids share, facing opposite ways: a cone standing on a cylinder's top, a roof on a box. */
+export function gluedFaces(objects: Array<Record<string, any>>): Set<string> {
+  const seen = new Map<string, Array<{ object: number; normal: Point3d }>>();
+  const glued = new Set<string>();
+  objects.forEach((object, index) => {
+    if (Number(object.unfold) > 0) return;
+    for (const facet of solidFacets(object)) {
+      if (facet.part !== "face") continue;
+      const key = faceKey(facet.points);
+      const others = seen.get(key) ?? [];
+      if (others.some((other) => other.object !== index && other.normal.x * facet.normal.x + other.normal.y * facet.normal.y + other.normal.z * facet.normal.z < -.99)) glued.add(key);
+      seen.set(key, [...others, { object: index, normal: facet.normal }]);
+    }
+  });
+  return glued;
 }
 
 function polygon(
@@ -372,8 +410,13 @@ function radialPoint(
   };
 }
 
+/** 3D solids added in player 0.9.0, drawn and sliced from their facets. */
+const FACETED_KINDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"]);
+
 function primitiveMesh(object: Record<string, any>): SceneMesh {
   const target = objectTarget(object);
+  // Solids added later are sliced from the same facets they are drawn with.
+  if (FACETED_KINDS.has(String(object.kind)) || Number(object.unfold) > 0) return { target, solid: Number(object.unfold) > 0 ? false : true, triangles: solidTriangles(object) };
   if (object.kind === "box") {
     return {
       target,
@@ -812,7 +855,8 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "face"; glued?: boolean }> = [];
+    const glued = gluedFaces(content.objects ?? []);
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
       if (object.kind === "surface") {
@@ -826,7 +870,8 @@ function renderScene(
         if (mesh) renderImplicitSurface(svg, object, mesh, view);
         continue;
       }
-      if (object.kind === "box") {
+      const opening = Number(object.unfold) > 0;
+      if (object.kind === "box" && !opening) {
         // A see-through box reads two ways (near faces seen as far). Faces turned
         // away are drawn as dashed hidden edges, as in a textbook, so the box
         // reads one way: the way it is drawn and pointed at.
@@ -834,47 +879,32 @@ function renderScene(
         for (const points of boxFaces(object)) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6 });
+          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
         }
         continue;
       }
-      const center = object.center as Point3d;
-      const projected = projectScene3dPoint(center, view);
-      if (object.kind === "sphere") {
-        const radius = object.radius * 54 * view.zoom;
-        const sphere = layerElement(svg, "ellipse", {
-          cx: projected.x, cy: projected.y, rx: radius, ry: radius * .74,
-          fill: color, "fill-opacity": .28, stroke: color,
-        });
-        sphere.setAttribute("class", "scene3d-solid");
-        sphere.dataset.id = String(object.id ?? object.as ?? "");
-
-      } else {
-        const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
-        const bottom = projectScene3dPoint({ ...center, z: center.z - object.height / 2 }, view);
-        const radius = object.radius * 54 * view.zoom;
-        if (object.kind === "cone") {
-          const cone = layerElement(svg, "path", {
-            d: `M ${top.x} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} Z`,
-            fill: color, "fill-opacity": .28, stroke: color,
-          });
-          cone.setAttribute("class", "scene3d-solid");
-          cone.dataset.id = String(object.id ?? object.as ?? "");
-
-        } else {
-          const cylinder = layerElement(svg, "path", {
-            d: `M ${top.x - radius} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} L ${top.x + radius} ${top.y} A ${radius} ${radius * .3} 0 0 0 ${top.x - radius} ${top.y} Z`,
-            fill: color, "fill-opacity": .25, stroke: color,
-          });
-          cylinder.setAttribute("class", "scene3d-solid");
-          cylinder.dataset.id = String(object.id ?? object.as ?? "");
-
-        }
+      // Round solids are built from small facets, like the box: only facets
+      // turned towards the viewer are drawn, shaded by how squarely they face
+      // it, so a cylinder, cone or sphere turns and tilts correctly.
+      for (const facet of solidFacets(object)) {
+        const centre = averagePoint(facet.points);
+        const here = projectScene3dPoint(centre, view).depth;
+        const toward = projectScene3dPoint({ x: centre.x + facet.normal.x * .01, y: centre.y + facet.normal.y * .01, z: centre.z + facet.normal.z * .01 }, view).depth - here;
+        // An opening net shows both sides of its faces (an opened face shows its inside).
+        if (toward <= 1e-9 && !opening) continue;
+        const facing = Math.min(1, Math.abs(toward) / .01);
+        faces.push({ points: facet.points, color, depth: here, objectId: String(object.id ?? object.as ?? ""), opacity: .1 + .32 * facing, facet: facet.part, glued: facet.part === "face" && glued.has(faceKey(facet.points)) });
       }
     }
     faces.sort((left, right) => left.depth - right.depth);
     for (const face of faces) {
-      const element = polygon(svg, face.points, view, face.color, .23, face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
+      const element = polygon(svg, face.points, view, face.color, face.opacity ?? .23,
+        face.facet ? `scene3d-solid scene3d-facet scene3d-facet-${face.facet}` : face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
+      // A round solid's side has no edges of its own: its facets meet without lines.
+      // A thin stroke at half the fill's strength closes hairline gaps between facets without drawing a grid.
+      if (face.facet === "side") { element.setAttribute("stroke-opacity", String((face.opacity ?? .23) * .5)); element.setAttribute("stroke-width", ".6"); }
+      // Where two solids are stacked, the face they share is inside the composite: only its edge (the seam) is drawn.
+      if (face.glued) { element.setAttribute("fill-opacity", "0"); element.classList.add("scene3d-face-glued"); }
       element.dataset.id = face.objectId;
     }
     endLayer(state.base);

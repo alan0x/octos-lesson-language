@@ -353,3 +353,84 @@ test("a revision that adds a point to a grid makes the new point addressable", (
   assert.deepEqual(points.map((point) => point.id), ["lesson-learner-001:node:grid:fragment:point-a", "lesson-learner-001:node:grid:fragment:point-c"]);
   rejectsWith(inkLesson([grid, { do: "point", target: "grid#point-c" }]), "OLL_REFERENCE_NOT_FOUND");
 });
+
+// ---- 0011: a card that grows where the learner writes
+
+const step = { do: "write", as: "ink-step", kind: "ink", role: "derivation", place: { relation: "continues", anchor: "neat-fraction", offset: { x: 12, y: 84 } },
+  content: { snapshot_id: "ink-snap:circle-a@v4", sha256: SHA, alt: "minus 5 on both sides", drawn_size: { width: 210, height: 48 } } };
+const nextLine = { do: "write", as: "next-line", kind: "math", role: "derivation", place: { relation: "continues", anchor: "ink-step", offset: { x: 0, y: 60 }, align: "equals" },
+  content: { fragments: [{ as: "line", latex: "3x=15" }] } };
+
+test("learner ink and math can continue a card at the offset they were drawn, which needs player 0.9.0", () => {
+  const lesson = inkLesson([grid, fraction, neat, step, nextLine]);
+  validate(lesson);
+  const events = normalizeAuthoringLesson(lesson, { ...host, resourceContext: inkContext });
+  const created = events[1]!.step!.beats[0]!.stage.during_speech.filter((action) => action.op === "board.create");
+  assert.deepEqual(created.at(-1)!.node!.placement, {
+    relation: "continues", anchor: "lesson-learner-001:node:ink-step", offset: { x: 0, y: 60 }, align: "equals",
+  });
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("placement:continues"));
+  assert.ok(requirements.requiredCapabilities.includes("ink:drawn-size"));
+  assert.equal(requirements.minimumPlayerVersion, "0.9.0");
+});
+
+test("a continuation has an offset, is ink or math, and only math lines up its '='", () => {
+  const { offset: _, ...noOffset } = step.place;
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: noOffset }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/offset");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { ...step.place, offset: { x: 5000, y: 0 } } }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(inkLesson([grid, { do: "write", as: "note", kind: "note", role: "note", place: { relation: "continues", anchor: "grid", offset: { x: 0, y: 10 } }, content: { title: "x" } }]),
+    "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/1/place/relation");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { ...step.place, align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/align");
+  rejectsWith(inkLesson([grid, { ...fraction, place: { relation: "below", anchor: "grid", offset: { x: 0, y: 0 } } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/1/place/offset");
+  rejectsWith(inkLesson([grid, fraction, { ...neat, place: { relation: "below", anchor: "ink-fraction", align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/2/place/align");
+  // Neat math replacing a continued line may line up; ink replacing anything may not.
+  validate(inkLesson([grid, fraction, neat, step, { ...nextLine, place: { relation: "replaces", anchor: "ink-step", align: "equals" } }]));
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, place: { relation: "replaces", anchor: "neat-fraction", align: "equals" } }]), "OLL_INVALID_PLACEMENT", "/steps/0/beats/0/actions/3/place/align");
+  rejectsWith(inkLesson([grid, fraction, neat, { ...step, content: { ...step.content, drawn_size: { width: 0, height: 10 } } }]), "OLL_SCHEMA_INVALID");
+});
+
+test("continuing a card belongs only to learner-taught lessons", () => {
+  const explainContinue = inkLesson([grid, { ...neat, place: { relation: "continues", anchor: "grid", offset: { x: 0, y: 400 } } }], "explain");
+  rejectsWith(explainContinue, "OLL_INVALID_OPERATION", "/steps/0/beats/0/actions/1/place/relation");
+});
+
+test("more 3D solids: prisms, pyramids, frustums, hemispheres, tori and regular polyhedra, which need player 0.9.0", () => {
+  const scene = (objects: unknown[]) => inkLesson([grid, { do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+    content: { fallback: "Solids.", axes: false, camera: { yaw: 0.72, pitch: 0.55, zoom: 1 }, objects } }]);
+  const objects = [
+    { as: "prism", kind: "prism", center: { x: 0, y: 0, z: 0 }, sides: 6, radius: 1, height: 2 },
+    { as: "pyramid", kind: "pyramid", center: { x: 3, y: 0, z: 0 }, sides: 4, radius: 1, height: 2 },
+    { as: "frustum", kind: "frustum", center: { x: 6, y: 0, z: 0 }, radius: 2, top_radius: 1, height: 2 },
+    { as: "dome", kind: "hemisphere", center: { x: 9, y: 0, z: 0 }, radius: 1 },
+    { as: "ring", kind: "torus", center: { x: 12, y: 0, z: 0 }, radius: 2, tube: 0.5 },
+    { as: "d20", kind: "icosahedron", center: { x: 15, y: 0, z: 0 }, radius: 1 },
+  ];
+  validate(scene(objects));
+  const events = normalizeAuthoringLesson(scene(objects), { ...host, resourceContext: inkContext });
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("scene3d:more-solids"));
+  rejectsWith(scene([{ ...objects[0]!, sides: 2 }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(scene([{ ...objects[4], tube: 3 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ as: "f", kind: "frustum", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 2 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+});
+
+test("solids on any convex base, truncated pyramids, ellipsoids, and nets that unfold with a slider", () => {
+  const scene = (objects: unknown[], extra: Record<string, unknown> = {}) => inkLesson([grid, { do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+    content: { fallback: "Solids.", axes: false, camera: { yaw: 0.72, pitch: 0.55, zoom: 1 }, objects, ...extra } }]);
+  const triangle = [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 0, y: 4 }];
+  const objects = [
+    { as: "wedge", kind: "prism", center: { x: 0, y: 0, z: 0 }, base: triangle, height: 2 },
+    { as: "cut", kind: "pyramid", center: { x: 4, y: 0, z: 0 }, sides: 4, radius: 2, height: 2, top_scale: 0.5 },
+    { as: "egg", kind: "ellipsoid", center: { x: 8, y: 0, z: 0 }, radii: { x: 2, y: 1, z: 1 } },
+    { as: "net", kind: "box", center: { x: 12, y: 0, z: 0 }, size: { x: 2, y: 2, z: 2 }, unfold: 0 },
+  ];
+  validate(scene(objects));
+  const required = deriveExecutionRequirements(normalizeAuthoringLesson(scene(objects), { ...host, resourceContext: inkContext })).requiredCapabilities;
+  assert.ok(required.includes("scene3d:more-solids") && required.includes("scene3d:unfold"));
+  rejectsWith(scene([{ ...objects[0], base: [{ x: 0, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 0.2 }, { x: 1, y: 2 }] }]), "OLL_INVALID_OPERATION_PAYLOAD", "/steps/0/beats/0/actions/1/content/objects/0/base");
+  rejectsWith(scene([{ ...objects[0], sides: 3 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[1], kind: "prism" }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[2], radii: { x: 2, y: 0, z: 1 } }]), "OLL_SCHEMA_INVALID");
+  rejectsWith(scene([{ ...objects[2], unfold: 0.5 }]), "OLL_INVALID_OPERATION_PAYLOAD");
+  rejectsWith(scene([{ ...objects[3], unfold: 2 }]), "OLL_SCHEMA_INVALID");
+});

@@ -12,15 +12,24 @@ export type JsonObject = { [key: string]: any };
 export type Delivery = "neutral" | "patient" | "encouraging" | "careful" | "emphatic";
 export type ActionPhase = "before_speech" | "during_speech" | "after_speech";
 export type NodeKind = OllNodeKind;
-export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay" | "annotates" | "replaces";
+export type PlacementRelation = "new_region" | "below" | "above" | "left_of" | "right_of" | "near" | "inside" | "overlay" | "annotates" | "replaces" | "continues";
 export type RegistryEntryType = "node" | "connection" | "group";
 
 export interface Placement {
   relation: PlacementRelation;
   anchor?: Alias;
   region_role?: string;
-  align?: "start" | "center" | "end";
+  /**
+   * "equals" (player 0.9.0): a math card that continues another, or replaces
+   * a card that did, lines its "=" up with the math above it.
+   */
+  align?: "start" | "center" | "end" | "equals";
   gap?: "compact" | "normal" | "spacious";
+  /**
+   * `continues` only (player 0.9.0): where this card sits relative to its
+   * anchor's top-left corner, in board units, as the learner drew it.
+   */
+  offset?: { x: number; y: number };
 }
 
 interface BaseAction {

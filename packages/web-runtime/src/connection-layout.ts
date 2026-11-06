@@ -295,13 +295,21 @@ export function routePath(route: ConnectionRoute, cornerRadius = CORNER_RADIUS):
   return `${path} L ${end.x} ${end.y}`;
 }
 
-export function stackConnectionLabel(route: ConnectionRoute, occupied: Rect[]): ConnectionRoute {
+export function stackConnectionLabel(route: ConnectionRoute, occupied: Rect[], ends: Rect[] = []): ConnectionRoute {
   const next = {
     ...route,
     points: route.points.map((point) => ({ ...point })),
     labelCandidates: route.labelCandidates.map((point) => ({ ...point })),
     label: { ...route.label },
   };
+  // Two cards close together leave no room on the arrow itself: the label may
+  // also sit beside the arrow, just outside both cards, at the arrow's middle.
+  if (ends.length) {
+    const middle = next.points[Math.floor((next.points.length - 1) / 2)]!, after = next.points[Math.ceil((next.points.length - 1) / 2)]!;
+    const y = (middle.y + after.y) / 2;
+    const right = Math.max(...ends.map((rect) => rect.x + rect.width)), left = Math.min(...ends.map((rect) => rect.x));
+    next.labelCandidates.push({ x: right + 10 + next.label.width / 2, y }, { x: left - 10 - next.label.width / 2, y });
+  }
   const candidate = next.labelCandidates.find((point) => {
     const rect = {
       x: point.x - next.label.width / 2,

@@ -45,6 +45,9 @@ import {
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
   computeBoardLayout,
+  cycleDiagramAspect,
+  cycleDiagramPath,
+  inkDrawnSize,
   measureSemanticNode,
   targetRect,
   type BoardLayout,
@@ -79,6 +82,8 @@ import {
 } from "./scene3d.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+/** Space between a growing card's frame and the cards inside it. */
+const BLOCK_PADDING = 14;
 const EMPHASIS_CLASSES = ["emphasis-focus", "emphasis-supporting", "emphasis-warning", "emphasis-resolved"];
 const EMPHASIS_KINDS = new Set(["focus", "supporting", "warning", "resolved"]);
 
@@ -1188,16 +1193,42 @@ export interface DiagramPointLayout {
   height?: number;
 }
 
+/** Line height of a label in a cycle's box, in drawing units. */
+const RING_LINE_HEIGHT = 20;
+
 export interface DiagramLayout {
   width: number;
   height: number;
   points: Map<string, DiagramPointLayout>;
   ordered: boolean;
+  /** Boxes joined in order (a chain of steps or a cycle): each edge is drawn as an arrow from box to box. */
+  directed?: boolean;
+  /** A cycle drawn on a ring (its labels are larger). */
+  ring?: boolean;
 }
 
 export function diagramLayout(content: Record<string, any>): DiagramLayout {
   const elements = Array.isArray(content.elements) ? content.elements : [];
   const orderedPath = orderedDiagramPath(content);
+  const ring = orderedPath ? undefined : cycleDiagramPath(content);
+  if (ring) {
+    // Boxes round an ellipse, the first at the top, going clockwise.
+    const nodeWidth = ring.length <= 4 ? 150 : 124;
+    const elementById = new Map(elements.map((element: Record<string, any>) => [text(element.id), element]));
+    // A ring has room for larger words than a chain of steps (diagram-ring labels are 17 units).
+    const lineSets = ring.map((id) => wrapDiagramLabel(text(elementById.get(id)?.label), ring.length <= 4 ? 8 : 6));
+    const nodeHeights = lineSets.map((lines) => Math.max(46, 20 + lines.length * RING_LINE_HEIGHT));
+    const tallest = Math.max(...nodeHeights);
+    const width = 520, height = Math.round(520 * cycleDiagramAspect(ring.length));
+    const rx = width / 2 - nodeWidth / 2 - 14, ry = height / 2 - tallest / 2 - 12;
+    return {
+      width, height, ordered: true, directed: true, ring: true,
+      points: new Map(ring.map((id, index) => {
+        const angle = -Math.PI / 2 + (2 * Math.PI * index) / ring.length;
+        return [id, { x: width / 2 + rx * Math.cos(angle), y: height / 2 + ry * Math.sin(angle), label: text(elementById.get(id)?.label), lines: lineSets[index]!, width: nodeWidth, height: nodeHeights[index]! }];
+      })),
+    };
+  }
   if (!orderedPath) {
     return {
       width: 300,
@@ -1238,6 +1269,7 @@ export function diagramLayout(content: Record<string, any>): DiagramLayout {
     width,
     height,
     ordered: true,
+    directed: true,
     points: new Map(elements.map((element: Record<string, any>) => {
       const index = orderedIndex.get(text(element.id))!;
       const row = Math.floor(index / columns);
@@ -1329,6 +1361,15 @@ export function diagramConnectionGeometry(content: Record<string, any>, connecti
   };
 }
 
+/** Where the line from a box's centre towards `toward` leaves the box, a few units out. */
+function boxEdgePoint(box: DiagramPointLayout, toward: { x: number; y: number }): { x: number; y: number } {
+  const dx = toward.x - box.x, dy = toward.y - box.y;
+  const halfWidth = (box.width ?? 0) / 2 + 4, halfHeight = (box.height ?? 0) / 2 + 4;
+  if ((!dx && !dy) || !(halfWidth > 4 && halfHeight > 4)) return { x: box.x, y: box.y };
+  const scale = Math.min(dx ? halfWidth / Math.abs(dx) : Infinity, dy ? halfHeight / Math.abs(dy) : Infinity);
+  return { x: box.x + dx * Math.min(1, scale), y: box.y + dy * Math.min(1, scale) };
+}
+
 function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   const content = node.content ?? {};
   const layout = diagramLayout(content);
@@ -1336,6 +1377,7 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
   svg.classList.add("diagram-preview");
+  if (layout.ring) svg.classList.add("diagram-ring");
   for (const region of Array.isArray(content.regions) ? content.regions : []) {
     const members = (region.members ?? []).map((id: string) => points.get(id)).filter(Boolean) as { x: number; y: number }[];
     if (members.length < 3) continue;
@@ -1343,11 +1385,24 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
     polygon.setAttribute("points", members.map((point) => `${point.x},${point.y}`).join(" "));
     polygon.classList.add("diagram-region"); polygon.dataset.id = text(region.id); applyEmphasisClass(polygon, latestEmphasis(node, text(region.id))); svg.append(polygon);
   }
+  // Steps and cycles read in one direction: their edges are arrows from box edge to box edge.
+  const arrowId = layout.directed ? `diagram-arrow-${String(node.id ?? "").replace(/[^A-Za-z0-9_-]/g, "-")}` : "";
+  if (layout.directed) {
+    const defs = document.createElementNS(SVG_NS, "defs");
+    const marker = document.createElementNS(SVG_NS, "marker");
+    marker.setAttribute("id", arrowId); marker.setAttribute("viewBox", "0 0 10 10"); marker.setAttribute("refX", "9"); marker.setAttribute("refY", "5");
+    marker.setAttribute("markerWidth", "7"); marker.setAttribute("markerHeight", "7"); marker.setAttribute("orient", "auto-start-reverse");
+    const head = document.createElementNS(SVG_NS, "path"); head.setAttribute("d", "M0,0 L10,5 L0,10 Z"); head.classList.add("diagram-arrowhead");
+    marker.append(head); defs.append(marker); svg.append(defs);
+  }
   for (const edge of Array.isArray(content.edges) ? content.edges : []) {
-    const from = points.get(text(edge.from)); const to = points.get(text(edge.to));
-    if (!from || !to) continue;
+    const center = { from: points.get(text(edge.from)), to: points.get(text(edge.to)) };
+    if (!center.from || !center.to) continue;
+    const from = layout.directed ? boxEdgePoint(center.from, center.to) : center.from;
+    const to = layout.directed ? boxEdgePoint(center.to, center.from) : center.to;
     const line = document.createElementNS(SVG_NS, "line");
     line.setAttribute("x1", String(from.x)); line.setAttribute("y1", String(from.y)); line.setAttribute("x2", String(to.x)); line.setAttribute("y2", String(to.y));
+    if (layout.directed) line.setAttribute("marker-end", `url(#${arrowId})`);
     line.classList.add("diagram-edge"); line.dataset.id = text(edge.id); applyEmphasisClass(line, latestEmphasis(node, text(edge.id))); svg.append(line);
     if (edge.label) {
       const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String((from.x + to.x) / 2)); label.setAttribute("y", String((from.y + to.y) / 2 - 6));
@@ -1362,9 +1417,10 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
       box.classList.add("diagram-node"); box.dataset.id = pointId; applyEmphasisClass(box, latestEmphasis(node, pointId)); svg.append(box);
       const anchor = document.createElementNS(SVG_NS, "circle"); anchor.setAttribute("cx", String(point.x)); anchor.setAttribute("cy", String(point.y)); anchor.setAttribute("r", "0"); anchor.classList.add("diagram-point", "diagram-anchor"); svg.append(anchor);
       const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x)); label.setAttribute("text-anchor", "middle"); label.classList.add("diagram-label");
-      const firstY = point.y - (point.lines.length - 1) * 8.5 + 5;
+      const lineHeight = layout.ring ? RING_LINE_HEIGHT : 17;
+      const firstY = point.y - (point.lines.length - 1) * lineHeight / 2 + (layout.ring ? 6 : 5);
       point.lines.forEach((line, index) => {
-        const span = document.createElementNS(SVG_NS, "tspan"); span.setAttribute("x", String(point.x)); span.setAttribute("y", String(firstY + index * 17)); span.textContent = line; label.append(span);
+        const span = document.createElementNS(SVG_NS, "tspan"); span.setAttribute("x", String(point.x)); span.setAttribute("y", String(firstY + index * lineHeight)); span.textContent = line; label.append(span);
       });
       svg.append(label);
     } else {
@@ -1591,6 +1647,9 @@ export class InfiniteBoardView {
   private scale = .78;
   private layout?: BoardLayout;
   private layoutMeasuredSizes?: MeasuredNodeSizes;
+  /** Each math card's first "=", from its left edge (board units). */
+  private readonly equalsX: Record<string, number> = {};
+  private readonly blockElements = new Map<string, HTMLElement>();
   private layoutSemanticSizes?: string;
   private board?: SemanticBoardState;
   private operation?: PlaybackOperation;
@@ -1766,7 +1825,7 @@ export class InfiniteBoardView {
     this.pointer.hidden = true;
     this.layoutRevisionCounter += 1;
     if (!board) { this.clearBoard(); return; }
-    const layoutOptions = { regions: this.regionLayouts };
+    const layoutOptions = { regions: this.regionLayouts, equalsX: this.equalsX };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
     // Non-math cards report the width they were rendered at, which in a
     // teaching row may already be stretched to their column. Their layout
@@ -2349,7 +2408,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.blockElements.clear(); for (const id of Object.keys(this.equalsX)) delete this.equalsX[id]; this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2374,7 +2433,9 @@ export class InfiniteBoardView {
       const kind = String(node.kind ?? "text");
       const fixedVisualSize = kind === "geometry" || kind === "scene3d"
         || (kind === "diagram" && Array.isArray(node.content?.elements))
-        || (node.placement?.relation === "annotates" && node.content?.annotation !== undefined);
+        || (node.placement?.relation === "annotates" && node.content?.annotation !== undefined)
+        // Ink kept at the size it was drawn is exactly that size.
+        || (kind === "ink" && inkDrawnSize(node.content) !== undefined);
       let element = this.nodeElements.get(node.id);
       const created = !element;
       if (!element) {
@@ -2385,6 +2446,10 @@ export class InfiniteBoardView {
         this.nodes.append(element);
       }
       element.className = `board-node kind-${kind}${node.placement?.relation === "annotates" ? " annotation" : ""}`;
+      // Ink kept at its drawn size shows at exactly that size.
+      if (kind === "ink" && inkDrawnSize(node.content)) element.classList.add("drawn");
+      // A card that grows (or grows another) is framed with its block, not on its own.
+      if (layout.blocks?.[node.id] || (node.placement?.relation === "continues" && layout.blocks && !layout.blocks[node.id])) element.classList.add("continued");
       element.dataset.kind = kind;
       element.dataset.plotViewScope = board.board_id;
       if (created && node.id === activeCreateId) element.classList.add("active");
@@ -2438,6 +2503,7 @@ export class InfiniteBoardView {
       const measuredMathWidth = intrinsicMathWidth === undefined ? undefined
         : constrainWidth ? Math.min(intrinsicMathWidth, layout.nodes[node.id]!.width) : intrinsicMathWidth;
       if (measuredMathWidth) element.style.width = `${measuredMathWidth}px`;
+      if (kind === "math") this.measureEquals(element, node.id);
       if (!fixedVisualSize) element.style.height = "auto";
       if (kind === "math") fitRenderedMath(element);
       const provisional = layout.nodes[node.id]!;
@@ -2488,7 +2554,38 @@ export class InfiniteBoardView {
     }
   }
 
+  /**
+   * Where a math card's first "=" is, from its left edge in board units, so a
+   * line that continues it can line its "=" up (player 0.9.0).
+   */
+  private measureEquals(element: HTMLElement, id: string): void {
+    const relation = [...element.querySelectorAll<HTMLElement>(".katex-html .mrel")].find((candidate) => candidate.textContent?.trim() === "=");
+    const card = element.getBoundingClientRect();
+    const scale = element.offsetWidth > 0 ? card.width / element.offsetWidth : 0;
+    if (!relation || !(scale > 0)) { delete this.equalsX[id]; return; }
+    const sign = relation.getBoundingClientRect();
+    this.equalsX[id] = (sign.left + sign.width / 2 - card.left) / scale;
+  }
+
+  /** The frame of each card that others continue, around the whole block. */
+  private syncBlocks(layout: BoardLayout): void {
+    const blocks = layout.blocks ?? {};
+    for (const [id, element] of this.blockElements) {
+      if (blocks[id]) continue;
+      element.remove(); this.blockElements.delete(id);
+    }
+    for (const [id, rect] of Object.entries(blocks)) {
+      let element = this.blockElements.get(id);
+      if (!element) {
+        element = document.createElement("div"); element.className = "board-continued"; element.dataset.id = id;
+        this.blockElements.set(id, element); this.groups.append(element);
+      }
+      setRect(element, { x: rect.x - BLOCK_PADDING, y: rect.y - BLOCK_PADDING, width: rect.width + 2 * BLOCK_PADDING, height: rect.height + 2 * BLOCK_PADDING });
+    }
+  }
+
   private syncGroups(board: SemanticBoardState, layout: BoardLayout, action?: CanonicalAction): void {
+    this.syncBlocks(layout);
     const arrivingFocus = action?.op === "board.focus" ? new Set(action.focus?.targets ?? []) : undefined;
     for (const [id, element] of this.groupElements) {
       if (board.groups[id]) continue;
@@ -2552,6 +2649,7 @@ export class InfiniteBoardView {
         ? stackConnectionLabel(
             computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles),
             occupiedLabels,
+            [fromRect, toRect],
           )
         : computeConnectionRoute(fromRect, toRect, labelText, internalFragments, routeObstacles);
       const path = document.createElementNS(SVG_NS, "path"); path.classList.add("connection-line"); path.dataset.id = connection.id; path.setAttribute("d", routePath(route)); this.connections.append(path);

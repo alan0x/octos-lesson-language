@@ -611,13 +611,22 @@
             "additionalProperties": false,
             "properties": {
               "as": {"$ref": "#/$defs/alias"},
-              "kind": {"enum": ["box", "sphere", "cylinder", "cone", "surface", "implicit_surface"]},
+              "kind": {"enum": ["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"]},
               "label": {"type": "string"},
               "color": {"type": "string"},
               "center": {"$ref": "#/$defs/point3d"},
               "size": {"$ref": "#/$defs/size3d"},
               "radius": {"type": "number", "exclusiveMinimum": 0},
               "height": {"type": "number", "exclusiveMinimum": 0},
+              "sides": {"type": "integer", "minimum": 3, "maximum": 12},
+              "top_radius": {"type": "number", "exclusiveMinimum": 0},
+              "tube": {"type": "number", "exclusiveMinimum": 0},
+              "radii": {"type": "object", "required": ["x", "y", "z"], "additionalProperties": false,
+                "properties": {"x": {"type": "number", "exclusiveMinimum": 0}, "y": {"type": "number", "exclusiveMinimum": 0}, "z": {"type": "number", "exclusiveMinimum": 0}}},
+              "base": {"type": "array", "minItems": 3, "maxItems": 12, "items": {"type": "object", "required": ["x", "y"], "additionalProperties": false,
+                "properties": {"x": {"type": "number"}, "y": {"type": "number"}}}},
+              "top_scale": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
+              "unfold": {"type": "number", "minimum": 0, "maximum": 1},
               "expression": {"type": "string", "minLength": 1, "maxLength": 256},
               "x_range": {"$ref": "#/$defs/range3d"},
               "y_range": {"$ref": "#/$defs/range3d"},
@@ -748,6 +757,15 @@
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "replay": {"enum": ["stroke_order", "static"]},
         "shown_strokes": {"type": "integer", "minimum": 1},
+        "drawn_size": {
+          "type": "object",
+          "required": ["width", "height"],
+          "additionalProperties": false,
+          "properties": {
+            "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 4000},
+            "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 4000}
+          }
+        },
         "alt": {"type": "string", "minLength": 1, "maxLength": 480},
         "selections": {
           "type": "array",
@@ -810,10 +828,19 @@
       "required": ["relation"],
       "additionalProperties": false,
       "properties": {
-        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]},
+        "relation": {"enum": ["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces", "continues"]},
         "anchor": {"$ref": "#/$defs/alias"},
         "region_role": {"type": "string"},
-        "align": {"enum": ["start", "center", "end"]},
+        "align": {"enum": ["start", "center", "end", "equals"]},
+        "offset": {
+          "type": "object",
+          "required": ["x", "y"],
+          "additionalProperties": false,
+          "properties": {
+            "x": {"type": "number", "minimum": -4000, "maximum": 4000},
+            "y": {"type": "number", "minimum": -4000, "maximum": 4000}
+          }
+        },
         "gap": {"enum": ["compact", "normal", "spacious"]}
       }
     }

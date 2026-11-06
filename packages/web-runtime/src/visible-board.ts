@@ -22,8 +22,34 @@ function visibleAnchor(state: SemanticBoardState, id: string, seen = new Set<str
   return typeof anchor === "string" ? visibleAnchor(state, anchor, seen) : undefined;
 }
 
+/**
+ * A continuation (player 0.9.0) whose card left the board keeps its place:
+ * it continues the card shown in its place, or what that card continued
+ * (adding that card's offset), or it takes the card's own place on the board.
+ */
+function continuationPlacement(state: SemanticBoardState, placement: JsonObject): JsonObject | undefined {
+  let anchor = String(placement.anchor);
+  let x = Number(placement.offset?.x) || 0, y = Number(placement.offset?.y) || 0;
+  const seen = new Set<string>();
+  while (!seen.has(anchor)) {
+    seen.add(anchor);
+    const node = state.nodes[anchor];
+    if (!node) return { relation: "new_region" };
+    const shown = shownInPlaceOf(state, anchor);
+    if (shown) return shown === placement.anchor ? placement : { ...placement, anchor: shown, offset: { x, y } };
+    if (node.placement?.relation === "continues" && typeof node.placement.anchor === "string") {
+      x += Number(node.placement.offset?.x) || 0; y += Number(node.placement.offset?.y) || 0;
+      anchor = node.placement.anchor;
+      continue;
+    }
+    return reanchored(state, node.placement) ?? { relation: "new_region" };
+  }
+  return { relation: "new_region" };
+}
+
 function reanchored(state: SemanticBoardState, placement: JsonObject | undefined): JsonObject | undefined {
   if (!placement || typeof placement.anchor !== "string") return placement;
+  if (placement.relation === "continues") return continuationPlacement(state, placement);
   const anchor = visibleAnchor(state, placement.anchor);
   if (anchor === placement.anchor) return placement;
   return anchor ? { ...placement, anchor } : { relation: "new_region" };
@@ -52,11 +78,13 @@ export function visibleBoard(state: SemanticBoardState): SemanticBoardState {
     const placement = reanchored(state, node.placement);
     // Neat math that replaces handwriting drawn on a card sits where the ink was.
     const inkBox = placement?.relation === "annotates" ? node.content?.annotation ?? node.placement?.annotation : undefined;
+    // Neat math that replaces a line continuing a card lines its "=" up when it asks to.
+    const aligned = placement?.relation === "continues" && replacement.placement?.align === "equals" ? { ...placement, align: "equals" } : placement;
     shown[replacementId] = {
       ...replacement,
       // Layout orders cards by creation; the replacement keeps the replaced card's turn.
       in_place_of: node.id,
-      placement: inkBox ? { ...placement, annotation: inkBox } : placement,
+      placement: inkBox ? { ...placement, annotation: inkBox } : aligned,
       ...(node.region_id !== undefined ? { region_id: node.region_id } : {}),
     };
   }

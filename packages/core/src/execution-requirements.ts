@@ -2,7 +2,7 @@ import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabiliti
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.8.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.9.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -34,7 +34,14 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "scene3d:latent-highlights": "0.7.0",
   "ink:shown-strokes": "0.8.0",
   "beat-pace:continuous": "0.8.0",
+  "placement:continues": "0.9.0",
+  "ink:drawn-size": "0.9.0",
+  "scene3d:more-solids": "0.9.0",
+  "scene3d:unfold": "0.9.0",
 });
+
+/** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
+const MORE_SOLIDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"]);
 
 export interface ExecutionRequirements {
   minimumPlayerVersion: string;
@@ -108,12 +115,22 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
         if (action.op === "board.emphasize" && action.emphasis === "none") add("emphasis:none", `${actionPath}/emphasis`);
         const inkContent = action.node?.kind === "ink" ? action.node.content : action.op === "board.revise" ? action.revision?.content : undefined;
         if (inkContent && (inkContent as { shown_strokes?: unknown }).shown_strokes !== undefined) add("ink:shown-strokes", `${actionPath}`);
+        if (inkContent && (inkContent as { drawn_size?: unknown }).drawn_size !== undefined) add("ink:drawn-size", `${actionPath}`);
         if (action.node) {
           add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;
-          if (relation === "annotates" || relation === "replaces") add(`placement:${relation}`, `${actionPath}/node/placement`);
+          if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
           content(action.node.content, `${actionPath}/node/content`);
+          if (action.node.kind === "scene3d") {
+            const scene = action.node.content as { objects?: Array<Record<string, unknown>>; bindings?: Array<{ target?: string }> };
+            if ((scene.objects ?? []).some((object) => MORE_SOLIDS.has(String(object.kind)) || object.base !== undefined || object.top_scale !== undefined)) {
+              add("scene3d:more-solids", `${actionPath}/node/content/objects`);
+            }
+            if ((scene.objects ?? []).some((object) => object.unfold !== undefined) || (scene.bindings ?? []).some((binding) => String(binding.target).endsWith(".unfold"))) {
+              add("scene3d:unfold", `${actionPath}/node/content`);
+            }
+          }
         }
         if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);
       }

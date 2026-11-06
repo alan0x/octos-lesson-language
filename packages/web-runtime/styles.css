@@ -14,10 +14,15 @@
 .board-node.active { border-color: #2a9386; box-shadow: 0 0 0 3px rgba(42,147,134,.13), 0 10px 28px rgba(68,57,41,.1); animation: write-in .34s ease both; }
 .board-node.focused { border-color: #7a5aa3; box-shadow: 0 0 0 4px rgba(122,90,163,.13); }
 .board-node.focus-arrive { animation: focus-arrive .72s cubic-bezier(.22,1,.36,1); }
-.board-node.emphasis-focus { border-color: #e19b35; box-shadow: 0 0 0 4px rgba(225,155,53,.18); }
-.board-node.emphasis-supporting { background: #fff9dc; }
-.board-node.emphasis-warning { border-color: #d95361; }
-.board-node.emphasis-resolved { opacity: .84; }
+/* What a mark means shows by shape as well as colour: a glow (important), a dashed outline (also look),
+   a "!" badge (careful), a "✓" badge (done). */
+.board-node.emphasis-focus { border-color: #e19b35; box-shadow: 0 0 0 4px rgba(225,155,53,.28); background: #fffaf0; }
+.board-node.emphasis-supporting { border: 2px dashed #d79a29; background: #fff9dc; }
+.board-node.emphasis-warning { border: 2px solid #cc3447; box-shadow: 0 0 0 4px rgba(204,52,71,.16); }
+.board-node.emphasis-resolved { border: 2px solid #2f8f80; box-shadow: 0 0 0 4px rgba(47,143,128,.18); background: #f3fbf7; }
+.board-node.emphasis-warning::after, .board-node.emphasis-resolved::after { position: absolute; right: 10px; bottom: 10px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; font: 700 15px/1 ui-sans-serif, system-ui, sans-serif; pointer-events: none; }
+.board-node.emphasis-warning::after { content: "!"; background: #cc3447; }
+.board-node.emphasis-resolved::after { content: "✓"; background: #2f8f80; }
 .board-node.kind-math { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; padding-top: 12px; padding-bottom: 12px; font-family: "STKaiti", "Kaiti SC", Georgia, serif; font-size: 24px; color: #163f3a; }
 .math-render { width: 100%; min-height: 0; display: grid; align-items: center; overflow: hidden; }
 .math-render .katex-display { margin: 0; min-width: max-content; text-align: left; }
@@ -33,7 +38,7 @@
 .math-fragment.emphasis-focus, .text-fragment.emphasis-focus { background: #ffe5ad; box-shadow: 0 0 0 3px rgba(225,155,53,.24); }
 .math-fragment.emphasis-supporting, .text-fragment.emphasis-supporting { background: #fff0a8; text-decoration: underline 2px #d79a29; text-underline-offset: 4px; }
 .math-fragment.emphasis-warning, .text-fragment.emphasis-warning { background: #ffd9de; box-shadow: 0 0 0 2px #cc3447; }
-.math-fragment.emphasis-resolved, .text-fragment.emphasis-resolved { opacity: .7; }
+.math-fragment.emphasis-resolved, .text-fragment.emphasis-resolved { background: #dcf3ea; box-shadow: 0 0 0 2px #2f8f80; }
 .text-fragments { display: flex; flex-wrap: wrap; align-items: baseline; gap: .22em; }
 .board-node.kind-note { background: #fff7cd; transform: rotate(-.25deg); }
 .board-node.kind-text { font-family: "STKaiti", "Kaiti SC", serif; font-size: 20px; }
@@ -122,7 +127,7 @@
 .scene3d-controls button:hover, .scene3d-controls button:focus-visible { border-color: #2a9386; background: #eef8f5; outline: none; }
 .scene3d-axis { stroke-width: 1.7; vector-effect: non-scaling-stroke; }
 .scene3d-axis-label { fill: #5f6f6b; font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.scene3d-face, .scene3d-solid, .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scene3d-face, .scene3d-solid:not(.scene3d-facet-side), .scene3d-surface-cell, .scene3d-section { stroke-width: 1.1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .scene3d-surface-cell { stroke-opacity: .42; }
 .scene3d-section { stroke-dasharray: 5 4; stroke-width: 1.8; }
 .scene3d-intersection { stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
@@ -133,6 +138,11 @@
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
 .diagram-edge { stroke: #526b67; stroke-width: 2.2; }
+.diagram-arrowhead { fill: #526b67; }
+.diagram-node.emphasis-focus { stroke: #e19b35; stroke-width: 3.5; fill: #fff3d6; }
+.diagram-node.emphasis-supporting { stroke: #d79a29; stroke-width: 2.5; stroke-dasharray: 6 4; fill: #fff9dc; }
+.diagram-node.emphasis-warning { stroke: #cc3447; stroke-width: 3.5; fill: #ffe9ec; }
+.diagram-node.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.5; fill: #e3f5ee; }
 .diagram-edge.emphasis-focus { stroke: #e15d45; stroke-width: 5; }
 .diagram-edge.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .diagram-edge.emphasis-resolved { stroke: #2f8f80; stroke-width: 3.4; }
@@ -145,6 +155,8 @@
 .diagram-point { fill: #247f74; }
 .diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
 .diagram-node { fill: rgba(255,253,247,.96); stroke: #6e8d86; stroke-width: 1.5; }
+.diagram-ring .diagram-label { font-size: 17px; }
+.diagram-ring .diagram-edge-label { font-size: 14px; }
 .diagram-node.emphasis-focus { fill: rgba(225,93,69,.1); stroke: #e15d45; stroke-width: 2.5; }
 .diagram-node.emphasis-supporting { fill: rgba(215,154,41,.1); stroke: #d79a29; stroke-width: 2.2; }
 .diagram-node.emphasis-warning { fill: rgba(204,52,71,.1); stroke: #cc3447; stroke-width: 2.5; }
@@ -179,6 +191,13 @@
 .image-region.emphasis-resolved { border-color: #2f8f80; background: rgba(47,143,128,.08); }
 .image-region.emphasis-warning { border-color: #cc3447; background: rgba(204,52,71,.13); }
 .image-region[class*="emphasis-"]::after { content: attr(data-label); position: absolute; left: 4px; top: 4px; max-width: calc(100% - 8px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 6px; border-radius: 999px; background: rgba(255,253,247,.92); color: #594d43; font: 600 10px/1.2 ui-sans-serif, system-ui, sans-serif; }
+/* A card and the cards that continue it (player 0.9.0): one frame round the block; the cards inside keep only their content. */
+.board-continued { position: absolute; border: 1px solid #d8d0c2; border-radius: 18px; background: rgba(255,253,247,.97); box-shadow: 0 8px 24px rgba(68,57,41,.08); pointer-events: none; }
+.board-node.continued { border-color: transparent; background: none; box-shadow: none; }
+.board-node.continued::before { content: none; }
+.board-node.continued .lesson-ink-frame { background: none; }
+.board-node.kind-ink.drawn { min-height: 0; padding: 0; }
+.board-node.kind-ink.drawn .lesson-ink-frame { height: 100%; }
 .board-group { position: absolute; border: 2px dashed rgba(84,117,110,.28); border-radius: 24px; background: rgba(219,235,230,.08); pointer-events: none; }
 .board-group.focused { border-color: rgba(122,90,163,.55); background: rgba(122,90,163,.05); }
 .board-group.focus-arrive { animation: group-focus-arrive .72s cubic-bezier(.22,1,.36,1); }

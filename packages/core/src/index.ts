@@ -61,7 +61,25 @@ const ACTIONS = new Set<AuthoringAction["do"]>(OLL_ACTION_NAMES);
 const PHASES = new Set<ActionPhase>(["before_speech", "during_speech", "after_speech"]);
 const ANIMATION_EASINGS = new Set(["linear", "ease_in_out"]);
 const ANIMATION_DURATION_INTENTS = new Set(["brief", "normal", "extended"]);
-const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces"]);
+/** Solids that open into a net (unfold, player 0.9.0). */
+const UNFOLDING_KINDS = new Set(["box", "prism", "pyramid", "cylinder", "cone"]);
+
+/** A convex polygon of 3–12 corners with an area (a prism's or pyramid's base). */
+function convexPolygon(base: unknown): boolean {
+  if (!Array.isArray(base) || base.length < 3 || base.length > 12) return false;
+  if (!base.every((point) => point && typeof point === "object" && Number.isFinite(point.x) && Number.isFinite(point.y))) return false;
+  const area = base.reduce((sum, point, index) => { const next = base[(index + 1) % base.length]; return sum + point.x * next.y - next.x * point.y; }, 0) / 2;
+  if (Math.abs(area) < 1e-9) return false;
+  return base.every((point, index) => {
+    const next = base[(index + 1) % base.length], after = base[(index + 2) % base.length];
+    return Math.sign(area) * ((next.x - point.x) * (after.y - next.y) - (next.y - point.y) * (after.x - next.x)) > -1e-9;
+  });
+}
+
+/** 3D solids with a center and a radius (and, per kind, height, sides, top_radius or tube). */
+const SOLID_KINDS = new Set(["sphere", "cylinder", "cone", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"]);
+
+const PLACEMENT_RELATIONS = new Set(["new_region", "below", "above", "left_of", "right_of", "near", "inside", "overlay", "annotates", "replaces", "continues"]);
 const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
@@ -892,8 +910,13 @@ function validateScene3dContent(
     aliases.add(object.as);
     objectAliases.add(object.as);
     const objectKind = String(object.kind);
-    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface"].includes(objectKind)) {
+    if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
+    }
+    if (object.unfold !== undefined) {
+      if (!UNFOLDING_KINDS.has(objectKind)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/unfold`, "Only a box, prism, pyramid, cylinder or cone unfolds into a net");
+      const unfold = requireFiniteNumber(object.unfold, `${objectPath}/unfold`);
+      if (unfold < 0 || unfold > 1) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/unfold`, "unfold is between 0 (closed) and 1 (a flat net)");
     }
     if (object.color !== undefined
       && (typeof object.color !== "string" || !/^(#[0-9a-fA-F]{6}|teal|blue|purple|orange|red|gray)$/.test(object.color))) {
@@ -902,13 +925,36 @@ function validateScene3dContent(
     if (objectKind === "box") {
       point(object.center, `${objectPath}/center`);
       size(object.size, `${objectPath}/size`);
-    } else if (["sphere", "cylinder", "cone"].includes(objectKind)) {
+    } else if (objectKind === "ellipsoid") {
       point(object.center, `${objectPath}/center`);
-      const radius = requireFiniteNumber(object.radius, `${objectPath}/radius`);
+      const radii = object.radii as Record<string, unknown> | undefined;
+      if (!radii || !["x", "y", "z"].every((axis) => typeof radii[axis] === "number" && (radii[axis] as number) > 0)) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radii`, "An ellipsoid needs three radii above zero");
+      }
+    } else if (SOLID_KINDS.has(objectKind)) {
+      point(object.center, `${objectPath}/center`);
+      const based = (objectKind === "prism" || objectKind === "pyramid") && object.base !== undefined;
+      const radius = based ? 1 : requireFiniteNumber(object.radius, `${objectPath}/radius`);
       if (radius <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/radius`, "3D radius must be greater than zero");
-      if (objectKind !== "sphere") {
+      if (["cylinder", "cone", "prism", "pyramid", "frustum"].includes(objectKind)) {
         const height = requireFiniteNumber(object.height, `${objectPath}/height`);
         if (height <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/height`, "3D height must be greater than zero");
+      }
+      if (based) {
+        if (object.sides !== undefined) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/sides`, "A prism or pyramid has either sides (a regular base) or a base polygon, not both");
+        if (!convexPolygon(object.base)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/base`, "A base is a convex polygon of 3 to 12 corners with an area");
+      } else if (objectKind === "prism" || objectKind === "pyramid") {
+        const sides = Number(object.sides);
+        if (!Number.isInteger(sides) || sides < 3 || sides > 12) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/sides`, "A prism or pyramid has 3 to 12 sides");
+      }
+      if (object.top_scale !== undefined && objectKind !== "pyramid") fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/top_scale`, "Only a pyramid is truncated (top_scale)");
+      if (objectKind === "frustum") {
+        const top = requireFiniteNumber(object.top_radius, `${objectPath}/top_radius`);
+        if (top <= 0) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/top_radius`, "A frustum's top radius must be greater than zero");
+      }
+      if (objectKind === "torus") {
+        const tube = requireFiniteNumber(object.tube, `${objectPath}/tube`);
+        if (tube <= 0 || tube >= radius) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/tube`, "A torus's tube must be thinner than its ring: 0 < tube < radius");
       }
     } else if (objectKind === "implicit_surface") {
       requireString(object.expression, `${objectPath}/expression`);
@@ -1144,6 +1190,7 @@ function validateInkResource(action: WriteAction, path: string, resourceContext:
   if (content.shown_strokes !== undefined && (!Number.isInteger(content.shown_strokes) || content.shown_strokes < 1)) {
     fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/shown_strokes`, "shown_strokes is a whole number of strokes, at least 1");
   }
+  validateDrawnSize(content.drawn_size, `${path}/content/drawn_size`);
   if (!resourceContext) return;
   const snapshot = resourceContext.ink_snapshots?.find((candidate) => candidate.snapshot_id === content.snapshot_id);
   if (!snapshot) fail("OLL_RESOURCE_DENIED", `${path}/content/snapshot_id`, `Ink snapshot '${content.snapshot_id}' is not available in Session Context`);
@@ -1156,6 +1203,17 @@ function validateInkResource(action: WriteAction, path: string, resourceContext:
   });
 }
 
+/** Ink keeps the size it was drawn at, in board units (player 0.9.0). */
+function validateDrawnSize(size: unknown, path: string): void {
+  if (size === undefined) return;
+  const value = size as { width?: unknown; height?: unknown };
+  const fine = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n > 0 && n <= 4000;
+  if (!size || typeof size !== "object" || Array.isArray(size) || !fine(value.width) || !fine(value.height)
+    || Object.keys(size).some((key) => key !== "width" && key !== "height")) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", path, "drawn_size is { width, height } in board units, each above 0 and at most 4000");
+  }
+}
+
 function validatePlacement(place: Placement, path: string, registry: Registry): void {
   requireObject(place, path);
   if (!PLACEMENT_RELATIONS.has(place.relation)) {
@@ -1164,10 +1222,22 @@ function validatePlacement(place: Placement, path: string, registry: Registry): 
   for (const forbidden of ["x", "y", "width", "height", "zoom", "duration_ms"]) {
     if (forbidden in place) fail("OLL_INVALID_PLACEMENT", `${path}/${forbidden}`, `Authoring Profile cannot set '${forbidden}'`);
   }
+  if (place.relation === "continues") {
+    const offset = place.offset as { x?: unknown; y?: unknown } | undefined;
+    const fine = (n: unknown) => typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 4000;
+    if (!offset || typeof offset !== "object" || Array.isArray(offset) || !fine(offset.x) || !fine(offset.y)
+      || Object.keys(offset).some((key) => key !== "x" && key !== "y")) {
+      fail("OLL_INVALID_PLACEMENT", `${path}/offset`, "A continuation needs its offset { x, y } from the anchor's top-left, in board units within ±4000");
+    }
+  } else {
+    if (place.offset !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/offset`, "Only a continuation has an offset");
+    if (place.align === "equals" && place.relation !== "replaces") fail("OLL_INVALID_PLACEMENT", `${path}/align`, "Only a continuation, or what replaces one, lines up its '='");
+  }
   if (place.relation === "new_region") {
     if (place.anchor !== undefined) fail("OLL_INVALID_PLACEMENT", `${path}/anchor`, "new_region cannot use an anchor");
-  } else if (place.relation === "annotates" || place.relation === "replaces") {
-    // Both attach to one card: an annotation moves with it; a replacement takes its place.
+  } else if (place.relation === "annotates" || place.relation === "replaces" || place.relation === "continues") {
+    // All attach to one card: an annotation moves with it; a replacement takes
+    // its place; a continuation grows it, where the learner drew.
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node"]);
   } else {
     resolveLocal(registry, place.anchor, `${path}/anchor`, ["node", "group"]);
@@ -1415,6 +1485,14 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             if (action.kind !== "ink") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink annotates a card");
           }
           if (action.place.anchor !== undefined) requireVisible(action.place.anchor, `${actionPath}/place/anchor`);
+          if (action.place.relation === "replaces" && action.place.align === "equals" && action.kind !== "math") {
+            fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/align`, "Only math lines up its '='");
+          }
+          if (action.place.relation === "continues") {
+            requireLearnerTaught(`${actionPath}/place/relation`, "Continuing a card");
+            if (action.kind !== "ink" && action.kind !== "math") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/relation`, "Only learner ink or math continues a card");
+            if (action.place.align === "equals" && action.kind !== "math") fail("OLL_INVALID_PLACEMENT", `${actionPath}/place/align`, "Only math lines up its '='");
+          }
           if (action.place.relation === "replaces") {
             requireLearnerTaught(`${actionPath}/place/relation`, "Replacing a card");
             if (registry.get(action.place.anchor!)?.external) {
@@ -2014,6 +2092,8 @@ export function evaluateContentBindings(content: JsonObject, variables: Record<s
       if (property === "radius" && (record[property] < 0 || (record[property] === 0 && binding.allow_zero !== true))) {
         throw new Error("Bound radius must be positive unless explicitly allowed to degenerate to zero");
       }
+      // A net opens from 0 (closed) to 1 (flat); a slider past either end stays there.
+      if (property === "unfold") record[property] = Math.min(1, Math.max(0, record[property]));
       if (property === "sides" && (record[property] < 3 || record[property] > 384)) {
         throw new Error("Bound polygon sides must be in 3..384");
       }
