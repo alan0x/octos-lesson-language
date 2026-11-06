@@ -1193,6 +1193,9 @@ export interface DiagramPointLayout {
   height?: number;
 }
 
+/** Line height of a label in a cycle's box, in drawing units. */
+const RING_LINE_HEIGHT = 20;
+
 export interface DiagramLayout {
   width: number;
   height: number;
@@ -1200,6 +1203,8 @@ export interface DiagramLayout {
   ordered: boolean;
   /** Boxes joined in order (a chain of steps or a cycle): each edge is drawn as an arrow from box to box. */
   directed?: boolean;
+  /** A cycle drawn on a ring (its labels are larger). */
+  ring?: boolean;
 }
 
 export function diagramLayout(content: Record<string, any>): DiagramLayout {
@@ -1210,13 +1215,14 @@ export function diagramLayout(content: Record<string, any>): DiagramLayout {
     // Boxes round an ellipse, the first at the top, going clockwise.
     const nodeWidth = ring.length <= 4 ? 150 : 124;
     const elementById = new Map(elements.map((element: Record<string, any>) => [text(element.id), element]));
-    const lineSets = ring.map((id) => wrapDiagramLabel(text(elementById.get(id)?.label), ring.length <= 4 ? 10 : 8));
-    const nodeHeights = lineSets.map((lines) => Math.max(42, 18 + lines.length * 17));
+    // A ring has room for larger words than a chain of steps (diagram-ring labels are 17 units).
+    const lineSets = ring.map((id) => wrapDiagramLabel(text(elementById.get(id)?.label), ring.length <= 4 ? 8 : 6));
+    const nodeHeights = lineSets.map((lines) => Math.max(46, 20 + lines.length * RING_LINE_HEIGHT));
     const tallest = Math.max(...nodeHeights);
     const width = 520, height = Math.round(520 * cycleDiagramAspect(ring.length));
     const rx = width / 2 - nodeWidth / 2 - 14, ry = height / 2 - tallest / 2 - 12;
     return {
-      width, height, ordered: true, directed: true,
+      width, height, ordered: true, directed: true, ring: true,
       points: new Map(ring.map((id, index) => {
         const angle = -Math.PI / 2 + (2 * Math.PI * index) / ring.length;
         return [id, { x: width / 2 + rx * Math.cos(angle), y: height / 2 + ry * Math.sin(angle), label: text(elementById.get(id)?.label), lines: lineSets[index]!, width: nodeWidth, height: nodeHeights[index]! }];
@@ -1371,6 +1377,7 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
   svg.classList.add("diagram-preview");
+  if (layout.ring) svg.classList.add("diagram-ring");
   for (const region of Array.isArray(content.regions) ? content.regions : []) {
     const members = (region.members ?? []).map((id: string) => points.get(id)).filter(Boolean) as { x: number; y: number }[];
     if (members.length < 3) continue;
@@ -1410,9 +1417,10 @@ function renderDiagram(parent: HTMLElement, node: Record<string, any>): void {
       box.classList.add("diagram-node"); box.dataset.id = pointId; applyEmphasisClass(box, latestEmphasis(node, pointId)); svg.append(box);
       const anchor = document.createElementNS(SVG_NS, "circle"); anchor.setAttribute("cx", String(point.x)); anchor.setAttribute("cy", String(point.y)); anchor.setAttribute("r", "0"); anchor.classList.add("diagram-point", "diagram-anchor"); svg.append(anchor);
       const label = document.createElementNS(SVG_NS, "text"); label.setAttribute("x", String(point.x)); label.setAttribute("text-anchor", "middle"); label.classList.add("diagram-label");
-      const firstY = point.y - (point.lines.length - 1) * 8.5 + 5;
+      const lineHeight = layout.ring ? RING_LINE_HEIGHT : 17;
+      const firstY = point.y - (point.lines.length - 1) * lineHeight / 2 + (layout.ring ? 6 : 5);
       point.lines.forEach((line, index) => {
-        const span = document.createElementNS(SVG_NS, "tspan"); span.setAttribute("x", String(point.x)); span.setAttribute("y", String(firstY + index * 17)); span.textContent = line; label.append(span);
+        const span = document.createElementNS(SVG_NS, "tspan"); span.setAttribute("x", String(point.x)); span.setAttribute("y", String(firstY + index * lineHeight)); span.textContent = line; label.append(span);
       });
       svg.append(label);
     } else {

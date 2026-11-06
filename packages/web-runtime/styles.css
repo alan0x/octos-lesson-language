@@ -146,6 +146,8 @@
 .diagram-point { fill: #247f74; }
 .diagram-label { fill: #193f3a; font: 600 14px/1 "STKaiti", "Kaiti SC", serif; }
 .diagram-node { fill: rgba(255,253,247,.96); stroke: #6e8d86; stroke-width: 1.5; }
+.diagram-ring .diagram-label { font-size: 17px; }
+.diagram-ring .diagram-edge-label { font-size: 14px; }
 .diagram-node.emphasis-focus { fill: rgba(225,93,69,.1); stroke: #e15d45; stroke-width: 2.5; }
 .diagram-node.emphasis-supporting { fill: rgba(215,154,41,.1); stroke: #d79a29; stroke-width: 2.2; }
 .diagram-node.emphasis-warning { fill: rgba(204,52,71,.1); stroke: #cc3447; stroke-width: 2.5; }
