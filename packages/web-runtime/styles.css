@@ -163,6 +163,7 @@
 .lesson-ink-missing { padding: 12px; border: 1px dashed #cc3447; border-radius: 10px; color: #8d2a36; }
 /* Strokes are visible by default; only a running replay hides each one until its turn. */
 .ink-replay path, .ink-replay polyline, .ink-replay line { stroke-dasharray: var(--ink-length); animation: ink-stroke var(--ink-duration) linear var(--ink-delay) backwards; }
+.ink-replay .ink-still { stroke-dasharray: none; animation: none; }
 @keyframes ink-stroke { from { stroke-dashoffset: var(--ink-length); } to { stroke-dashoffset: 0; } }
 /* An annotation is exactly the box of its strokes on the anchor card: no card minimum size or clipping. */
 .board-node.annotation { min-height: 0; padding: 0; border: 0; background: none; box-shadow: none; overflow: visible; pointer-events: none; }

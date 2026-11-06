@@ -15,7 +15,7 @@ import {
   type InkSelectionRegion,
   type InkSelectionSnapshot,
 } from "./selection-record.js";
-import { ensurePersistentInkComponentIds, inkComponentOrigin } from "./component-identity.js";
+import { ensurePersistentInkComponentIds, inkComponentDrawnAt, inkComponentOrigin } from "./component-identity.js";
 
 export function selectedComponentsToSvg(components: AbstractComponent[]): {
   bounds: InkSelectionBounds;
@@ -27,8 +27,18 @@ export function selectedComponentsToSvg(components: AbstractComponent[]): {
   const viewport = new Viewport(() => {});
   viewport.updateScreenSize(Vec2.of(Math.max(1, bounds.width), Math.max(1, bounds.height)));
   viewport.resetTransform(Mat33.translation(Vec2.of(-bounds.x, -bounds.y)));
-  const { element, renderer } = SVGRenderer.fromViewport(viewport, { sanitize: true });
-  for (const component of ordered) component.render(renderer, bounds);
+  const { element } = SVGRenderer.fromViewport(viewport, { sanitize: true });
+  // Each stroke is drawn on its own and kept in a group numbered in drawing
+  // order, so a player can show a stroke at a time even when js-draw draws
+  // one stroke as several paths.
+  ordered.forEach((component, index) => {
+    const { element: drawn, renderer } = SVGRenderer.fromViewport(viewport, { sanitize: true });
+    component.render(renderer, bounds);
+    const group = element.ownerDocument.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttribute("data-oll-stroke", String(index));
+    group.append(...Array.from(drawn.childNodes));
+    element.append(group);
+  });
   element.setAttribute("data-oll-ink-selection", "1");
   return {
     bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
@@ -60,6 +70,9 @@ export async function createInkSelectionSnapshot(options: {
       { x: selection.bounds.x, y: selection.bounds.y + selection.bounds.height },
     ],
   };
+  // When each stroke was drawn, in the same order, when the runtime saw every one drawn.
+  const drawnAt = [...options.components].sort((left, right) => left.getZIndex() - right.getZIndex()).map(inkComponentDrawnAt);
+  const times = drawnAt.every((value): value is number => value !== undefined) ? drawnAt : undefined;
   return {
     format: INK_SELECTION_FORMAT,
     format_version: ai ? AI_INK_SELECTION_FORMAT_VERSION : INK_SELECTION_FORMAT_VERSION,
@@ -71,6 +84,7 @@ export async function createInkSelectionSnapshot(options: {
     region,
     component_ids: componentIds,
     ...(ai ? { component_origins: origins } : {}),
+    ...(times ? { component_drawn_at: times } : {}),
     checksum: {
       algorithm: "sha-256",
       value: await inkSvgChecksum(JSON.stringify({

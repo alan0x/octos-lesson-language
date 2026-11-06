@@ -54,6 +54,7 @@ import {
   ensurePersistentInkComponentIds,
   hasPersistentInkComponentId,
   markAiInkComponent,
+  stampInkComponentsDrawnAt,
 } from "./component-identity.js";
 import {
   INK_SELECTION_FORMAT_VERSION,
@@ -332,6 +333,12 @@ export class InkRuntime {
     });
     this.editor.notifier.on(EditorEventType.CommandDone, (event) => {
       if (event.kind !== EditorEventType.CommandDone || this.suppressSave) return;
+      // A stroke is timed when the command that drew it is done. Strokes loaded
+      // from a saved document keep the time they were saved with, or none.
+      stampInkComponentsDrawnAt(
+        this.editor.image.getAllComponents().filter((component) => !this.loadedComponents.has(component)),
+        Date.now(),
+      );
       this.changeRevision += 1;
       this.scheduleSave();
       this.scheduleGeometryNotification();
@@ -901,6 +908,13 @@ export class InkRuntime {
     return colors.length > 0 ? Color4.average(colors).toHexString().slice(0, 7) : null;
   }
 
+  /** Strokes that came from a saved document, not drawn in this session: they are never timed now. */
+  private readonly loadedComponents = new WeakSet<object>();
+
+  private rememberLoadedComponents(): void {
+    for (const component of this.editor.image.getAllComponents()) this.loadedComponents.add(component);
+  }
+
   private async restoreSavedDocument(): Promise<void> {
     const record = await this.store.load(this.options.storageKey);
     if (!record) {
@@ -917,6 +931,7 @@ export class InkRuntime {
       const sourceSvg = new DOMParser().parseFromString(record.svg, "image/svg+xml").documentElement as unknown as SVGElement;
       this.aiWritingRecords = readAiWritingRecords(sourceSvg);
       await this.editor.loadFromSVG(record.svg);
+      this.rememberLoadedComponents();
       // Documents saved before infinite-canvas mode may restore js-draw's fixed
       // export rectangle. Normalize them without adding an undoable user action.
       this.enableInfiniteCanvas();
@@ -1250,6 +1265,7 @@ export class InkRuntime {
       const sourceSvg = new DOMParser().parseFromString(source.svg, "image/svg+xml").documentElement as unknown as SVGElement;
       const sourceRecords = readAiWritingRecords(sourceSvg);
       await this.editor.loadFromSVG(source.svg, true);
+      this.rememberLoadedComponents();
       const existing = new Set(this.aiWritingRecords.map((record) => record.artifact_id));
       this.aiWritingRecords.push(...sourceRecords.filter((record) => !existing.has(record.artifact_id)));
       this.enableInfiniteCanvas();

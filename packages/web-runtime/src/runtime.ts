@@ -278,8 +278,12 @@ function actionBaseDelay(operation: PlaybackOperation): number {
   return 650;
 }
 
+/** The pause between two sentences of the same speech. */
+const CONTINUOUS_BEAT_GAP_MS = 250;
+
 function operationBaseDelay(operation: PlaybackOperation): number {
   if (operation.type === "action.apply") return actionBaseDelay(operation);
+  if (operation.continues) return operation.type === "beat.end" ? CONTINUOUS_BEAT_GAP_MS : 18;
   if (operation.type === "narration.begin") return 180;
   if (operation.type === "narration.end") return 160;
   if (operation.type === "beat.end") return 700;

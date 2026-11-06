@@ -92,27 +92,30 @@ export function compilePlaybackOperations(
     if (stepIds.has(step.id)) playbackFail("OLL_DUPLICATE_STEP_ID", `/events/${eventIndex}/step/id`, `Step '${step.id}' is duplicated`);
     stepIds.add(step.id);
     push({ type: "step.begin", event_index: eventIndex, step_id: step.id });
-    for (const beat of step.beats) {
+    step.beats.forEach((beat, beatIndex) => {
+      // A beat that follows straight on plays without the pauses that separate teaching beats.
+      const flow = beat.pace === "continuous" ? { continues: true as const } : {};
+      const flowsOn = step.beats[beatIndex + 1]?.pace === "continuous" ? { continues: true as const } : {};
       if (beatIds.has(beat.id)) playbackFail("OLL_DUPLICATE_BEAT_ID", `/events/${eventIndex}/step/beats`, `Beat '${beat.id}' is duplicated`);
       beatIds.add(beat.id);
-      push({ type: "beat.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id });
+      push({ type: "beat.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id, ...flow });
       for (const phase of PHASES) {
         if (phase === "during_speech" && beat.narration) {
-          push({ type: "narration.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id, narration: beat.narration });
+          push({ type: "narration.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id, narration: beat.narration, ...flow });
         }
-        push({ type: "phase.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id, phase });
+        push({ type: "phase.begin", event_index: eventIndex, step_id: step.id, beat_id: beat.id, phase, ...flow });
         for (const action of beat.stage[phase]) {
           if (actionIds.has(action.action_id)) playbackFail("OLL_DUPLICATE_ACTION_ID", `/events/${eventIndex}/step/beats`, `Action '${action.action_id}' is duplicated`);
           actionIds.add(action.action_id);
           push({ type: "action.apply", event_index: eventIndex, step_id: step.id, beat_id: beat.id, phase, action });
         }
-        push({ type: "phase.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id, phase });
+        push({ type: "phase.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id, phase, ...flow });
         if (phase === "during_speech" && beat.narration) {
-          push({ type: "narration.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id, narration: beat.narration });
+          push({ type: "narration.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id, narration: beat.narration, ...flow });
         }
       }
-      push({ type: "beat.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id });
-    }
+      push({ type: "beat.end", event_index: eventIndex, step_id: step.id, beat_id: beat.id, ...flowsOn });
+    });
     push({ type: "step.commit", event_index: eventIndex, step_id: step.id });
   }
   return operations;

@@ -1141,6 +1141,9 @@ function validateInkResource(action: WriteAction, path: string, resourceContext:
   if (action.place.relation === "annotates" && content.annotation === undefined) {
     fail("OLL_INVALID_PLACEMENT", `${path}/content/annotation`, "An annotation needs its position on the anchor");
   }
+  if (content.shown_strokes !== undefined && (!Number.isInteger(content.shown_strokes) || content.shown_strokes < 1)) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/shown_strokes`, "shown_strokes is a whole number of strokes, at least 1");
+  }
   if (!resourceContext) return;
   const snapshot = resourceContext.ink_snapshots?.find((candidate) => candidate.snapshot_id === content.snapshot_id);
   if (!snapshot) fail("OLL_RESOURCE_DENIED", `${path}/content/snapshot_id`, `Ink snapshot '${content.snapshot_id}' is not available in Session Context`);
@@ -1309,7 +1312,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   // Learner-taught lessons may hide or replace the learner's own cards; hidden
   // cards cannot be referenced again, and ink revisions must stay ink.
   const hidden = new Set<string>();
-  const inkNodes = new Set<string>();
+  // Learner ink cards, with how each was placed: a revision keeps the placement.
+  const inkNodes = new Map<string, Placement["relation"]>();
   // Highlighted parts of each 3D scene, which a view can turn to show.
   const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
@@ -1383,7 +1387,11 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       requireAlias(beat.key, `${beatPath}/key`);
       if (beatKeys.has(beat.key)) fail("OLL_DUPLICATE_ALIAS", `${beatPath}/key`, `Beat '${beat.key}' is duplicated`);
       beatKeys.add(beat.key);
-      requireArray(beat.actions, `${beatPath}/actions`);
+      if (!Array.isArray(beat.actions)) fail("OLL_INVALID_TYPE", `${beatPath}/actions`, "Expected an array");
+      // A learner says each sentence as its own beat; one with nothing done on the board is words only.
+      if (!beat.actions.length && !(isLearnerTaught(document) && beat.say?.trim())) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions`, "A beat needs at least one action; only a learner-taught beat may be words alone");
+      }
       if (beat.start) {
         if (beat.start.kind === "practice") fail("OLL_INVALID_PHASE_START", `${beatPath}/start`, "Practice belongs on a student task");
         resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`);
@@ -1416,7 +1424,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
           validateInkResource(action, actionPath, resourceContext);
           if (action.kind === "ink") {
-            inkNodes.add(action.as);
+            inkNodes.set(action.as, action.place.relation);
             for (const selection of (action.content.selections ?? []) as JsonObject[]) knownSelections.add(selection.selection_id);
           }
           if (action.source !== undefined) {
@@ -1509,7 +1517,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           requireVisible(action.target, `${actionPath}/target`);
           if (inkNodes.has(resolved.alias)) {
             // Erasing and rewriting shows a newer snapshot of the same ink.
-            validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: "new_region" } }, actionPath, resourceContext);
+            validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: inkNodes.get(resolved.alias)! } } as WriteAction, actionPath, resourceContext);
           }
           // A revision that declares addressable parts (a point added to a
           // grid) makes exactly those parts addressable from then on; one that
@@ -1899,6 +1907,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
           return {
             id: `${stableId(host, "step", step.key)}:beat:${beat.key}`,
             ...(beat.say ? { narration: { text: beat.say, ...(beat.delivery ? { delivery: beat.delivery } : {}) } } : {}),
+            ...(beat.pace ? { pace: beat.pace } : {}),
             stage,
           };
         }),

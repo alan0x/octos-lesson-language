@@ -130,6 +130,8 @@ export interface AuthoringBeat {
   key: Alias;
   say?: string;
   delivery?: Delivery;
+  /** "continuous": the beat follows straight on from the one before, like the next sentence of the same speech. */
+  pace?: "continuous";
   actions: AuthoringAction[];
 }
 
@@ -387,6 +389,7 @@ export interface CanonicalEvent {
     beats: Array<{
       id: string;
       narration?: { text: string; delivery?: Delivery };
+      pace?: "continuous";
       stage: Record<ActionPhase, CanonicalAction[]>;
     }>;
   };

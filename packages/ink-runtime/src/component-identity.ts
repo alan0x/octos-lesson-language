@@ -67,6 +67,34 @@ export function inkComponentOrigin(component: AbstractComponent): InkComponentOr
   throw new Error("Invalid ink component origin");
 }
 
+const DRAWN_AT_ATTRIBUTE = "data-octos-ink-drawn-at";
+
+/** When a stroke was drawn (ms since the epoch), if the runtime saw it drawn. */
+export function inkComponentDrawnAt(component: AbstractComponent): number | undefined {
+  const attributes = component.getLoadSaveData()[SVG_ATTRIBUTE_DATA_KEY] ?? [];
+  for (const attribute of attributes) {
+    if (Array.isArray(attribute) && attribute[0] === DRAWN_AT_ATTRIBUTE) {
+      const value = Number(attribute[1]);
+      if (Number.isFinite(value) && value >= 0) return value;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Stamps strokes that have no drawing time with `at`. The time survives the
+ * document's save and load, and pieces of a partly erased stroke keep the
+ * time of the stroke they came from.
+ */
+export function stampInkComponentsDrawnAt(components: AbstractComponent[], at: number): void {
+  for (const component of components) {
+    preserveInkDescendantOrigins(component);
+    if (inkComponentDrawnAt(component) === undefined) {
+      component.attachLoadSaveData(SVG_ATTRIBUTE_DATA_KEY, [DRAWN_AT_ATTRIBUTE, String(Math.round(at))]);
+    }
+  }
+}
+
 export function markAiInkComponent(component: AbstractComponent): void {
   component.attachLoadSaveData(SVG_ATTRIBUTE_DATA_KEY, [ORIGIN_ATTRIBUTE, "ai"]);
 }
@@ -82,9 +110,13 @@ function preserveInkDescendantOrigins(component: AbstractComponent): void {
   if (originalErase) {
     erased.withRegionErased = (...args: Parameters<Stroke["withRegionErased"]>) => {
       const parts = originalErase.apply(erased, args);
+      const drawnAt = inkComponentDrawnAt(component);
       for (const part of parts) {
         if (part === component) continue;
         if (inkComponentOrigin(component) === "ai") markAiInkComponent(part);
+        if (drawnAt !== undefined && inkComponentDrawnAt(part) === undefined) {
+          part.attachLoadSaveData(SVG_ATTRIBUTE_DATA_KEY, [DRAWN_AT_ATTRIBUTE, String(drawnAt)]);
+        }
       }
       ensurePersistentInkComponentIds(parts);
       return parts;
