@@ -434,3 +434,21 @@ test("solids on any convex base, truncated pyramids, ellipsoids, and nets that u
   rejectsWith(scene([{ ...objects[2], unfold: 0.5 }]), "OLL_INVALID_OPERATION_PAYLOAD");
   rejectsWith(scene([{ ...objects[3], unfold: 2 }]), "OLL_SCHEMA_INVALID");
 });
+
+test("face targets normalize independently and require a compatible player", () => {
+  const scene = (target: string) => inkLesson([grid, {
+    do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
+    content: { fallback: "A cylinder.", camera: { yaw: .72, pitch: .55, zoom: 1 }, objects: [
+      { as: "can", kind: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 4, face_targets: true },
+    ] },
+  }, { do: "emphasize", target: `solids#${target}`, emphasis: "focus" }]);
+  const events = normalizeAuthoringLesson(scene("can-top-face"), { ...host, resourceContext: inkContext });
+  const node = reduceCanonicalEvents(events).nodes[`${host.lessonId}:node:solids`]!;
+  assert.deepEqual(node.emphasis?.[0]?.target, {
+    node_id: `${host.lessonId}:node:solids`, fragment_id: `${host.lessonId}:node:solids:fragment:can-top-face`,
+  });
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes("scene3d:face-targets"));
+  assert.equal(requirements.minimumPlayerVersion, "0.10.0");
+  rejectsWith(scene("can-side-1-face"), "OLL_REFERENCE_NOT_FOUND");
+});

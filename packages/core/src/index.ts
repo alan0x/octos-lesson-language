@@ -8,6 +8,7 @@ import {
   referencedMathVariables,
 } from "./math-expression.js";
 import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
+import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -706,6 +707,9 @@ function collectAddressableContent(content: JsonObject): string[] {
     if (!content?.[field]) continue;
     for (const item of content[field]) {
       if (item?.as) result.push(item.as);
+      if (field === "objects" && item?.face_targets === true && typeof item.as === "string") {
+        result.push(...solidFaceKeys(item).map((face) => solidFaceTarget(item.as, face)));
+      }
     }
   }
   return result;
@@ -912,6 +916,9 @@ function validateScene3dContent(
     const objectKind = String(object.kind);
     if (!["box", "sphere", "cylinder", "cone", "surface", "implicit_surface", "prism", "pyramid", "frustum", "hemisphere", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron", "ellipsoid"].includes(objectKind)) {
       fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/kind`, `Unknown 3D object kind '${object.kind}'`);
+    }
+    if (object.face_targets === true && !solidFaceKeys(object).length) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/face_targets`, "Face targets require a solid with selectable surfaces");
     }
     if (object.unfold !== undefined) {
       if (!UNFOLDING_KINDS.has(objectKind)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${objectPath}/unfold`, "Only a box, prism, pyramid, cylinder or cone unfolds into a net");

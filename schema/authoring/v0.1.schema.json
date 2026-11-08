@@ -627,6 +627,7 @@
                 "properties": {"x": {"type": "number"}, "y": {"type": "number"}}}},
               "top_scale": {"type": "number", "minimum": 0, "exclusiveMaximum": 1},
               "unfold": {"type": "number", "minimum": 0, "maximum": 1},
+              "face_targets": {"type": "boolean"},
               "expression": {"type": "string", "minLength": 1, "maxLength": 256},
               "x_range": {"$ref": "#/$defs/range3d"},
               "y_range": {"$ref": "#/$defs/range3d"},
