@@ -1,6 +1,7 @@
 import { bindUi, ui } from "./ui-localization.js";
 import { solidFacets, solidTriangles } from "./solids.js";
 import { compileMathExpression } from "../../core/src/index.js";
+import { solidFaceTarget } from "../../core/src/solid-face-targets.js";
 import type { StudentInputMethod } from "./student-operations.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -214,6 +215,9 @@ function polygon(
 
   return element;
 }
+
+// In the order used by the closed box renderer; the keys match prismLike's hinges.
+const BOX_SURFACE_KEYS = ["bottom", "top", "side-1", "side-3", "side-4", "side-2"];
 
 function boxFaces(object: Record<string, any>): Point3d[][] {
   const center = object.center;
@@ -803,18 +807,58 @@ interface PreparedScene {
   baseKey: string;
   sectionKey: string;
   highlightKey: string;
+  highlights: Array<Record<string, any>>;
   meshes: SceneMesh[];
 }
+
+/** A box face named in its closed position follows the corresponding hinge. */
+function unfoldingHighlights(content: Record<string, any>): Array<Record<string, any>> {
+  const highlights: Array<Record<string, any>> = content.highlights ?? [];
+  if (!highlights.some((highlight) => highlight.kind === "face" && highlight.shown === "when_emphasized")) return highlights;
+  const openFaces = new Map<string, Point3d[]>();
+  for (const object of content.objects ?? []) {
+    if (object.kind !== "box" || !(Number(object.unfold) > 0)) continue;
+    const opened = solidFacets(object);
+    solidFacets({ ...object, unfold: 0 }).forEach((closed, index) => {
+      openFaces.set(faceKey(closed.points), opened[index]!.points);
+    });
+  }
+  if (!openFaces.size) return highlights;
+  return highlights.map((highlight) => {
+    if (highlight.kind !== "face" || highlight.shown !== "when_emphasized") return highlight;
+    const points = openFaces.get(faceKey(highlight.points));
+    return points ? { ...highlight, points, unfolded: true } : highlight;
+  });
+}
+
 function prepareScene(content: Record<string, any>, variables: Record<string, number>, prior?: PreparedScene): PreparedScene {
   const objects = content.objects ?? [];
   const meshKey = JSON.stringify([objects, expressionVariables(objects, variables)]);
+  const highlights = unfoldingHighlights(content);
   return {
     meshKey,
     baseKey: JSON.stringify([content.axes, meshKey]),
     sectionKey: JSON.stringify([content.sections, meshKey]),
-    highlightKey: JSON.stringify(content.highlights),
+    highlightKey: JSON.stringify(highlights),
+    highlights,
     meshes: prior?.meshKey === meshKey ? prior.meshes : sceneMeshes(content, variables),
   };
+}
+
+/** Omit a net label when the face is too foreshortened to contain it. */
+function netLabelFits(face: ProjectedPoint[], centre: ProjectedPoint, lines: string[], fit: number): boolean {
+  const fontSize = 11 / fit;
+  const width = Math.max(...lines.map((line) => Array.from(line).reduce(
+    (sum, char) => sum + (/[^\u0000-\u00ff]/u.test(char) ? 1 : char === " " ? 0.35 : 0.65), 0,
+  )));
+  const halfWidth = (width / 2 + 0.1) * fontSize;
+  const halfHeight = (lines.length * 0.55 + 0.05) * fontSize;
+  return face.every((point, index) => {
+    const next = face[(index + 1) % face.length]!;
+    const dx = next.x - point.x, dy = next.y - point.y;
+    const clearance = Math.abs(dx * (centre.y - point.y) - dy * (centre.x - point.x));
+    return clearance > Math.abs(dx) * halfHeight + Math.abs(dy) * halfWidth;
+  });
 }
 
 function renderScene(
@@ -855,7 +899,7 @@ function renderScene(
         label.setAttribute("class", "scene3d-axis-label");
       }
     }
-    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; hidden?: boolean; opacity?: number; facet?: "side" | "face"; glued?: boolean }> = [];
+    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string; faceId?: string; hidden?: boolean; opacity?: number; facet?: "side" | "face"; glued?: boolean }> = [];
     const glued = gluedFaces(content.objects ?? []);
     for (const object of content.objects ?? []) {
       const color = safeColor(object.color);
@@ -871,15 +915,17 @@ function renderScene(
         continue;
       }
       const opening = Number(object.unfold) > 0;
+      const objectId = objectTarget(object);
+      const target = (face: string | undefined) => object.face_targets === true && face ? solidFaceTarget(objectId, face) : undefined;
       if (object.kind === "box" && !opening) {
         // A see-through box reads two ways (near faces seen as far). Faces turned
         // away are drawn as dashed hidden edges, as in a textbook, so the box
         // reads one way: the way it is drawn and pointed at.
         const centreDepth = projectScene3dPoint(object.center as Point3d, view).depth;
-        for (const points of boxFaces(object)) {
+        for (const [index, points] of boxFaces(object).entries()) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? ""), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
+          faces.push({ points, color, depth, objectId, faceId: target(BOX_SURFACE_KEYS[index]), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
         }
         continue;
       }
@@ -893,7 +939,7 @@ function renderScene(
         // An opening net shows both sides of its faces (an opened face shows its inside).
         if (toward <= 1e-9 && !opening) continue;
         const facing = Math.min(1, Math.abs(toward) / .01);
-        faces.push({ points: facet.points, color, depth: here, objectId: String(object.id ?? object.as ?? ""), opacity: .1 + .32 * facing, facet: facet.part, glued: facet.part === "face" && glued.has(faceKey(facet.points)) });
+        faces.push({ points: facet.points, color, depth: here, objectId, faceId: target(facet.surface), opacity: .1 + .32 * facing, facet: facet.part, glued: facet.part === "face" && glued.has(faceKey(facet.points)) });
       }
     }
     faces.sort((left, right) => left.depth - right.depth);
@@ -902,10 +948,24 @@ function renderScene(
         face.facet ? `scene3d-solid scene3d-facet scene3d-facet-${face.facet}` : face.hidden ? "scene3d-face scene3d-face-hidden" : "scene3d-face");
       // A round solid's side has no edges of its own: its facets meet without lines.
       // A thin stroke at half the fill's strength closes hairline gaps between facets without drawing a grid.
-      if (face.facet === "side") { element.setAttribute("stroke-opacity", String((face.opacity ?? .23) * .5)); element.setAttribute("stroke-width", ".6"); }
+      if (face.facet === "side") {
+        element.setAttribute("stroke-opacity", String((face.opacity ?? .23) * .5));
+        element.setAttribute("stroke-width", ".6");
+      } else {
+        // A cap can take over a painter-order slot previously used by a side facet.
+        element.removeAttribute("stroke-opacity");
+        element.removeAttribute("stroke-width");
+      }
       // Where two solids are stacked, the face they share is inside the composite: only its edge (the seam) is drawn.
       if (face.glued) { element.setAttribute("fill-opacity", "0"); element.classList.add("scene3d-face-glued"); }
-      element.dataset.id = face.objectId;
+      if (face.faceId && !face.hidden && !face.glued) {
+        element.classList.add("scene3d-selectable-face");
+        element.dataset.id = face.faceId;
+        element.dataset.scene3dObjectId = face.objectId;
+      } else {
+        element.dataset.id = face.objectId;
+        delete element.dataset.scene3dObjectId;
+      }
     }
     endLayer(state.base);
     state.baseGeometryKey = baseGeometryKey;
@@ -936,6 +996,41 @@ function renderScene(
     state.sectionGeometryKey = sectionGeometryKey;
     state.sectionKey = sectionKey;
   }
+  // Section-only updates retain the mesh projection and fit transform.
+  if (state.fitKey !== baseKey) {
+    const baseView = { ...view, zoom: 1 };
+    viewProjectors.set(baseView, createProjector(baseView, 54));
+    const included = new Set<Point3d>();
+    let minX = CENTER_X, maxX = CENTER_X, minY = CENTER_Y, maxY = CENTER_Y;
+    const include = (point: Point3d) => {
+      if (included.has(point)) return;
+      included.add(point);
+      const projected = projectScene3dPoint(point, baseView);
+      if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
+      minX = Math.min(minX, projected.x); maxX = Math.max(maxX, projected.x);
+      minY = Math.min(minY, projected.y); maxY = Math.max(maxY, projected.y);
+    };
+    for (const mesh of meshes) for (const triangle of mesh.triangles) for (const point of triangle.points) include(point);
+    if (content.axes !== false) {
+      include({ x: 2.7, y: 0, z: 0 }); include({ x: 0, y: 2.7, z: 0 }); include({ x: 0, y: 0, z: 2.7 });
+    }
+    const margin = 20;
+    if (minX < margin || maxX > WIDTH - margin || minY < margin || maxY > HEIGHT - margin) {
+      const fit = Math.min(1, (WIDTH - margin * 2) / Math.max(1, maxX - minX),
+        (HEIGHT - margin * 2) / Math.max(1, maxY - minY));
+      const centerX = CENTER_X + ((minX + maxX) / 2 - CENTER_X) * view.zoom;
+      const centerY = CENTER_Y + ((minY + maxY) / 2 - CENTER_Y) * view.zoom;
+      state.frame.style.setProperty("--scene3d-fit", String(fit));
+      state.frame.setAttribute("class", "scene3d-fitted-frame");
+      state.frame.setAttribute("transform",
+        `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`);
+    } else {
+      state.frame.style.removeProperty("--scene3d-fit");
+      state.frame.removeAttribute("class");
+      state.frame.removeAttribute("transform");
+    }
+    state.fitKey = baseKey;
+  }
   const highlightGeometryKey = prepared.highlightKey;
   const highlightKey = `${highlightGeometryKey}\0${viewKey}`;
   if (state.highlightKey !== highlightKey) {
@@ -946,11 +1041,15 @@ function renderScene(
     const solidPoints = meshes.flatMap((mesh) => mesh.triangles.flatMap((triangle) => triangle.points));
     const centreDepth = solidPoints.length
       ? solidPoints.reduce((sum, point) => sum + projectScene3dPoint(point, view).depth, 0) / solidPoints.length : 0;
-    for (const highlight of content.highlights ?? []) {
+    const depthOf = (highlight: Record<string, any>) => projectScene3dPoint(averagePoint(highlight.points), view).depth;
+    const highlights = prepared.highlights;
+    const unfolded = highlights.filter((highlight) => highlight.unfolded).sort((a, b) => depthOf(a) - depthOf(b));
+    for (const highlight of [...unfolded, ...highlights.filter((highlight) => !highlight.unfolded)]) {
       const points = highlight.points as Point3d[];
       const color = safeColor(highlight.color, "#d04f45");
       const id = String(highlight.id ?? highlight.as ?? "");
       let labelPoint: ProjectedPoint | undefined;
+      let netFace: ProjectedPoint[] | undefined;
       if (highlight.kind === "point") {
         labelPoint = projectScene3dPoint(points[0]!, view);
         const point = layerElement(svg, "circle", {
@@ -980,9 +1079,13 @@ function renderScene(
         const face = polygon(svg, points, view, color, .42, `scene3d-highlight scene3d-highlight-face${latent ? " scene3d-highlight-latent" : ""}`);
         face.dataset.id = id;
         const projected = points.map((point) => projectScene3dPoint(point, view));
+        if (highlight.unfolded) netFace = projected;
         if (latent) {
           const depth = projected.reduce((sum, point) => sum + point.depth, 0) / projected.length;
-          face.dataset.facing = depth > centreDepth + 1e-6 ? "front" : "back";
+          const [a, b, c] = projected as [ProjectedPoint, ProjectedPoint, ProjectedPoint, ...ProjectedPoint[]];
+          const area = Math.abs((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+          const visible = highlight.unfolded ? area > 0.1 : depth > centreDepth + 1e-6;
+          face.dataset.facing = visible ? "front" : "back";
         } else delete face.dataset.facing;
         labelPoint = {
           x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
@@ -991,49 +1094,33 @@ function renderScene(
         };
       }
       if (highlight.label && labelPoint) {
-        const label = layerElement(svg, "text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
-        if (label.textContent !== String(highlight.label)) label.textContent = String(highlight.label);
-        label.setAttribute("class", "scene3d-highlight-label");
-
+        const label = layerElement(svg, "text", { x: labelPoint.x, y: labelPoint.y });
+        const words = String(highlight.label);
+        if (netFace) {
+          const lines = words.split("\n");
+          const fit = Number(state.frame.style.getPropertyValue("--scene3d-fit")) || 1;
+          label.setAttribute("visibility", netLabelFits(netFace, labelPoint, lines, fit) ? "visible" : "hidden");
+          if (label.childElementCount !== lines.length) label.replaceChildren(...lines.map(() => svgElement("tspan")));
+          lines.forEach((line, index) => {
+            const span = label.children[index]!;
+            span.setAttribute("x", String(labelPoint.x));
+            span.setAttribute("dy", index ? "1.1em" : lines.length > 1 ? "-0.55em" : "0");
+            if (span.textContent !== line) span.textContent = line;
+          });
+          label.setAttribute("class", "scene3d-highlight-label scene3d-net-label");
+        } else {
+          label.removeAttribute("visibility");
+          label.setAttribute("x", String(labelPoint.x + 8));
+          label.setAttribute("y", String(labelPoint.y - 8));
+          if (label.textContent !== words || label.childElementCount) label.textContent = words;
+          label.setAttribute("class", "scene3d-highlight-label");
+        }
       }
     }
     endLayer(state.highlights);
     state.highlightGeometryKey = highlightGeometryKey;
     state.highlightKey = highlightKey;
   }
-  // Section-only updates retain the mesh projection and fit transform.
-  if (state.fitKey === baseKey) return;
-  const baseView = { ...view, zoom: 1 };
-  viewProjectors.set(baseView, createProjector(baseView, 54));
-  const included = new Set<Point3d>();
-  let minX = CENTER_X, maxX = CENTER_X, minY = CENTER_Y, maxY = CENTER_Y;
-  const include = (point: Point3d) => {
-    if (included.has(point)) return;
-    included.add(point);
-    const projected = projectScene3dPoint(point, baseView);
-    if (!Number.isFinite(projected.x) || !Number.isFinite(projected.y)) return;
-    minX = Math.min(minX, projected.x); maxX = Math.max(maxX, projected.x);
-    minY = Math.min(minY, projected.y); maxY = Math.max(maxY, projected.y);
-  };
-  for (const mesh of meshes) for (const triangle of mesh.triangles) for (const point of triangle.points) include(point);
-  if (content.axes !== false) {
-    include({ x: 2.7, y: 0, z: 0 }); include({ x: 0, y: 2.7, z: 0 }); include({ x: 0, y: 0, z: 2.7 });
-  }
-  const margin = 20;
-  if (minX < margin || maxX > WIDTH - margin || minY < margin || maxY > HEIGHT - margin) {
-    const fit = Math.min(1, (WIDTH - margin * 2) / Math.max(1, maxX - minX),
-      (HEIGHT - margin * 2) / Math.max(1, maxY - minY));
-    const centerX = CENTER_X + ((minX + maxX) / 2 - CENTER_X) * view.zoom;
-    const centerY = CENTER_Y + ((minY + maxY) / 2 - CENTER_Y) * view.zoom;
-    state.frame.setAttribute("class", "scene3d-fitted-frame");
-    state.frame.setAttribute("transform",
-      `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`);
-  } else {
-    state.frame.removeAttribute("class");
-    state.frame.removeAttribute("transform");
-  }
-  state.fitKey = baseKey;
-
 }
 
 function inputMethod(pointerType: string | undefined): StudentInputMethod {
