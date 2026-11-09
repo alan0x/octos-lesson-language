@@ -115,8 +115,36 @@ try {
   check(ink.state.component_count===1 && ink.state.selected_count===0,'delete selection removes the selected stroke');
   check(ink.editor.image.getAllComponents().includes(keep),'delete selection keeps other strokes');
   await ink.undo();await ink.saveNow();check(ink.state.component_count===2,'undo restores deleted selection');
+  // Replacing a captured selection erases it and adds AI paths as one undo step,
+  // and refuses when the selection or document changed after capture.
+  {const [other,target]=ink.editor.image.getAllComponents().filter(c=>c.isSelectable());
+   const select=c=>{ink.setMode('select');ink.getTool(window.SelectionToolForProbe).setSelection([c]);};
+   const expectedNow=async()=>{const source=await ink.captureSelectionSnapshot();
+     return {source,selectionRevision:ink.state.selection_revision,contentRevision:ink.state.content_revision};};
+   select(target);let expected=await expectedNow();
+   select(other);let refused=false;
+   try{await ink.replaceSelectionWithAiPaths('replace-stale',['M1 1 L2 1 L2 2 Z'],expected);}catch{refused=true;}
+   check(refused&&ink.state.component_count===2,'replace refuses a changed selection');
+   select(target);expected=await expectedNow();
+   await ink.writeAiPaths('replace-interleaved',['M5 5 L6 5 L6 6 Z']);refused=false;
+   try{await ink.replaceSelectionWithAiPaths('replace-edited',['M1 1 L2 1 L2 2 Z'],expected);}catch{refused=true;}
+   check(refused&&ink.state.component_count===3,'replace refuses after the document changed');
+   await ink.undo();await ink.saveNow();
+   select(target);expected=await expectedNow();
+   check(await ink.replaceSelectionWithAiPaths('replace-A',['M300 300 L340 300 L340 340 Z','M350 300 L390 300 L390 340 Z'],expected),'replace selection');
+   await ink.saveNow();
+   const after=ink.editor.image.getAllComponents().filter(c=>c.isSelectable());
+   check(after.length===3&&!after.includes(target)&&after.includes(other),'replace erases only the selected strokes');
+   check(after.filter(c=>window.inkComponentOrigin(c)==='ai').length===2+(window.inkComponentOrigin(other)==='ai'?1:0),'replacement is AI writing');
+   check(ink.state.selected_count===0,'replace clears the selection');
+   await ink.undo();await ink.saveNow();
+   const restored=ink.editor.image.getAllComponents().filter(c=>c.isSelectable());
+   check(restored.length===2&&restored.includes(target),'one undo restores the original strokes');
+   await ink.redo();await ink.saveNow();
+   check(ink.editor.image.getAllComponents().filter(c=>c.isSelectable()).length===3,'redo reapplies the replacement');
+   check(!await ink.replaceSelectionWithAiPaths('replace-A',['M1 1 L2 1 L2 2 Z'],expected),'replacement artifact is not applied twice');}
   await ink.destroy();
-  return {passed:['delete selection','write','origin','idempotency','undo','redo','reload','capture during save','v5 integrity','save failure retry','undo reload','concurrent writers','legacy write protection','move','copy','partial erase undo redo reload']};
+  return {passed:['delete selection','replace selection','write','origin','idempotency','undo','redo','reload','capture during save','v5 integrity','save failure retry','undo reload','concurrent writers','legacy write protection','move','copy','partial erase undo redo reload']};
  });
  const move = await page.evaluate(async () => {
    const viewport=document.querySelector('#board'), camera={panX:0,panY:0,scale:1};

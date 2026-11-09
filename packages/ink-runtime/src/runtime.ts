@@ -1168,6 +1168,29 @@ export class InkRuntime {
 
   /** One artifact is one undoable addition; consumption survives user edits. */
   async writeAiPaths(artifactId: string, paths: string[], color = "#84523c"): Promise<boolean> {
+    return this.commitAiPaths(artifactId, paths, color);
+  }
+
+  /**
+   * Replace the selected strokes with AI paths in one undoable command, but only
+   * if the selection, its strokes and the document are exactly those captured in
+   * `expected`. One undo restores the original strokes.
+   */
+  async replaceSelectionWithAiPaths(
+    artifactId: string,
+    paths: string[],
+    expected: { source: InkSelectionSnapshot; selectionRevision: number; contentRevision: number },
+    color = "#243c39",
+  ): Promise<boolean> {
+    return this.commitAiPaths(artifactId, paths, color, expected);
+  }
+
+  private async commitAiPaths(
+    artifactId: string,
+    paths: string[],
+    color: string,
+    expected?: { source: InkSelectionSnapshot; selectionRevision: number; contentRevision: number },
+  ): Promise<boolean> {
     await this.ready;
     if (!artifactId || artifactId.length > 512 || paths.length === 0 || paths.length > 2048
       || paths.some((path) => !path || path.length > 200_000)
@@ -1184,15 +1207,32 @@ export class InkRuntime {
     if (this.aiWritingRecords.length >= 4096) {
       throw new InkRuntimeError("INK_INVALID_RECORD", "AI writing ledger is full");
     }
+    const replacing = expected ? [...this.selectedComponents] : [];
+    if (expected) {
+      const expectedIds = expected.source.component_ids ?? [];
+      const selectedIds = ensurePersistentInkComponentIds(replacing);
+      if (this.options.documentId !== expected.source.document_id
+        || this.changeRevision !== expected.contentRevision
+        || this.selectionRevision !== expected.selectionRevision
+        || !expectedIds.length || expectedIds.length !== selectedIds.length
+        || new Set(expectedIds).size !== expectedIds.length
+        || selectedIds.some((id) => !expectedIds.includes(id))) {
+        throw new InkRuntimeError("INK_INVALID_RECORD", "The selected handwriting changed before replacement");
+      }
+    }
     const components = paths.map((path) => Stroke.fromFilled(path, Color4.fromHex(color)));
     components.forEach(markAiInkComponent);
     const componentIds = ensurePersistentInkComponentIds(components);
-    const command = uniteCommands(components.map((component) => this.editor.image.addComponent(component)),
+    const command = uniteCommands([
+      ...(expected ? [new Erase(replacing)] : []),
+      ...components.map((component) => this.editor.image.addComponent(component)),
+    ],
       { description: /^zh(?:-|$)/i.test(this.options.locale ?? this.host.ownerDocument.documentElement.lang)
         ? "小章鱼板书" : "Octos board writing" });
     const wasSuppressed = this.suppressSave;
     this.suppressSave = true;
     try {
+      if (expected) this.clearSelection();
       // Filled-stroke additions are synchronous. Keep dispatch and the ledger in
       // the same JS turn so neither autosave nor another writer can observe half.
       this.editor.dispatch(command);
