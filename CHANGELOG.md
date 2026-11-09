@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Opt in to stable face targets on a solid with `face_targets: true` (player 0.10.0, `scene3d:face-targets`). Use `<scene>#<object>-<surface>-face` to mark a face. Latent box highlights specified at the four corners of an opted-in face follow that face as it unfolds.
+- Opt in to stable face targets on a solid with `face_targets: true` (player 0.10.0, `scene3d:face-targets`). Use `<scene>#<object>-<surface>-face` to mark a face. A latent box highlight at the four corners of a single opted-in face follows that face as it unfolds.
 
 ### Added
 

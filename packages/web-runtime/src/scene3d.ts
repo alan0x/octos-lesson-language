@@ -819,12 +819,14 @@ function faceVerticesKey(points: Point3d[]): string {
 function unfoldingHighlights(content: Record<string, any>): Array<Record<string, any>> {
   const highlights: Array<Record<string, any>> = content.highlights ?? [];
   if (!highlights.some((highlight) => highlight.kind === "face" && highlight.shown === "when_emphasized")) return highlights;
-  const openFaces = new Map<string, Point3d[]>();
+  const openFaces = new Map<string, Point3d[] | undefined>();
   for (const object of content.objects ?? []) {
     if (object.kind !== "box" || object.face_targets !== true || !(Number(object.unfold) > 0)) continue;
     const opened = solidFacets(object);
     solidFacets({ ...object, unfold: 0 }).forEach((closed, index) => {
-      openFaces.set(faceVerticesKey(closed.points), opened[index]!.points);
+      const key = faceVerticesKey(closed.points);
+      // Coincident faces have no unique hinge to follow.
+      openFaces.set(key, openFaces.has(key) ? undefined : opened[index]?.points);
     });
   }
   if (!openFaces.size) return highlights;
