@@ -2086,6 +2086,8 @@ export class InfiniteBoardView {
         } else {
           push(elementId, node.id, bounds, nodeIndex + 1, elementId,
             describeBoardTarget(node as Record<string, unknown>, elementId, element.textContent ?? undefined));
+          const objectId = element.dataset.scene3dObjectId;
+          if (objectId) push(objectId, node.id, bounds, nodeIndex + 1, objectId);
         }
       }
     });
@@ -2745,7 +2747,9 @@ export class InfiniteBoardView {
    * card's own arrival animation does not shift it.
    */
   private fragmentRect(fragmentId: string): Rect | undefined {
-    const element = [...this.nodes.querySelectorAll<Element>("[data-id]")].find((candidate) => candidate.getAttribute("data-id") === fragmentId);
+    const fragments = [...this.nodes.querySelectorAll<HTMLElement | SVGElement>("[data-id]")];
+    const element = fragments.find((candidate) => candidate.dataset.scene3dObjectId === fragmentId)
+      ?? fragments.find((candidate) => candidate.dataset.id === fragmentId);
     const card = element?.closest<HTMLElement>(".board-node");
     if (!element || !card) return undefined;
     const box = element.getBoundingClientRect();

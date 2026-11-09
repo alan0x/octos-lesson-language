@@ -28,6 +28,15 @@ test("every solid exposes the same face keys through its mesh and its lesson tar
   }
 });
 
+test("solid faces and their parent remain distinct board targets", () => {
+  const object = { id: "lesson:node:can:fragment:solid", kind: "cylinder", face_targets: true, label: "Can" };
+  const node = { kind: "scene3d", content: { objects: [object] } };
+  assert.equal(describeBoardTarget(node, object.id).kind, "scene3d-object");
+  assert.deepEqual(describeBoardTarget(node, `${object.id}-top-face`), {
+    kind: "scene3d-face", label: "Can top", value: { object_id: object.id, surface: "top" },
+  });
+});
+
 test("geometry polygons are addressable teaching targets", () => {
   assert.deepEqual(describeBoardTarget({
     kind: "geometry",
