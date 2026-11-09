@@ -4,6 +4,8 @@
 
 ### Added
 
+- Ink runtime: `replaceSelectionWithAiPaths(artifactId, paths, expected, color?)` replaces the selected strokes with AI paths in one undoable command. It refuses (`INK_INVALID_RECORD`) unless the document, the selected stroke IDs and the selection and content revisions still match the captured `expected` snapshot. One undo restores the original strokes; the artifact ID is consumed like `writeAiPaths`. Runtime API only; no lesson contract change.
+
 - Opt in to stable face targets on a solid with `face_targets: true` (player 0.10.0, `scene3d:face-targets`). Use `<scene>#<object>-<surface>-face` to mark a face. A latent box highlight at the four corners of a single opted-in face follows that face as it unfolds.
 
 - More 3D solids: `prism` and `pyramid` (3–12 sides), `frustum` (bottom and top radius), `hemisphere`, `torus` (ring and tube radius), and the regular polyhedra `tetrahedron`, `octahedron`, `dodecahedron`, `icosahedron`. Drawn from shaded facets like the cylinder, cone and sphere (flat faces keep their edges), and cut into cross-sections from the same facets. Capability `scene3d:more-solids`, player 0.9.0. Web runtime exports `solidFacets`.
