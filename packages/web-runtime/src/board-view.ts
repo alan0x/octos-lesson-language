@@ -2086,6 +2086,8 @@ export class InfiniteBoardView {
         } else {
           push(elementId, node.id, bounds, nodeIndex + 1, elementId,
             describeBoardTarget(node as Record<string, unknown>, elementId, element.textContent ?? undefined));
+          const objectId = element.dataset.scene3dObjectId;
+          if (objectId) push(objectId, node.id, bounds, nodeIndex + 1, objectId);
         }
       }
     });
@@ -2176,6 +2178,16 @@ export class InfiniteBoardView {
   setScene3dInputHandler(handler: Scene3dViewInputHandler | undefined): void {
     this.scene3dInputHandler = handler;
   }
+
+  private readonly handleScene3dInput: Scene3dViewInputHandler = (nodeId, view, event) => {
+    if (event.phase !== "start") {
+      // Local view changes redraw the SVG before the host updates the board.
+      const node = this.board?.nodes[nodeId];
+      const element = this.nodeElements.get(nodeId);
+      if (element && node?.emphasis?.length) this.syncNodeFragmentEmphasis(element, node);
+    }
+    return this.scene3dInputHandler?.(nodeId, view, event);
+  };
 
   setScene3dViews(views: Record<string, Scene3dViewState>): void {
     this.scene3dViews = structuredClone(views);
@@ -2469,7 +2481,7 @@ export class InfiniteBoardView {
         if (kind === "scene3d") {
           try {
             updated = updateScene3d(element, node, this.scene3dViews[node.id],
-              variableValues, this.scene3dInputHandler);
+              variableValues, this.handleScene3dInput);
           } catch { /* Recreate through the existing static fallback on failure. */ }
         }
         if (!updated) {
@@ -2478,7 +2490,7 @@ export class InfiniteBoardView {
           const shownBefore = this.inkShownStrokes.get(node.id);
           renderContent(
             element, node, this.resolveAsset,
-            this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
+            this.scene3dViews[node.id], this.handleScene3dInput, variableValues,
             created && node.id === activeCreateId ? 0
               : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
           );
@@ -2542,8 +2554,11 @@ export class InfiniteBoardView {
 
   private syncNodeFragmentEmphasis(element: HTMLElement, node: Record<string, any>): void {
     for (const fragment of element.querySelectorAll<HTMLElement | SVGElement>("[data-id]")) {
-      const fragmentId = (fragment as HTMLElement).dataset.id;
-      if (fragmentId) syncEmphasisClass(fragment, latestEmphasis(node, fragmentId));
+      const { id, scene3dObjectId } = fragment.dataset;
+      if (!id) continue;
+      // Older lessons could mark a solid as a whole before its faces were addressable.
+      const emphasis = latestEmphasis(node, id) ?? (scene3dObjectId ? latestEmphasis(node, scene3dObjectId) : undefined);
+      syncEmphasisClass(fragment, emphasis);
     }
   }
 
@@ -2732,7 +2747,9 @@ export class InfiniteBoardView {
    * card's own arrival animation does not shift it.
    */
   private fragmentRect(fragmentId: string): Rect | undefined {
-    const element = [...this.nodes.querySelectorAll<Element>("[data-id]")].find((candidate) => candidate.getAttribute("data-id") === fragmentId);
+    const fragments = [...this.nodes.querySelectorAll<HTMLElement | SVGElement>("[data-id]")];
+    const element = fragments.find((candidate) => candidate.dataset.scene3dObjectId === fragmentId)
+      ?? fragments.find((candidate) => candidate.dataset.id === fragmentId);
     const card = element?.closest<HTMLElement>(".board-node");
     if (!element || !card) return undefined;
     const box = element.getBoundingClientRect();

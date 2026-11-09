@@ -10,6 +10,32 @@ import {
 } from "../src/input-routing.js";
 import { describeBoardTarget } from "../src/board-targets.js";
 import { measureSemanticNode } from "../src/layout.js";
+import { solidFaceKeys } from "../../core/src/solid-face-targets.js";
+
+test("every solid exposes the same face keys through its mesh and its lesson targets", () => {
+  const kinds = ["box", "prism", "pyramid", "cylinder", "cone", "frustum", "sphere", "hemisphere", "ellipsoid", "torus", "tetrahedron", "octahedron", "dodecahedron", "icosahedron"];
+  const common = { center: { x: 0, y: 0, z: 0 }, size: { x: 4, y: 3, z: 2 }, radius: 2, top_radius: 1, height: 4, sides: 5, tube: .5, radii: { x: 2, y: 1, z: 1 } };
+  const objects = [...kinds.map((kind) => ({ ...common, kind })),
+    { ...common, kind: "pyramid", top_scale: .4 },
+    { ...common, kind: "prism", base: [{ x: 0, y: 0 }, { x: 3, y: 0 }, { x: 0, y: 4 }] },
+  ];
+  for (const object of objects) {
+    const foldable = ["box", "prism", "pyramid", "cylinder", "cone"].includes(object.kind);
+    for (const unfold of foldable ? [0, .5, 1] : [0]) {
+      const groups = new Set(roundSolidFacets({ ...object, unfold }).map((facet) => facet.surface));
+      assert.deepEqual(groups, new Set(solidFaceKeys(object)), `${object.kind} at unfold=${unfold}`);
+    }
+  }
+});
+
+test("solid faces and their parent remain distinct board targets", () => {
+  const object = { id: "lesson:node:can:fragment:solid", kind: "cylinder", face_targets: true, label: "Can" };
+  const node = { kind: "scene3d", content: { objects: [object] } };
+  assert.equal(describeBoardTarget(node, object.id).kind, "scene3d-object");
+  assert.deepEqual(describeBoardTarget(node, `${object.id}-top-face`), {
+    kind: "scene3d-face", label: "Can top", value: { object_id: object.id, surface: "top" },
+  });
+});
 
 test("geometry polygons are addressable teaching targets", () => {
   assert.deepEqual(describeBoardTarget({

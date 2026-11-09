@@ -1,4 +1,5 @@
 import type { Rect } from "./layout.js";
+import { solidFaceKeys, solidFaceTarget } from "../../core/src/solid-face-targets.js";
 
 export interface BoardTargetPoint {
   x: number;
@@ -101,6 +102,17 @@ export function describeBoardTarget(
   }
   const found = addressableItem(content, elementId);
   if (!found) {
+    if (nodeKind === "scene3d" && Array.isArray(content.objects)) {
+      for (const object of content.objects) {
+        if (object?.face_targets !== true || typeof object.id !== "string" || !elementId.startsWith(`${object.id}-`)) continue;
+        const surface = solidFaceKeys(object).find((face) => solidFaceTarget(object.id, face) === elementId);
+        if (surface) return {
+          kind: "scene3d-face",
+          label: `${text(object.label) ?? text(object.kind) ?? "solid"} ${surface}`,
+          value: { object_id: object.id, surface },
+        };
+      }
+    }
     return { kind: "unknown-fragment", label: text(fallbackText) ?? elementId };
   }
   const { field, item } = found;
