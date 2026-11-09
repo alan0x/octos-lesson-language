@@ -216,9 +216,6 @@ function polygon(
   return element;
 }
 
-// In the order used by the closed box renderer; the keys match prismLike's hinges.
-const BOX_SURFACE_KEYS = ["bottom", "top", "side-1", "side-3", "side-4", "side-2"];
-
 function boxFaces(object: Record<string, any>): Point3d[][] {
   const center = object.center;
   const size = object.size;
@@ -931,10 +928,11 @@ function renderScene(
         // away are drawn as dashed hidden edges, as in a textbook, so the box
         // reads one way: the way it is drawn and pointed at.
         const centreDepth = projectScene3dPoint(object.center as Point3d, view).depth;
-        for (const [index, points] of boxFaces(object).entries()) {
+        const box = object.face_targets === true ? solidFacets(object) : boxFaces(object).map((points) => ({ points, surface: undefined }));
+        for (const { points, surface } of box) {
           const depth = points.reduce((sum, point) =>
             sum + projectScene3dPoint(point, view).depth, 0) / points.length;
-          faces.push({ points, color, depth, objectId, faceId: target(BOX_SURFACE_KEYS[index]), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
+          faces.push({ points, color, depth, objectId, faceId: target(surface), hidden: depth <= centreDepth + 1e-6, glued: glued.has(faceKey(points)) });
         }
         continue;
       }
