@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Opt in to stable face targets on a solid with `face_targets: true` (player 0.10.0, `scene3d:face-targets`). Use `<scene>#<object>-<surface>-face` to mark a face. Latent box highlights specified at the four corners of an opted-in face follow that face as it unfolds.
+
 ### Added
 
 - More 3D solids: `prism` and `pyramid` (3–12 sides), `frustum` (bottom and top radius), `hemisphere`, `torus` (ring and tube radius), and the regular polyhedra `tetrahedron`, `octahedron`, `dodecahedron`, `icosahedron`. Drawn from shaded facets like the cylinder, cone and sphere (flat faces keep their edges), and cut into cross-sections from the same facets. Capability `scene3d:more-solids`, player 0.9.0. Web runtime exports `solidFacets`.

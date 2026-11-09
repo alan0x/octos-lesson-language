@@ -811,22 +811,26 @@ interface PreparedScene {
   meshes: SceneMesh[];
 }
 
-/** A box face named in its closed position follows the corresponding hinge. */
+function faceVerticesKey(points: Point3d[]): string {
+  return points.map(({ x, y, z }) => [x, y, z].map((value) => value.toFixed(9)).join(",")).sort().join(";");
+}
+
+/** An opted-in box face named in its closed position follows the corresponding hinge. */
 function unfoldingHighlights(content: Record<string, any>): Array<Record<string, any>> {
   const highlights: Array<Record<string, any>> = content.highlights ?? [];
   if (!highlights.some((highlight) => highlight.kind === "face" && highlight.shown === "when_emphasized")) return highlights;
   const openFaces = new Map<string, Point3d[]>();
   for (const object of content.objects ?? []) {
-    if (object.kind !== "box" || !(Number(object.unfold) > 0)) continue;
+    if (object.kind !== "box" || object.face_targets !== true || !(Number(object.unfold) > 0)) continue;
     const opened = solidFacets(object);
     solidFacets({ ...object, unfold: 0 }).forEach((closed, index) => {
-      openFaces.set(faceKey(closed.points), opened[index]!.points);
+      openFaces.set(faceVerticesKey(closed.points), opened[index]!.points);
     });
   }
   if (!openFaces.size) return highlights;
   return highlights.map((highlight) => {
     if (highlight.kind !== "face" || highlight.shown !== "when_emphasized") return highlight;
-    const points = openFaces.get(faceKey(highlight.points));
+    const points = openFaces.get(faceVerticesKey(highlight.points));
     return points ? { ...highlight, points, unfolded: true } : highlight;
   });
 }
@@ -1032,7 +1036,8 @@ function renderScene(
     state.fitKey = baseKey;
   }
   const highlightGeometryKey = prepared.highlightKey;
-  const highlightKey = `${highlightGeometryKey}\0${viewKey}`;
+  const fit = Number(state.frame.style.getPropertyValue("--scene3d-fit")) || 1;
+  const highlightKey = `${highlightGeometryKey}\0${viewKey}\0${fit}`;
   if (state.highlightKey !== highlightKey) {
     beginLayer(state.highlights, state.highlightGeometryKey === highlightGeometryKey);
     const svg = state.highlights;
@@ -1098,7 +1103,6 @@ function renderScene(
         const words = String(highlight.label);
         if (netFace) {
           const lines = words.split("\n");
-          const fit = Number(state.frame.style.getPropertyValue("--scene3d-fit")) || 1;
           label.setAttribute("visibility", netLabelFits(netFace, labelPoint, lines, fit) ? "visible" : "hidden");
           if (label.childElementCount !== lines.length) label.replaceChildren(...lines.map(() => svgElement("tspan")));
           lines.forEach((line, index) => {
