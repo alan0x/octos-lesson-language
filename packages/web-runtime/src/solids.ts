@@ -9,7 +9,7 @@
 // touches it along its front line, its discs swinging out to touch the net.
 
 export interface Point3 { x: number; y: number; z: number }
-export interface Facet { points: Point3[]; normal: Point3; part: "side" | "face" }
+export interface Facet { points: Point3[]; normal: Point3; part: "side" | "face"; surface?: string }
 
 /** How many facets go round a round solid, and how many bands a sphere has. */
 const ROUND = 40;
@@ -98,7 +98,7 @@ function roundSides(bottom: Point3[], top: Point3[], height: number, bottomRadiu
     const angle = (2 * Math.PI * (index + .5)) / bottom.length;
     const normal = { x: Math.cos(angle) * height / slant, y: Math.sin(angle) * height / slant, z: (bottomRadius - topRadius) / slant };
     const points = topRadius > 0 ? [point, bottom[next]!, top[next]!, top[index]!] : [point, bottom[next]!, top[0]!];
-    return { points, normal, part: "side" as const };
+    return { points, normal, part: "side" as const, surface: "side" };
   });
 }
 
@@ -164,7 +164,7 @@ function prismLike(c: Point3, base: Array<{ x: number; y: number }>, height: num
   const top = corners.map((point) => ({ x: c.x + point.x * topScale, y: c.y + point.y * topScale, z: topZ }));
   // Faces turn away from a point inside the solid; the centre need not be inside a base given by its corners.
   const inside = average([...bottom, ...top]);
-  const facets: Facet[] = [flatFace([...bottom].reverse(), inside)];
+  const facets: Facet[] = [{ ...flatFace([...bottom].reverse(), inside), surface: "bottom" }];
   // The front side (nearest the default view, -y) carries the top when the net opens.
   let front = 0;
   bottom.forEach((point, index) => { const mid = average([point, bottom[(index + 1) % bottom.length]!]); if (mid.y < average([bottom[front]!, bottom[(front + 1) % bottom.length]!]).y) front = index; });
@@ -177,11 +177,11 @@ function prismLike(c: Point3, base: Array<{ x: number; y: number }>, height: num
     const toward = unit(sub(average(face.points.slice(2)), average([point, bottom[next]!])));
     const angle = Math.atan2(dot(toward, UP), -dot(toward, outward));
     const hinge = { at: point, axis, angle: unfold * (Math.PI - angle) };
-    facets.push(hinged(face, [hinge]));
+    facets.push(hinged({ ...face, surface: `side-${index + 1}` }, [hinge]));
     if (index === front && topScale > 0) {
       // The top swings about this side's top edge by the side's own angle to it, then rides with the side.
       const topHinge = { at: top[index]!, axis: unit(sub(top[next]!, top[index]!)), angle: unfold * angle };
-      facets.push(hinged(flatFace(top, inside), [topHinge, hinge]));
+      facets.push(hinged({ ...flatFace(top, inside), surface: "top" }, [topHinge, hinge]));
     }
   });
   return facets;
@@ -205,16 +205,16 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
     const normalAt = (s: number) => ({ x: Math.sin((s * bend) / radius), y: -Math.cos((s * bend) / radius), z: 0 });
     if (bend < 1e-6) {
       // Flat: one rectangle 2πr wide with its edges, not strips (whose edges would draw a grid).
-      facets.push({ points: [at(arc(0), c.z - half), at(arc(ROUND), c.z - half), at(arc(ROUND), c.z + half), at(arc(0), c.z + half)], normal: normalAt(0), part: "face" });
+      facets.push({ points: [at(arc(0), c.z - half), at(arc(ROUND), c.z - half), at(arc(ROUND), c.z + half), at(arc(0), c.z + half)], normal: normalAt(0), part: "face", surface: "side" });
     } else for (let index = 0; index < ROUND; index += 1) {
       const [s0, s1] = [arc(index), arc(index + 1)];
-      facets.push({ points: [at(s0, c.z - half), at(s1, c.z - half), at(s1, c.z + half), at(s0, c.z + half)], normal: normalAt((s0 + s1) / 2), part: "side" });
+      facets.push({ points: [at(s0, c.z - half), at(s1, c.z - half), at(s1, c.z + half), at(s0, c.z + half)], normal: normalAt((s0 + s1) / 2), part: "side", surface: "side" });
     }
     // The discs touch the front line at its ends, and swing up (top) and down (bottom) into its plane.
     for (const [z, direction] of [[c.z + half, 1], [c.z - half, -1]] as const) {
       const hinge = { at: { x: c.x, y: c.y - radius, z }, axis: { x: direction, y: 0, z: 0 }, angle: unfold * Math.PI / 2 };
       const disc = circleRing(c, radius, z);
-      facets.push(hinged({ points: direction > 0 ? disc : [...disc].reverse(), normal: { x: 0, y: 0, z: direction }, part: "face" }, [hinge]));
+      facets.push(hinged({ points: direction > 0 ? disc : [...disc].reverse(), normal: { x: 0, y: 0, z: direction }, part: "face", surface: direction > 0 ? "top" : "bottom" }, [hinge]));
     }
     return facets;
   }
@@ -240,18 +240,18 @@ function unrolledRound(c: Point3, radius: number, height: number, cone: boolean,
     const [p0, p1] = [s0 / reach, s1 / reach];
     const middle = direction((p0 + p1) / 2);
     const normal = unit(cross(sub(direction(p1), direction(p0)), middle));
-    strips.push({ points: [add(apex, scale(direction(p0), slant)), add(apex, scale(direction(p1), slant)), apex], normal: dot(normal, sub(middle, axis)) < 0 ? scale(normal, -1) : normal, part: "side" });
+    strips.push({ points: [add(apex, scale(direction(p0), slant)), add(apex, scale(direction(p1), slant)), apex], normal: dot(normal, sub(middle, axis)) < 0 ? scale(normal, -1) : normal, part: "side", surface: "side" });
   }
   if (unfold >= 1 - 1e-9) {
     // Flat: one sector with its edges, not strips (whose edges would draw a fan of lines).
-    facets.push(hinged({ points: [apex, ...strips.map((strip) => strip.points[0]!), strips.at(-1)!.points[1]!], normal: strips[0]!.normal, part: "face" }, [tilt]));
+    facets.push(hinged({ points: [apex, ...strips.map((strip) => strip.points[0]!), strips.at(-1)!.points[1]!], normal: strips[0]!.normal, part: "face", surface: "side" }, [tilt]));
   } else facets.push(...strips.map((strip) => hinged(strip, [tilt])));
   // The base disc swings about the line touching the base at the front, until its centre lies on the front line extended.
   const from = { x: 0, y: radius, z: 0 };
   const to = scale(g, radius);
   const full = Math.atan2(dot(cross(from, to), e1), dot(from, to));
   const hinge = { at: contact, axis: e1, angle: unfold * full };
-  facets.push(hinged({ points: [...circleRing(c, radius, c.z - half)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face" }, [hinge, tilt]));
+  facets.push(hinged({ points: [...circleRing(c, radius, c.z - half)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face", surface: "bottom" }, [hinge, tilt]));
   return facets;
 }
 
@@ -284,7 +284,7 @@ export function solidFacets(object: Record<string, any>): Facet[] {
   if (!(radius > 0)) return [];
   if (kind === "sphere" || kind === "hemisphere") {
     const facets = sphereBands(c, { x: radius, y: radius, z: radius }, kind === "hemisphere");
-    if (kind === "hemisphere") facets.push({ points: [...circleRing(c, radius, c.z)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face" });
+    if (kind === "hemisphere") facets.push({ points: [...circleRing(c, radius, c.z)].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face", surface: "bottom" });
     return facets;
   }
   if (kind === "torus") {
@@ -296,11 +296,11 @@ export function solidFacets(object: Record<string, any>): Facet[] {
       const [u0, u1] = [i, i + 1].map((step) => (2 * Math.PI * step) / ROUND) as [number, number];
       const [v0, v1] = [j, j + 1].map((step) => (2 * Math.PI * step) / TUBE) as [number, number];
       const u = (u0 + u1) / 2, v = (v0 + v1) / 2;
-      facets.push({ points: [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)], normal: { x: Math.cos(v) * Math.cos(u), y: Math.cos(v) * Math.sin(u), z: Math.sin(v) }, part: "side" });
+      facets.push({ points: [at(u0, v0), at(u1, v0), at(u1, v1), at(u0, v1)], normal: { x: Math.cos(v) * Math.cos(u), y: Math.cos(v) * Math.sin(u), z: Math.sin(v) }, part: "side", surface: "side" });
     }
     return facets;
   }
-  if (kind === "tetrahedron" || kind === "octahedron" || kind === "dodecahedron" || kind === "icosahedron") return polyhedronFacets(kind, c, radius);
+  if (kind === "tetrahedron" || kind === "octahedron" || kind === "dodecahedron" || kind === "icosahedron") return polyhedronFacets(kind, c, radius).map((facet, index) => ({ ...facet, surface: `face-${index + 1}` }));
   if (!(height > 0)) return [];
   if ((kind === "cylinder" || kind === "cone") && unfold > 0) return unrolledRound(c, radius, height, kind === "cone", unfold);
   if (kind === "cylinder" || kind === "cone" || kind === "frustum") {
@@ -309,8 +309,8 @@ export function solidFacets(object: Record<string, any>): Facet[] {
     const bottom = circleRing(c, radius, c.z - half);
     const top = topRadius > 0 ? circleRing(c, topRadius, c.z + half) : [{ x: c.x, y: c.y, z: c.z + half }];
     const facets = roundSides(bottom, top, height, radius, topRadius);
-    if (topRadius > 0) facets.push({ points: top, normal: { x: 0, y: 0, z: 1 }, part: "face" });
-    facets.push({ points: [...bottom].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face" });
+    if (topRadius > 0) facets.push({ points: top, normal: { x: 0, y: 0, z: 1 }, part: "face", surface: "top" });
+    facets.push({ points: [...bottom].reverse(), normal: { x: 0, y: 0, z: -1 }, part: "face", surface: "bottom" });
     return facets;
   }
   return [];
@@ -327,7 +327,7 @@ function sphereBands(c: Point3, radii: Point3, upperHalf: boolean): Facet[] {
       const lat = (low + high) / 2, lon = (a + b) / 2;
       // An ellipsoid's normal at a point p is (p.x/a², p.y/b², p.z/c²).
       const normal = unit({ x: Math.cos(lat) * Math.cos(lon) / radii.x, y: Math.cos(lat) * Math.sin(lon) / radii.y, z: Math.sin(lat) / radii.z });
-      facets.push({ points: [at(low, a), at(low, b), at(high, b), at(high, a)], normal, part: "side" });
+      facets.push({ points: [at(low, a), at(low, b), at(high, b), at(high, a)], normal, part: "side", surface: "side" });
     }
   }
   return facets;

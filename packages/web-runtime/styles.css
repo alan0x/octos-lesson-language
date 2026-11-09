@@ -113,7 +113,7 @@
 .scene3d-highlight-latent[data-facing="back"] { pointer-events: none; }
 /* Its label names it while it faces the viewer, quietly until it is emphasized. */
 .scene3d-highlight-latent:not([class*="emphasis-"]) + .scene3d-highlight-label { opacity: .72; font-weight: 600; }
-.scene3d-highlight-latent[data-facing="back"]:not([class*="emphasis-"]) + .scene3d-highlight-label { display: none; }
+.scene3d-highlight-latent[data-facing="back"] + .scene3d-highlight-label { display: none; }
 /* A box face turned away: only its edges, dashed, behind the faces in front. */
 .scene3d-face-hidden { fill-opacity: 0; stroke-dasharray: 4 3; stroke-opacity: .55; pointer-events: none; }
 /* The scene fills what its card's title leaves, whatever the title's height,
@@ -133,7 +133,23 @@
 .scene3d-intersection { stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .scene3d-intersection-surface { stroke-width: 3.6; }
 .scene3d-highlight { pointer-events: none; vector-effect: non-scaling-stroke; }
-.scene3d-highlight-label { fill: #8d302a; paint-order: stroke; stroke: rgba(255,255,255,.94); stroke-width: 3px; font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; }
+.scene3d-highlight-label { pointer-events: none; fill: #8d302a; paint-order: stroke; stroke: rgba(255,255,255,.94); stroke-width: 3px; font: 700 11px/1 ui-sans-serif, system-ui, sans-serif; }
+.scene3d-highlight-label.scene3d-net-label { text-anchor: middle; dominant-baseline: central; fill: #244f4a; font-size: calc(11px / var(--scene3d-fit, 1)); }
+.scene3d-highlight-face.emphasis-focus { fill: #ffd84d; fill-opacity: .6; stroke: #e0a800; stroke-opacity: 1; }
+.scene3d-highlight-face.emphasis-supporting { fill: #ffe5a3; fill-opacity: .55; stroke: #d79a29; stroke-opacity: 1; }
+.scene3d-highlight-face.emphasis-warning { fill: #ffd1c6; fill-opacity: .65; stroke: #c2533d; stroke-opacity: 1; }
+.scene3d-highlight-face.emphasis-resolved { fill: #a9e4cd; fill-opacity: .65; stroke: #258261; stroke-opacity: 1; }
+/* A tint over a labelled face leaves the solid's original edges readable. */
+.scene3d-highlight-latent[class*="emphasis-"] { fill-opacity: .36; stroke-opacity: 0; }
+.scene3d-highlight-latent[data-facing="back"][class*="emphasis-"] { fill-opacity: 0; }
+.scene3d-face-glued { pointer-events: none; }
+.scene3d-selectable-face.emphasis-focus { --scene3d-mark: #dc9600; }
+.scene3d-selectable-face.emphasis-supporting { --scene3d-mark: #e6b34c; }
+.scene3d-selectable-face.emphasis-warning { --scene3d-mark: #df6042; }
+.scene3d-selectable-face.emphasis-resolved { --scene3d-mark: #2d9b57; }
+/* Keep the renderer's angle-dependent opacity and the solid's outline. */
+.scene3d-selectable-face[class*="emphasis-"] { fill: var(--scene3d-mark); }
+.scene3d-selectable-face.scene3d-facet-side[class*="emphasis-"] { stroke: var(--scene3d-mark); }
 .scene3d-fallback { grid-area: fallback; margin: 0; padding: 4px 12px 7px; color: #66736f; background: rgba(255,255,255,.6); font: 500 10px/1.35 ui-sans-serif, system-ui, sans-serif; }
 .diagram-preview { width: 100%; height: calc(100% - 24px); min-height: 168px; overflow: visible; }
 .diagram-region { fill: rgba(79,153,141,.08); stroke: none; transition: fill .2s ease, stroke .2s ease; }
