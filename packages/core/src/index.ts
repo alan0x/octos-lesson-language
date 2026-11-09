@@ -701,14 +701,18 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
   });
 }
 
-function collectAddressableContent(content: JsonObject): string[] {
-  const result = validateContentFragments(content, "/content");
+function collectAddressableContent(content: JsonObject, path = "/content"): string[] {
+  const result = validateContentFragments(content, path);
   for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
     if (!content?.[field]) continue;
-    for (const item of content[field]) {
+    for (const [index, item] of content[field].entries()) {
       if (item?.as) result.push(item.as);
       if (field === "objects" && item?.face_targets === true && typeof item.as === "string") {
-        result.push(...solidFaceKeys(item).map((face) => solidFaceTarget(item.as, face)));
+        const faces = solidFaceKeys(item).map((face) => solidFaceTarget(item.as, face));
+        if (ALIAS_PATTERN.test(item.as) && faces.some((face) => !ALIAS_PATTERN.test(face))) {
+          fail("OLL_INVALID_ALIAS", `${path}/objects/${index}/as`, "Shorten the object alias to leave room for its face target names");
+        }
+        result.push(...faces);
       }
     }
   }
@@ -1518,7 +1522,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
               fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/source/selection`, `Selection '${action.source.selection}' is not part of this lesson's ink`);
             }
           }
-          const fragments = collectAddressableContent(action.content);
+          const fragments = collectAddressableContent(action.content, `${actionPath}/content`);
           const uniqueFragments = new Set<string>();
           for (const fragment of fragments) {
             requireAlias(fragment, `${actionPath}/content`);
@@ -1607,7 +1611,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           // A revision that declares addressable parts (a point added to a
           // grid) makes exactly those parts addressable from then on; one that
           // declares none keeps the card's existing parts.
-          const revisedFragments = collectAddressableContent(action.content);
+          const revisedFragments = collectAddressableContent(action.content, `${actionPath}/content`);
           if (revisedFragments.length) {
             const unique = new Set<string>();
             for (const fragment of revisedFragments) {

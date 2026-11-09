@@ -816,31 +816,34 @@ function faceVerticesKey(points: Point3d[]): string {
 }
 
 /** An opted-in box face named in its closed position follows the corresponding hinge. */
-function unfoldingHighlights(content: Record<string, any>): Array<Record<string, any>> {
+function boxFaceHighlights(content: Record<string, any>): Array<Record<string, any>> {
   const highlights: Array<Record<string, any>> = content.highlights ?? [];
   if (!highlights.some((highlight) => highlight.kind === "face" && highlight.shown === "when_emphasized")) return highlights;
-  const openFaces = new Map<string, Point3d[] | undefined>();
+  const faces = new Map<string, { points: Point3d[]; unfolded: boolean } | undefined>();
   for (const object of content.objects ?? []) {
-    if (object.kind !== "box" || object.face_targets !== true || !(Number(object.unfold) > 0)) continue;
-    const opened = solidFacets(object);
-    solidFacets({ ...object, unfold: 0 }).forEach((closed, index) => {
-      const key = faceVerticesKey(closed.points);
+    if (object.kind !== "box" || object.face_targets !== true) continue;
+    const unfolded = Number(object.unfold) > 0;
+    const closed = solidFacets({ ...object, unfold: 0 });
+    const shown = unfolded ? solidFacets(object) : closed;
+    closed.forEach((face, index) => {
+      const key = faceVerticesKey(face.points);
+      const points = shown[index]?.points;
       // Coincident faces have no unique hinge to follow.
-      openFaces.set(key, openFaces.has(key) ? undefined : opened[index]?.points);
+      faces.set(key, points && !faces.has(key) ? { points, unfolded } : undefined);
     });
   }
-  if (!openFaces.size) return highlights;
+  if (!faces.size) return highlights;
   return highlights.map((highlight) => {
     if (highlight.kind !== "face" || highlight.shown !== "when_emphasized") return highlight;
-    const points = openFaces.get(faceVerticesKey(highlight.points));
-    return points ? { ...highlight, points, unfolded: true } : highlight;
+    const face = faces.get(faceVerticesKey(highlight.points));
+    return face ? { ...highlight, ...face, tracksFace: true } : highlight;
   });
 }
 
 function prepareScene(content: Record<string, any>, variables: Record<string, number>, prior?: PreparedScene): PreparedScene {
   const objects = content.objects ?? [];
   const meshKey = JSON.stringify([objects, expressionVariables(objects, variables)]);
-  const highlights = unfoldingHighlights(content);
+  const highlights = boxFaceHighlights(content);
   return {
     meshKey,
     baseKey: JSON.stringify([content.axes, meshKey]),
@@ -1084,6 +1087,7 @@ function renderScene(
       } else {
         const latent = highlight.shown === "when_emphasized";
         const face = polygon(svg, points, view, color, .42, `scene3d-highlight scene3d-highlight-face${latent ? " scene3d-highlight-latent" : ""}`);
+        if (highlight.tracksFace) face.classList.add("scene3d-tracked-highlight");
         face.dataset.id = id;
         const projected = points.map((point) => projectScene3dPoint(point, view));
         if (highlight.unfolded) netFace = projected;

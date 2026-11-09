@@ -436,10 +436,10 @@ test("solids on any convex base, truncated pyramids, ellipsoids, and nets that u
 });
 
 test("face targets normalize independently and require a compatible player", () => {
-  const scene = (target: string) => inkLesson([grid, {
+  const scene = (target: string, alias = "can") => inkLesson([grid, {
     do: "write", as: "solids", kind: "scene3d", role: "diagram", place: { relation: "new_region" },
     content: { fallback: "A cylinder.", camera: { yaw: .72, pitch: .55, zoom: 1 }, objects: [
-      { as: "can", kind: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 4, face_targets: true },
+      { as: alias, kind: "cylinder", center: { x: 0, y: 0, z: 0 }, radius: 2, height: 4, face_targets: true },
     ] },
   }, { do: "emphasize", target: `solids#${target}`, emphasis: "focus" }]);
   const events = normalizeAuthoringLesson(scene("can-top-face"), { ...host, resourceContext: inkContext });
@@ -451,4 +451,6 @@ test("face targets normalize independently and require a compatible player", () 
   assert.ok(requirements.requiredCapabilities.includes("scene3d:face-targets"));
   assert.equal(requirements.minimumPlayerVersion, "0.10.0");
   rejectsWith(scene("can-side-1-face"), "OLL_REFERENCE_NOT_FOUND");
+  const longAlias = "a".repeat(64);
+  rejectsWith(scene(longAlias, longAlias), "OLL_INVALID_ALIAS", "/steps/0/beats/0/actions/1/content/objects/0/as");
 });
