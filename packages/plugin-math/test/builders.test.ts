@@ -5,6 +5,7 @@ import {
   MATH_BUILDERS,
   MATH_PLUGIN_MANIFEST,
   buildCirclePolygons,
+  buildFunctionPlot,
   buildUnitCircle,
   type BuiltRecipe,
 } from "../src/index.js";
@@ -25,7 +26,7 @@ const sides = { as: "n1", initial: 6, min: 3, max: 96, label: "sides", control: 
 
 test("the manifest names the math plugin and its builders", () => {
   assert.equal(MATH_PLUGIN_MANIFEST.id, "math");
-  assert.deepEqual(Object.keys(MATH_BUILDERS).sort(), ["circle_polygon_bounds", "unit_circle_projection"]);
+  assert.deepEqual(Object.keys(MATH_BUILDERS).sort(), ["circle_polygon_bounds", "function_plot", "unit_circle_projection"]);
 });
 
 test("a unit circle with a draggable angle validates, alone or with its graph", () => {
@@ -80,4 +81,35 @@ test("regular polygons in a circle validate, inscribed alone or with the circums
   assert.deepEqual(content.bindings.map((b: { target: string }) => b.target), ["inscribed.sides", "circumscribed.sides"]);
   // The outer polygon fits at the smallest side count: 2 / cos(π/3) * 1.18.
   assert.ok(Math.abs(content.axes.x.max - 4.72) < 1e-9);
+});
+
+test("a function plot names its curves and makes sample points follow the primary curve", () => {
+  const x = { as: "n1", initial: 1, min: -3, max: 3, label: "x of A", control: { kind: "slider", step: 0.25 } };
+  const x2 = { as: "n2", initial: 2, min: -3, max: 3, label: "x of B", control: { kind: "slider", step: 0.25 } };
+  const secant = buildFunctionPlot({
+    as: "plot", role: "main_visual", place: { relation: "new_region" }, title: "Parabola",
+    axes: { x: { min: -3, max: 3, label: "x" }, y: { min: -1, max: 9, label: "y" } },
+    curves: [{ expression: "x^2", label: "y = x^2" }, { expression: "x", label: "y = x" }],
+    samples: [{ x: 1, y: 1, label: "A", x_expression: "n1" }, { x: 2, y: 4, label: "B", x_expression: "n2" }],
+  });
+  validateAuthoringLesson(lessonWith(secant, [x, x2]));
+  const content = (secant.actions[0] as { content: Record<string, any> }).content;
+  assert.deepEqual(content.curves.map((curve: { as: string }) => curve.as), ["primary-curve", "curve-02"]);
+  assert.deepEqual(content.bindings, [
+    { target: "moving-point.x", expression: "n1" }, { target: "moving-point.y", expression: "n1^2" },
+    { target: "second-point.x", expression: "n2" }, { target: "second-point.y", expression: "n2^2" },
+  ]);
+  assert.equal(content.measurement, "secant");
+
+  const slope = { as: "n1", initial: 2, min: -3, max: 3, label: "k", control: { kind: "slider", step: 0.1 } };
+  const references = buildFunctionPlot({
+    as: "line", role: "main_visual", place: { relation: "new_region" },
+    axes: { x: { min: -3, max: 3 }, y: { min: -9, max: 9 } },
+    curves: [{ expression: "n1*x", label: "y = kx" }],
+    references: [{ x: 0, y: 0, label: "A" }, { x: 1, y: 2, label: "B" }],
+  });
+  validateAuthoringLesson(lessonWith(references, [slope]));
+  const fixed = (references.actions[0] as { content: Record<string, any> }).content;
+  assert.deepEqual(fixed.bindings, [{ target: "reference-a.y", expression: "n1*0" }, { target: "reference-b.y", expression: "n1*1" }]);
+  assert.equal(fixed.sample_input, "fixed_x");
 });

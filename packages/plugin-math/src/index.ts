@@ -231,8 +231,72 @@ export function buildCirclePolygons(input: CirclePolygonsInput): BuiltRecipe {
   };
 }
 
+
+// -------------------------------------------------------------- function plot
+
+/** The curve name of curve `index` (0-based): the first is the primary curve. */
+export const functionCurveId = (index: number) => (index === 0 ? "primary-curve" : `curve-${String(index + 1).padStart(2, "0")}`);
+
+/** Replaces a whole-word identifier, the way bindings substitute x. */
+function replaceIdentifier(expression: string, source: string, target: string): string {
+  return expression.replace(new RegExp(`\\b${source}\\b`, "gu"), target);
+}
+
+export interface FunctionPlotInput {
+  as: string;
+  role: string;
+  place: Placement | Record<string, unknown>;
+  title?: string;
+  /** Axes as the plot shows them; the caller decides the viewport. */
+  axes: Record<string, unknown>;
+  /** Curves in order; the first is the primary curve the points follow. */
+  curves: Array<Record<string, unknown> & { expression: string }>;
+  /**
+   * Points that move along the primary curve: x follows `x_expression`, y is
+   * the primary curve at that x. Two points are A and B of a secant.
+   */
+  samples?: Array<{ x: number; y: number; label: string; x_expression: string }>;
+  /** Fixed-x points whose y follows the primary curve as its parameters change (slope references). */
+  references?: Array<{ x: number; y: number; label: string }>;
+}
+
+export const FUNCTION_PLOT_POINT_IDS = { samples: ["moving-point", "second-point"], references: ["reference-a", "reference-b"] } as const;
+
+export function buildFunctionPlot(input: FunctionPlotInput): BuiltRecipe {
+  const primary = input.curves[0]!.expression;
+  const content: Record<string, unknown> = {
+    ...(input.title !== undefined ? { title: input.title } : {}),
+    axes: input.axes,
+    curves: input.curves.map((curve, index) => ({ as: functionCurveId(index), ...curve })),
+  };
+  if (input.samples?.length) {
+    content.points = input.samples.map((sample, index) => ({ as: FUNCTION_PLOT_POINT_IDS.samples[index], x: sample.x, y: sample.y, label: sample.label }));
+    content.bindings = input.samples.flatMap((sample, index) => {
+      const point = FUNCTION_PLOT_POINT_IDS.samples[index];
+      return [{ target: `${point}.x`, expression: sample.x_expression },
+        { target: `${point}.y`, expression: replaceIdentifier(primary, "x", sample.x_expression) }];
+    });
+    if (input.samples.length === 2) content.measurement = "secant";
+  } else if (input.references?.length) {
+    content.points = input.references.map((reference, index) => ({ as: FUNCTION_PLOT_POINT_IDS.references[index], x: reference.x, y: reference.y, label: reference.label }));
+    content.bindings = input.references.map((reference, index) => ({ target: `${FUNCTION_PLOT_POINT_IDS.references[index]}.y`, expression: replaceIdentifier(primary, "x", String(reference.x)) }));
+    content.measurement = "secant";
+    content.sample_input = "fixed_x";
+  }
+  return {
+    actions: [{ do: "write", as: input.as, kind: "plot", role: input.role, content, place: input.place } as AuthoringAction],
+    whole: input.as,
+    parts: {
+      whole: input.as,
+      primary_curve: `${input.as}#primary-curve`,
+      ...(input.samples?.length ? { moving_point: `${input.as}#moving-point` } : {}),
+    },
+  };
+}
+
 /** The math plugin's recipe builders, by recipe name. */
 export const MATH_BUILDERS = {
+  function_plot: buildFunctionPlot,
   unit_circle_projection: buildUnitCircle,
   circle_polygon_bounds: buildCirclePolygons,
 } as const;
