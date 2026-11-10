@@ -300,9 +300,16 @@ export function buildFunctionPlot(input: FunctionPlotInput): BuiltRecipe {
   };
 }
 
+export {
+  SOLID_SCENE_CAMERA, baseCorners, boxFaces, buildSolid, compositeHeight, describeSolid, solidObjects, solidUnfolds, solidZRange,
+  type BoxFaceNames, type CompositeSolid, type Solid, type SolidBase, type SolidSceneInput, type SolidShape,
+} from "./solids.js";
+import { buildSolid } from "./solids.js";
+
 /** The math plugin's recipe builders, by recipe name. */
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
+  solid_3d: buildSolid,
   unit_circle_projection: buildUnitCircle,
   circle_polygon_bounds: buildCirclePolygons,
 } as const;
