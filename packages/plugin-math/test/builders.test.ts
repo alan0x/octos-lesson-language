@@ -26,7 +26,7 @@ const sides = { as: "n1", initial: 6, min: 3, max: 96, label: "sides", control: 
 
 test("the manifest names the math plugin and its builders", () => {
   assert.equal(MATH_PLUGIN_MANIFEST.id, "math");
-  assert.deepEqual(Object.keys(MATH_BUILDERS).sort(), ["circle_and_arc", "circle_area_rearrangement", "circle_polygon_bounds", "coordinate_circle", "function_plot", "geometric_rearrangement", "rectangle_unit_square_array", "solid_3d", "unit_circle_projection"]);
+  assert.deepEqual(Object.keys(MATH_BUILDERS).sort(), ["circle_and_arc", "circle_area_rearrangement", "circle_polygon_bounds", "coordinate_circle", "cube_with_section", "function_plot", "function_surface_with_section", "geometric_rearrangement", "implicit_surface_with_section", "rectangle_unit_square_array", "solid_3d", "unit_circle_projection"]);
 });
 
 test("a unit circle with a draggable angle validates, alone or with its graph", () => {

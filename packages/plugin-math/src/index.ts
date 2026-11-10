@@ -310,6 +310,16 @@ export {
 } from "./rearrangement.js";
 import { buildCircleAndArc, buildCircleAreaRearrangement, buildCoordinateCircle, buildGeometricRearrangement, buildUnitSquareArray } from "./geometry.js";
 
+export {
+  SURFACE_SCENE_CAMERA, buildCubeWithSection, buildFunctionSurface, buildImplicitSurface,
+  type FunctionSurfaceInput, type ImplicitSurfaceInput, type SectionInput,
+} from "./surfaces.js";
+export {
+  buildImplicitSurfaceObject, implicitSurfaceDomain,
+  type ImplicitSurfaceDomain, type ImplicitSurfaceObject, type Scene3dRange,
+} from "./scene3d-surfaces.js";
+import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from "./surfaces.js";
+
 /** The math plugin's recipe builders, by recipe name. */
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
@@ -318,6 +328,9 @@ export const MATH_BUILDERS = {
   rectangle_unit_square_array: buildUnitSquareArray,
   circle_area_rearrangement: buildCircleAreaRearrangement,
   geometric_rearrangement: buildGeometricRearrangement,
+  cube_with_section: buildCubeWithSection,
+  function_surface_with_section: buildFunctionSurface,
+  implicit_surface_with_section: buildImplicitSurface,
   solid_3d: buildSolid,
   unit_circle_projection: buildUnitCircle,
   circle_polygon_bounds: buildCirclePolygons,

@@ -62,3 +62,18 @@ test("every rigid rearrangement construction builds a valid proof figure", () =>
   }
   assert.throws(() => buildGeometricRearrangement({ as: "x", role: "r", place, construction: "nope" as RearrangementConstruction, legs: { a: 1, b: 1 } }), /Unsupported/);
 });
+
+test("the cube and both surfaces build valid scenes whose section follows a number", async () => {
+  const { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } = await import("../src/index.js");
+  const h = slider("n1", 0.5, -1, 1);
+  const cube = buildCubeWithSection({ as: "cube", role: "main_visual", place, t, title: "正方体", section: { value: 0.5, variable: "n1" } });
+  validates(cube, [h]);
+  assert.equal(cube.parts.primary_control, "cube#section");
+  const surface = buildFunctionSurface({ as: "surf", role: "main_visual", place, t, title: "曲面", expression: "x^2+y^2",
+    x_range: { min: -2, max: 2 }, y_range: { min: -2, max: 2 }, samples: 12, axis: "z", section: { value: 1, variable: "n1" } });
+  validates(surface, [slider("n1", 1, 0, 8)]);
+  const sphere = buildImplicitSurface({ as: "ball", role: "main_visual", place, t, title: "球面", expression: "x^2+y^2+z^2", level: 1, axis: "z", section: { value: 0 } });
+  validates(sphere, []);
+  assert.equal(((sphere.actions[0] as { content: Record<string, any> }).content.bindings), undefined);
+  assert.throws(() => buildImplicitSurface({ as: "x", role: "r", place, t, title: "x", expression: "x^2+y^2+z^2", level: -1, axis: "z", section: { value: 0 } }), "a sphere of radius² −1 has no points");
+});
