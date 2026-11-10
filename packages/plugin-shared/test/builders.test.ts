@@ -43,3 +43,11 @@ test("a process diagram is a chain of steps, or a cycle back to the first", () =
   ]);
   assert.deepEqual((cycle.edges as unknown[])[0], { as: "edge-01", from: "step-01", to: "step-02", label: "cools" });
 });
+
+test("every subject plugin depends on the shared plugin at its current version", async () => {
+  const { MATH_PLUGIN_MANIFEST } = await import("../../plugin-math/src/index.js");
+  const { PHYSICS_PLUGIN_MANIFEST } = await import("../../plugin-physics/src/index.js");
+  for (const manifest of [MATH_PLUGIN_MANIFEST, PHYSICS_PLUGIN_MANIFEST]) {
+    assert.deepEqual(manifest.depends, { shared: SHARED_PLUGIN_MANIFEST.version }, manifest.id);
+  }
+});

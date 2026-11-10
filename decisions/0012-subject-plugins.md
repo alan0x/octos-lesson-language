@@ -1,6 +1,6 @@
 # 0012：学科插件
 
-状态：Proposed（待产品负责人确认）
+状态：Accepted（产品负责人 2026-11-09 确认；P1 实现已合并：#34–#39）
 日期：2026-11-09（学科插件计划，决定 S1–S9：octos-learn `docs/SUBJECT_EXPANSION_PLAN.md`）
 取代：[0004](0004-interactive-whiteboard-mvp-boundaries.md) 中“MVP 不实现通用插件系统”一条。0004 的其余各条（共享变量状态、Runtime 留在本仓库、学生原稿单独保存）继续有效。
 
