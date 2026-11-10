@@ -320,6 +320,62 @@ test("incremental restore adds newly delivered variables without replaying prior
   assert.deepEqual(restored.events[0], delivered[0]);
 });
 
+for (const hasPriorReflection of [false, true]) {
+  test(`incremental restore preserves playback when appending ${hasPriorReflection ? "another" : "the first"} reflection`, () => {
+    const store = new MemoryStore();
+    const prefix = structuredClone(unitCircleEvents.slice(0, 2));
+    const anchor = prefix[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flat())
+      .find(action => action.op === "board.create")!.node!.id;
+    const reflection = { as: "first-reflection", prompt: "What changes?", answer: "The point moves.", anchor,
+      availability: { kind: "after_lesson" as const } };
+    if (hasPriorReflection) prefix[0]!.lesson!.reflections = [reflection];
+    else delete prefix[0]!.lesson!.reflections;
+    const first = new BrowserLessonSession(prefix, store, "appended-reflection", { incremental: true });
+    while (first.status !== "waiting") first.advance();
+    first.changeStudentVariable("theta", Math.PI / 2, { control: "slider", input: "mouse" });
+    const savedCursor = first.cursor;
+    const savedBoard = structuredClone(first.projection.board);
+
+    const delivered = structuredClone(prefix);
+    delivered[0]!.lesson!.reflections = [...(delivered[0]!.lesson!.reflections ?? []),
+      { ...reflection, as: "next-reflection", prompt: "What stays the same?", answer: "The radius." }];
+    delivered.push(structuredClone(unitCircleEvents[2]!));
+    const restored = new BrowserLessonSession([structuredClone(delivered[0]!)], store, "appended-reflection",
+      { incremental: true, deliveredProgram: delivered });
+
+    assert.equal(restored.cursor, savedCursor);
+    assert.deepEqual(restored.projection.board, savedBoard);
+    assert.deepEqual(restored.studentOperations, first.studentOperations);
+    assert.deepEqual(restored.events[0], delivered[0]);
+    assert.equal(restored.reflections.length, hasPriorReflection ? 2 : 1);
+    restored.appendEvents(delivered.slice(prefix.length));
+    assert.equal(restored.cursor, savedCursor, "new Steps append without replaying the old ones");
+    assert.ok(restored.advance());
+    assert.equal(restored.cursor, savedCursor + 1);
+    restored.pause();
+  });
+}
+
+for (const change of ["prompt", "answer", "anchor", "remove"] as const) {
+  test(`incremental restore rejects an existing reflection ${change} change`, () => {
+    const store = new MemoryStore();
+    const prefix = structuredClone(unitCircleEvents.slice(0, 2));
+    const anchor = prefix[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flat())
+      .find(action => action.op === "board.create")!.node!.id;
+    prefix[0]!.lesson!.reflections = [{ as: "reflection", prompt: "What changes?", answer: "The point moves.", anchor,
+      availability: { kind: "after_lesson" } }];
+    const first = new BrowserLessonSession(prefix, store, "changed-reflection", { incremental: true });
+    while (first.status !== "waiting") first.advance();
+    const delivered = structuredClone(prefix);
+    if (change === "remove") delete delivered[0]!.lesson!.reflections;
+    else delivered[0]!.lesson!.reflections![0]![change] = change === "anchor" ? "different-node" : "Changed meaning";
+    const restored = new BrowserLessonSession([structuredClone(delivered[0]!)], store, "changed-reflection",
+      { incremental: true, deliveredProgram: delivered });
+    assert.equal(restored.cursor, 0, "changing existing teaching content still invalidates the checkpoint");
+    assert.equal(store.values.has("changed-reflection"), false);
+  });
+}
+
 test("narration pacing accounts for reading load, delivery, and speed", () => {
   const short = narrationDuration("先看这里。", "neutral");
   const long = narrationDuration(
