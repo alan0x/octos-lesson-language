@@ -300,9 +300,24 @@ export {
 } from "./solids.js";
 import { buildSolid } from "./solids.js";
 
+export {
+  buildCircleAndArc, buildCircleAreaRearrangement, buildCoordinateCircle, buildGeometricRearrangement, buildUnitSquareArray,
+  type CircleAndArcInput, type CircleAreaInput, type CoordinateCircleInput, type GeometricRearrangementInput, type Translate, type UnitSquareArrayInput,
+} from "./geometry.js";
+export {
+  REARRANGEMENT_CONSTRUCTIONS, REARRANGEMENT_FACTS, rearrangementRecipe,
+  type RearrangementConstruction, type RearrangementRecipe, type RigidPose,
+} from "./rearrangement.js";
+import { buildCircleAndArc, buildCircleAreaRearrangement, buildCoordinateCircle, buildGeometricRearrangement, buildUnitSquareArray } from "./geometry.js";
+
 /** The math plugin's recipe builders, by recipe name. */
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
+  circle_and_arc: buildCircleAndArc,
+  coordinate_circle: buildCoordinateCircle,
+  rectangle_unit_square_array: buildUnitSquareArray,
+  circle_area_rearrangement: buildCircleAreaRearrangement,
+  geometric_rearrangement: buildGeometricRearrangement,
   solid_3d: buildSolid,
   unit_circle_projection: buildUnitCircle,
   circle_polygon_bounds: buildCirclePolygons,
