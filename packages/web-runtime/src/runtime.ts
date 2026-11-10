@@ -88,13 +88,19 @@ function lessonOpenCanExtend(
   const savedVariables = savedCopy.lesson?.variables ?? [];
   const deliveredTasks = deliveredCopy.lesson?.tasks ?? [];
   const savedTasks = savedCopy.lesson?.tasks ?? [];
+  const deliveredReflections = deliveredCopy.lesson?.reflections ?? [];
+  const savedReflections = savedCopy.lesson?.reflections ?? [];
+  // Later teaching turns may add thinking questions as well as variables
+  // and tasks. Existing definitions must still retain their meaning.
   if (deliveredCopy.lesson) {
     delete deliveredCopy.lesson.tasks;
     delete deliveredCopy.lesson.variables;
+    delete deliveredCopy.lesson.reflections;
   }
   if (savedCopy.lesson) {
     delete savedCopy.lesson.tasks;
     delete savedCopy.lesson.variables;
+    delete savedCopy.lesson.reflections;
   }
   if (JSON.stringify(deliveredCopy) !== JSON.stringify(savedCopy)) return false;
   const deliveredByAlias = new Map(
@@ -103,10 +109,15 @@ function lessonOpenCanExtend(
   const deliveredTasksByAlias = new Map(
     deliveredTasks.map((task) => [task.as, task]),
   );
+  const deliveredReflectionsByAlias = new Map(
+    deliveredReflections.map((reflection) => [reflection.as, reflection]),
+  );
   return savedVariables.every((variable) =>
     JSON.stringify(deliveredByAlias.get(variable.as)) === JSON.stringify(variable))
     && savedTasks.every((task) =>
-      JSON.stringify(deliveredTasksByAlias.get(task.as)) === JSON.stringify(task));
+      JSON.stringify(deliveredTasksByAlias.get(task.as)) === JSON.stringify(task))
+    && savedReflections.every((reflection) =>
+      JSON.stringify(deliveredReflectionsByAlias.get(reflection.as)) === JSON.stringify(reflection));
 }
 
 function checkpointPrefixMatchesDeliveredProgram(
