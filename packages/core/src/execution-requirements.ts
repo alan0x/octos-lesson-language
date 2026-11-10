@@ -174,7 +174,9 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     }
     for (const beat of event.step?.beats ?? []) {
       if (beat.pace === "continuous") add("beat-pace:continuous", `${path}/step/beats/${beat.id}/pace`);
-      for (const actions of Object.values(beat.stage)) for (const action of actions) {
+      // Scan in playback order so a revision sees the kind of a node created
+      // earlier in the beat, regardless of the stage keys' order in JSON.
+      for (const phase of ["before_speech", "during_speech", "after_speech"] as const) for (const action of beat.stage[phase] ?? []) {
         const actionPath = `${path}/actions/${action.action_id}`;
         add(`action:${action.op}`, actionPath);
         if (action.op === "board.emphasize" && action.emphasis === "none") add("emphasis:none", `${actionPath}/emphasis`);

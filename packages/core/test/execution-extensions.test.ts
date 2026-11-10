@@ -13,12 +13,17 @@ const physics = (version: string, introducedIn = "0.2.0"): ExecutionExtension =>
   detect: (content, kind, use) => { if (kind === "geometry" && content.title === "vectors") use("plugin:physics/vectors@1"); },
 });
 
-function events(title: string) {
+function events(title: string, revisedTitle?: string) {
+  const geometry = { title, axes: { x: { min: -1, max: 1 }, y: { min: -1, max: 1 }, equal_scale: true }, points: [{ as: "o", x: 0, y: 0 }] };
   const lesson = {
     dsl: "octos.lesson", version: "0.1", profile: "authoring",
     lesson: { mode: "explain", language: "en-US", title: "Forces", goals: ["See the forces"] },
-    steps: [{ key: "s", purpose: "Show", beats: [{ key: "b", say: "Look.", actions: [{ do: "write", as: "card", kind: "geometry", role: "diagram",
-      content: { title, axes: { x: { min: -1, max: 1 }, y: { min: -1, max: 1 }, equal_scale: true }, points: [{ as: "o", x: 0, y: 0 }] }, place: { relation: "new_region" } }] }] }],
+    steps: [{ key: "s", purpose: "Show", beats: [{ key: "b", say: "Look.", actions: [
+      { do: "write", as: "card", kind: "geometry", role: "diagram", content: geometry, place: { relation: "new_region" }, when: "before_speech" },
+      ...(revisedTitle === undefined ? [] : [{
+        do: "revise", target: "card", content: { ...geometry, title: revisedTitle }, reason: "Show vectors", when: "after_speech",
+      }]),
+    ] }] }],
     close: { summary: "Done.", focus: ["card"] },
   } as unknown as AuthoringLesson;
   return normalizeAuthoringLesson(lesson, { lessonId: "l", boardId: "b", baseRevision: 0 });
@@ -82,16 +87,14 @@ test("a lesson that needs a plugin must declare its capabilities, even at core 0
   assert.throws(() => assertExecutionDeclaration(vectors, { minimumPlayerVersion: "0.1.0" }, { extensions }), /require a capability declaration/);
 });
 
-test("a revision reaches detectors with the kind of the node it revises", () => {
-  const base = events("plain");
-  const card = base.flatMap((event) => event.step?.beats ?? []).flatMap((beat) => Object.values(beat.stage).flat()).find((action) => action.node)!;
-  const revision = structuredClone(base);
-  const beat = revision.find((event) => event.step)!.step!.beats[0]!;
-  beat.stage.after_speech = [...(beat.stage.after_speech ?? []), {
-    action_id: "l:action:revise", op: "board.revise", target: { node_id: card.node!.id },
-    revision: { content: { ...card.node!.content, title: "vectors" }, reason: "now with vectors" },
-  } as never];
-  assert.deepEqual(deriveExecutionRequirements(revision, { extensions: [physics("0.2.0")] }).requiredPlugins, { physics: "0.2.0" });
+test("a revision reaches detectors with the node kind regardless of stage key order", () => {
+  const revised = events("plain", "vectors");
+  const beat = revised.find((event) => event.step)!.step!.beats[0]!;
+  const { before_speech, during_speech, after_speech } = beat.stage;
+  beat.stage = { after_speech, during_speech, before_speech };
+  const extensions = [physics("0.2.0")];
+  assert.deepEqual(deriveExecutionRequirements(revised, { extensions }).requiredPlugins, { physics: "0.2.0" });
+  assert.throws(() => assertExecutionDeclaration(revised, { minimumPlayerVersion: "0.1.0" }, { extensions }), /require a capability declaration/);
 });
 
 test("a plugin id that names an inherited property is still counted correctly", () => {
