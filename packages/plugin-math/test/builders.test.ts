@@ -113,3 +113,19 @@ test("a function plot names its curves and makes sample points follow the primar
   assert.deepEqual(fixed.bindings, [{ target: "reference-a.y", expression: "n1*0" }, { target: "reference-b.y", expression: "n1*1" }]);
   assert.equal(fixed.sample_input, "fixed_x");
 });
+
+test("a sample point at a compound x stays on the curve, and the builder names every curve", () => {
+  const plot = buildFunctionPlot({
+    as: "p", role: "diagram", place: { relation: "new_region" }, axes: { x: { min: -3, max: 3 }, y: { min: 0, max: 9 } },
+    curves: [{ as: "custom", expression: "x^2", label: "y = x^2" }],
+    samples: [{ x: 3, y: 9, label: "P", x_expression: "theta+1" }],
+    references: [],
+  });
+  const content = (plot.actions[0] as { content: Record<string, any> }).content;
+  assert.equal(content.bindings[1].expression, "(theta+1)^2");
+  assert.equal(content.curves[0].as, "primary-curve");
+  assert.equal(plot.parts.primary_curve, "p#primary-curve");
+  const negative = buildFunctionPlot({ as: "q", role: "diagram", place: { relation: "new_region" }, axes: {},
+    curves: [{ expression: "x^2", label: "" }], references: [{ x: -1, y: 1, label: "A" }] });
+  assert.equal((negative.actions[0] as { content: Record<string, any> }).content.bindings[0].expression, "(-1)^2");
+});
