@@ -4,6 +4,8 @@
 
 ### Added
 
+- Subject plugin `octos-lesson-language/plugin-shared` (decision 0012, shared layer): `buildProcessDiagram` and `processDiagramContent`, a diagram of steps as a chain or as a cycle back to the first step, with stable step and edge names (`step-01`, `edge-01`, `edge-close`). `plugin-math` adds `buildFunctionPlot`: curve names (`primary-curve`, `curve-02`, …), sample points whose y follows the primary curve (two make a secant), and fixed-x slope references. Authoring helpers only.
+
 - Subject plugin `octos-lesson-language/plugin-math` (decision 0012, shared layer): the math plugin's manifest, its Jev subject line, and recipe builders that turn neutral input (recipe parameters, number expressions, caller-supplied text) into OLL authoring actions with stable part names. First builders: `buildUnitCircle` (unit circle with a draggable angle, optionally linked and grouped with its sin or cos graph) and `buildCirclePolygons` (regular polygons in a circle: inscribed, or inscribed and circumscribed as bounds on π). Coach and Studio are meant to call these instead of each writing the geometry. Authoring helpers only; no lesson contract or player change.
 
 - Ink runtime: `replaceSelectionWithAiPaths(artifactId, paths, expected, color?)` replaces the selected strokes with AI paths in one undoable command. It refuses (`INK_INVALID_RECORD`) unless the document, the selected stroke IDs and the selection and content revisions still match the captured `expected` snapshot. One undo restores the original strokes; the artifact ID is consumed like `writeAiPaths`. Runtime API only; no lesson contract change.
