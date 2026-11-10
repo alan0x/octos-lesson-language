@@ -237,9 +237,14 @@ export function buildCirclePolygons(input: CirclePolygonsInput): BuiltRecipe {
 /** The curve name of curve `index` (0-based): the first is the primary curve. */
 export const functionCurveId = (index: number) => (index === 0 ? "primary-curve" : `curve-${String(index + 1).padStart(2, "0")}`);
 
-/** Replaces a whole-word identifier, the way bindings substitute x. */
-function replaceIdentifier(expression: string, source: string, target: string): string {
-  return expression.replace(new RegExp(`\\b${source}\\b`, "gu"), target);
+/**
+ * Substitutes x in the primary curve with an expression. A plain variable or
+ * non-negative number is inserted as it is; anything else is parenthesized so
+ * x^2 at "theta+1" stays (theta+1)^2.
+ */
+function substituteX(expression: string, value: string): string {
+  const atomic = /^(?:[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?)$/.test(value);
+  return expression.replace(/\bx\b/gu, atomic ? value : `(${value})`);
 }
 
 export interface FunctionPlotInput {
@@ -267,19 +272,20 @@ export function buildFunctionPlot(input: FunctionPlotInput): BuiltRecipe {
   const content: Record<string, unknown> = {
     ...(input.title !== undefined ? { title: input.title } : {}),
     axes: input.axes,
-    curves: input.curves.map((curve, index) => ({ as: functionCurveId(index), ...curve })),
+    // The builder names the curves; a caller's own "as" is ignored so the part names stay true.
+    curves: input.curves.map(({ as: _ignored, ...curve }, index) => ({ as: functionCurveId(index), ...curve })),
   };
   if (input.samples?.length) {
     content.points = input.samples.map((sample, index) => ({ as: FUNCTION_PLOT_POINT_IDS.samples[index], x: sample.x, y: sample.y, label: sample.label }));
     content.bindings = input.samples.flatMap((sample, index) => {
       const point = FUNCTION_PLOT_POINT_IDS.samples[index];
       return [{ target: `${point}.x`, expression: sample.x_expression },
-        { target: `${point}.y`, expression: replaceIdentifier(primary, "x", sample.x_expression) }];
+        { target: `${point}.y`, expression: substituteX(primary, sample.x_expression) }];
     });
     if (input.samples.length === 2) content.measurement = "secant";
   } else if (input.references?.length) {
     content.points = input.references.map((reference, index) => ({ as: FUNCTION_PLOT_POINT_IDS.references[index], x: reference.x, y: reference.y, label: reference.label }));
-    content.bindings = input.references.map((reference, index) => ({ target: `${FUNCTION_PLOT_POINT_IDS.references[index]}.y`, expression: replaceIdentifier(primary, "x", String(reference.x)) }));
+    content.bindings = input.references.map((reference, index) => ({ target: `${FUNCTION_PLOT_POINT_IDS.references[index]}.y`, expression: substituteX(primary, String(reference.x)) }));
     content.measurement = "secant";
     content.sample_input = "fixed_x";
   }
