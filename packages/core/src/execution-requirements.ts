@@ -47,7 +47,60 @@ const MORE_SOLIDS = new Set(["prism", "pyramid", "frustum", "hemisphere", "torus
 export interface ExecutionRequirements {
   minimumPlayerVersion: string;
   requiredCapabilities: string[];
+  /** Subject plugins the lesson needs, each with the lowest version that has every feature used. Absent when none. */
+  requiredPlugins?: Record<string, string>;
 }
+
+/**
+ * A subject plugin's runtime extension (decision 0012). The host installs it
+ * next to the player; lessons only name its features.
+ */
+export interface ExecutionExtension {
+  plugin: { id: string; version: string };
+  /** Feature name, `plugin:<id>/<name>@<major>`, to the plugin version that introduced it. */
+  features: Readonly<Record<string, string>>;
+  /** Reports the plugin features a node's or revision's content uses. */
+  detect?(content: Readonly<Record<string, unknown>>, kind: string | undefined, use: (feature: string) => void): void;
+}
+
+export interface ExecutionOptions {
+  /** Installed plugin extensions; their features join the core table. */
+  extensions?: readonly ExecutionExtension[];
+}
+
+const PLUGIN_ID = /^[a-z][a-z0-9-]{0,31}$/;
+const PLUGIN_FEATURE = /^plugin:([a-z][a-z0-9-]{0,31})\/[a-z0-9][a-z0-9-]{0,47}@[1-9]\d*$/;
+
+/**
+ * The core feature table plus the installed plugins' features. A plugin may
+ * only declare namespaced features of its own, introduced no later than its
+ * installed version; core features cannot be redefined.
+ */
+export function composeExecutionFeatures(extensions: readonly ExecutionExtension[] = []): Readonly<Record<string, string>> {
+  const table: Record<string, string> = { ...OLL_EXECUTION_FEATURES };
+  const plugins = new Set<string>();
+  for (const [index, extension] of extensions.entries()) {
+    const path = `extensions/${index}`;
+    const { id, version } = extension.plugin;
+    if (!PLUGIN_ID.test(id)) throw new ExecutionCapabilityError(`${path}/plugin/id`, `Invalid plugin id '${id}'`);
+    if (plugins.has(id)) throw new ExecutionCapabilityError(`${path}/plugin/id`, `Plugin '${id}' is installed twice`);
+    plugins.add(id);
+    compareExecutionVersions(version, version);
+    for (const [feature, minimum] of Object.entries(extension.features)) {
+      const match = PLUGIN_FEATURE.exec(feature);
+      if (!match || match[1] !== id) {
+        throw new ExecutionCapabilityError(`${path}/features`, `Plugin '${id}' may only declare features named 'plugin:${id}/<name>@<major>', not '${feature}'`);
+      }
+      if (compareExecutionVersions(minimum, version) > 0) {
+        throw new ExecutionCapabilityError(`${path}/features`, `Feature '${feature}' needs plugin ${id} ${minimum}, newer than installed ${version}`);
+      }
+      table[feature] = minimum;
+    }
+  }
+  return Object.freeze(table);
+}
+
+const pluginOf = (feature: string) => PLUGIN_FEATURE.exec(feature)?.[1];
 
 export class ExecutionCapabilityError extends Error {
   readonly code = "OLL_UNSUPPORTED_CAPABILITY";
@@ -69,16 +122,19 @@ export function compareExecutionVersions(left: string, right: string): number {
 }
 
 /** Inspect structural units only; never infer intention from narration or labels. */
-export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): ExecutionRequirements {
+export function deriveExecutionRequirements(events: readonly CanonicalEvent[], options: ExecutionOptions = {}): ExecutionRequirements {
+  const extensions = options.extensions ?? [];
+  const features = extensions.length ? composeExecutionFeatures(extensions) : OLL_EXECUTION_FEATURES;
   const required = new Set<string>();
   const add = (feature: string, path: string) => {
-    if (!Object.hasOwn(OLL_EXECUTION_FEATURES, feature)) {
+    if (!Object.hasOwn(features, feature)) {
       throw new ExecutionCapabilityError(path, `Unsupported executable capability '${feature}'`);
     }
     required.add(feature);
   };
-  const content = (value: Record<string, unknown> | undefined, path: string) => {
+  const content = (value: Record<string, unknown> | undefined, path: string, kind?: string) => {
     if (!value) return;
+    for (const extension of extensions) extension.detect?.(value, kind, (feature) => add(feature, path));
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     if (Array.isArray(value.objects) && value.objects.some((object) => object.face_targets === true)) add("scene3d:face-targets", path);
@@ -123,7 +179,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
           const relation = action.node.placement?.relation;
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
-          content(action.node.content, `${actionPath}/node/content`);
+          content(action.node.content, `${actionPath}/node/content`, String(action.node.kind));
           if (action.node.kind === "scene3d") {
             const scene = action.node.content as { objects?: Array<Record<string, unknown>>; bindings?: Array<{ target?: string }> };
             if ((scene.objects ?? []).some((object) => MORE_SOLIDS.has(String(object.kind)) || object.base !== undefined || object.top_scale !== undefined)) {
@@ -139,22 +195,39 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[]): 
     }
   }
   const requiredCapabilities = [...required].sort();
-  const minimumPlayerVersion = requiredCapabilities.reduce((version, feature) => {
-    const minimum = OLL_EXECUTION_FEATURES[feature]!;
-    return compareExecutionVersions(minimum, version) > 0 ? minimum : version;
-  }, "0.1.0");
-  return { minimumPlayerVersion, requiredCapabilities };
+  // Core features set the player version; plugin features set their plugin's version.
+  let minimumPlayerVersion = "0.1.0";
+  const requiredPlugins: Record<string, string> = {};
+  for (const feature of requiredCapabilities) {
+    const minimum = features[feature]!;
+    const plugin = pluginOf(feature);
+    if (plugin) {
+      if (!requiredPlugins[plugin] || compareExecutionVersions(minimum, requiredPlugins[plugin]!) > 0) requiredPlugins[plugin] = minimum;
+    } else if (compareExecutionVersions(minimum, minimumPlayerVersion) > 0) {
+      minimumPlayerVersion = minimum;
+    }
+  }
+  return { minimumPlayerVersion, requiredCapabilities, ...(Object.keys(requiredPlugins).length ? { requiredPlugins } : {}) };
 }
 
 export function assertExecutionSupported(
   events: readonly CanonicalEvent[],
   playerVersion = OLL_PLAYER_EXECUTION_VERSION,
-  supportedCapabilities: readonly string[] = Object.keys(OLL_EXECUTION_FEATURES),
+  supportedCapabilities?: readonly string[],
+  options: ExecutionOptions = {},
 ): ExecutionRequirements {
-  const requirements = deriveExecutionRequirements(events);
-  const available = new Set(supportedCapabilities);
+  const extensions = options.extensions ?? [];
+  const requirements = deriveExecutionRequirements(events, options);
+  const available = new Set(supportedCapabilities ?? Object.keys(composeExecutionFeatures(extensions)));
   if (compareExecutionVersions(requirements.minimumPlayerVersion, playerVersion) > 0) {
     throw new ExecutionCapabilityError("minimumPlayerVersion", `Lesson requires player ${requirements.minimumPlayerVersion}`);
+  }
+  for (const [plugin, minimum] of Object.entries(requirements.requiredPlugins ?? {})) {
+    const installed = extensions.find((extension) => extension.plugin.id === plugin)?.plugin.version;
+    if (!installed) throw new ExecutionCapabilityError("requiredPlugins", `Lesson requires the '${plugin}' plugin ${minimum}, which is not installed`);
+    if (compareExecutionVersions(minimum, installed) > 0) {
+      throw new ExecutionCapabilityError("requiredPlugins", `Lesson requires the '${plugin}' plugin ${minimum}; installed ${installed}`);
+    }
   }
   for (const capability of requirements.requiredCapabilities) {
     if (!available.has(capability)) throw new ExecutionCapabilityError("requiredCapabilities", `Player does not support '${capability}'`);
@@ -165,8 +238,10 @@ export function assertExecutionSupported(
 export function assertExecutionDeclaration(
   events: readonly CanonicalEvent[],
   declaration: { minimumPlayerVersion: string; requiredCapabilities?: readonly string[] },
+  options: ExecutionOptions = {},
 ): ExecutionRequirements {
-  const requirements = assertExecutionSupported(events);
+  const features = composeExecutionFeatures(options.extensions);
+  const requirements = assertExecutionSupported(events, undefined, undefined, options);
   if (compareExecutionVersions(declaration.minimumPlayerVersion, requirements.minimumPlayerVersion) < 0) {
     throw new ExecutionCapabilityError("minimumPlayerVersion", "Declared player version is lower than the content requires");
   }
@@ -181,10 +256,37 @@ export function assertExecutionDeclaration(
       }
     }
     for (const feature of declaration.requiredCapabilities) {
-      if (!Object.hasOwn(OLL_EXECUTION_FEATURES, feature)) {
+      if (!Object.hasOwn(features, feature)) {
         throw new ExecutionCapabilityError("requiredCapabilities", `Unsupported declared capability '${feature}'`);
       }
     }
   }
   return requirements;
 }
+
+/**
+ * Checks a lesson package's declared requirements against this player before
+ * any lesson event is read: its version, each core feature, and each plugin
+ * feature with the installed plugin. Messages name what is missing.
+ */
+export function assertDeclarationPlayable(
+  declaration: { minimumPlayerVersion: string; requiredCapabilities?: readonly string[] },
+  playerVersion = OLL_PLAYER_EXECUTION_VERSION,
+  options: ExecutionOptions = {},
+): void {
+  if (compareExecutionVersions(declaration.minimumPlayerVersion, playerVersion) > 0) {
+    throw new ExecutionCapabilityError("minimumPlayerVersion", `Lesson requires player ${declaration.minimumPlayerVersion}`);
+  }
+  const extensions = options.extensions ?? [];
+  const features = composeExecutionFeatures(extensions);
+  for (const feature of declaration.requiredCapabilities ?? []) {
+    if (Object.hasOwn(features, feature)) continue;
+    const plugin = pluginOf(feature);
+    if (!plugin) throw new ExecutionCapabilityError("requiredCapabilities", `Player does not support '${feature}'`);
+    const installed = extensions.find((extension) => extension.plugin.id === plugin)?.plugin.version;
+    throw new ExecutionCapabilityError("requiredPlugins", installed
+      ? `Lesson uses '${feature}', which the installed '${plugin}' plugin ${installed} does not have`
+      : `Lesson requires the '${plugin}' plugin, which is not installed`);
+  }
+}
+

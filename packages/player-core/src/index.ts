@@ -1,6 +1,7 @@
 import {
   OllError,
   assertExecutionSupported,
+  type ExecutionExtension,
   applyCanonicalAction,
   applyLessonClose,
   assertDeepEqual,
@@ -31,6 +32,8 @@ const PHASES: ActionPhase[] = ["before_speech", "during_speech", "after_speech"]
 
 export interface PlaybackCompileOptions {
   allowIncomplete?: boolean;
+  /** Installed subject-plugin extensions (decision 0012); a lesson needing a missing or older plugin is refused. */
+  executionExtensions?: readonly ExecutionExtension[];
 }
 
 export class PlaybackError extends OllError {
@@ -58,7 +61,7 @@ export function compilePlaybackOperations(
   events: CanonicalEvent[],
   options: PlaybackCompileOptions = {},
 ): PlaybackOperation[] {
-  assertExecutionSupported(events);
+  assertExecutionSupported(events, undefined, undefined, { extensions: options.executionExtensions });
   if (events.length < 1) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open");
   if (!options.allowIncomplete && events.length < 2) playbackFail("OLL_PLAYBACK_BOUNDARY", "events", "Playback requires lesson.open and lesson.close");
   const lessonId = events[0]!.lesson_id;
