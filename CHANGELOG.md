@@ -4,6 +4,8 @@
 
 ### Added
 
+- Plugin extension point for execution features (decision 0012). A host passes installed `ExecutionExtension`s (plugin id and version, namespaced features `plugin:<id>/<name>@<major>` each mapped to the plugin version that introduced it, and an optional `detect` over node content). `composeExecutionFeatures` joins them to the core table and rejects foreign, duplicate or too-new features. `deriveExecutionRequirements`, `assertExecutionSupported`, `assertExecutionDeclaration` and `compilePlaybackOperations` (`executionExtensions`) take them as an option; plugin features add `requiredPlugins` instead of raising the player version. `assertDeclarationPlayable` checks a package's declared requirements before playback and names a missing or outdated plugin. No plugin features exist yet; lessons without them derive exactly the same requirements.
+
 - `plugin-math` adds the rest of Coach's math recipes as builders: `buildCircleAndArc`, `buildCoordinateCircle`, `buildUnitSquareArray`, `buildCircleAreaRearrangement`, `buildGeometricRearrangement` (with the rearrangement constructions and their facts), `buildCubeWithSection`, `buildFunctionSurface` and `buildImplicitSurface` (with `implicitSurfaceDomain` and `buildImplicitSurfaceObject`). Callers resolve their own numbers and pass a translator for the Chinese source labels. Authoring helpers only.
 
 - Subject plugin `octos-lesson-language/plugin-physics` (decision 0012, shared layer): manifest (depends on `shared`), Jev subject line, and `buildSpringAndMass`, a mass on a spring (x = cos phase) linked to its displacement graph. Authoring helpers only.
