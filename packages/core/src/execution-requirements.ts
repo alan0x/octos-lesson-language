@@ -59,7 +59,12 @@ export interface ExecutionExtension {
   plugin: { id: string; version: string };
   /** Feature name, `plugin:<id>/<name>@<major>`, to the plugin version that introduced it. */
   features: Readonly<Record<string, string>>;
-  /** Reports the plugin features a node's or revision's content uses. */
+  /**
+   * Reports the plugin features a node's or revision's content uses. `kind`
+   * is the node's kind; it is undefined for a revision of a node created
+   * outside these events (already on the board), so a detector must then
+   * judge from the content alone.
+   */
   detect?(content: Readonly<Record<string, unknown>>, kind: string | undefined, use: (feature: string) => void): void;
 }
 
@@ -126,6 +131,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
   const extensions = options.extensions ?? [];
   const features = extensions.length ? composeExecutionFeatures(extensions) : OLL_EXECUTION_FEATURES;
   const required = new Set<string>();
+  // Node kinds created in these events, so revisions reach detectors with their kind.
+  const kinds = new Map<string, string>();
   const add = (feature: string, path: string) => {
     if (!Object.hasOwn(features, feature)) {
       throw new ExecutionCapabilityError(path, `Unsupported executable capability '${feature}'`);
@@ -179,6 +186,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
           const relation = action.node.placement?.relation;
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
+          kinds.set(action.node.id, String(action.node.kind));
           content(action.node.content, `${actionPath}/node/content`, String(action.node.kind));
           if (action.node.kind === "scene3d") {
             const scene = action.node.content as { objects?: Array<Record<string, unknown>>; bindings?: Array<{ target?: string }> };
@@ -190,24 +198,29 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
             }
           }
         }
-        if (action.revision) content(action.revision.content, `${actionPath}/revision/content`);
+        if (action.revision) {
+          const target = action.target?.node_id;
+          content(action.revision.content, `${actionPath}/revision/content`, target === undefined ? undefined : kinds.get(target));
+        }
       }
     }
   }
   const requiredCapabilities = [...required].sort();
   // Core features set the player version; plugin features set their plugin's version.
   let minimumPlayerVersion = "0.1.0";
-  const requiredPlugins: Record<string, string> = {};
+  // A Map: plugin ids such as "constructor" must not meet inherited properties.
+  const pluginMinimums = new Map<string, string>();
   for (const feature of requiredCapabilities) {
     const minimum = features[feature]!;
     const plugin = pluginOf(feature);
     if (plugin) {
-      if (!requiredPlugins[plugin] || compareExecutionVersions(minimum, requiredPlugins[plugin]!) > 0) requiredPlugins[plugin] = minimum;
+      const current = pluginMinimums.get(plugin);
+      if (current === undefined || compareExecutionVersions(minimum, current) > 0) pluginMinimums.set(plugin, minimum);
     } else if (compareExecutionVersions(minimum, minimumPlayerVersion) > 0) {
       minimumPlayerVersion = minimum;
     }
   }
-  return { minimumPlayerVersion, requiredCapabilities, ...(Object.keys(requiredPlugins).length ? { requiredPlugins } : {}) };
+  return { minimumPlayerVersion, requiredCapabilities, ...(pluginMinimums.size ? { requiredPlugins: Object.fromEntries(pluginMinimums) } : {}) };
 }
 
 export function assertExecutionSupported(
@@ -245,8 +258,9 @@ export function assertExecutionDeclaration(
   if (compareExecutionVersions(declaration.minimumPlayerVersion, requirements.minimumPlayerVersion) < 0) {
     throw new ExecutionCapabilityError("minimumPlayerVersion", "Declared player version is lower than the content requires");
   }
-  // Legacy 0.1 packs remain valid without a new declaration. New feature packs must declare it.
-  if (!declaration.requiredCapabilities && requirements.minimumPlayerVersion !== "0.1.0") {
+  // Legacy 0.1 packs remain valid without a new declaration. New feature packs,
+  // and any lesson that needs a plugin, must declare it.
+  if (!declaration.requiredCapabilities && (requirements.minimumPlayerVersion !== "0.1.0" || requirements.requiredPlugins)) {
     throw new ExecutionCapabilityError("requiredCapabilities", "New executable features require a capability declaration");
   }
   if (declaration.requiredCapabilities) {

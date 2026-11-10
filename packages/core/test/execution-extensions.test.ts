@@ -74,3 +74,27 @@ test("plugins may only declare their own namespaced features, once each", () => 
   assert.equal(composeExecutionFeatures([physics("0.2.0")])["plugin:physics/vectors@1"], "0.2.0");
   assert.equal(composeExecutionFeatures()["variables"], OLL_EXECUTION_FEATURES["variables"]);
 });
+
+test("a lesson that needs a plugin must declare its capabilities, even at core 0.1.0", () => {
+  const vectors = events("vectors");
+  const extensions = [physics("0.2.0")];
+  assert.equal(deriveExecutionRequirements(vectors, { extensions }).minimumPlayerVersion, deriveExecutionRequirements(events("forces")).minimumPlayerVersion);
+  assert.throws(() => assertExecutionDeclaration(vectors, { minimumPlayerVersion: "0.1.0" }, { extensions }), /require a capability declaration/);
+});
+
+test("a revision reaches detectors with the kind of the node it revises", () => {
+  const base = events("plain");
+  const card = base.flatMap((event) => event.step?.beats ?? []).flatMap((beat) => Object.values(beat.stage).flat()).find((action) => action.node)!;
+  const revision = structuredClone(base);
+  const beat = revision.find((event) => event.step)!.step!.beats[0]!;
+  beat.stage.after_speech = [...(beat.stage.after_speech ?? []), {
+    action_id: "l:action:revise", op: "board.revise", target: { node_id: card.node!.id },
+    revision: { content: { ...card.node!.content, title: "vectors" }, reason: "now with vectors" },
+  } as never];
+  assert.deepEqual(deriveExecutionRequirements(revision, { extensions: [physics("0.2.0")] }).requiredPlugins, { physics: "0.2.0" });
+});
+
+test("a plugin id that names an inherited property is still counted correctly", () => {
+  const ctor: ExecutionExtension = { plugin: { id: "constructor", version: "1.0.0" }, features: { "plugin:constructor/x@1": "1.0.0" }, detect: (_content, _kind, use) => use("plugin:constructor/x@1") };
+  assert.deepEqual(deriveExecutionRequirements(events("plain"), { extensions: [ctor] }).requiredPlugins, { constructor: "1.0.0" });
+});
