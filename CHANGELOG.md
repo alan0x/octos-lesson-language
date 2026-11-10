@@ -4,6 +4,8 @@
 
 ### Added
 
+- `plugin-math` adds the rest of Coach's math recipes as builders: `buildCircleAndArc`, `buildCoordinateCircle`, `buildUnitSquareArray`, `buildCircleAreaRearrangement`, `buildGeometricRearrangement` (with the rearrangement constructions and their facts), `buildCubeWithSection`, `buildFunctionSurface` and `buildImplicitSurface` (with `implicitSurfaceDomain` and `buildImplicitSurfaceObject`). Callers resolve their own numbers and pass a translator for the Chinese source labels. Authoring helpers only.
+
 - Subject plugin `octos-lesson-language/plugin-physics` (decision 0012, shared layer): manifest (depends on `shared`), Jev subject line, and `buildSpringAndMass`, a mass on a spring (x = cos phase) linked to its displacement graph. Authoring helpers only.
 
 - `plugin-math` adds 3D solids, moved from Octos Learn's Studio: the `Solid` shape model (box, cylinder, cone, regular or custom-base prism and pyramid, truncated pyramid, frustum, sphere, hemisphere, ellipsoid, torus, regular polyhedra, stacked composites), its helpers (`solidZRange`, `solidUnfolds`, `baseCorners`, `compositeHeight`, `solidObjects`, `boxFaces`), `describeSolid` (zh/en) and `buildSolid` (a scene with an optional sliding cut plane, a net that unfolds, highlightable box faces and stable face targets). Authoring helpers only.
