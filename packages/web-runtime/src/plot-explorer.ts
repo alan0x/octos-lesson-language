@@ -1,5 +1,5 @@
 import { bindUi, ui, inheritUiLocale } from "./ui-localization.js";
-import { plotFrame, extendPlotRanges, plotSurfaceHeight, followPlotSamples, compilePlotExpression, formatLinearCurveEquation, type PlotRange, type PlotSampleAnimation } from "./plot.js";
+import { plotFrame, extendPlotRanges, plotSurfaceSize, followPlotSamples, compilePlotExpression, curveLegendText, type PlotRange, type PlotSampleAnimation } from "./plot.js";
 import {
   coordinateWheelZoomFactor,
   panCoordinateRanges,
@@ -141,15 +141,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     for (const child of [...host.children]) if (child.tagName.toLowerCase() !== 'svg') child.remove();
     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
     const adaptive = axes.equal_scale === true && axes.layout === "adaptive";
-    const width = large
-      ? Math.max(adaptive ? 100 : 360, Math.min(1000, window.innerWidth - 80))
-      : 404;
-    const dialogHeight = adaptive ? Math.max(100, Math.min(520, window.innerHeight - 160)) : 520;
-    const height = adaptive
-      ? plotSurfaceHeight(width, recommended.x, recommended.y, large
-        ? { minHeight: Math.min(260, dialogHeight), maxHeight: dialogHeight }
-        : { minHeight: 160, maxHeight: 420 })
-      : large ? Math.max(260, Math.min(520, window.innerHeight - 220)) : 235;
+    const { width, height } = plotSurfaceSize({ large, adaptive, viewport: { width: window.innerWidth, height: window.innerHeight }, x: recommended.x, y: recommended.y });
     let ranges = current.ranges;
     if (animation && !current.exploring && rangesEqual(ranges, recommended)) {
       try {
@@ -171,11 +163,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     curves.forEach((c,i)=>{const label=document.createElement('label');label.className=`plot-legend-item plot-series-${i%6}`;
       if(curves.length>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!current.hidden.has(i);
         checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
-      const baseLabel = c.label || c.expression;
-      const evaluatedEq = defaultAxisNames ? formatLinearCurveEquation(c.expression, variables) : undefined;
-      const displayText = evaluatedEq && baseLabel !== evaluatedEq
-        ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
-        : baseLabel;
+      const displayText = curveLegendText(c, variables, defaultAxisNames);
       label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
     const readout=document.createElement('output');readout.className='plot-probe-readout';bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,current.hidden.size
@@ -183,6 +171,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       : current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标');});
     readout.hidden=!current.exploring&&!current.hidden.size;host.append(readout);
     const svg=host.querySelector('svg') as SVGSVGElement|null;if(!svg)return;
+    // The large view draws at its planned size; CSS must not stretch a narrowed equal-unit surface.
+    if(large){svg.style.maxWidth=`${width}px`;svg.style.marginInline='auto';}
     svg.style.touchAction=current.exploring?'none':'';svg.dataset.ollBoardWheel='capture';svg.setAttribute('tabindex','0');bindUi(parent,svg,'aria',()=>{svg.setAttribute('aria-label',ui(parent,'函数图；滚轮缩放，探索模式可拖动平移'));});
     const anchor=(clientX:number,clientY:number)=>{const rect=svg.getBoundingClientRect();
       const svgX=(clientX-rect.left)/rect.width*width,svgY=(clientY-rect.top)/rect.height*height;
@@ -243,13 +233,9 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       }
       if (hit) {
         const hitCurve = curves[hit.i];
-        const hitBaseLabel = hitCurve.label || hitCurve.expression;
-        const hitEvaluatedEq = defaultAxisNames ? formatLinearCurveEquation(hitCurve.expression, variables) : undefined;
-        const values = { label: hitBaseLabel, equation: hitEvaluatedEq ?? "", x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
+        const values = { label: curveLegendText(hitCurve, variables, defaultAxisNames), x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
         // Bound like every other readout state, so a language switch keeps the coordinates shown.
-        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
-          ? "{label}（{equation}）：{x} ≈ {xValue}，{y} ≈ {yValue}"
-          : "{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
+        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,"{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
       } else {
         bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,'当前位置没有可读曲线');});
       }

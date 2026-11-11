@@ -86,25 +86,77 @@ export function samplePlotExpression(
   const count = Math.max(2, Math.min(1001, Math.floor(sampleCount)));
   const evaluate = compilePlotExpression(expression, variables);
   const ySpan = yRange.max - yRange.min;
-  const jumpLimit = ySpan * 2;
   const magnitudeLimit = Math.max(Math.abs(yRange.min), Math.abs(yRange.max), 1) * 10_000;
+  const usable = (y: number) => Number.isFinite(y) && Math.abs(y) <= magnitudeLimit;
+  // Adaptive refinement: subdivide where the curve bends or jumps, so fast
+  // oscillation stays smooth, a steep continuous stretch stays connected and
+  // only a jump that survives refinement (a pole) breaks the curve.
+  const bendTolerance = ySpan * 0.002;
+  const jumpTolerance = ySpan * 0.5;
+  const minimumStep = (xRange.max - xRange.min) / count / 64;
+  const budget = { points: 8000 };
   const segments: PlotSample[][] = [];
   let segment: PlotSample[] = [];
   const flush = () => {
     if (segment.length > 1) segments.push(segment);
     segment = [];
   };
+  // The last defined point next to an undefined stretch (sqrt at 0, ln near 0).
+  const edgePoint = (defined: number, undefinedX: number): PlotSample | undefined => {
+    let a = defined, b = undefinedX;
+    for (let step = 0; step < 30; step += 1) {
+      const mid = (a + b) / 2;
+      if (usable(evaluate(mid))) a = mid; else b = mid;
+    }
+    const y = evaluate(a);
+    return usable(y) ? { x: a, y } : undefined;
+  };
+  const refine = (x0: number, y0: number, x1: number, y1: number, depth: number): void => {
+    const mid = (x0 + x1) / 2;
+    const ym = evaluate(mid);
+    const step = x1 - x0;
+    if (budget.points > 0 && step > minimumStep && depth < 10) {
+      const bend = usable(ym) ? Math.abs(ym - (y0 + y1) / 2) : Infinity;
+      if (bend > bendTolerance || Math.abs(y1 - y0) > jumpTolerance) {
+        budget.points -= 1;
+        if (!usable(ym)) {
+          const left = edgePoint(x0, mid);
+          if (left) segment.push(left);
+          flush();
+          const right = edgePoint(x1, mid);
+          if (right) segment.push(right);
+          return;
+        }
+        refine(x0, y0, mid, ym, depth + 1);
+        segment.push({ x: mid, y: ym });
+        refine(mid, ym, x1, y1, depth + 1);
+        return;
+      }
+    }
+    // A jump that refinement could not close is a discontinuity.
+    if (Math.abs(y1 - y0) > jumpTolerance * 2) flush();
+  };
 
+  let previous: PlotSample | undefined;
   for (let index = 0; index < count; index += 1) {
     const x = xRange.min + (xRange.max - xRange.min) * index / (count - 1);
     const y = evaluate(x);
-    const prior = segment.at(-1);
-    if (!Number.isFinite(y) || Math.abs(y) > magnitudeLimit) {
+    if (!usable(y)) {
+      if (previous) {
+        const edge = edgePoint(previous.x, x);
+        if (edge && edge.x > previous.x) segment.push(edge);
+      }
       flush();
+      previous = undefined;
       continue;
     }
-    if (prior && Math.abs(y - prior.y) > jumpLimit) flush();
+    if (previous) refine(previous.x, previous.y, x, y, 0);
+    else if (index > 0) {
+      const edge = edgePoint(x, xRange.min + (xRange.max - xRange.min) * (index - 1) / (count - 1));
+      if (edge && edge.x < x) segment.push(edge);
+    }
     segment.push({ x, y });
+    previous = { x, y };
   }
   flush();
   return segments;
@@ -223,6 +275,8 @@ export function secantMeasurement(a: PlotSample, b: PlotSample): {dx:number;dy:n
 
 /** Letterbox equal-unit plots without changing the requested mathematical range. */
 export const PLOT_FRAME_MARGIN = { x: 42, y: 34 } as const;
+/** Card height as a fraction of its width; equal-unit plots stay inside this band. */
+export const PLOT_HEIGHT_BAND = { min: 0.55, max: 1 } as const;
 
 export function plotFrame(width:number,height:number,x:PlotRange,y:PlotRange,equalScale=false) {
   const availableWidth=width-PLOT_FRAME_MARGIN.x, availableHeight=height-PLOT_FRAME_MARGIN.y;
@@ -271,6 +325,40 @@ export function plotSurfaceHeight(
   return Math.max(bounds.minHeight, Math.min(bounds.maxHeight, height));
 }
 
+/**
+ * Surface size for a plot card (`large: false`) or the large view. Heights
+ * stay within PLOT_HEIGHT_BAND of the width. A height-limited equal-unit
+ * plot narrows to its own aspect instead of stretching one axis far out.
+ */
+export function plotSurfaceSize(options: {
+  large: boolean;
+  adaptive: boolean;
+  viewport: { width: number; height: number };
+  x: PlotRange;
+  y: PlotRange;
+}): { width: number; height: number } {
+  const band = (width: number) => ({ minHeight: Math.round(width * PLOT_HEIGHT_BAND.min), maxHeight: Math.round(width * PLOT_HEIGHT_BAND.max) });
+  if (!options.large) {
+    const width = 404;
+    return { width, height: options.adaptive ? plotSurfaceHeight(width, options.x, options.y, band(width)) : 235 };
+  }
+  const availableWidth = Math.max(200, Math.min(1000, options.viewport.width - 80));
+  const availableHeight = Math.max(160, Math.min(640, options.viewport.height - 230));
+  if (!options.adaptive) {
+    const height = Math.min(availableHeight, Math.max(Math.round(availableWidth * PLOT_HEIGHT_BAND.min), Math.round(availableWidth * 0.75)));
+    return { width: availableWidth, height };
+  }
+  let width = availableWidth;
+  const natural = plotSurfaceHeight(width, options.x, options.y, { minHeight: 0, maxHeight: Infinity });
+  if (natural > availableHeight) {
+    const xSpan = options.x.max - options.x.min, ySpan = options.y.max - options.y.min;
+    const fitted = PLOT_FRAME_MARGIN.x + (availableHeight - PLOT_FRAME_MARGIN.y) * xSpan / ySpan;
+    width = Math.round(Math.min(availableWidth, Math.max(availableHeight / PLOT_HEIGHT_BAND.max, fitted)));
+  }
+  const limits = band(width);
+  return { width, height: plotSurfaceHeight(width, options.x, options.y, { minHeight: Math.min(limits.minHeight, availableHeight), maxHeight: Math.min(limits.maxHeight, availableHeight) }) };
+}
+
 export interface PlotSampleAnimation {
   variable: string;
   to: number;
@@ -305,6 +393,36 @@ export function followPlotSamples(
     };
   };
   return { x: fit("x"), y: fit("y") };
+}
+
+/** Legend text: the curve label, plus its current equation only when sliders change it. */
+export function curveLegendText(
+  curve: { label?: unknown; expression?: unknown },
+  variables: Readonly<Record<string, number>> = {},
+  includeEquation = true,
+): string {
+  const expression = typeof curve.expression === "string" ? curve.expression : "";
+  const baseLabel = typeof curve.label === "string" && curve.label ? curve.label : expression;
+  const parameterized = Object.keys(variables).some(name => new RegExp(`\\b${name}\\b`, "u").test(expression));
+  const evaluated = includeEquation && parameterized ? formatLinearCurveEquation(expression, variables) : undefined;
+  if (!evaluated) return baseLabel;
+  const normalize = (text: string) => text.replace(/[−–]/gu, "-").replace(/\s+/gu, "");
+  if (normalize(evaluated) === normalize(baseLabel)) return baseLabel;
+  return baseLabel ? `${baseLabel}（${evaluated}）` : evaluated;
+}
+
+/** Where to draw an off-screen point's indicator: on the frame edge, pointing at it. */
+export function plotEdgeIndicator(
+  point: PlotSample,
+  ranges: { x: PlotRange; y: PlotRange },
+): { x: number; y: number; angle: number } | undefined {
+  const inside = point.x >= ranges.x.min && point.x <= ranges.x.max && point.y >= ranges.y.min && point.y <= ranges.y.max;
+  if (inside || ![point.x, point.y].every(Number.isFinite)) return undefined;
+  const cx = (ranges.x.min + ranges.x.max) / 2, cy = (ranges.y.min + ranges.y.max) / 2;
+  const hx = (ranges.x.max - ranges.x.min) / 2, hy = (ranges.y.max - ranges.y.min) / 2;
+  const dx = (point.x - cx) / hx, dy = (point.y - cy) / hy;
+  const scale = 1 / Math.max(Math.abs(dx), Math.abs(dy));
+  return { x: cx + dx * scale * hx, y: cy + dy * scale * hy, angle: Math.atan2(dy, dx) };
 }
 
 export function formatPointLabel(rawLabel: string, x: number, y: number): string {

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  curveLegendText,
+  plotEdgeIndicator,
+  PLOT_HEIGHT_BAND,
+  plotSurfaceSize,
   compilePlotExpression,
   evaluatePlotExpression,
   extendPlotRanges,
@@ -233,4 +237,68 @@ test("zoom around the extended area keeps the cursor coordinate and stores the u
   const xAtAnchor = (range: typeof fitted.x) => range.min + .9 * (range.max - range.min);
   assert.ok(Math.abs(xAtAnchor(fitted.x) - xAtAnchor(displayedNext.x)) < 1e-9);
   assert.equal(next.x.max - next.x.min, 8);
+});
+
+test("adaptive sampling keeps fast oscillation smooth and steep curves connected", () => {
+  const fast = samplePlotExpression("sin(20*x)", { min: -0.4, max: 0.4 }, { min: -1.2, max: 1.2 }, 241);
+  assert.equal(fast.length, 1);
+  const peak = Math.max(...fast[0]!.map(point => point.y));
+  assert.ok(peak > 0.999, `peak ${peak}`);
+  const steep = samplePlotExpression("2^x", { min: -5, max: 5 }, { min: -2, max: 18 }, 241);
+  assert.equal(steep.length, 1, "a steep continuous curve is one stroke");
+});
+
+test("adaptive sampling breaks only at real poles and reaches domain edges", () => {
+  const tangent = samplePlotExpression("tan(x)", { min: -Math.PI, max: Math.PI }, { min: -5, max: 5 }, 241);
+  assert.equal(tangent.length, 3);
+  // No stroke crosses a pole from above the frame to below it.
+  for (const segment of tangent) {
+    for (let i = 1; i < segment.length; i += 1) {
+      const [a, b] = [segment[i - 1]!.y, segment[i]!.y];
+      assert.ok(!(a > 5 && b < -5) && !(a < -5 && b > 5), `crossing at x=${segment[i]!.x}`);
+    }
+  }
+  const root = samplePlotExpression("sqrt(x)", { min: -1, max: 9 }, { min: -0.5, max: 3.5 }, 241);
+  assert.equal(root.length, 1);
+  assert.ok(root[0]![0]!.x < 1e-6, `starts at ${root[0]![0]!.x}`);
+  const reciprocal = samplePlotExpression("1/x", { min: -5, max: 5 }, { min: -4, max: 4 }, 241);
+  assert.equal(reciprocal.length, 2);
+});
+
+test("legends add the current equation only for curves that sliders change", () => {
+  assert.equal(curveLegendText({ label: "y = 0.5x − 100", expression: "0.5*x-100" }), "y = 0.5x − 100");
+  assert.equal(curveLegendText({ label: "y = kx + b", expression: "number_01*x+number_02" }, { number_01: 2, number_02: 1 }), "y = kx + b（y = 2x + 1）");
+  assert.equal(curveLegendText({ label: "y = kx", expression: "number_01*x" }, { number_01: 2 }, false), "y = kx");
+});
+
+test("an off-screen point is marked on the frame edge in its direction", () => {
+  const ranges = { x: { min: -4, max: 4 }, y: { min: -2, max: 10 } };
+  assert.equal(plotEdgeIndicator({ x: 1, y: 1 }, ranges), undefined);
+  const right = plotEdgeIndicator({ x: 9, y: 4 }, ranges)!;
+  assert.deepEqual([right.x, right.y], [4, 4]);
+  const corner = plotEdgeIndicator({ x: 12, y: 30 }, ranges)!;
+  assert.ok(corner.x <= 4 && corner.y <= 10 && (corner.x === 4 || corner.y === 10));
+  const above = plotEdgeIndicator({ x: 0, y: 40 }, ranges)!;
+  assert.equal(above.y, 10);
+});
+
+test("equal-unit card heights stay inside the height band", () => {
+  const width = 404;
+  const band = { minHeight: Math.round(width * PLOT_HEIGHT_BAND.min), maxHeight: Math.round(width * PLOT_HEIGHT_BAND.max) };
+  assert.equal(plotSurfaceHeight(width, { min: -5, max: 5 }, { min: -60, max: 60 }, band), band.maxHeight);
+  assert.equal(plotSurfaceHeight(width, { min: -8, max: 8 }, { min: -0.5, max: 4 }, band), band.minHeight);
+  const square = plotSurfaceHeight(width, { min: -5, max: 5 }, { min: -5, max: 5 }, band);
+  assert.ok(square > band.minHeight && square <= band.maxHeight);
+});
+
+test("large views keep plots inside the height band on desktops and phones", () => {
+  const sine = { x: { min: -2 * Math.PI, max: 2 * Math.PI }, y: { min: -1.2, max: 1.2 } };
+  const phone = plotSurfaceSize({ large: true, adaptive: false, viewport: { width: 390, height: 760 }, ...sine });
+  assert.ok(phone.height <= phone.width && phone.height >= phone.width * 0.55, JSON.stringify(phone));
+  const parabola = { x: { min: -4, max: 4 }, y: { min: -1, max: 10 } };
+  const desktop = plotSurfaceSize({ large: true, adaptive: true, viewport: { width: 1280, height: 800 }, ...parabola });
+  assert.ok(desktop.width < 1000, "a tall equal-unit plot narrows instead of stretching x");
+  assert.ok(desktop.height <= desktop.width && desktop.height >= desktop.width * 0.55, JSON.stringify(desktop));
+  const card = plotSurfaceSize({ large: false, adaptive: false, viewport: { width: 1280, height: 800 }, ...sine });
+  assert.deepEqual(card, { width: 404, height: 235 });
 });
