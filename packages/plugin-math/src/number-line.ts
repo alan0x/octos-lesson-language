@@ -160,7 +160,7 @@ const near = (a: number, b: number, scale = 1) => Math.abs(a - b) <= 1e-9 * Math
  * error with a JSON path. Aliases, bindings and variables are checked by the
  * core validator; this checks what only the number line knows.
  */
-export function validateNumberLineContent(raw: unknown, path: string, fail: Fail): void {
+export function validateNumberLineContent(raw: unknown, path: string, fail: Fail, options: { boundValues?: boolean } = {}): void {
   const content = record(raw, path, fail);
   only(content, ["title", "caption", "range", "ticks", "points", "jumps", "intervals", "bindings"], path, fail);
   text(content.title, `${path}/title`, fail);
@@ -187,6 +187,10 @@ export function validateNumberLineContent(raw: unknown, path: string, fail: Fail
   if ((max - min) / unit > NUMBER_LINE_LIMITS.ticks + 1e-9) fail(`${path}/ticks`, `The range holds more than ${NUMBER_LINE_LIMITS.ticks} of the smallest ticks; use a larger step or fewer subdivisions`);
   if ((ticks.format === "fraction" || ticks.format === "mixed") && !Number.isInteger(step)) fail(`${path}/ticks/format`, "Fraction labels need a whole-number major step");
   if (ticks.format === "integer" && !Number.isInteger(step)) fail(`${path}/ticks/format`, "Integer labels need a whole-number major step");
+  // Fraction ticks cannot carry integer labels: they would be rounded and name the wrong value.
+  if (ticks.format === "integer" && ticks.labels === "all" && !Number.isInteger(unit)) {
+    fail(`${path}/ticks`, "Integer labels on every tick need whole-number ticks; label only the major ticks, or use fraction or decimal labels");
+  }
 
   const pointAliases = new Set<string>();
   for (const [index, point] of list(content.points, `${path}/points`, NUMBER_LINE_LIMITS.points, fail).entries()) {
@@ -217,14 +221,17 @@ export function validateNumberLineContent(raw: unknown, path: string, fail: Fail
       start = value(jump.from, `${jumpPath}/from`, fail);
     }
     const by = value(jump.by, `${jumpPath}/by`, fail);
-    if (by === 0) fail(`${jumpPath}/by`, "A jump moves by a nonzero amount");
+    // A variable may pass through 0 (a jump growing from nothing); an authored jump moves.
+    if (by === 0 && !options.boundValues) fail(`${jumpPath}/by`, "A jump moves by a nonzero amount");
     const end = start + by;
     if (start < min - 1e-9 || start > max + 1e-9 || end < min - 1e-9 || end > max + 1e-9) fail(jumpPath, "A jump starts and ends inside the line's range");
     text(jump.label, `${jumpPath}/label`, fail, 32);
     if (jump.hops !== undefined && typeof jump.hops !== "boolean") fail(`${jumpPath}/hops`, "hops is true or false");
     if (jump.hops) {
       const count = Math.abs(by) / unit;
-      if (!near(count, Math.round(count), count) || Math.round(count) > NUMBER_LINE_LIMITS.hops) {
+      // A variable may stop between ticks (the last hop is then drawn short), but never needs more hops than the limit.
+      const whole = near(count, Math.round(count), count);
+      if ((!whole && !options.boundValues) || Math.ceil(count - 1e-9) > NUMBER_LINE_LIMITS.hops) {
         fail(`${jumpPath}/hops`, `A jump drawn hop by hop moves a whole number of the smallest ticks, at most ${NUMBER_LINE_LIMITS.hops}`);
       }
     }
@@ -310,7 +317,8 @@ export function planNumberLineTicks(content: Pick<NumberLineContent, "range" | "
             : { kind: "fraction", negative, numerator: size, denominator };
         }
       } else {
-        label = { kind: "text", text: formatDecimal(tickValue, format === "integer" ? 1 : unit) };
+        // Integer labels go only on integer ticks; any other tick stays unlabelled rather than rounded.
+        label = format === "integer" && !Number.isInteger(tickValue) ? undefined : { kind: "text", text: formatDecimal(tickValue, format === "integer" ? 1 : unit) };
       }
     }
     ticks.push({ value: tickValue, major, ...(label ? { label } : {}) });
@@ -360,4 +368,25 @@ export function visibleTickLabels(boxes: readonly LabelBox[], step: number, gap 
   const all = boxes.map((_box, index) => index);
   const minorsFit = chosen.length === majors.length && fits(all);
   return new Set(minorsFit ? all : chosen);
+}
+
+/**
+ * The pieces a jump is drawn in: one arc, or one hop per smallest tick. When
+ * the distance is not a whole number of ticks (a variable between values),
+ * the last hop is shorter, so the arrow still ends exactly at the jump's end.
+ */
+export function jumpHops(content: Pick<NumberLineContent, "range" | "ticks">, ends: { from: number; to: number }, hops: boolean): Array<{ from: number; to: number }> {
+  const distance = ends.to - ends.from;
+  if (!hops || distance === 0) return [{ ...ends }];
+  const unit = tickUnit(content);
+  const direction = Math.sign(distance);
+  const count = Math.abs(distance) / unit;
+  const whole = Math.floor(count + 1e-9);
+  const pieces: Array<{ from: number; to: number }> = [];
+  for (let hop = 0; hop < Math.min(whole, NUMBER_LINE_LIMITS.hops); hop += 1) {
+    pieces.push({ from: ends.from + direction * hop * unit, to: ends.from + direction * (hop + 1) * unit });
+  }
+  const reached = pieces.at(-1)?.to ?? ends.from;
+  if (Math.abs(ends.to - reached) > 1e-9 * Math.max(1, Math.abs(ends.to))) pieces.push({ from: reached, to: ends.to });
+  return pieces;
 }

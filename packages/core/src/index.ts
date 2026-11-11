@@ -750,6 +750,46 @@ function validateStructuredContent(content: JsonObject, path: string, addressabl
   }
 }
 
+/**
+ * A number line's bound values stay drawable for every value its variables
+ * can take (decision 0013): the card is evaluated with each referenced
+ * variable at its minimum, its maximum and its starting value (up to four
+ * variables), and every result is checked like authored content. A jump may
+ * then stop between ticks; the runtime draws a shorter last hop.
+ */
+function checkNumberLineBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  const bindings = Array.isArray(content.bindings) ? content.bindings as JsonObject[] : [];
+  if (!bindings.length) return;
+  const known = new Map(declarations.map((declaration) => [declaration.as, declaration]));
+  const referenced = [...new Set(bindings.flatMap((binding) => referencedMathVariables(String(binding.expression), known.keys())))].slice(0, 4);
+  let combinations: Array<Record<string, number>> = [{}];
+  for (const variable of referenced) {
+    const { min, max, initial } = known.get(variable)!;
+    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial])].map((value) => ({ ...combination, [variable]: value })));
+  }
+  const withIds = (value: JsonObject): JsonObject => {
+    const clone = structuredClone(value);
+    for (const field of ["points", "jumps", "intervals"]) {
+      if (Array.isArray(clone[field])) clone[field] = clone[field].map((item: JsonObject) => ({ ...item, id: item.as }));
+    }
+    return clone;
+  };
+  for (const combination of combinations) {
+    const values = { ...Object.fromEntries(declarations.map((declaration) => [declaration.as, declaration.initial])), ...combination };
+    const where = Object.entries(combination).map(([name, value]) => `${name} = ${value}`).join(", ");
+    let evaluated: JsonObject;
+    try {
+      evaluated = evaluateContentBindings(withIds(content), values);
+    } catch (error) {
+      fail("OLL_INVALID_BINDING", `${path}/bindings`, `When ${where}: ${(error as Error).message}`);
+    }
+    for (const field of ["points", "jumps", "intervals"]) {
+      if (Array.isArray(evaluated[field])) evaluated[field] = evaluated[field].map(({ id: _id, ...item }: JsonObject) => item);
+    }
+    validateNumberLineContent(evaluated, path, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `When ${where}: ${message}`), { boundValues: true });
+  }
+}
+
 function requireFiniteNumber(value: unknown, path: string): number {
   const number = Number(value);
   if (!Number.isFinite(number)) fail("OLL_INVALID_OPERATION_PAYLOAD", path, "Expected a finite number");
@@ -1605,6 +1645,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             }
           }
           validateValueBindings(action, actionPath, lessonVariables);
+          if (action.kind === NUMBER_LINE_KIND) checkNumberLineBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }

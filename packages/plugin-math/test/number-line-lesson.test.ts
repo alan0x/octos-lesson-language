@@ -140,3 +140,27 @@ test("the builder writes a number line whose driven values are bound and whose d
   assertAuthoringSchema(document);
   validateAuthoringLesson(document);
 });
+
+const boundJump = (max: number) => ({
+  dsl: "octos.lesson", version: "0.1", profile: "authoring",
+  lesson: { mode: "explain", language: "zh-CN", title: "跳", goals: ["看跳跃"], variables: [{ as: "delta", initial: 1, min: 1, max, label: "跳多远" }] },
+  steps: [{ key: "s", purpose: "跳", beats: [
+    { key: "b", say: "从 0 出发。", actions: [{ do: "write", as: "line", kind: "number_line", role: "main_visual", place: { relation: "new_region" }, content: {
+      range: { min: 0, max: 4 }, ticks: { step: 1 }, jumps: [{ as: "move", from: 0, by: 1, hops: true }], bindings: [{ target: "move.by", expression: "delta" }],
+    } }] },
+    { key: "c", say: "跳得更远。", actions: [{ do: "animate", variable: "delta", value: Math.min(max, 2.6) }] },
+  ] }],
+  close: { summary: "完。", focus: ["line"] },
+}) as unknown as AuthoringLesson;
+
+test("a bound jump may stop between ticks (the review's 2.6), and the board keeps the computed end", () => {
+  const document = boundJump(2.6);
+  assertAuthoringSchema(document);
+  validateAuthoringLesson(document);
+  const node = reduceCanonicalEvents(normalizeAuthoringLesson(document, host)).nodes["l:node:line"]!;
+  assert.equal((node.content.jumps as Array<{ by: number }>)[0]!.by, 2.6);
+});
+
+test("a variable that would carry a jump off the line is rejected, naming the value", () => {
+  assert.throws(() => validateAuthoringLesson(boundJump(5)), /When delta = 5: A jump starts and ends inside the line's range/);
+});

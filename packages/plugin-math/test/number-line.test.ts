@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  decimalPlaces, jumpEnds, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, snapToTick, validateNumberLineContent, visibleTickLabels,
+  decimalPlaces, jumpEnds, jumpHops, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, snapToTick, validateNumberLineContent, visibleTickLabels,
   type NumberLineContent, type TickLabel,
 } from "../src/number-line.js";
 
@@ -113,4 +113,24 @@ test("dense labels thin out on a regular stride that fits; every tick stays", ()
   const roomy = planNumberLineTicks({ range: { min: 0, max: 2 }, ticks: { step: 1, subdivisions: 4, labels: "all" } });
   const roomyBoxes = roomy.map((tick) => ({ x: 30 + tick.value / 2 * 460, width: width(tick.label!), major: tick.major, value: tick.value }));
   assert.equal(visibleTickLabels(roomyBoxes, 1).size, roomy.length);
+});
+
+test("integer labels never round a fraction tick: the combination is rejected, and the planner leaves such ticks unlabelled", () => {
+  // The review's case: fourths with integer labels on every tick.
+  invalid({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 4, labels: "all", format: "integer" } }, /Integer labels on every tick need whole-number ticks/);
+  valid({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 4, labels: "major", format: "integer" } });
+  const ticks = planNumberLineTicks({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 4, labels: "all", format: "integer" } });
+  assert.deepEqual(ticks.map((tick) => show(tick.label)), ["0", "", "", "", "1"]);
+});
+
+test("a jump that stops between ticks is drawn as whole hops and a shorter last hop ending at its end", () => {
+  const content = { range: { min: 0, max: 4 }, ticks: { step: 1 } };
+  const pieces = jumpHops(content, { from: 0, to: 2.6 }, true);
+  assert.equal(pieces.length, 3);
+  assert.deepEqual(pieces.slice(0, 2), [{ from: 0, to: 1 }, { from: 1, to: 2 }]);
+  assert.equal(pieces[2]!.from, 2);
+  assert.ok(Math.abs(pieces[2]!.to - 2.6) < 1e-12, "the arrow ends at 2.6, not 3");
+  assert.deepEqual(jumpHops(content, { from: 3, to: 1 }, true), [{ from: 3, to: 2 }, { from: 2, to: 1 }]);
+  assert.deepEqual(jumpHops(content, { from: 0, to: 0.4 }, true), [{ from: 0, to: 0.4 }]);
+  assert.deepEqual(jumpHops(content, { from: 0, to: 2.6 }, false), [{ from: 0, to: 2.6 }]);
 });

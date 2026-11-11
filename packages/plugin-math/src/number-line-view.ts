@@ -5,7 +5,7 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, numberLineValue, planNumberLineTicks, planTickStep, tickUnit, visibleTickLabels,
+  jumpEnds, jumpHops, numberLineValue, planNumberLineTicks, planTickStep, visibleTickLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
 
@@ -127,17 +127,18 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     if (!ends || ends.from === ends.to) continue;
     const group = element("g", {}, "number-line-jump");
     group.dataset.id = idOf(jump as Part);
-    const unit = tickUnit(content);
-    const hops = jump.hops ? Math.round(Math.abs(ends.to - ends.from) / unit) : 1;
-    const direction = Math.sign(ends.to - ends.from);
-    const hopHeight = hops > 1 ? 18 : Math.min(46, 14 + Math.abs(mapX(ends.to) - mapX(ends.from)) / 5);
-    for (let hop = 0; hop < hops; hop += 1) {
-      const a = mapX(ends.from + direction * hop * (hops > 1 ? unit : Math.abs(ends.to - ends.from)));
-      const b = hops > 1 ? mapX(ends.from + direction * (hop + 1) * unit) : mapX(ends.to);
-      const path = element("path", { d: `M${a},${lineY - 4} Q${(a + b) / 2},${lineY - 4 - hopHeight * 2} ${b},${lineY - 4}` }, "number-line-jump-arc");
-      if (hop === hops - 1) path.setAttribute("marker-end", arrow);
+    // Whole hops, then a shorter last one when a variable stops between ticks: the arrow ends at ends.to.
+    const pieces = jumpHops(content, ends, Boolean(jump.hops));
+    const span = (piece: { from: number; to: number }) => Math.abs(mapX(piece.to) - mapX(piece.from));
+    const hopHeight = jump.hops ? 18 : Math.min(46, 14 + span(ends) / 5);
+    pieces.forEach((piece, index) => {
+      const a = mapX(piece.from), b = mapX(piece.to);
+      // A short last hop is lower, in proportion to its length.
+      const height = jump.hops && pieces.length > 1 && index === pieces.length - 1 ? hopHeight * Math.min(1, span(piece) / span(pieces[0]!)) : hopHeight;
+      const path = element("path", { d: `M${a},${lineY - 4} Q${(a + b) / 2},${lineY - 4 - height * 2} ${b},${lineY - 4}` }, "number-line-jump-arc");
+      if (index === pieces.length - 1) path.setAttribute("marker-end", arrow);
       group.append(path);
-    }
+    });
     if (jump.label) {
       const text = element("text", { x: (mapX(ends.from) + mapX(ends.to)) / 2, y: lineY - 8 - hopHeight - 4, "text-anchor": "middle" }, "number-line-jump-label");
       text.textContent = jump.label;
