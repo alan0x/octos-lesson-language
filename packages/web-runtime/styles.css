@@ -54,7 +54,9 @@
 .plot-grid { stroke: #e4ded3; stroke-width: .8; }
 .plot-grid-minor { stroke: #eee9df; stroke-width: .55; }
 .plot-axis { stroke: #8b857b; stroke-width: 1.4; }
-.plot-axis-label { fill: #817a70; font: 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.plot-axis-label { fill: #6f685e; font: 10.5px/1 system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+.plot-hole { fill: #fffdf7; stroke: var(--plot-series-color); stroke-width: 2; }
+.plot-edge-indicator { fill: #e15d45; stroke: #fffdf7; stroke-width: 1; }
 .plot-curve { fill: none; stroke: var(--plot-series-color); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .plot-curve.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .plot-curve.emphasis-supporting { stroke-width: 4; }

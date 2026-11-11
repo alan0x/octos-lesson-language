@@ -1,5 +1,5 @@
 import { bindUi, ui, inheritUiLocale } from "./ui-localization.js";
-import { plotFrame, compilePlotExpression, formatLinearCurveEquation, type PlotRange } from "./plot.js";
+import { plotFrame, extendPlotRanges, plotSurfaceSize, followPlotSamples, compilePlotExpression, curveLegendText, type PlotRange, type PlotSampleAnimation } from "./plot.js";
 import {
   coordinateWheelZoomFactor,
   panCoordinateRanges,
@@ -14,17 +14,17 @@ const states=new WeakMap<HTMLElement,State>();
 interface PlotController {
   body: HTMLElement;
   signature: string;
-  update: (node: Record<string,any>, variables: Record<string,number>) => void;
+  update: (node: Record<string,any>, variables: Record<string,number>, animation?: PlotSampleAnimation) => void;
 }
 const controllers = new WeakMap<HTMLElement, PlotController>();
 function controllerSignature(node: Record<string,any>): string {
   return JSON.stringify([node.kind, node.role, node.content?.title, node.content?.label,
     node.content?.axes, node.content?.curves?.map((curve: Record<string,any>) => [curve.id, curve.expression, curve.kind])]);
 }
-export function updatePlotExplorer(parent: HTMLElement, node: Record<string,any>, variables: Record<string,number>): boolean {
+export function updatePlotExplorer(parent: HTMLElement, node: Record<string,any>, variables: Record<string,number>, animation?: PlotSampleAnimation): boolean {
   const controller = controllers.get(parent);
   if (!controller || controller.body.parentNode !== parent || controller.signature !== controllerSignature(node)) return false;
-  controller.update(node, variables);
+  controller.update(node, variables, animation);
   return true;
 }
 export function disposePlotExplorer(parent:HTMLElement):void {
@@ -36,8 +36,28 @@ export function disposePlotExplorer(parent:HTMLElement):void {
   states.delete(parent);
   controllers.delete(parent);
 }
-export function zoomPlotRanges(ranges:Ranges,factor:number,anchor={x:.5,y:.5}):Ranges {
-  return zoomCoordinateRanges(ranges,factor,anchor);
+export function zoomPlotRanges(
+  ranges: Ranges,
+  factor: number,
+  anchor = { x: .5, y: .5 },
+  displayed = ranges,
+): Ranges {
+  const zoomed = zoomCoordinateRanges(displayed, factor, anchor);
+  if (displayed === ranges) return zoomed;
+  if (rangesEqual(zoomed, displayed)) return ranges;
+
+  // Keep the same point under the cursor in the displayed viewport, then
+  // remove its padding so the card and large view share the same zoom state.
+  const crop = (axis: "x" | "y"): PlotRange => {
+    const before = displayed[axis];
+    const after = zoomed[axis];
+    const scale = (after.max - after.min) / (before.max - before.min);
+    return {
+      min: after.min + (ranges[axis].min - before.min) * scale,
+      max: after.max + (ranges[axis].max - before.max) * scale,
+    };
+  };
+  return { x: crop("x"), y: crop("y") };
 }
 export function panPlotRanges(ranges:Ranges,dx:number,dy:number):Ranges {
   return panCoordinateRanges(ranges,dx,dy);
@@ -50,7 +70,8 @@ function rangesEqual(left: Ranges, right: Ranges): boolean {
 
 /** View-only state stays out of lesson variables, model input and replay events. */
 export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,variables:Record<string,number>,
-  draw:(host:HTMLElement,node:Record<string,any>,variables:Record<string,number>,width:number,height:number)=>void):void {
+  draw:(host:HTMLElement,node:Record<string,any>,variables:Record<string,number>,width:number,height:number)=>void,
+  animation?: PlotSampleAnimation):void {
   const axes=node.content?.axes??{};
   const valid=(r:any):PlotRange=>validCoordinateRange(r,{min:-5,max:5});
   const recommended={x:valid(axes.x),y:valid(axes.y)};
@@ -119,9 +140,22 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     // Keep the coordinate SVG and captured-pointer host across variable updates.
     for (const child of [...host.children]) if (child.tagName.toLowerCase() !== 'svg') child.remove();
     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
-    const width=large?Math.max(360,Math.min(1000,window.innerWidth-80)):404, height=large?Math.max(260,Math.min(520,window.innerHeight-220)):235;
-    const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
-    const content={...node.content,axes:{...axes,x:{...axes.x,...current.ranges.x},y:{...axes.y,...current.ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
+    const adaptive = axes.equal_scale === true && axes.layout === "adaptive";
+    const { width, height } = plotSurfaceSize({ large, adaptive, viewport: { width: window.innerWidth, height: window.innerHeight }, x: recommended.x, y: recommended.y });
+    let ranges = current.ranges;
+    if (animation && !current.exploring && rangesEqual(ranges, recommended)) {
+      try {
+        const y = evaluators[0]?.(animation.to);
+        if (y !== undefined && Number.isFinite(y)) {
+          ranges = followPlotSamples(ranges, node.content?.points ?? [], { x: animation.to, y });
+        }
+      } catch { /* Undefined sample positions do not change the view. */ }
+    }
+    const fitRanges = (value: Ranges) => adaptive ? extendPlotRanges(width, height, value) : value;
+    const requested = ranges;
+    ranges = fitRanges(requested);
+    const frame=plotFrame(width,height,ranges.x,ranges.y,axes.equal_scale===true);
+    const content={...node.content,axes:{...axes,x:{...axes.x,...ranges.x},y:{...axes.y,...ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
     inheritUiLocale(host,parent);
     draw(host,{...node,content},variables,width,height);
     host.querySelector('.plot-legend')?.remove();
@@ -129,11 +163,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     curves.forEach((c,i)=>{const label=document.createElement('label');label.className=`plot-legend-item plot-series-${i%6}`;
       if(curves.length>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!current.hidden.has(i);
         checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
-      const baseLabel = c.label || c.expression;
-      const evaluatedEq = defaultAxisNames ? formatLinearCurveEquation(c.expression, variables) : undefined;
-      const displayText = evaluatedEq && baseLabel !== evaluatedEq
-        ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
-        : baseLabel;
+      const displayText = curveLegendText(c, variables, defaultAxisNames);
       label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
     const readout=document.createElement('output');readout.className='plot-probe-readout';bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,current.hidden.size
@@ -141,13 +171,18 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       : current.exploring?'探索中：拖动空白平移，滚轮/双指缩放。':'指向曲线查看坐标');});
     readout.hidden=!current.exploring&&!current.hidden.size;host.append(readout);
     const svg=host.querySelector('svg') as SVGSVGElement|null;if(!svg)return;
+    // The large view draws at its planned size; CSS must not stretch a narrowed equal-unit surface.
+    if(large){svg.style.maxWidth=`${width}px`;svg.style.marginInline='auto';}
     svg.style.touchAction=current.exploring?'none':'';svg.dataset.ollBoardWheel='capture';svg.setAttribute('tabindex','0');bindUi(parent,svg,'aria',()=>{svg.setAttribute('aria-label',ui(parent,'函数图；滚轮缩放，探索模式可拖动平移'));});
-    const anchor=(event:PointerEvent|WheelEvent)=>{const rect=svg.getBoundingClientRect();
-      const svgX=(event.clientX-rect.left)/rect.width*width,svgY=(event.clientY-rect.top)/rect.height*height;
+    const anchor=(clientX:number,clientY:number)=>{const rect=svg.getBoundingClientRect();
+      const svgX=(clientX-rect.left)/rect.width*width,svgY=(clientY-rect.top)/rect.height*height;
       return {inside:svgX>=frame.left&&svgX<=frame.right&&svgY>=frame.top&&svgY<=frame.bottom,
         x:Math.max(0,Math.min(1,(svgX-frame.left)/frame.width)),y:Math.max(0,Math.min(1,1-(svgY-frame.top)/frame.height))};};
-    svg.onwheel=event=>{const point=anchor(event);if(!point.inside)return;event.preventDefault();event.stopPropagation();
-      current.ranges=zoomPlotRanges(current.ranges,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point);schedule();};
+    svg.onwheel=event=>{const point=anchor(event.clientX,event.clientY);if(!point.inside)return;event.preventDefault();event.stopPropagation();
+      const source = animation && !current.exploring && rangesEqual(current.ranges, recommended)
+        ? requested : current.ranges;
+      const displayed = fitRanges(source);
+      current.ranges=zoomPlotRanges(source,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point,displayed);schedule();};
     // Pointer capture lives on the persistent host: redraws do not lose the gesture.
     svg.onpointerdown=event=>{if(!current.exploring)return;event.preventDefault();event.stopPropagation();host.setPointerCapture(event.pointerId);
       if(current.gesture?.host!==host)current.gesture={host,pointers:new Map()};
@@ -164,27 +199,32 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
           const a=distance(before),b=distance(after);
           const rect=svg.getBoundingClientRect();
           const beforeMid={x:(before[0]!.x+before[1]!.x)/2,y:(before[0]!.y+before[1]!.y)/2};
-          const center={x:((after[0]!.x+after[1]!.x)/2-rect.left)/rect.width,y:1-((after[0]!.y+after[1]!.y)/2-rect.top)/rect.height};
           const afterMid={x:(after[0]!.x+after[1]!.x)/2,y:(after[0]!.y+after[1]!.y)/2};
+          const displayed = fitRanges(current.ranges);
           current.ranges=panPlotRanges(current.ranges,
-            (beforeMid.x-afterMid.x)/rect.width*width/frame.width*(current.ranges.x.max-current.ranges.x.min),
-            (afterMid.y-beforeMid.y)/rect.height*height/frame.height*(current.ranges.y.max-current.ranges.y.min));
-          if(a>1&&b>1)current.ranges=zoomPlotRanges(current.ranges,a/b,center);
+            (beforeMid.x-afterMid.x)/rect.width*width/frame.width*(displayed.x.max-displayed.x.min),
+            (afterMid.y-beforeMid.y)/rect.height*height/frame.height*(displayed.y.max-displayed.y.min));
+          if(a>1&&b>1) {
+            const center = anchor(afterMid.x, afterMid.y);
+            const panned = fitRanges(current.ranges);
+            current.ranges=zoomPlotRanges(current.ranges,a/b,center,panned);
+          }
         } else {
           const rect=svg.getBoundingClientRect();
-          const dx=(previous.x-event.clientX)/rect.width*width/frame.width*(current.ranges.x.max-current.ranges.x.min);
-          const dy=(event.clientY-previous.y)/rect.height*height/frame.height*(current.ranges.y.max-current.ranges.y.min);
+          const displayed = fitRanges(current.ranges);
+          const dx=(previous.x-event.clientX)/rect.width*width/frame.width*(displayed.x.max-displayed.x.min);
+          const dy=(event.clientY-previous.y)/rect.height*height/frame.height*(displayed.y.max-displayed.y.min);
           const next=panPlotRanges(current.ranges,dx,dy);
           if([next.x.min,next.x.max,next.y.min,next.y.max].every(v=>Number.isFinite(v)&&Math.abs(v)<=1e12))current.ranges=next;
         }
         schedule();return;
       }
-      const point=anchor(event),x=current.ranges.x.min+point.x*(current.ranges.x.max-current.ranges.x.min);
+      const point=anchor(event.clientX,event.clientY),x=ranges.x.min+point.x*(ranges.x.max-ranges.x.min);
       const candidates=evaluators.flatMap((f,i)=>{if(!f||current.hidden.has(i))return [];let y;try{y=f(x);}catch{return [];}
-        return Number.isFinite(y)&&y>=current.ranges.y.min&&y<=current.ranges.y.max?[{i,y,distance:Math.abs((y-current.ranges.y.min)/(current.ranges.y.max-current.ranges.y.min)-point.y)}]:[];});
+        return Number.isFinite(y)&&y>=ranges.y.min&&y<=ranges.y.max?[{i,y,distance:Math.abs((y-ranges.y.min)/(ranges.y.max-ranges.y.min)-point.y)}]:[];});
       candidates.sort((a,b)=>a.distance-b.distance);const hit=candidates[0];
       svg.querySelectorAll('[data-plot-probe]').forEach(e=>e.remove());
-      if(hit){const px=frame.left+point.x*frame.width,py=frame.bottom-(hit.y-current.ranges.y.min)/(current.ranges.y.max-current.ranges.y.min)*frame.height;
+      if(hit){const px=frame.left+point.x*frame.width,py=frame.bottom-(hit.y-ranges.y.min)/(ranges.y.max-ranges.y.min)*frame.height;
         for(const coordinates of [[px,frame.top,px,frame.bottom],[frame.left,py,frame.right,py]]){
           const line=document.createElementNS('http://www.w3.org/2000/svg','line');line.dataset.plotProbe='true';
           ['x1','y1','x2','y2'].forEach((key,i)=>line.setAttribute(key,String(coordinates[i])));
@@ -193,13 +233,9 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       }
       if (hit) {
         const hitCurve = curves[hit.i];
-        const hitBaseLabel = hitCurve.label || hitCurve.expression;
-        const hitEvaluatedEq = defaultAxisNames ? formatLinearCurveEquation(hitCurve.expression, variables) : undefined;
-        const values = { label: hitBaseLabel, equation: hitEvaluatedEq ?? "", x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
+        const values = { label: curveLegendText(hitCurve, variables, defaultAxisNames), x: xLabel, xValue: Number(x.toPrecision(5)), y: yLabel, yValue: Number(hit.y.toPrecision(5)) };
         // Bound like every other readout state, so a language switch keeps the coordinates shown.
-        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,hitEvaluatedEq && hitBaseLabel !== hitEvaluatedEq
-          ? "{label}（{equation}）：{x} ≈ {xValue}，{y} ≈ {yValue}"
-          : "{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
+        bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,"{label}：{x} ≈ {xValue}，{y} ≈ {yValue}",values);});
       } else {
         bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,'当前位置没有可读曲线');});
       }
@@ -209,8 +245,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     svg.onkeydown=event=>{if(!['+','=','-','0','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();event.stopPropagation();
       if(event.key==='0')current.ranges=structuredClone(recommended);
       else if(['+','=','-'].includes(event.key))current.ranges=zoomPlotRanges(current.ranges,event.key==='-'?1.25:.8);
-      else {const dx=(current.ranges.x.max-current.ranges.x.min)*.08*(event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0);
-        const dy=(current.ranges.y.max-current.ranges.y.min)*.08*(event.key==='ArrowDown'?-1:event.key==='ArrowUp'?1:0);current.ranges=panPlotRanges(current.ranges,dx,dy);}
+      else {const dx=(ranges.x.max-ranges.x.min)*.08*(event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0);
+        const dy=(ranges.y.max-ranges.y.min)*.08*(event.key==='ArrowDown'?-1:event.key==='ArrowUp'?1:0);current.ranges=panPlotRanges(current.ranges,dx,dy);}
       refresh();(host.querySelector("svg") as SVGSVGElement|null)?.focus();};
   }
   current.draw=refresh;
@@ -218,9 +254,10 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
   refresh();
   controllers.set(parent, {
     body, signature: controllerSignature(node),
-    update(nextNode, nextVariables) {
+    update(nextNode, nextVariables, nextAnimation) {
       node = nextNode;
       variables = nextVariables;
+      animation = nextAnimation;
       curves = node.content?.curves ?? [];
       evaluators = compileEvaluators();
       refresh();

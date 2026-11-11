@@ -64,8 +64,11 @@ import {
   sampleImplicitPlotExpression,
   samplePlotExpression,
   formatPointLabel,
-  formatLinearCurveEquation,
+  curveLegendText,
+  plotEdgeIndicator,
   type PlotRange,
+  plotSampleAnimation,
+  type PlotSampleAnimation,
 } from "./plot.js";
 import {
   studentInputMethod,
@@ -614,14 +617,29 @@ function drawPlot(
   const clipId = reuseFrame ? priorFrame.clipId : `plot-clip-${++plotClipSequence}`;
   if (!reuseFrame) {
     const previousTickSteps = plotTickSteps.get(parent);
-    const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
-      minMajorPixelSpacing: 46,
+    const piX = axes.x?.ticks === "pi";
+    const equalUnits = axes.equal_scale === true;
+    // Label spacing follows the widest label the range can produce.
+    const labelWidth = (range: PlotRange) => 6.5 * Math.max(...[range.min, range.max].map(value =>
+      Number(value.toPrecision(4)).toString().length)) + 14;
+    const planX = (step?: number) => planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
+      minMajorPixelSpacing: Math.max(40, labelWidth(xRange)),
       previousStep: previousTickSteps?.x,
+      ...(piX ? { unit: "pi" as const } : step ? { step } : {}),
     });
-    const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
+    const planY = (step?: number) => planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
       minMajorPixelSpacing: 34,
       previousStep: previousTickSteps?.y,
+      ...(step ? { step } : {}),
     });
+    let xTicks = planX();
+    let yTicks = planY();
+    // Equal units read as equal only when both axes count in the same step.
+    if (equalUnits && !piX && xTicks.step !== yTicks.step) {
+      const shared = Math.max(xTicks.step, yTicks.step);
+      xTicks = planX(shared);
+      yTicks = planY(shared);
+    }
     plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
     for (const value of xTicks.minor) {
       const x = mapX(value);
@@ -717,6 +735,22 @@ function drawPlot(
     }
   });
 
+  // Removable discontinuities: an open circle where the curve has no value.
+  curves.forEach((curve: Record<string, any>, index: number) => {
+    if (!Array.isArray(curve.holes)) return;
+    const series = Number(curve.plotSeries ?? index) % 6;
+    for (const hole of curve.holes) {
+      const hx = Number(hole?.x), hy = Number(hole?.y);
+      if (![hx, hy].every(Number.isFinite) || hx < xRange.min || hx > xRange.max || hy < yRange.min || hy > yRange.max) continue;
+      const ring = document.createElementNS(SVG_NS, "circle");
+      ring.setAttribute("cx", String(mapX(hx)));
+      ring.setAttribute("cy", String(mapY(hy)));
+      ring.setAttribute("r", "4");
+      ring.classList.add("plot-hole", `plot-series-${series}`);
+      svg.append(ring);
+    }
+  });
+
   let measurementText: (()=>string) | undefined;
   let controlHint: (()=>string) | undefined;
   if (content.measurement === "secant" && content.points?.length === 2) {
@@ -749,7 +783,31 @@ function drawPlot(
     const pointX = Number(point.x);
     const pointY = Number(point.y);
     if (!Number.isFinite(pointX) || !Number.isFinite(pointY)) continue;
-    if (pointX < xRange.min || pointX > xRange.max || pointY < yRange.min || pointY > yRange.max) continue;
+    if (pointX < xRange.min || pointX > xRange.max || pointY < yRange.min || pointY > yRange.max) {
+      // Off-screen points keep a marker on the frame edge, pointing at them.
+      const edge = plotEdgeIndicator({ x: pointX, y: pointY }, { x: xRange, y: yRange });
+      if (edge) {
+        const ex = mapX(edge.x), ey = mapY(edge.y);
+        const angle = Math.atan2(mapY(pointY) - ey, mapX(pointX) - ex);
+        const tip = (distance: number, turn: number) => `${ex + Math.cos(angle + turn) * distance},${ey + Math.sin(angle + turn) * distance}`;
+        const arrow = document.createElementNS(SVG_NS, "polygon");
+        arrow.setAttribute("points", [tip(0, 0), tip(-11, 0.45), tip(-11, -0.45)].join(" "));
+        arrow.classList.add("plot-edge-indicator");
+        arrow.dataset.id = text(point.id);
+        svg.append(arrow);
+        if (point.label) {
+          const marker = document.createElementNS(SVG_NS, "text");
+          const nearRight = ex > PLOT_RIGHT - 30, nearTop = ey < PLOT_TOP + 14;
+          marker.setAttribute("x", String(nearRight ? ex - 14 : ex + 10));
+          marker.setAttribute("y", String(nearTop ? ey + 18 : ey - 6));
+          if (nearRight) marker.setAttribute("text-anchor", "end");
+          marker.classList.add("plot-label", "plot-edge-label");
+          marker.textContent = formatPointLabel(text(point.label), pointX, pointY);
+          svg.append(marker);
+        }
+      }
+      continue;
+    }
     const x = mapX(pointX);
     const y = mapY(pointY);
     const dot = document.createElementNS(SVG_NS, "circle");
@@ -811,11 +869,7 @@ function drawPlot(
     const legend = document.createElement("div");
     legend.className = "plot-legend";
     for (const { curve, series } of renderedCurves) {
-      const baseLabel = text(curve.label || curve.expression);
-      const evaluatedEq = formatLinearCurveEquation(curve.expression, variables);
-      const displayText = evaluatedEq && baseLabel !== evaluatedEq
-        ? (baseLabel ? `${baseLabel}（${evaluatedEq}）` : evaluatedEq)
-        : baseLabel;
+      const displayText = curveLegendText({ label: text(curve.label), expression: curve.expression }, variables);
       appendText(
         legend,
         displayText,
@@ -1538,13 +1592,14 @@ function renderContent(
   variables: Record<string, number> = {},
   /** Draw ink strokes from this stroke on, one after another; undefined shows it still. */
   replayInkFrom?: number,
+  plotAnimation?: PlotSampleAnimation,
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
   const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
-  if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot); return; }
+  if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
       renderScene3d(parent, node, sceneView, variables, sceneInput);
@@ -2468,14 +2523,15 @@ export class InfiniteBoardView {
       if (board.focus.includes(node.id)) element.classList.add("focused");
       if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");
       applyEmphasisClass(element, latestEmphasis(node));
+      const plotAnimation = kind === "plot" ? plotSampleAnimation(node.content ?? {}, action?.animation) : undefined;
       const signature = nodeContentSignature(node)
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
-        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "")
+        + (kind === "plot" ? plotVariableSignature(node, variableValues) + JSON.stringify(plotAnimation ?? null) : "")
         + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
-          try { updated = updatePlotExplorer(element, node, variableValues); }
+          try { updated = updatePlotExplorer(element, node, variableValues, plotAnimation); }
           catch { /* Recreate the plot if an incremental update cannot render. */ }
         }
         if (kind === "scene3d") {
@@ -2493,6 +2549,7 @@ export class InfiniteBoardView {
             this.scene3dViews[node.id], this.handleScene3dInput, variableValues,
             created && node.id === activeCreateId ? 0
               : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
+            plotAnimation,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
         }

@@ -12,6 +12,29 @@ export interface AxisTickOptions {
   minMinorPixelSpacing?: number;
   previousStep?: number;
   maxTickCount?: number;
+  /** Use exactly this step (shared steps on equal-unit plots). */
+  step?: number;
+  /** Label multiples of π (radian trigonometric plots). */
+  unit?: "pi";
+}
+
+const PI_FRACTIONS = [1 / 4, 1 / 2, 1, 2, 4, 8, 16] as const;
+
+/** 0, π/4, π/2, 3π/4, π, 3π/2, 2π, −π ... with a true minus sign. */
+export function formatPiMultiple(value: number): string {
+  const quarters = Math.round(value / Math.PI * 4);
+  if (quarters === 0) return "0";
+  const sign = quarters < 0 ? "−" : "";
+  const divisor = quarters % 4 === 0 ? 1 : quarters % 2 === 0 ? 2 : 4;
+  const numerator = Math.abs(quarters) * divisor / 4;
+  const head = numerator === 1 ? "π" : `${numerator}π`;
+  return `${sign}${head}${divisor === 1 ? "" : `/${divisor}`}`;
+}
+
+/** Locale-independent number with a true minus sign. */
+function formatNumber(value: number, decimals: number): string {
+  const text = Number(value.toFixed(decimals)).toString();
+  return text.startsWith("-") ? `−${text.slice(1)}` : text;
 }
 
 const NICE_MULTIPLIERS = [1, 2, 5, 10] as const;
@@ -55,10 +78,21 @@ export function planAxisTicks(
   const minMajorPixelSpacing = Math.max(24, options.minMajorPixelSpacing ?? 48);
   const safePixels = Number.isFinite(pixelLength) && pixelLength > 0 ? pixelLength : 240;
   const targetIntervals = Math.max(1, Math.floor(safePixels / minMajorPixelSpacing));
-  let step = niceStep(span / targetIntervals);
+  if (options.unit === "pi") {
+    const fraction = PI_FRACTIONS.find(candidate => safePixels * candidate * Math.PI / span >= minMajorPixelSpacing) ?? PI_FRACTIONS.at(-1)!;
+    const piStep = fraction * Math.PI;
+    const piMinor = piStep / (fraction >= 1 ? 4 : 2);
+    const major = tickValues(range, piStep, maxTickCount);
+    const majorKeys = new Set(major.map(value => Math.round(value / piMinor)));
+    const minor = safePixels * piMinor / span >= Math.max(10, options.minMinorPixelSpacing ?? 20)
+      ? tickValues(range, piMinor, maxTickCount * 5).filter(value => !majorKeys.has(Math.round(value / piMinor)))
+      : [];
+    return { major, minor, step: piStep, format: formatPiMultiple };
+  }
+  let step = options.step && Number.isFinite(options.step) && options.step > 0 ? options.step : niceStep(span / targetIntervals);
 
   const previous = options.previousStep;
-  if (previous && Number.isFinite(previous) && previous > 0) {
+  if (!options.step && previous && Number.isFinite(previous) && previous > 0) {
     const previousSpacing = safePixels * previous / span;
     if (previousSpacing >= minMajorPixelSpacing * .82
       && previousSpacing <= minMajorPixelSpacing * 2.35) step = previous;
@@ -90,7 +124,7 @@ export function planAxisTicks(
       if (Math.abs(normalized) >= 1e9 || (Math.abs(normalized) > 0 && Math.abs(normalized) < 1e-6)) {
         return normalized.toExponential(2).replace(/\.00e/u, "e").replace(/\.0e/u, "e");
       }
-      return Number(normalized.toFixed(decimals)).toString();
+      return formatNumber(normalized, decimals);
     },
   };
 }

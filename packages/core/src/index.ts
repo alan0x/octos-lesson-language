@@ -1102,6 +1102,26 @@ function validatePlotContent(
 ): void {
   if (action.kind !== "plot" || !Array.isArray(action.content.curves)) return;
   const axes = action.content.axes ?? {};
+  if (axes.layout !== undefined && (axes.layout !== "adaptive" || axes.equal_scale !== true)) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/layout`, "Adaptive plot layout requires equal_scale=true");
+  }
+  if (axes.follow_samples !== undefined && typeof axes.follow_samples !== "boolean") {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/follow_samples`, "Sample following must be a boolean");
+  }
+  for (const axis of ["x", "y"] as const) {
+    const ticks = (axes[axis] as Record<string, unknown> | undefined)?.ticks;
+    if (ticks !== undefined && ticks !== "pi") {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/${axis}/ticks`, "Axis ticks may only be \"pi\"");
+    }
+  }
+  (action.content.curves as unknown[]).forEach((curve, index) => {
+    const holes = (curve as Record<string, unknown> | null)?.holes;
+    if (holes === undefined) return;
+    if (!Array.isArray(holes) || holes.length > 16 || !holes.every(hole => hole && typeof hole === "object"
+      && Number.isFinite((hole as Record<string, unknown>).x) && Number.isFinite((hole as Record<string, unknown>).y))) {
+      fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/curves/${index}/holes`, "Curve holes are up to 16 finite {x, y} points");
+    }
+  });
   const plotRange = (
     value: unknown,
     rangePath: string,

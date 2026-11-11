@@ -22,7 +22,7 @@ test("padded integer ranges use readable ticks instead of subdivided boundaries"
 test("small decimal ranges keep meaningful decimal ticks", () => {
   const plan = planAxisTicks({ min: -.2, max: .2 }, 260);
   assert.deepEqual(plan.major, [-.2, -.1, 0, .1, .2]);
-  assert.deepEqual(plan.major.map(plan.format), ["-0.2", "-0.1", "0", "0.1", "0.2"]);
+  assert.deepEqual(plan.major.map(plan.format), ["−0.2", "−0.1", "0", "0.1", "0.2"]);
 });
 
 test("small zoom changes keep the previous readable step to avoid label flicker", () => {
@@ -56,4 +56,17 @@ test("wheel zoom is continuous and follows wheel direction", () => {
   assert.ok(coordinateWheelZoomFactor(-100, 0) < 1);
   assert.ok(coordinateWheelZoomFactor(100, 0) > 1);
   assert.ok(coordinateWheelZoomFactor(-3, 1) < 1);
+});
+
+test("π ticks label radian axes in multiples of π", () => {
+  const plan = planAxisTicks({ min: -2 * Math.PI, max: 2 * Math.PI }, 362, { unit: "pi", minMajorPixelSpacing: 40 });
+  assert.deepEqual(plan.major.map(plan.format), ["−2π", "−3π/2", "−π", "−π/2", "0", "π/2", "π", "3π/2", "2π"]);
+  const narrow = planAxisTicks({ min: -Math.PI, max: Math.PI }, 120, { unit: "pi", minMajorPixelSpacing: 40 });
+  assert.deepEqual(narrow.major.map(narrow.format), ["−π", "0", "π"]);
+});
+
+test("a forced step is shared exactly (equal-unit plots)", () => {
+  const plan = planAxisTicks({ min: -4, max: 4 }, 362, { step: 2, previousStep: 1 });
+  assert.equal(plan.step, 2);
+  assert.deepEqual(plan.major, [-4, -2, 0, 2, 4]);
 });

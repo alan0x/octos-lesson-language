@@ -1130,3 +1130,33 @@ test("a point bound with hide_when_undefined disappears while undefined and retu
     { k1: 1, k2: 1 }), (error) => error instanceof OllError && error.code === "OLL_BINDING_EVALUATION_FAILED",
   "without the option an undefined value still fails");
 });
+
+test("plot view fields: adaptive layout, sample following, π ticks and holes are validated", () => {
+  const lesson = (content: Record<string, unknown>): AuthoringLesson => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode: "explain", language: "zh-CN", title: "函数图像", goals: ["观察图像"] },
+    steps: [{ key: "show", purpose: "显示图像", beats: [{ key: "draw", say: "这是图像。", actions: [{
+      do: "write", as: "graph", kind: "plot", role: "diagram", content, place: { relation: "new_region" },
+    }, { do: "focus", when: "after_speech", targets: ["graph"], intent: "current_step" }] }] }],
+    close: { summary: "看过图像。", focus: ["graph"] },
+  });
+  const valid = {
+    axes: { equal_scale: true, layout: "adaptive", follow_samples: true,
+      x: { min: -6.283185307179586, max: 6.283185307179586, ticks: "pi" }, y: { min: -2, max: 3 } },
+    curves: [{ as: "curve", expression: "(x^2-1)/(x-1)", holes: [{ x: 1, y: 2 }] }],
+  };
+  assertAuthoringSchema(lesson(valid));
+  validateAuthoringLesson(lesson(valid));
+  const invalid: Array<[string, (content: any) => void]> = [
+    ["layout without equal units", content => { delete content.axes.equal_scale; }],
+    ["unknown tick unit", content => { content.axes.x.ticks = "degrees"; }],
+    ["non-boolean sample following", content => { content.axes.follow_samples = "yes"; }],
+    ["non-finite hole", content => { content.curves[0].holes = [{ x: 1, y: null }]; }],
+  ];
+  for (const [name, change] of invalid) {
+    const content = structuredClone(valid);
+    change(content);
+    assert.throws(() => validateAuthoringLesson(lesson(content)),
+      (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD", name);
+  }
+});
