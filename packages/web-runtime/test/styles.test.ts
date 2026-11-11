@@ -46,3 +46,11 @@ test("a latent 3D face shows only when emphasized and is pointable only from the
   assert.match(styles, /\.scene3d-tracked-highlight\[data-facing="back"\]\[class\*="emphasis-"\]\s*\{[^}]*fill-opacity:\s*0/);
   assert.match(styles, /\.scene3d-face-hidden\s*\{[^}]*stroke-dasharray/);
 });
+
+test("a card's layout box includes its padding and border", () => {
+  const styles = readFileSync(resolve("packages/web-runtime/styles.css"), "utf8");
+  // The layout gives each card its full size; with content-box sizing the
+  // padding and border were added on top (38px wider, 34px taller than laid
+  // out), so cards crossed group frames and narrowed the gaps between them.
+  assert.match(styles, /\.board-node\s*\{[^}]*box-sizing:\s*border-box/);
+});

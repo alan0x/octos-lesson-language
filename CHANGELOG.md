@@ -55,6 +55,7 @@
 
 ### Fixed
 
+- Cards are drawn at the size the layout gives them. Their padding and border were added outside that size (content-box sizing), so every card except math was 38px wider and about 34px taller than laid out: cards crossed their group frames and the gaps between cards shrank. Visual cards now scale their drawing to the slightly smaller inner width, and text wraps to the card the layout planned. Rendering only.
 - Geometry cards show their axis labels again. The zoomable view replaced each axis with its range, which dropped the label, so every geometry card showed "x" and "y". Rendering only.
 - 3D highlights accept `shown: "when_emphasized"`: the part is filled only once emphasized; while a latent face faces the viewer its label shows and it can be pointed at.
 - 3D boxes draw the faces turned away from the viewer as dashed hidden edges, so a see-through box no longer reads two ways (near faces seen as far). Capability `scene3d:latent-highlights`, player 0.7.0.
