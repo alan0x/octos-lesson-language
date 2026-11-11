@@ -310,7 +310,8 @@ export function planNumberLineTicks(content: Pick<NumberLineContent, "range" | "
 /** A jump's start and end values, after bindings have been applied. */
 export function jumpEnds(content: NumberLineContent, jump: NumberLineJump): { from: number; to: number } | undefined {
   const start = typeof jump.from === "string" && numberLineValue(jump.from) === undefined
-    ? numberLineValue(content.points?.find((point) => point.as === jump.from || point.as.endsWith(`:${jump.from}`))?.value)
+    // Authoring names the point by alias; canonical content by fragment id.
+    ? numberLineValue(content.points?.find((point) => point.as === jump.from || (point as { id?: string }).id === jump.from)?.value)
     : numberLineValue(jump.from);
   const by = numberLineValue(jump.by);
   if (start === undefined || by === undefined) return undefined;

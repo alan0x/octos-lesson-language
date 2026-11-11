@@ -7,13 +7,7 @@
  */
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
 
-export const MATH_PLUGIN_MANIFEST = {
-  id: "math",
-  version: "0.1.0",
-  // Every subject plugin depends on the shared tools (decision 0012).
-  depends: { shared: "0.1.0" },
-  ollCore: ">=0.10.0",
-} as const;
+export { MATH_PLUGIN_MANIFEST } from "./manifest.js";
 
 /** The plugin's choice in the Jev subject question, per language. */
 export const MATH_SUBJECT_DESCRIPTION = {

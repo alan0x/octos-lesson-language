@@ -9,6 +9,7 @@ import {
 } from "./math-expression.js";
 import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
+import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -450,6 +451,7 @@ function validateStudentTasks(
   availableControls: Map<string, Set<string>>,
   scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
   registry: Registry,
+  numberLineGrids: Map<string, NumberLineContent> = new Map(),
 ): void {
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
@@ -499,7 +501,7 @@ function validateStudentTasks(
       requireArray(operation.controls, `${operationPath}/controls`);
       const controls = new Set<string>();
       operation.controls.forEach((control, controlIndex) => {
-        if (control !== "slider" && control !== "geometry_point") {
+        if (control !== "slider" && control !== "geometry_point" && control !== "number_line_point") {
           fail("OLL_INVALID_STUDENT_TASK", `${operationPath}/controls/${controlIndex}`, `Unsupported task control '${String(control)}'`);
         }
         if (controls.has(control)) {
@@ -570,6 +572,13 @@ function validateStudentTasks(
               check(declaration.min + sample * declaration.control!.step!);
             }
           }
+          // A dragged number-line point snaps to the line's smallest ticks: only those values can be reached.
+          const grid = numberLineGrids.get(variableAlias!);
+          if (!reachable && grid && allowed?.controls.includes("number_line_point")) {
+            for (const tick of planNumberLineTicks(grid)) {
+              if (tick.value >= declaration.min - 1e-9 && tick.value <= declaration.max + 1e-9) check(tick.value);
+            }
+          }
           if (!reachable && allowed?.controls.includes("geometry_point")) {
             const sampleCount = 20_000;
             for (let sample = 0; sample <= sampleCount && !reachable; sample += 1) {
@@ -615,8 +624,8 @@ function bindableTargets(action: WriteAction): Map<string, Set<string>> {
 
 function validateValueBindings(action: WriteAction, path: string, variables: Map<string, number>): void {
   if (action.content.bindings === undefined) return;
-  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d") {
-    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, and scene3d nodes");
+  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d" && action.kind !== NUMBER_LINE_KIND) {
+    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, scene3d and number_line nodes");
   }
   requireArray(action.content.bindings, `${path}/content/bindings`);
   const targets = bindableTargets(action);
@@ -703,7 +712,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject, path = "/content"): string[] {
   const result = validateContentFragments(content, path);
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals"]) {
     if (!content?.[field]) continue;
     for (const [index, item] of content[field].entries()) {
       if (item?.as) result.push(item.as);
@@ -1399,6 +1408,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   validateLessonAuthor(document);
   const lessonVariables = validateLessonVariables(document);
   const availableStudentControls = new Map<string, Set<string>>();
+  // Variables a learner drags on a number line, with the line whose ticks the drag snaps to.
+  const numberLineGrids = new Map<string, NumberLineContent>();
   const scene3dCameras = new Map<string, { yaw: number; pitch: number; zoom: number }>();
   for (const variable of document.lesson.variables ?? []) {
     if (variable.control?.kind === "slider") {
@@ -1554,6 +1565,24 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validateGeometryContent(action, actionPath, lessonVariables);
           validatePlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
+          if (action.kind === NUMBER_LINE_KIND) {
+            validateNumberLineContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
+            for (const [pointIndex, point] of ((action.content.points ?? []) as JsonObject[]).entries()) {
+              const variable = point.interaction?.variable;
+              if (typeof variable !== "string") continue;
+              const pointPath = `${actionPath}/content/points/${pointIndex}/interaction/variable`;
+              if (!lessonVariables.has(variable)) fail("OLL_REFERENCE_NOT_FOUND", pointPath, `Variable '${variable}' is not declared`);
+              // The learner drags the point to set the variable, so the point must follow the variable itself.
+              const bound = ((action.content.bindings ?? []) as JsonObject[]).some((binding) =>
+                binding.target === `${point.as}.value` && String(binding.expression).trim() === variable);
+              if (!bound) fail("OLL_INVALID_BINDING", pointPath, `A draggable point is bound to its variable: add {"target": "${point.as}.value", "expression": "${variable}"}`);
+              if (numberLineGrids.has(variable)) fail("OLL_INVALID_OPERATION_PAYLOAD", pointPath, `Variable '${variable}' is already dragged on a number line`);
+              numberLineGrids.set(variable, action.content as unknown as NumberLineContent);
+              const controls = availableStudentControls.get(variable) ?? new Set<string>();
+              controls.add("number_line_point");
+              availableStudentControls.set(variable, controls);
+            }
+          }
           if (action.kind === "scene3d") {
             scene3dHighlights.set(action.as, new Set(((action.content.highlights ?? []) as JsonObject[]).map((highlight) => highlight.as as string)));
             const camera = action.content.camera as UnknownRecord;
@@ -1674,7 +1703,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
     });
   });
 
-  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids);
   validateReflections(document, registry);
 
   if (document.close?.focus) {
@@ -1693,7 +1722,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;
@@ -1712,6 +1741,10 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
       }
       if (field === "arcs") {
         normalized.center = `${nodeId}:fragment:${item.center}`;
+      }
+      // A number-line jump starts at a point of the same card, or at a value.
+      if (field === "jumps" && typeof item.from === "string" && numberLineValue(item.from) === undefined) {
+        normalized.from = `${nodeId}:fragment:${item.from}`;
       }
       if (field === "polygons" && Array.isArray(item.points)) {
         normalized.points = item.points.map((point: string) => `${nodeId}:fragment:${point}`);

@@ -1,4 +1,6 @@
-import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES } from "./capabilities.js";
+import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES, OLL_PLUGIN_NODE_KINDS } from "./capabilities.js";
+import { MATH_PLUGIN_MANIFEST } from "../../plugin-math/src/manifest.js";
+import { NUMBER_LINE_FEATURE, NUMBER_LINE_KIND, NUMBER_LINE_PLUGIN_VERSION } from "../../plugin-math/src/number-line.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
@@ -71,6 +73,41 @@ export interface ExecutionExtension {
 export interface ExecutionOptions {
   /** Installed plugin extensions; their features join the core table. */
   extensions?: readonly ExecutionExtension[];
+  /**
+   * First-party plugins ship with OLL and are always installed (decision 0013
+   * §3); they join `extensions` unless one of the same id is passed. False
+   * leaves them out, as a player without them would.
+   */
+  firstParty?: boolean;
+}
+
+const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
+  typeof content.range === "object" && content.range !== null
+  && ["points", "jumps", "intervals", "ticks"].some((field) => field in content);
+
+/** The first-party plugins' runtime extensions. */
+export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
+  {
+    plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION },
+    detect(content, kind, use) {
+      if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) use(NUMBER_LINE_FEATURE);
+    },
+  },
+]);
+
+/** Every first-party plugin feature, with the plugin version that introduced it. */
+const FIRST_PARTY_FEATURES: Readonly<Record<string, string>> = Object.freeze(Object.assign({}, ...FIRST_PARTY_EXTENSIONS.map((extension) => extension.features)));
+
+/** First-party plugin node kinds and the feature each requires. */
+const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE });
+
+/** The extensions a check uses: those passed, plus first-party plugins not overridden. */
+export function installedExtensions(options: ExecutionOptions = {}): readonly ExecutionExtension[] {
+  const passed = options.extensions ?? [];
+  if (options.firstParty === false) return passed;
+  const ids = new Set(passed.map((extension) => extension.plugin.id));
+  return [...FIRST_PARTY_EXTENSIONS.filter((extension) => !ids.has(extension.plugin.id)), ...passed];
 }
 
 const PLUGIN_ID = /^[a-z][a-z0-9-]{0,31}$/;
@@ -128,13 +165,15 @@ export function compareExecutionVersions(left: string, right: string): number {
 
 /** Inspect structural units only; never infer intention from narration or labels. */
 export function deriveExecutionRequirements(events: readonly CanonicalEvent[], options: ExecutionOptions = {}): ExecutionRequirements {
-  const extensions = options.extensions ?? [];
+  const extensions = installedExtensions(options);
   const features = extensions.length ? composeExecutionFeatures(extensions) : OLL_EXECUTION_FEATURES;
   const required = new Set<string>();
   // Node kinds created in these events, so revisions reach detectors with their kind.
   const kinds = new Map<string, string>();
   const add = (feature: string, path: string) => {
-    if (!Object.hasOwn(features, feature)) {
+    // A first-party plugin feature is known even when that plugin is left out,
+    // so the player's check can say which plugin is missing.
+    if (!Object.hasOwn(features, feature) && !Object.hasOwn(FIRST_PARTY_FEATURES, feature)) {
       throw new ExecutionCapabilityError(path, `Unsupported executable capability '${feature}'`);
     }
     required.add(feature);
@@ -184,7 +223,10 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
         if (inkContent && (inkContent as { shown_strokes?: unknown }).shown_strokes !== undefined) add("ink:shown-strokes", `${actionPath}`);
         if (inkContent && (inkContent as { drawn_size?: unknown }).drawn_size !== undefined) add("ink:drawn-size", `${actionPath}`);
         if (action.node) {
-          add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
+          // A first-party plugin's node kind is required through its plugin feature, whether or not that plugin is installed.
+          const pluginFeature = PLUGIN_NODE_FEATURES[String(action.node.kind)];
+          if (pluginFeature) add(pluginFeature, `${actionPath}/node/kind`);
+          else add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);
@@ -213,7 +255,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
   // A Map: plugin ids such as "constructor" must not meet inherited properties.
   const pluginMinimums = new Map<string, string>();
   for (const feature of requiredCapabilities) {
-    const minimum = features[feature]!;
+    const minimum = features[feature] ?? FIRST_PARTY_FEATURES[feature]!;
     const plugin = pluginOf(feature);
     if (plugin) {
       const current = pluginMinimums.get(plugin);
@@ -231,7 +273,7 @@ export function assertExecutionSupported(
   supportedCapabilities?: readonly string[],
   options: ExecutionOptions = {},
 ): ExecutionRequirements {
-  const extensions = options.extensions ?? [];
+  const extensions = installedExtensions(options);
   const requirements = deriveExecutionRequirements(events, options);
   const available = new Set(supportedCapabilities ?? Object.keys(composeExecutionFeatures(extensions)));
   if (compareExecutionVersions(requirements.minimumPlayerVersion, playerVersion) > 0) {
@@ -255,7 +297,7 @@ export function assertExecutionDeclaration(
   declaration: { minimumPlayerVersion: string; requiredCapabilities?: readonly string[] },
   options: ExecutionOptions = {},
 ): ExecutionRequirements {
-  const features = composeExecutionFeatures(options.extensions);
+  const features = composeExecutionFeatures(installedExtensions(options));
   const requirements = assertExecutionSupported(events, undefined, undefined, options);
   if (compareExecutionVersions(declaration.minimumPlayerVersion, requirements.minimumPlayerVersion) < 0) {
     throw new ExecutionCapabilityError("minimumPlayerVersion", "Declared player version is lower than the content requires");
@@ -293,7 +335,7 @@ export function assertDeclarationPlayable(
   if (compareExecutionVersions(declaration.minimumPlayerVersion, playerVersion) > 0) {
     throw new ExecutionCapabilityError("minimumPlayerVersion", `Lesson requires player ${declaration.minimumPlayerVersion}`);
   }
-  const extensions = options.extensions ?? [];
+  const extensions = installedExtensions(options);
   const features = composeExecutionFeatures(extensions);
   for (const feature of declaration.requiredCapabilities ?? []) {
     if (Object.hasOwn(features, feature)) continue;
