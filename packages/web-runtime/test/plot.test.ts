@@ -3,7 +3,12 @@ import assert from "node:assert/strict";
 import {
   compilePlotExpression,
   evaluatePlotExpression,
+  extendPlotRanges,
+  plotFrame,
+  followPlotSamples,
+  plotSampleAnimation,
   plotPathData,
+  plotSurfaceHeight,
   referencedPlotVariables,
   sampleImplicitPlotExpression,
   samplePlotExpression,
@@ -169,4 +174,63 @@ test("formatLinearCurveEquation formats linear functions and ignores non-linear 
   assert.equal(formatLinearCurveEquation("m * x + b", { m: -3, b: -2 }), "y = -3x - 2");
   assert.equal(formatLinearCurveEquation("x^2", {}), undefined);
   assert.equal(formatLinearCurveEquation("sin(x)", {}), undefined);
+});
+
+test("equal-unit plot surfaces grow taller from the published range", () => {
+  const bounds = { minHeight: 160, maxHeight: 420 };
+  // A tall published view (a translated parabola lesson: x span 16, y span 22)
+  // clamps at the maximum card height.
+  assert.equal(plotSurfaceHeight(404, { min: -8, max: 8 }, { min: -11, max: 11 }, bounds), 420);
+  // A balanced view keeps exact unit scale: a 362 px frame width, span ratio 1.
+  assert.equal(plotSurfaceHeight(404, { min: -4, max: 4 }, { min: -4, max: 4 }, bounds), 396);
+  // A wide-flat view never shrinks below the minimum card height.
+  assert.equal(plotSurfaceHeight(404, { min: -15, max: 15 }, { min: -1, max: 1 }, bounds), 160);
+  // Degenerate ranges fall back to the minimum height.
+  assert.equal(plotSurfaceHeight(404, { min: 1, max: 1 }, { min: 0, max: 1 }, bounds), 160);
+});
+
+
+test("only opted-in plot sample animations temporarily expand the published view", () => {
+  const content = { axes: { follow_samples: true }, bindings: [{ target: "plot#point.x", expression: "number_01" }] };
+  const animation = { variable: "number_01", to: 5 };
+  assert.equal(plotSampleAnimation(content, animation), animation);
+  assert.equal(plotSampleAnimation({ ...content, axes: {} }, animation), undefined);
+  assert.equal(plotSampleAnimation(content, { variable: "number_02", to: 5 }), undefined);
+  const published = { x: { min: -4, max: 4 }, y: { min: -22, max: 8 } };
+  const points = [{ x: -1, y: 4 }, { x: 4, y: -21 }];
+  const view = followPlotSamples(published, points, { x: 5, y: -32 });
+  assert.ok(view.x.max > 5 && view.y.min < -32);
+  assert.deepEqual(published, { x: { min: -4, max: 4 }, y: { min: -22, max: 8 } });
+  assert.deepEqual(followPlotSamples(published, points, { x: 0, y: 3 }), published);
+});
+
+test("adaptive plots fill the frame by extending the short axis at the existing unit scale", () => {
+  const tall = { x: { min: -8, max: 8 }, y: { min: -20, max: 15 } };
+  const fitted = extendPlotRanges(404, 420, tall);
+  const before = plotFrame(404, 420, tall.x, tall.y, true);
+  const after = plotFrame(404, 420, fitted.x, fitted.y, true);
+  assert.deepEqual(fitted.y, tall.y);
+  assert.ok(fitted.x.min < -16 && fitted.x.max > 16);
+  assert.ok(Math.abs(after.width - 362) < 1e-9);
+  assert.equal(after.height, before.height);
+  assert.ok(Math.abs(after.width / (fitted.x.max - fitted.x.min) - before.width / 16) < 1e-9);
+
+  const wide = { x: { min: -15, max: 15 }, y: { min: 3, max: 5 } };
+  const fittedWide = extendPlotRanges(404, 160, wide);
+  const wideFrame = plotFrame(404, 160, fittedWide.x, fittedWide.y, true);
+  assert.deepEqual(fittedWide.x, wide.x);
+  assert.equal((fittedWide.y.min + fittedWide.y.max) / 2, 4);
+  assert.ok(Math.abs(wideFrame.height - 126) < 1e-9);
+});
+
+test("zoom around the extended area keeps the cursor coordinate and stores the unpadded range", async () => {
+  const { zoomPlotRanges } = await import("../src/plot-explorer.js");
+  const ranges = { x: { min: -8, max: 8 }, y: { min: -20, max: 15 } };
+  const fitted = extendPlotRanges(404, 420, ranges);
+  const anchor = { x: .9, y: .5 };
+  const next = zoomPlotRanges(ranges, .5, anchor, fitted);
+  const displayedNext = extendPlotRanges(404, 420, next);
+  const xAtAnchor = (range: typeof fitted.x) => range.min + .9 * (range.max - range.min);
+  assert.ok(Math.abs(xAtAnchor(fitted.x) - xAtAnchor(displayedNext.x)) < 1e-9);
+  assert.equal(next.x.max - next.x.min, 8);
 });

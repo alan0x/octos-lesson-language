@@ -1102,6 +1102,12 @@ function validatePlotContent(
 ): void {
   if (action.kind !== "plot" || !Array.isArray(action.content.curves)) return;
   const axes = action.content.axes ?? {};
+  if (axes.layout !== undefined && (axes.layout !== "adaptive" || axes.equal_scale !== true)) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/layout`, "Adaptive plot layout requires equal_scale=true");
+  }
+  if (axes.follow_samples !== undefined && typeof axes.follow_samples !== "boolean") {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/axes/follow_samples`, "Sample following must be a boolean");
+  }
   const plotRange = (
     value: unknown,
     rangePath: string,

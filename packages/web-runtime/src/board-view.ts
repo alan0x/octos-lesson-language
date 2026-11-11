@@ -66,6 +66,8 @@ import {
   formatPointLabel,
   formatLinearCurveEquation,
   type PlotRange,
+  plotSampleAnimation,
+  type PlotSampleAnimation,
 } from "./plot.js";
 import {
   studentInputMethod,
@@ -1538,13 +1540,14 @@ function renderContent(
   variables: Record<string, number> = {},
   /** Draw ink strokes from this stroke on, one after another; undefined shows it still. */
   replayInkFrom?: number,
+  plotAnimation?: PlotSampleAnimation,
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
   const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
-  if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot); return; }
+  if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
       renderScene3d(parent, node, sceneView, variables, sceneInput);
@@ -2468,14 +2471,15 @@ export class InfiniteBoardView {
       if (board.focus.includes(node.id)) element.classList.add("focused");
       if (arrivingFocus?.has(node.id)) element.classList.add("focus-arrive");
       applyEmphasisClass(element, latestEmphasis(node));
+      const plotAnimation = kind === "plot" ? plotSampleAnimation(node.content ?? {}, action?.animation) : undefined;
       const signature = nodeContentSignature(node)
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
-        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "")
+        + (kind === "plot" ? plotVariableSignature(node, variableValues) + JSON.stringify(plotAnimation ?? null) : "")
         + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
-          try { updated = updatePlotExplorer(element, node, variableValues); }
+          try { updated = updatePlotExplorer(element, node, variableValues, plotAnimation); }
           catch { /* Recreate the plot if an incremental update cannot render. */ }
         }
         if (kind === "scene3d") {
@@ -2493,6 +2497,7 @@ export class InfiniteBoardView {
             this.scene3dViews[node.id], this.handleScene3dInput, variableValues,
             created && node.id === activeCreateId ? 0
               : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
+            plotAnimation,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
         }

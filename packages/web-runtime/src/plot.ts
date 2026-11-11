@@ -222,13 +222,89 @@ export function secantMeasurement(a: PlotSample, b: PlotSample): {dx:number;dy:n
 
 
 /** Letterbox equal-unit plots without changing the requested mathematical range. */
+export const PLOT_FRAME_MARGIN = { x: 42, y: 34 } as const;
+
 export function plotFrame(width:number,height:number,x:PlotRange,y:PlotRange,equalScale=false) {
-  const availableWidth=width-42, availableHeight=height-34;
+  const availableWidth=width-PLOT_FRAME_MARGIN.x, availableHeight=height-PLOT_FRAME_MARGIN.y;
   const scale=Math.min(availableWidth/(x.max-x.min),availableHeight/(y.max-y.min));
   const w=equalScale?scale*(x.max-x.min):availableWidth;
   const h=equalScale?scale*(y.max-y.min):availableHeight;
   const left=30+(availableWidth-w)/2,top=10+(availableHeight-h)/2;
   return {left,right:left+w,top,bottom:top+h,width:w,height:h};
+}
+
+/** Extend the shorter axis around its center to fill an equal-unit frame. */
+export function extendPlotRanges(
+  width: number,
+  height: number,
+  ranges: { x: PlotRange; y: PlotRange },
+): { x: PlotRange; y: PlotRange } {
+  const widthRatio = (width - PLOT_FRAME_MARGIN.x) / (height - PLOT_FRAME_MARGIN.y);
+  const xSpan = ranges.x.max - ranges.x.min;
+  const ySpan = ranges.y.max - ranges.y.min;
+  if (!(widthRatio > 0) || !Number.isFinite(widthRatio) || !(xSpan > 0) || !(ySpan > 0)) return ranges;
+
+  const axis = xSpan < ySpan * widthRatio ? "x" : "y";
+  const span = axis === "x" ? xSpan : ySpan;
+  const targetSpan = axis === "x" ? ySpan * widthRatio : xSpan / widthRatio;
+  const padding = (targetSpan - span) / 2;
+  const extended = { min: ranges[axis].min - padding, max: ranges[axis].max + padding };
+  if (!(padding > 0) || !Number.isFinite(extended.min) || !Number.isFinite(extended.max)) return ranges;
+  return { ...ranges, [axis]: extended };
+}
+
+/**
+ * Surface height for an equal-unit plot at a given width: the card grows
+ * taller instead of letterboxing into a wide-flat box. The caller passes the
+ * published (recommended) range, so panning or zooming never resizes the
+ * card. The renderer extends an axis if the height bounds leave extra space.
+ */
+export function plotSurfaceHeight(
+  width: number,
+  x: PlotRange,
+  y: PlotRange,
+  bounds: { minHeight: number; maxHeight: number },
+): number {
+  const xSpan = x.max - x.min, ySpan = y.max - y.min;
+  if (!(xSpan > 0) || !(ySpan > 0)) return bounds.minHeight;
+  const height = Math.round(PLOT_FRAME_MARGIN.y + Math.max(0, width - PLOT_FRAME_MARGIN.x) * ySpan / xSpan);
+  return Math.max(bounds.minHeight, Math.min(bounds.maxHeight, height));
+}
+
+export interface PlotSampleAnimation {
+  variable: string;
+  to: number;
+}
+
+export function plotSampleAnimation(
+  content: Record<string, any>,
+  animation: PlotSampleAnimation | undefined,
+): PlotSampleAnimation | undefined {
+  if (content.axes?.follow_samples !== true || !animation || !Array.isArray(content.bindings)) return undefined;
+  return content.bindings.some(binding => typeof binding.target === "string" && binding.target.endsWith(".x")
+    && binding.expression === animation.variable) ? animation : undefined;
+}
+
+/** The temporary camera comes from the replayed animation and its resolved
+ * points. The published view and the learner's exploration state stay intact. */
+export function followPlotSamples(
+  ranges: { x: PlotRange; y: PlotRange },
+  points: readonly (PlotSample & { binding_undefined?: boolean })[],
+  destination: PlotSample,
+): { x: PlotRange; y: PlotRange } {
+  const visible = [...points.filter(point => !point.binding_undefined), destination].filter(point =>
+    [point.x, point.y].every(value => Number.isFinite(value) && Math.abs(value) < 1e12));
+  const fit = (axis: "x" | "y"): PlotRange => {
+    const range = ranges[axis];
+    const min = Math.min(range.min, ...visible.map(point => point[axis]));
+    const max = Math.max(range.max, ...visible.map(point => point[axis]));
+    const pad = (range.max - range.min) * 0.05;
+    return {
+      min: min < range.min ? min - pad : range.min,
+      max: max > range.max ? max + pad : range.max,
+    };
+  };
+  return { x: fit("x"), y: fit("y") };
 }
 
 export function formatPointLabel(rawLabel: string, x: number, y: number): string {
