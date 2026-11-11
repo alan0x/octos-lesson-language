@@ -5,7 +5,7 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, numberLineValue, planNumberLineTicks, tickUnit,
+  jumpEnds, numberLineValue, planNumberLineTicks, planTickStep, tickUnit, visibleTickLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
 
@@ -34,6 +34,14 @@ function label(svg: SVGSVGElement, value: string, x: number, y: number, classNam
   node.textContent = value;
   svg.append(node);
   return node;
+}
+
+/** About how wide a tick label is drawn (12px labels, about 7 board units per character). */
+function tickLabelWidth(tick: TickLabel): number {
+  if (tick.kind === "text") return tick.text.length * 7.2;
+  const fraction = Math.max(String(tick.numerator).length, String(tick.denominator).length) * 7 + 4;
+  const whole = tick.whole !== undefined ? String(tick.whole).length * 7.2 + 4 : 0;
+  return fraction + whole + (tick.negative ? 8 : 0);
 }
 
 /** A tick label; a fraction is drawn stacked, with its whole part to the left. Returns its height below y. */
@@ -104,10 +112,14 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     svg.append(group);
   }
 
+  // Every tick is drawn; labels thin out on a regular stride when they would overlap.
+  const labelled = ticks.filter((tick) => tick.label);
+  const shown = visibleTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content));
+  const shownValues = new Set([...shown].map((index) => labelled[index]!.value));
   for (const tick of ticks) {
     const x = mapX(tick.value);
     svg.append(element("line", { x1: x, x2: x, y1: lineY - (tick.major ? 8 : 5), y2: lineY + (tick.major ? 8 : 5) }, tick.major ? "number-line-tick" : "number-line-tick number-line-tick-minor"));
-    if (tick.label) tickLabel(svg, tick.label, x, lineY + 10);
+    if (tick.label && shownValues.has(tick.value)) tickLabel(svg, tick.label, x, lineY + 10);
   }
 
   for (const jump of jumps) {

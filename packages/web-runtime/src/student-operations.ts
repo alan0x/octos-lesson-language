@@ -110,7 +110,9 @@ export type StudentVariableInputHandler = (
   event: StudentVariableInputEvent,
 ) => string | void;
 
-const controls = new Set<StudentVariableControl>(["slider", "geometry_point", "number_line_point", "reset"]);
+/** Every control a learner can change a lesson variable with; the session and the log both check against it. */
+export const STUDENT_VARIABLE_CONTROLS: ReadonlySet<StudentVariableControl> = new Set<StudentVariableControl>(["slider", "geometry_point", "number_line_point", "reset"]);
+const controls = STUDENT_VARIABLE_CONTROLS;
 const inputMethods = new Set<StudentInputMethod>(["mouse", "touch", "pen", "keyboard", "unknown"]);
 const scene3dControls = new Set<StudentScene3dControl>(["orbit", "zoom", "preset", "reset"]);
 

@@ -256,10 +256,21 @@ export type TickLabel =
 
 export interface PlannedTick { value: number; major: boolean; label?: TickLabel }
 
+/**
+ * Decimal places that write every multiple of `unit` exactly: 0.25 needs two,
+ * 0.5 one, 2 none. A unit with no short decimal (1/3) gets three places.
+ */
+export function decimalPlaces(unit: number): number {
+  for (let digits = 0; digits <= 6; digits += 1) {
+    const scaled = unit * 10 ** digits;
+    if (Math.abs(scaled - Math.round(scaled)) <= 1e-9 * Math.max(1, Math.abs(scaled))) return digits;
+  }
+  return 3;
+}
+
 function formatDecimal(value: number, unit: number): string {
-  const digits = Math.min(6, Math.max(0, Math.ceil(-Math.log10(unit) - 1e-9)));
-  const text = value.toFixed(digits).replace(/(\.\d*?)0+$/u, "$1").replace(/\.$/u, "");
-  return text === "-0" ? "0" : text.replace("-", "−");
+  const text = value.toFixed(decimalPlaces(unit)).replace(/(\.\d*?)0+$/u, "$1").replace(/\.$/u, "");
+  return text === "-0" || text === "−0" ? "0" : text.replace("-", "−");
 }
 
 /**
@@ -325,4 +336,28 @@ export function snapToTick(content: Pick<NumberLineContent, "range" | "ticks">, 
   const first = Math.ceil(content.range.min / unit - 1e-9) * unit;
   const last = Math.floor(content.range.max / unit + 1e-9) * unit;
   return Number(Math.min(last, Math.max(first, snapped)).toPrecision(12));
+}
+
+/** A planned tick label as drawn: its centre, width (board units) and whether its tick is major. */
+export interface LabelBox { x: number; width: number; major: boolean; value: number }
+
+/**
+ * Which tick labels to draw so none overlap (decision 0013 §1): every tick
+ * stays, but labels thin out on a regular stride. Major labels come first, on
+ * the smallest stride that fits, counted from 0 so 0 keeps its label; minor
+ * labels are added only if all of them fit between. Returns the indexes of
+ * the boxes to draw.
+ */
+export function visibleTickLabels(boxes: readonly LabelBox[], step: number, gap = 6): Set<number> {
+  const fits = (chosen: number[]) => chosen.every((index, position) => position === 0
+    || boxes[index]!.x - boxes[index]!.width / 2 - (boxes[chosen[position - 1]!]!.x + boxes[chosen[position - 1]!]!.width / 2) >= gap);
+  const majors = boxes.map((box, index) => ({ box, index })).filter(({ box }) => box.major);
+  let chosen: number[] = [];
+  for (let stride = 1; stride <= Math.max(1, majors.length); stride += 1) {
+    const candidate = majors.filter(({ box }) => Math.round(box.value / step) % stride === 0).map(({ index }) => index);
+    if (fits(candidate)) { chosen = candidate; break; }
+  }
+  const all = boxes.map((_box, index) => index);
+  const minorsFit = chosen.length === majors.length && fits(all);
+  return new Set(minorsFit ? all : chosen);
 }

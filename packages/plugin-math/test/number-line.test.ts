@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  jumpEnds, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, snapToTick, validateNumberLineContent,
+  decimalPlaces, jumpEnds, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, snapToTick, validateNumberLineContent, visibleTickLabels,
   type NumberLineContent, type TickLabel,
 } from "../src/number-line.js";
 
@@ -82,4 +82,35 @@ test("a dragged point snaps to the smallest tick and stays on the line", () => {
   assert.equal(snapToTick(content, 1.1), 1);
   assert.equal(snapToTick(content, -3), 0);
   assert.equal(snapToTick(content, 9), 2);
+});
+
+test("decimal labels keep the places the step needs: quarters are 0.25 and 0.75, not 0.3 and 0.8", () => {
+  assert.deepEqual([0.25, 0.5, 2, 0.125, 0.1, 1 / 3].map(decimalPlaces), [2, 1, 0, 3, 1, 3]);
+  const quarters = planNumberLineTicks({ range: { min: 0, max: 1 }, ticks: { step: 0.25 } });
+  assert.deepEqual(quarters.map((tick) => show(tick.label)), ["0", "0.25", "0.5", "0.75", "1"]);
+  const subdivided = planNumberLineTicks({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 4, labels: "all", format: "decimal" } });
+  assert.deepEqual(subdivided.map((tick) => show(tick.label)), ["0", "0.25", "0.5", "0.75", "1"]);
+  const negative = planNumberLineTicks({ range: { min: -1, max: 0 }, ticks: { step: 0.25 } });
+  assert.deepEqual(negative.map((tick) => show(tick.label)), ["−1", "−0.75", "−0.5", "−0.25", "0"]);
+});
+
+test("dense labels thin out on a regular stride that fits; every tick stays", () => {
+  // The review's case: −5 to 5 in fourths, every label asked for, on the 460-unit axis.
+  const content = { range: { min: -5, max: 5 }, ticks: { step: 1, subdivisions: 4, labels: "all" as const } };
+  const ticks = planNumberLineTicks(content);
+  assert.equal(ticks.length, 41);
+  const mapX = (value: number) => 30 + (value + 5) / 10 * 460;
+  const width = (label: TickLabel) => label.kind === "text" ? label.text.length * 7.2 : 18 + (label.negative ? 8 : 0);
+  const boxes = ticks.map((tick) => ({ x: mapX(tick.value), width: width(tick.label!), major: tick.major, value: tick.value }));
+  const shown = [...visibleTickLabels(boxes, 1)].sort((a, b) => a - b);
+  const kept = shown.map((index) => boxes[index]!);
+  for (let index = 1; index < kept.length; index += 1) {
+    assert.ok(kept[index]!.x - kept[index]!.width / 2 - (kept[index - 1]!.x + kept[index - 1]!.width / 2) >= 6, "no two shown labels overlap");
+  }
+  assert.ok(kept.some((box) => box.value === 0), "0 keeps its label");
+  assert.ok(kept.every((box) => box.major), "the fourths' labels are dropped together when they cannot all fit");
+  // A roomy line keeps them all.
+  const roomy = planNumberLineTicks({ range: { min: 0, max: 2 }, ticks: { step: 1, subdivisions: 4, labels: "all" } });
+  const roomyBoxes = roomy.map((tick) => ({ x: 30 + tick.value / 2 * 460, width: width(tick.label!), major: tick.major, value: tick.value }));
+  assert.equal(visibleTickLabels(roomyBoxes, 1).size, roomy.length);
 });
