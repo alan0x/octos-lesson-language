@@ -100,6 +100,32 @@
 .geometry-control-point:active { cursor: grabbing; }
 .geometry-label { fill: #374b47; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
 .geometry-label-leader { stroke: #758882; stroke-width: 1; stroke-dasharray: 3 2; }
+/* Number line (math plugin, decision 0013). */
+.number-line-preview { display: block; width: 100%; height: auto; overflow: visible; }
+.number-line-axis { fill: none; stroke: #4f5b57; stroke-width: 2; stroke-linecap: round; }
+.number-line-tick { stroke: #4f5b57; stroke-width: 1.6; }
+.number-line-tick-minor { stroke: #8a9894; stroke-width: 1.2; }
+.number-line-tick-label { fill: #374b47; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
+.number-line-fraction { font-size: 11px; }
+.number-line-fraction-bar { stroke: #374b47; stroke-width: 1.2; }
+.number-line-dot { fill: #e15d45; stroke: #fffdf7; stroke-width: 2; }
+.number-line-dot-open { fill: #fffdf7; stroke: #e15d45; stroke-width: 2.4; }
+.number-line-point-label { fill: #8f3527; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
+.number-line-point-leader { stroke: #c9796b; stroke-width: 1; stroke-dasharray: 2 2; }
+.number-line-latent:not([class*="emphasis-"]) { display: none; }
+.number-line-point.emphasis-focus .number-line-dot, .number-line-point.emphasis-focus .number-line-dot-open { stroke: #e19b35; stroke-width: 3.5; }
+.number-line-drag-handle { fill: transparent; cursor: grab; }
+.number-line-draggable .number-line-dot { stroke: #fff4d6; stroke-width: 3; }
+.number-line-jump-arc { fill: none; stroke: #167d78; stroke-width: 2.4; stroke-linecap: round; }
+.number-line-arrowhead { fill: #167d78; }
+.number-line-jump-label { fill: #0d5f5b; font: 700 13px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
+.number-line-jump.emphasis-focus .number-line-jump-arc { stroke: #e15d45; stroke-width: 3.4; }
+.number-line-interval-bar { fill: none; stroke: #2a9386; stroke-width: 6; stroke-linecap: round; opacity: .85; }
+.number-line-end-closed { fill: #2a9386; stroke: #fffdf7; stroke-width: 1.5; }
+.number-line-end-open { fill: #fffdf7; stroke: #2a9386; stroke-width: 2.6; }
+.number-line-interval-label { fill: #1d6f66; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
+.number-line-interval.emphasis-focus .number-line-interval-bar { stroke: #e19b35; }
+.number-line-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }

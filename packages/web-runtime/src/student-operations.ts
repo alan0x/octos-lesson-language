@@ -1,5 +1,5 @@
 export type StudentInputMethod = "mouse" | "touch" | "pen" | "keyboard" | "unknown";
-export type StudentVariableControl = "slider" | "geometry_point" | "reset";
+export type StudentVariableControl = "slider" | "geometry_point" | "number_line_point" | "reset";
 
 export interface StudentVariableOperationContext {
   control: StudentVariableControl;
@@ -110,7 +110,7 @@ export type StudentVariableInputHandler = (
   event: StudentVariableInputEvent,
 ) => string | void;
 
-const controls = new Set<StudentVariableControl>(["slider", "geometry_point", "reset"]);
+const controls = new Set<StudentVariableControl>(["slider", "geometry_point", "number_line_point", "reset"]);
 const inputMethods = new Set<StudentInputMethod>(["mouse", "touch", "pen", "keyboard", "unknown"]);
 const scene3dControls = new Set<StudentScene3dControl>(["orbit", "zoom", "preset", "reset"]);
 
