@@ -10,7 +10,7 @@
     "build": "node scripts/prepare-dist.mjs && tsc -p tsconfig.json && npm run build:harness",
     "build:harness": "esbuild apps/playback-harness/src/app.ts apps/playback-harness/src/ink-entry.ts --bundle --splitting --format=esm --platform=browser --target=es2022 --sourcemap --loader:.svg=text --loader:.woff2=file --loader:.woff=file --loader:.ttf=file --asset-names=assets/[name]-[hash] --entry-names=[name] --chunk-names=chunks/[name]-[hash] --outdir=dist/apps/playback-harness/browser",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node scripts/check-package-contents.mjs && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js dist/packages/ink-runtime/test/*.test.js dist/packages/player-core/test/*.test.js dist/packages/plugin-math/test/*.test.js dist/packages/plugin-physics/test/*.test.js dist/packages/plugin-shared/test/*.test.js dist/packages/quality-runner/test/*.test.js dist/packages/web-runtime/test/*.test.js dist/apps/playback-harness/test/assets.test.js",
+    "test": "npm run build && node scripts/check-package-contents.mjs && node --test dist/packages/core/test/*.test.js dist/packages/eval-runner/test/*.test.js dist/packages/ink-runtime/test/*.test.js dist/packages/player-core/test/*.test.js dist/packages/plugin-math/test/*.test.js dist/packages/plugin-physics/test/*.test.js dist/packages/plugin-shared/test/*.test.js dist/packages/plugin-chemistry/test/*.test.js dist/packages/plugin-biology/test/*.test.js dist/packages/plugin-earth-space/test/*.test.js dist/packages/plugin-subjects/test/*.test.js dist/packages/quality-runner/test/*.test.js dist/packages/web-runtime/test/*.test.js dist/apps/playback-harness/test/assets.test.js",
     "test:web-runtime": "npm run build && node --test dist/packages/web-runtime/test/*.test.js",
     "prepare": "npm run build",
     "check:examples": "npm run build && node dist/packages/core/src/check-examples.js",
@@ -75,7 +75,23 @@
       "types": "./dist/packages/ink-runtime/src/index.d.ts",
       "default": "./dist/packages/ink-runtime/src/index.js"
     },
-    "./ink-runtime/styles.css": "./packages/ink-runtime/styles.css"
+    "./ink-runtime/styles.css": "./packages/ink-runtime/styles.css",
+    "./plugin-chemistry": {
+      "types": "./dist/packages/plugin-chemistry/src/index.d.ts",
+      "default": "./dist/packages/plugin-chemistry/src/index.js"
+    },
+    "./plugin-biology": {
+      "types": "./dist/packages/plugin-biology/src/index.d.ts",
+      "default": "./dist/packages/plugin-biology/src/index.js"
+    },
+    "./plugin-earth-space": {
+      "types": "./dist/packages/plugin-earth-space/src/index.d.ts",
+      "default": "./dist/packages/plugin-earth-space/src/index.js"
+    },
+    "./plugin-subjects": {
+      "types": "./dist/packages/plugin-subjects/src/index.d.ts",
+      "default": "./dist/packages/plugin-subjects/src/index.js"
+    }
   },
   "files": [
     "dist/packages/core/src/",
@@ -83,6 +99,10 @@
     "dist/packages/plugin-math/src/",
     "dist/packages/plugin-physics/src/",
     "dist/packages/plugin-shared/src/",
+    "dist/packages/plugin-chemistry/src/",
+    "dist/packages/plugin-biology/src/",
+    "dist/packages/plugin-earth-space/src/",
+    "dist/packages/plugin-subjects/src/",
     "dist/packages/web-runtime/src/",
     "dist/packages/ink-runtime/src/",
     "dist/schema/",
