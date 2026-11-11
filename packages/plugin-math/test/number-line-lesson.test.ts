@@ -110,3 +110,33 @@ test("number line content errors surface as lesson validation errors", () => {
   assert.throws(() => validateAuthoringLesson(lesson({ range: { min: 0, max: 5 }, points: [{ as: "p", value: 9 }] })), /inside the line's range/);
   assert.throws(() => validateAuthoringLesson(lesson({ ...integers, bindings: [{ target: "move.size", expression: "change" }] })), /not a supported numeric field/);
 });
+
+test("the builder writes a number line whose driven values are bound and whose draggable point follows its variable", async () => {
+  const { buildNumberLine } = await import("../src/index.js");
+  const built = buildNumberLine({
+    as: "line", role: "main_visual", place: { relation: "new_region" }, title: "3 + (−5)",
+    range: { min: -6, max: 6 }, ticks: { step: 1 },
+    points: [{ as: "start", value: 3, label: "起点" }, { as: "guess", value: 0, label: "你的答案", draggable: { variable: "p" } }],
+    jumps: [{ as: "move", from: "start", by: { expression: "change", initial: -5 }, label: "+(−5)", hops: true }],
+    intervals: [{ as: "left", from: null, to: "1/2", to_closed: false }],
+  });
+  assert.deepEqual(built.parts, { whole: "line", start: "line#start", guess: "line#guess", move: "line#move", left: "line#left" });
+  const content = (built.actions[0] as unknown as { content: Record<string, any> }).content;
+  assert.deepEqual(content.bindings, [{ target: "guess.value", expression: "p" }, { target: "move.by", expression: "change" }]);
+  assert.equal(content.jumps[0].by, -5);
+  assert.equal(content.jumps[0].from, "start");
+  const document = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "zh-CN", title: "3 + (−5)", goals: ["看移动"],
+      variables: [
+        { as: "change", initial: -5, min: -5, max: 0, label: "加上的数" },
+        { as: "p", initial: 0, min: -6, max: 6, label: "你的答案" },
+      ],
+    },
+    steps: [{ key: "s", purpose: "p", beats: [{ key: "b", say: "从 3 出发，向左跳 5 格。", actions: built.actions }] }],
+    close: { summary: "等于 −2。", focus: ["line"] },
+  } as unknown as AuthoringLesson;
+  assertAuthoringSchema(document);
+  validateAuthoringLesson(document);
+});

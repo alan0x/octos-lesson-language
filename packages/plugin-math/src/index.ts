@@ -322,8 +322,14 @@ export {
 import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from "./surfaces.js";
 
 /** The math plugin's recipe builders, by recipe name. */
+import { buildNumberLine } from "./number-line-builder.js";
+export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
+export * from "./number-line.js";
+export { renderNumberLine, NUMBER_LINE_VIEW_WIDTH } from "./number-line-view.js";
+
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
+  number_line: buildNumberLine,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

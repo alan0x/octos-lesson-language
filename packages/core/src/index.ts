@@ -1426,6 +1426,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   const hidden = new Set<string>();
   // Learner ink cards, with how each was placed: a revision keeps the placement.
   const inkNodes = new Map<string, Placement["relation"]>();
+  // Number lines of this lesson, so a revision is checked by the same rules (decision 0013).
+  const numberLineNodes = new Set<string>();
   // Highlighted parts of each 3D scene, which a view can turn to show.
   const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
@@ -1566,6 +1568,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           validatePlotContent(action, actionPath, lessonVariables);
           validateScene3dContent(action, actionPath, lessonVariables);
           if (action.kind === NUMBER_LINE_KIND) {
+            numberLineNodes.add(action.as);
             validateNumberLineContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
             for (const [pointIndex, point] of ((action.content.points ?? []) as JsonObject[]).entries()) {
               const variable = point.interaction?.variable;
@@ -1656,6 +1659,12 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (inkNodes.has(resolved.alias)) {
             // Erasing and rewriting shows a newer snapshot of the same ink.
             validateInkResource({ do: "write", as: resolved.alias, kind: "ink", role: "ink", content: action.content, place: { relation: inkNodes.get(resolved.alias)! } } as WriteAction, actionPath, resourceContext);
+          }
+          if (numberLineNodes.has(resolved.alias)) {
+            validateNumberLineContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
+            if (((action.content.points ?? []) as JsonObject[]).some((point) => point.interaction !== undefined)) {
+              fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/content/points`, "A draggable point is declared when the number line is written");
+            }
           }
           // A revision that declares addressable parts (a point added to a
           // grid) makes exactly those parts addressable from then on; one that

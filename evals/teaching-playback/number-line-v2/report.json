@@ -1,0 +1,1894 @@
+{
+  "profile": "octos.teaching-playback.report",
+  "version": "0.1",
+  "generated_at": "2026-11-11T16:46:50.979Z",
+  "lesson_id": "lesson-learner-context-number-line-v2-001",
+  "fixture": "number-line",
+  "viewport": {
+    "width": 1686,
+    "height": 880
+  },
+  "browser": "157.0.8103.40",
+  "passed": true,
+  "expected_result": "pass",
+  "expectation_met": true,
+  "console_messages": [],
+  "beats": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 16,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:read-expression:beat:show-expression",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.08,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 2,
+        "new_connections": 0,
+        "new_groups": 1,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:task-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 531.99,
+            "y": 204.27,
+            "width": 302.01,
+            "height": 81.98,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 531.69,
+            "y": 302.85,
+            "width": 302.62,
+            "height": 141.54,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 302.01,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.12,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 32,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:place-start",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 240.4,
+            "width": 616,
+            "height": 167.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 48,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 64,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:return-to-symbols:beat:write-result",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 1,
+        "new_connections": 1,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:result"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": 375,
+            "y": 282.2,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 80,
+        "operation_type": "beat.end",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:form-reusable-method:beat:show-three-step-method",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 2,
+        "new_connections": 0,
+        "new_groups": 1,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:summary-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:method",
+            "kind": "note",
+            "x": 562.72,
+            "y": 185.48,
+            "width": 240.56,
+            "height": 131.05,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 562.72,
+            "y": 331.48,
+            "width": 240.56,
+            "height": 131.05,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [],
+        "min_focal_node_width": 240.56,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.02,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4",
+          "lesson-learner-context-number-line-v2-001:node:method": "node-instance-5",
+          "lesson-learner-context-number-line-v2-001:node:takeaway": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ],
+  "action_frames": [
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 8,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:read-expression:beat:show-expression",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 1,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 529,
+            "y": 282.2,
+            "width": 308,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 9,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:read-expression:beat:show-expression",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 0,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 528.69,
+            "y": 251.83,
+            "width": 308.62,
+            "height": 144.34,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 10,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:read-expression:beat:show-expression",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [],
+        "focal_nodes": [],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:group:task-group",
+            "kind": "board-group",
+            "x": 491.6,
+            "y": 113.9,
+            "width": 382.8,
+            "height": 319,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": null,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": null,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 14,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:read-expression:beat:show-expression",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.08,
+        "node_count": 2,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:task-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 531.99,
+            "y": 204.27,
+            "width": 302.01,
+            "height": 81.98,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 531.69,
+            "y": 302.85,
+            "width": 302.62,
+            "height": 141.54,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:group:task-group",
+            "kind": "board-group",
+            "x": 495.32,
+            "y": 167.6,
+            "width": 375.36,
+            "height": 312.8,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 302.01,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.12,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 24,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:place-start",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:task-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 23,
+            "y": 240.4,
+            "width": 308,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 22.69,
+            "y": 340.93,
+            "width": 308.62,
+            "height": 144.34,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 240.4,
+            "width": 616,
+            "height": 167.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.42,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 25,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:place-start",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:task-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 23,
+            "y": 240.4,
+            "width": 308,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 22.69,
+            "y": 340.93,
+            "width": 308.62,
+            "height": 144.34,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "kind": "number-line-point",
+            "x": 854.13,
+            "y": 307.61,
+            "width": 38.69,
+            "height": 38.04,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.42,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 26,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:place-start",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:task-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:problem",
+            "kind": "math",
+            "x": 23,
+            "y": 240.4,
+            "width": 308,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:reading-guide",
+            "kind": "note",
+            "x": 22.69,
+            "y": 340.93,
+            "width": 308.62,
+            "height": 144.34,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "kind": "number-line-point",
+            "x": 854.13,
+            "y": 307.61,
+            "width": 38.69,
+            "height": 38.04,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 308,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 15.42,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 30,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:place-start",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 240.4,
+            "width": 616,
+            "height": 167.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 240.4,
+            "width": 616,
+            "height": 167.2,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 38,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "board.revise",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 39,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "kind": "number-line-point",
+            "x": 854.14,
+            "y": 341.89,
+            "width": 38.69,
+            "height": 61.27,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 40,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:move",
+            "kind": "number-line-jump",
+            "x": 556.01,
+            "y": 301.64,
+            "width": 317.47,
+            "height": 43.01,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 41,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two",
+            "kind": "number-line-point",
+            "x": 532.48,
+            "y": 341.89,
+            "width": 47.06,
+            "height": 61.27,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 42,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "teacher.point",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two",
+            "kind": "number-line-point",
+            "x": 532.48,
+            "y": 341.89,
+            "width": 47.06,
+            "height": 61.27,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 46,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:move-on-number-line:beat:move-left-five",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 3,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 213.45,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 56,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:return-to-symbols:beat:write-result",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 0,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 17.1,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": 375,
+            "y": 282.2,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 57,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:return-to-symbols:beat:write-result",
+        "action_op": "board.connect",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 17.1,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:connection:destination-to-answer",
+            "kind": "connection-line",
+            "x": 683,
+            "y": 238.2,
+            "width": 0,
+            "height": 44,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 58,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:return-to-symbols:beat:write-result",
+        "action_op": "board.emphasize",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:number-line"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "kind": "number_line",
+            "x": 375,
+            "y": 17.1,
+            "width": 616,
+            "height": 221.1,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result:fragment:answer",
+            "kind": "math-fragment",
+            "x": 731.16,
+            "y": 296.53,
+            "width": 35.1,
+            "height": 32.93,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 17.6,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 62,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:return-to-symbols:beat:write-result",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 4,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:result"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": 375,
+            "y": 282.2,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": 375,
+            "y": 282.2,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 72,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:form-reusable-method:beat:show-three-step-method",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 5,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:result"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": -109,
+            "y": 517.6,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:method",
+            "kind": "note",
+            "x": 550.69,
+            "y": 251.92,
+            "width": 264.62,
+            "height": 144.15,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4",
+          "lesson-learner-context-number-line-v2-001:node:method": "node-instance-5"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 73,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:form-reusable-method:beat:show-three-step-method",
+        "action_op": "board.create",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 1,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:result"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": -109,
+            "y": 357,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 550.69,
+            "y": 251.92,
+            "width": 264.62,
+            "height": 144.15,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4",
+          "lesson-learner-context-number-line-v2-001:node:method": "node-instance-5",
+          "lesson-learner-context-number-line-v2-001:node:takeaway": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 74,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:form-reusable-method:beat:show-three-step-method",
+        "action_op": "board.group",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1.1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:node:result"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:result",
+            "kind": "math",
+            "x": -109,
+            "y": 357,
+            "width": 616,
+            "height": 83.6,
+            "visible": true,
+            "fully_in_view": false
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:group:summary-group",
+            "kind": "board-group",
+            "x": 513.6,
+            "y": 54.5,
+            "width": 338.8,
+            "height": 378.4,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 616,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 26.4,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4",
+          "lesson-learner-context-number-line-v2-001:node:method": "node-instance-5",
+          "lesson-learner-context-number-line-v2-001:node:takeaway": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    },
+    {
+      "observation": {
+        "profile": "octos.teaching-playback.observation",
+        "version": "0.1",
+        "lesson_id": "lesson-learner-context-number-line-v2-001",
+        "cursor": 78,
+        "operation_type": "action.apply",
+        "beat_id": "lesson-learner-context-number-line-v2-001:step:form-reusable-method:beat:show-three-step-method",
+        "action_op": "board.focus",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "world_scale": 1,
+        "node_count": 6,
+        "connection_count": 1,
+        "group_count": 2,
+        "new_nodes": 0,
+        "new_connections": 0,
+        "new_groups": 0,
+        "focus_targets": [
+          "lesson-learner-context-number-line-v2-001:group:summary-group"
+        ],
+        "focal_nodes": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:method",
+            "kind": "note",
+            "x": 562.72,
+            "y": 185.48,
+            "width": 240.56,
+            "height": 131.05,
+            "visible": true,
+            "fully_in_view": true
+          },
+          {
+            "id": "lesson-learner-context-number-line-v2-001:node:takeaway",
+            "kind": "note",
+            "x": 562.72,
+            "y": 331.48,
+            "width": 240.56,
+            "height": 131.05,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "active_targets": [
+          {
+            "id": "lesson-learner-context-number-line-v2-001:group:summary-group",
+            "kind": "board-group",
+            "x": 529,
+            "y": 152,
+            "width": 308,
+            "height": 344,
+            "visible": true,
+            "fully_in_view": true
+          }
+        ],
+        "min_focal_node_width": 240.56,
+        "focus_fits_readably": true,
+        "active_targets_fit_readably": true,
+        "min_focal_body_font_px": 14.02,
+        "min_focal_diagram_edge_px": null,
+        "math_errors": 0,
+        "content_overflows": [],
+        "label_node_overlaps": [],
+        "duplicate_internal_connections": [],
+        "image_load_failures": [],
+        "image_pending": [],
+        "node_instances": {
+          "lesson-learner-context-number-line-v2-001:node:problem": "node-instance-1",
+          "lesson-learner-context-number-line-v2-001:node:reading-guide": "node-instance-2",
+          "lesson-learner-context-number-line-v2-001:node:number-line": "node-instance-3",
+          "lesson-learner-context-number-line-v2-001:node:result": "node-instance-4",
+          "lesson-learner-context-number-line-v2-001:node:method": "node-instance-5",
+          "lesson-learner-context-number-line-v2-001:node:takeaway": "node-instance-6"
+        },
+        "remounted_nodes": []
+      },
+      "gate": {
+        "passed": true,
+        "issues": []
+      }
+    }
+  ]
+}

@@ -40,13 +40,25 @@
               "role": "problem",
               "content": {
                 "fragments": [
-                  {"as": "start", "latex": "3"},
-                  {"as": "operation", "latex": "+"},
-                  {"as": "delta", "latex": "(-5)"}
+                  {
+                    "as": "start",
+                    "latex": "3"
+                  },
+                  {
+                    "as": "operation",
+                    "latex": "+"
+                  },
+                  {
+                    "as": "delta",
+                    "latex": "(-5)"
+                  }
                 ],
                 "caption": "要计算的式子"
               },
-              "place": {"relation": "new_region", "region_role": "lesson-origin"}
+              "place": {
+                "relation": "new_region",
+                "region_role": "lesson-origin"
+              }
             },
             {
               "do": "write",
@@ -55,18 +67,37 @@
               "role": "support",
               "content": {
                 "title": "只记住三件事",
-                "items": ["从 3 出发", "加一个负数", "移动 5 格"]
+                "items": [
+                  "从 3 出发",
+                  "加一个负数",
+                  "移动 5 格"
+                ]
               },
-              "place": {"relation": "right_of", "anchor": "problem", "align": "center", "gap": "normal"}
+              "place": {
+                "relation": "right_of",
+                "anchor": "problem",
+                "align": "center",
+                "gap": "normal"
+              }
             },
             {
               "do": "group",
               "as": "task-group",
               "role": "task",
               "label": "① 读懂式子",
-              "members": ["problem", "reading-guide"]
+              "members": [
+                "problem",
+                "reading-guide"
+              ]
             },
-            {"do": "focus", "when": "after_speech", "targets": ["task-group"], "intent": "separate_start_operation_and_delta"}
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "task-group"
+              ],
+              "intent": "separate_start_operation_and_delta"
+            }
           ]
         }
       ]
@@ -83,28 +114,55 @@
             {
               "do": "write",
               "as": "number-line",
-              "kind": "diagram",
+              "kind": "number_line",
               "role": "model",
               "content": {
-                "elements": [
-                  {"as": "minus-three", "kind": "point", "label": "-3"},
-                  {"as": "minus-two", "kind": "point", "label": "-2"},
-                  {"as": "minus-one", "kind": "point", "label": "-1"},
-                  {"as": "zero", "kind": "point", "label": "0"},
-                  {"as": "one", "kind": "point", "label": "1"},
-                  {"as": "two", "kind": "point", "label": "2"},
-                  {"as": "three", "kind": "point", "label": "3"}
-                ],
-                "edges": [
-                  {"as": "axis", "from": "minus-three", "to": "three", "label": "数轴"}
-                ],
-                "caption": "从 3 出发"
+                "title": "从 3 出发，加上 −5",
+                "range": {
+                  "min": -4,
+                  "max": 4
+                },
+                "ticks": {
+                  "step": 1
+                },
+                "points": [
+                  {
+                    "as": "three",
+                    "value": 3,
+                    "label": "起点 3"
+                  },
+                  {
+                    "as": "minus-two",
+                    "value": -2,
+                    "label": "终点 −2",
+                    "shown": "when_emphasized"
+                  }
+                ]
               },
-              "place": {"relation": "below", "anchor": "task-group", "align": "start", "gap": "spacious"}
+              "place": {
+                "relation": "below",
+                "anchor": "task-group",
+                "align": "start",
+                "gap": "spacious"
+              }
             },
-            {"do": "point", "target": "number-line#three"},
-            {"do": "emphasize", "target": "number-line#three", "emphasis": "focus"},
-            {"do": "focus", "when": "after_speech", "targets": ["number-line"], "intent": "locate_start_at_three"}
+            {
+              "do": "point",
+              "target": "number-line#three"
+            },
+            {
+              "do": "emphasize",
+              "target": "number-line#three",
+              "emphasis": "focus"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "number-line"
+              ],
+              "intent": "locate_start_at_three"
+            }
           ]
         },
         {
@@ -113,17 +171,69 @@
           "delivery": "careful",
           "actions": [
             {
-              "do": "connect",
-              "as": "move",
-              "from": "number-line#three",
-              "to": "number-line#minus-two",
-              "relation": "moves_left",
-              "label": "向左 5 格"
+              "do": "revise",
+              "target": "number-line",
+              "reason": "show the leftward move of five",
+              "content": {
+                "title": "从 3 出发，加上 −5",
+                "range": {
+                  "min": -4,
+                  "max": 4
+                },
+                "ticks": {
+                  "step": 1
+                },
+                "points": [
+                  {
+                    "as": "three",
+                    "value": 3,
+                    "label": "起点 3"
+                  },
+                  {
+                    "as": "minus-two",
+                    "value": -2,
+                    "label": "终点 −2",
+                    "shown": "when_emphasized"
+                  }
+                ],
+                "jumps": [
+                  {
+                    "as": "move",
+                    "from": "three",
+                    "by": -5,
+                    "label": "向左 5 格",
+                    "hops": true
+                  }
+                ]
+              }
             },
-            {"do": "emphasize", "target": "number-line#three", "emphasis": "resolved"},
-            {"do": "emphasize", "target": "number-line#minus-two", "emphasis": "focus"},
-            {"do": "point", "target": "number-line#minus-two"},
-            {"do": "focus", "when": "after_speech", "targets": ["number-line", "move"], "intent": "see_leftward_move_and_destination"}
+            {
+              "do": "emphasize",
+              "target": "number-line#three",
+              "emphasis": "resolved"
+            },
+            {
+              "do": "emphasize",
+              "target": "number-line#move",
+              "emphasis": "focus"
+            },
+            {
+              "do": "emphasize",
+              "target": "number-line#minus-two",
+              "emphasis": "focus"
+            },
+            {
+              "do": "point",
+              "target": "number-line#minus-two"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "number-line"
+              ],
+              "intent": "see_leftward_move_and_destination"
+            }
           ]
         }
       ]
@@ -144,17 +254,49 @@
               "role": "conclusion",
               "content": {
                 "fragments": [
-                  {"as": "expression", "latex": "3+(-5)"},
-                  {"as": "equals", "latex": "="},
-                  {"as": "answer", "latex": "-2"}
+                  {
+                    "as": "expression",
+                    "latex": "3+(-5)"
+                  },
+                  {
+                    "as": "equals",
+                    "latex": "="
+                  },
+                  {
+                    "as": "answer",
+                    "latex": "-2"
+                  }
                 ],
                 "caption": "数轴终点就是答案"
               },
-              "place": {"relation": "below", "anchor": "number-line", "align": "start", "gap": "normal"}
+              "place": {
+                "relation": "below",
+                "anchor": "number-line",
+                "align": "start",
+                "gap": "normal"
+              }
             },
-            {"do": "connect", "as": "destination-to-answer", "from": "number-line#minus-two", "to": "result#answer", "relation": "becomes", "label": "终点"},
-            {"do": "emphasize", "target": "result#answer", "emphasis": "focus"},
-            {"do": "focus", "when": "after_speech", "targets": ["result"], "intent": "connect_destination_to_symbolic_answer"}
+            {
+              "do": "connect",
+              "as": "destination-to-answer",
+              "from": "number-line#minus-two",
+              "to": "result#answer",
+              "relation": "becomes",
+              "label": "终点"
+            },
+            {
+              "do": "emphasize",
+              "target": "result#answer",
+              "emphasis": "focus"
+            },
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "result"
+              ],
+              "intent": "connect_destination_to_symbolic_answer"
+            }
           ]
         }
       ]
@@ -181,7 +323,12 @@
                   "3. 移动后读终点"
                 ]
               },
-              "place": {"relation": "right_of", "anchor": "result", "align": "center", "gap": "spacious"}
+              "place": {
+                "relation": "right_of",
+                "anchor": "result",
+                "align": "center",
+                "gap": "spacious"
+              }
             },
             {
               "do": "write",
@@ -190,18 +337,37 @@
               "role": "takeaway",
               "content": {
                 "title": "本题",
-                "items": ["从 3 出发", "向左 5 格", "停在 -2"]
+                "items": [
+                  "从 3 出发",
+                  "向左 5 格",
+                  "停在 -2"
+                ]
               },
-              "place": {"relation": "below", "anchor": "method", "align": "start", "gap": "normal"}
+              "place": {
+                "relation": "below",
+                "anchor": "method",
+                "align": "start",
+                "gap": "normal"
+              }
             },
             {
               "do": "group",
               "as": "summary-group",
               "role": "summary",
               "label": "③ 可复用的方法",
-              "members": ["method", "takeaway"]
+              "members": [
+                "method",
+                "takeaway"
+              ]
             },
-            {"do": "focus", "when": "after_speech", "targets": ["summary-group"], "intent": "retain_short_reusable_method"}
+            {
+              "do": "focus",
+              "when": "after_speech",
+              "targets": [
+                "summary-group"
+              ],
+              "intent": "retain_short_reusable_method"
+            }
           ]
         }
       ]
@@ -209,6 +375,8 @@
   ],
   "close": {
     "summary": "3+(-5) 可以看成从 3 向左移动 5 格，终点是 -2；同类题可使用找起点、定方向、读终点的三步数轴法。",
-    "focus": ["summary-group"]
+    "focus": [
+      "summary-group"
+    ]
   }
 }
