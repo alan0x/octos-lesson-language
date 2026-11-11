@@ -118,7 +118,139 @@ export function buildSpringAndMass(input: SpringAndMassInput): BuiltRecipe {
   };
 }
 
+/**
+ * A quantity of the motion: a lesson variable (`expression`, an OLL
+ * expression of lesson variables, usually one variable's name) or a fixed
+ * value. `max` sizes the track and the graph, so the object never leaves them.
+ */
+export interface MotionQuantity {
+  expression?: string;
+  initial: number;
+  max: number;
+}
+
+export interface ConstantSpeedMotionInput {
+  /** The group's alias; the track and graph are `${as}-track` and `${as}-graph`. */
+  as: string;
+  role: string;
+  place: Placement | Record<string, unknown>;
+  /** Elapsed time, from 0 (seconds by default). */
+  time: MotionQuantity;
+  /** The constant speed, greater than 0 (metres per second by default). */
+  speed: MotionQuantity;
+  /** Every label, in the lesson's language. Units are shown as given. */
+  text: {
+    title: string;
+    start: string;
+    object: string;
+    /** Prefix of the distance readout that labels the moving object, such as "cart: s = ". */
+    distance_readout: string;
+    distance_unit: string;
+    distance_axis: string;
+    time_axis: string;
+    plot_title: string;
+    /** The line's legend, such as "s = v t". */
+    curve_label: string;
+    current_state: string;
+    link_label: string;
+    group_label: string;
+  };
+}
+
+export const CONSTANT_SPEED_PART_IDS = {
+  start: "start", object: "object", track: "track", travelled: "travelled", finish: "finish",
+  primary_curve: "primary-curve", moving_point: "moving-point",
+} as const;
+
+/** A round upper bound for an axis: 1, 2, 2.5 or 5 times a power of ten, at or above `value`. */
+export function niceAxisMax(value: number): number {
+  if (!(value > 0) || !Number.isFinite(value)) return 1;
+  const power = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 2.5, 5, 10].find((candidate) => candidate * power >= value * (1 - 1e-9)) ?? 10;
+  return Number((step * power).toPrecision(12));
+}
+
+function quantityValue(quantity: MotionQuantity): string {
+  return quantity.expression ? `(${quantity.expression})` : String(quantity.initial);
+}
+
+/**
+ * An object moving at constant speed along a track (s = v·t), linked to its
+ * distance–time graph, a straight line through the origin whose slope is the
+ * speed. Time and speed may each be a lesson variable: dragging time moves the
+ * object and the graph's point together; changing speed changes the line's
+ * slope. Built only on shared geometry and plot features.
+ */
+export function buildConstantSpeedMotion(input: ConstantSpeedMotionInput): BuiltRecipe {
+  const { text, time, speed } = input;
+  if (!(time.max > 0) || !(speed.max > 0)) throw new Error("constant-speed motion needs a positive time and speed maximum");
+  if (time.initial < 0 || time.initial > time.max || speed.initial <= 0 || speed.initial > speed.max) {
+    throw new Error("constant-speed motion needs 0 <= time <= its maximum and 0 < speed <= its maximum");
+  }
+  const track = `${input.as}-track`;
+  const graph = `${input.as}-graph`;
+  const length = niceAxisMax(time.max * speed.max);
+  const distance = time.initial * speed.initial;
+  const t = quantityValue(time);
+  const v = quantityValue(speed);
+  const driven = Boolean(time.expression || speed.expression);
+  // The track runs just above the distance axis, which reads as a ruler under it
+  // and keeps the axis label clear of the moving object's readout.
+  const lane = Number((0.08 * length).toPrecision(12));
+  const trackContent: Record<string, unknown> = {
+    title: text.title,
+    axes: { x: { min: -0.05 * length, max: 1.05 * length, label: text.distance_axis }, y: { min: -0.1 * length, max: 0.2 * length, label: "" }, equal_scale: true },
+    points: [
+      { as: "start", x: 0, y: lane, label: text.start },
+      { as: "finish", x: length, y: lane, visible: false },
+      { as: "object", x: distance, y: lane, label: driven ? `${text.distance_readout}${distance}${text.distance_unit ? ` ${text.distance_unit}` : ""}` : text.object },
+    ],
+    segments: [
+      { as: "track", from: "start", to: "finish", style: "dashed" },
+      { as: "travelled", from: "start", to: "object", style: "solid" },
+    ],
+    ...(driven ? {
+      bindings: [{
+        target: "object.x", expression: `${v}*${t}`,
+        label: { prefix: text.distance_readout, suffix: text.distance_unit ? ` ${text.distance_unit}` : "", precision: 1 },
+      }],
+    } : {}),
+  };
+  const graphContent: Record<string, unknown> = {
+    title: text.plot_title,
+    axes: { x: { min: 0, max: time.max, label: text.time_axis }, y: { min: 0, max: length, label: text.distance_axis } },
+    curves: [{ as: "primary-curve", expression: `${v}*x`, label: text.curve_label }],
+    points: [{ as: "moving-point", x: time.initial, y: distance, label: text.current_state }],
+    ...(driven ? {
+      bindings: [
+        { target: "moving-point.x", expression: t },
+        { target: "moving-point.y", expression: `${v}*${t}` },
+      ],
+    } : {}),
+  };
+  return {
+    actions: [
+      { do: "write", as: track, kind: "geometry", role: input.role, content: trackContent, place: input.place },
+      { do: "write", as: graph, kind: "plot", role: input.role, content: graphContent, place: { relation: "right_of", anchor: track, gap: "normal" } },
+      { do: "connect", as: `${input.as}-link`, from: track, to: graph, relation: "same_state", label: text.link_label },
+      { do: "group", as: input.as, role: input.role, label: text.group_label, members: [track, graph] },
+    ] as AuthoringAction[],
+    whole: input.as,
+    parts: {
+      whole: input.as,
+      start: `${track}#start`,
+      object: `${track}#object`,
+      track: `${track}#track`,
+      travelled: `${track}#travelled`,
+      primary_curve: `${graph}#primary-curve`,
+      moving_point: `${graph}#moving-point`,
+      ...(time.expression ? { primary_control: `${graph}#moving-point` } : {}),
+    },
+  };
+}
+
 /** The physics plugin's recipe builders, by recipe name. */
 export const PHYSICS_BUILDERS = {
   spring_and_mass: buildSpringAndMass,
+  constant_speed_motion: buildConstantSpeedMotion,
 } as const;

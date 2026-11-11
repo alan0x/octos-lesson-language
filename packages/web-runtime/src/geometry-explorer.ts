@@ -175,7 +175,8 @@ export function renderGeometryExplorer(
     host.replaceChildren();
     const width = large ? Math.max(400, Math.min(900, window.innerWidth - 80)) : 404;
     const height = large ? Math.max(360, Math.min(700, window.innerHeight - 210)) : 280;
-    const content = { ...node.content, axes: { ...axes, ...current.ranges } };
+    // Zooming changes an axis's range only; its label stays.
+    const content = { ...node.content, axes: { ...axes, x: { ...axes.x, ...current.ranges.x }, y: { ...axes.y, ...current.ranges.y } } };
     inheritUiLocale(host,parent);
     draw(host, { ...node, content }, width, height);
     const svg = host.querySelector("svg") as SVGSVGElement | null;
