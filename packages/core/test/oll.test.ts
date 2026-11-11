@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   assertAuthoringSchema,
+  compileMathExpression,
   checkNumericAnswer,
   formatBoundNumericLabel,
   isSimplestFraction,
@@ -1159,4 +1160,12 @@ test("plot view fields: adaptive layout, sample following, π ticks and holes ar
     assert.throws(() => validateAuthoringLesson(lesson(content)),
       (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD", name);
   }
+});
+
+test("log is the common logarithm and ln the natural logarithm", () => {
+  assert.equal(compileMathExpression("log(1000)", [])({}), 3);
+  assert.equal(compileMathExpression("log(0.01)", [])({}), -2);
+  assert.ok(Math.abs(compileMathExpression("ln(e)", [])({}) - 1) < 1e-12);
+  // Change of base gives the same value whichever base log has.
+  assert.ok(Math.abs(compileMathExpression("log(8)/log(2)", [])({}) - 3) < 1e-12);
 });

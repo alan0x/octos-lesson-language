@@ -454,7 +454,7 @@ Geometry 和 Plot 的 `content.bindings` 把 fragment 的受支持数值字段�
 
 Authoring `target` 使用同一节点内的 `fragmentAlias.property`。Normalizer 将 fragment alias 改成稳定 Canonical fragment ID。两个 binding 不能写同一目标。
 
-受限表达式支持有限数值、圆括号、`+ - * / ^`、常量 `pi/e`，以及 `abs/acos/asin/atan/ceil/cos/exp/floor/ln/log/round/sin/sqrt/tan`。任何未知变量、未知函数、脚本语法、非有限结果或非法半径都必须以稳定错误失败。
+受限表达式支持有限数值、圆括号、`+ - * / ^`、常量 `pi/e`，以及 `abs/acos/asin/atan/ceil/cos/exp/floor/ln/log/round/sin/sqrt/tan`。`ln` 是自然对数，`log` 是常用对数（以 10 为底）；其他底数写成 `log(x)/log(b)`。任何未知变量、未知函数、脚本语法、非有限结果或非法半径都必须以稳定错误失败。
 
 允许目标：
 
