@@ -164,3 +164,18 @@ test("a bound jump may stop between ticks (the review's 2.6), and the board keep
 test("a variable that would carry a jump off the line is rejected, naming the value", () => {
   assert.throws(() => validateAuthoringLesson(boundJump(5)), /When delta = 5: A jump starts and ends inside the line's range/);
 });
+
+test("a jump a variable drives may start at 0 or between ticks: only the variable's reachable values are checked", () => {
+  const document = boundJump(2.6);
+  const content = ((document.steps[0]!.beats[0]!.actions[0] as unknown) as { content: Record<string, any> }).content;
+  content.jumps[0].by = 0;
+  document.lesson.variables![0] = { as: "delta", initial: 0, min: 0, max: 3, label: "跳多远" };
+  validateAuthoringLesson(document);
+  content.jumps[0].by = 1.5;
+  validateAuthoringLesson(document);
+  // An authored jump, which no variable drives, still has to move by whole hops.
+  delete content.bindings;
+  assert.throws(() => validateAuthoringLesson(document), /whole number of the smallest ticks/);
+  content.jumps[0].by = 0;
+  assert.throws(() => validateAuthoringLesson(document), /A jump moves by a nonzero amount/);
+});
