@@ -119,6 +119,13 @@ const latentCases = [
   ["emphasize", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }]), true],
   ["emphasize then none", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }, { do: "emphasize", target: "line#end", emphasis: "none" }]), false],
 ];
+// 0016: a solution set on a thinned line. The interval's ends keep their numbers, its label clears the
+// point name above the line, and no tick is drawn over its open ends.
+const solution = normalizeAuthoringLesson(lesson({
+  range: { min: -17, max: 17 }, ticks: { step: 1 },
+  points: [{ as: "center", value: 3, label: "中心" }],
+  intervals: [{ as: "set", from: 1, to: 7, from_closed: false, to_closed: false, label: "1 < x < 7" }],
+}), host("solution"));
 // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
 const names = normalizeAuthoringLesson(lesson({
   range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
@@ -349,6 +356,27 @@ try {
     }, events);
     check(shown === visible, `a point shown only when emphasized, after ${name}: expected ${visible ? "visible" : "hidden"}, got ${shown}`);
   }
+  const solutionView = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "solution");
+    while (session.projection.status !== "completed") session.advance();
+    window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+    const svg = document.querySelector(".number-line-preview");
+    const box = (node) => { const b = node.getBBox(); return { x: b.x, right: b.x + b.width, y: b.y, bottom: b.y + b.height }; };
+    const name = box(svg.querySelector(".number-line-point-label"));
+    const label = box(svg.querySelector(".number-line-interval-label"));
+    const children = [...svg.children];
+    const lastTick = Math.max(...children.map((node, index) => (node.classList?.contains("number-line-tick") ? index : -1)));
+    const interval = children.findIndex((node) => node.classList?.contains("number-line-interval"));
+    return {
+      labels: [...svg.querySelectorAll(".number-line-tick-label")].map((node) => node.textContent),
+      overlap: name.x < label.right && label.x < name.right && name.y < label.bottom && label.y < name.bottom,
+      ticksBeforeInterval: lastTick < interval,
+    };
+  }, solution);
+  check(solutionView.labels.includes("1") && solutionView.labels.includes("7"), `an interval's ends keep their numbers on a thinned line: ${solutionView.labels.join(" ")}`);
+  check(!solutionView.overlap, "the interval's label clears the point's name");
+  check(solutionView.ticksBeforeInterval, "ticks are drawn before the interval, so none crosses an open end");
   const nameBoxes = await page.evaluate((events) => {
     document.querySelector("#board").replaceChildren();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
@@ -369,4 +397,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point, solution sets readable");

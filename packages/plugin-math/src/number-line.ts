@@ -32,7 +32,8 @@ export const NUMBER_LINE_LIMITS = {
   intervals: 4,
   /** Smallest ticks across the whole range. */
   ticks: 240,
-  subdivisions: 12,
+  // 24 parts per unit, so two fractions such as 2/3 and 3/5 share fifteenths (0016).
+  subdivisions: 24,
   denominator: 1000,
   /** A jump drawn hop by hop has at most this many hops. */
   hops: 24,
