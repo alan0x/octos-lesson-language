@@ -193,3 +193,10 @@ test("a jump that stops between ticks is drawn as whole hops and a shorter last 
   assert.deepEqual(jumpHops(content, { from: 0, to: 0.4 }, true), [{ from: 0, to: 0.4 }]);
   assert.deepEqual(jumpHops(content, { from: 0, to: 2.6 }, false), [{ from: 0, to: 2.6 }]);
 });
+
+test("each unit splits into up to 24 parts, so 2/3 and 3/5 share fifteenths (0016)", () => {
+  valid({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 15, labels: "all" }, points: [{ as: "a", value: "2/3" }, { as: "b", value: "3/5" }] });
+  valid({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 24 } });
+  invalid({ range: { min: 0, max: 1 }, ticks: { step: 1, subdivisions: 25 } }, /from 1 to 24/);
+});
+

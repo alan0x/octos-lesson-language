@@ -92,6 +92,8 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const marked = [
     ...points.filter((point) => point.shown !== "when_emphasized").map((point) => numberLineValue(point.value)),
     ...jumps.flatMap((jump) => { const ends = jumpEnds(content, jump as NumberLineJump); return ends ? [ends.from, ends.to] : []; }),
+    // An interval's or a ray's ends are the boundary of a solution set: their numbers stay too (0016).
+    ...intervals.flatMap((interval) => [interval.from, interval.to].filter((end) => end !== null).map((end) => numberLineValue(end as never))),
   ].filter((value): value is number => value !== undefined && !latent.some((hidden) => hidden !== undefined && Math.abs(hidden - value) < 1e-9));
   const labelled = ticks.filter((tick) => tick.label);
   const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
@@ -104,7 +106,8 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const visiblePoints = points.filter((point) => point.shown !== "when_emphasized").length;
   const jumpMarks = jumps.reduce((count, jump) => count + 1
     + (typeof jump.from === "string" && points.some((point) => point.as === jump.from) ? 0 : 1), 0);
-  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, visiblePoints + jumpMarks) : labelPlan.rowCount;
+  const intervalMarks = intervals.reduce((count, interval) => count + (interval.from === null ? 0 : 1) + (interval.to === null ? 0 : 1), 0);
+  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, visiblePoints + jumpMarks + intervalMarks) : labelPlan.rowCount;
   const tickLabelHeight = rowHeight * tickRows;
   const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
   const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight) + 8;
@@ -121,6 +124,15 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   svg.append(element("line", { x1: x0 - 18, x2: x1 + 18, y1: lineY, y2: lineY }, "number-line-axis"));
   svg.append(element("path", { d: `M${x1 + 18},${lineY} l-7,-5 m7,5 l-7,5 M${x0 - 18},${lineY} l7,-5 m-7,5 l7,5` }, "number-line-axis"));
 
+  // Every tick is drawn, before the intervals, so no tick runs through an interval's open end; its label
+  // only when the plan above keeps it.
+  for (const tick of ticks) {
+    const x = mapX(tick.value);
+    svg.append(element("line", { x1: x, x2: x, y1: lineY - (tick.major ? 8 : 5), y2: lineY + (tick.major ? 8 : 5) }, tick.major ? "number-line-tick" : "number-line-tick number-line-tick-minor"));
+    const row = labelRow.get(tick.value);
+    if (tick.label && row !== undefined) tickLabel(svg, tick.label, x, lineY + 10 + row * rowHeight);
+  }
+
   for (const interval of intervals) {
     const from = interval.from === null ? undefined : numberLineValue(interval.from);
     const to = interval.to === null ? undefined : numberLineValue(interval.to);
@@ -135,20 +147,14 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
       group.append(element("circle", { cx: mapX(value), cy: lineY, r: 6 }, closed ? "number-line-end-closed" : "number-line-end-open"));
     }
     if (interval.label) {
-      const text = element("text", { x: (Math.max(start, x0) + Math.min(end, x1)) / 2, y: lineY - 12, "text-anchor": "middle" }, "number-line-interval-label");
+      // Above the point names when they sit above the line, so the two never overlap (0016).
+      const labelY = labelsAbove && labelledPoints ? lineY - 16 - nameRowCount * nameRowHeight - 2 : lineY - 12;
+      const text = element("text", { x: (Math.max(start, x0) + Math.min(end, x1)) / 2, y: labelY, "text-anchor": "middle" }, "number-line-interval-label");
       text.textContent = interval.label;
       group.append(text);
     }
     context.applyEmphasis(group, idOf(interval as Part));
     svg.append(group);
-  }
-
-  // Every tick is drawn; its label only when the plan above keeps it.
-  for (const tick of ticks) {
-    const x = mapX(tick.value);
-    svg.append(element("line", { x1: x, x2: x, y1: lineY - (tick.major ? 8 : 5), y2: lineY + (tick.major ? 8 : 5) }, tick.major ? "number-line-tick" : "number-line-tick number-line-tick-minor"));
-    const row = labelRow.get(tick.value);
-    if (tick.label && row !== undefined) tickLabel(svg, tick.label, x, lineY + 10 + row * rowHeight);
   }
 
   for (const jump of jumps) {
