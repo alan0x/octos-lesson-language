@@ -37,6 +37,7 @@ const fixtures = [
   { id: "learner-slope-v2", label: "学生讲课 V2 · 两点求斜率（笔迹）", path: "/examples/learner-taught-slope-v2/lesson.canonical.jsonl" },
   { id: "learner-unit-circle-v2", label: "学生讲课 V2 · 单位圆与正弦波", path: "/examples/learner-taught-unit-circle-v2/lesson.canonical.jsonl" },
   { id: "learner-box", label: "学生讲课 · 长方体表面积（3D）", path: "/examples/learner-taught-box-v1/lesson.canonical.jsonl" },
+  { id: "number-line", label: "数学 · 用数轴理解 3+(-5)", path: "/examples/learner-context-number-line-v2/lesson.canonical.jsonl" },
 ];
 const selectedLessonKey = "oll-harness:selected-lesson";
 const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");

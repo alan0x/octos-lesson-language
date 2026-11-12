@@ -33,7 +33,9 @@
     "teaching:observe:large-board": "npm run build && for lesson in geometry quadratic science english unit-circle learner-slope learner-unit-circle learner-slope-v2 learner-unit-circle-v2 learner-box; do node scripts/run-teaching-observer.mjs --lesson $lesson --board 1920x1080 --screenshots none --output evals/teaching-playback/large-board/$lesson/report.json || exit 1; done",
     "teaching:observe:english-probe": "npm run teaching:observe -- --lesson english-v1 --expect fail --screenshots none --output evals/teaching-playback/english-probe/report.json",
     "teaching:observe:calibration": "npm run teaching:observe -- --lesson geometry-v1 --expect fail --screenshots none --output evals/teaching-playback/geometry-v1-negative-control/report.json",
-    "teaching:observe:quadratic-probe": "npm run teaching:observe -- --lesson quadratic-v1 --expect fail --screenshots none --output evals/teaching-playback/quadratic-probe/report.json"
+    "teaching:observe:quadratic-probe": "npm run teaching:observe -- --lesson quadratic-v1 --expect fail --screenshots none --output evals/teaching-playback/quadratic-probe/report.json",
+    "teaching:observe:number-line": "npm run teaching:observe -- --lesson number-line --output evals/teaching-playback/number-line-v2/report.json",
+    "check:number-line-browser": "npm run build && node scripts/check-number-line-browser.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

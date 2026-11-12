@@ -169,7 +169,7 @@ export interface AuthoringVariable {
   };
 }
 
-export type StudentTaskVariableControl = "slider" | "geometry_point";
+export type StudentTaskVariableControl = "slider" | "geometry_point" | "number_line_point";
 
 export type StudentTaskScene3dControl = "orbit" | "zoom" | "preset" | "reset";
 

@@ -4,6 +4,8 @@ import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./p
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
+import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
+import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
@@ -1599,6 +1601,8 @@ function renderContent(
   const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
+  // The math plugin's number line (decision 0013); it marks its own parts for emphasis.
+  if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
@@ -1728,6 +1732,8 @@ export class InfiniteBoardView {
     rect: DOMRect;
     viewBoxWidth: number;
     viewBoxHeight: number;
+    /** A point dragged along a number line (decision 0013) instead of around a centre. */
+    line?: { x0: number; x1: number; min: number; max: number; grid: Pick<NumberLineContent, "range" | "ticks"> };
   };
   private variableInputHandler?: VariableInputHandler;
   private scene3dInputHandler?: Scene3dViewInputHandler;
@@ -3123,13 +3129,22 @@ export class InfiniteBoardView {
     if (!drag || !variable || !this.variableInputHandler || drag.rect.width <= 0 || drag.rect.height <= 0) return;
     const x = (event.clientX - drag.rect.left) / drag.rect.width * drag.viewBoxWidth;
     const y = (event.clientY - drag.rect.top) / drag.rect.height * drag.viewBoxHeight;
-    const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
-    const value = angleControlValue(rawAngle, variable.value, variable.min, variable.max, variable.unit);
+    let value: number;
+    if (drag.line) {
+      // Along the line, snapped to its smallest tick, within the variable's range.
+      const { x0, x1, min, max, grid } = drag.line;
+      const snapped = snapToTick(grid, min + (x - x0) / (x1 - x0) * (max - min));
+      value = Math.min(variable.max, Math.max(variable.min, snapped));
+      if (value === drag.lastValue) return;
+    } else {
+      const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
+      value = angleControlValue(rawAngle, variable.value, variable.min, variable.max, variable.unit);
+    }
     if (Number.isFinite(value)) {
       drag.lastValue = value;
       this.variableInputHandler(drag.alias, value, {
         phase: "update",
-        control: "geometry_point",
+        control: drag.line ? "number_line_point" : "geometry_point",
         input: drag.input,
         ...(drag.operationId ? { operation_id: drag.operationId } : {}),
       });
@@ -3160,6 +3175,22 @@ export class InfiniteBoardView {
     const centerY = Number(control?.dataset.angleCenterY);
     const viewBox = svg?.viewBox.baseVal;
     const variable = alias ? this.board?.variables?.[alias] : undefined;
+    const line = control?.dataset.ollControlKind === "number_line_point" ? numberLineDrag(control) : undefined;
+    if (
+      !auxiliaryPan && !spacePan && !inkReleasedTouchPan
+      && line && svg && alias && variable && this.variableInputHandler
+      && viewBox && Number.isFinite(viewBox.width) && viewBox.width > 0 && Number.isFinite(viewBox.height) && viewBox.height > 0
+    ) {
+      event.preventDefault();
+      const input = studentInputMethod(event.pointerType);
+      const operationId = this.variableInputHandler(alias, variable.value, { phase: "start", control: "number_line_point", input });
+      this.variableDragging = {
+        alias, ...(typeof operationId === "string" ? { operationId } : {}), input, lastValue: variable.value,
+        centerX: 0, centerY: 0, rect: svg.getBoundingClientRect(), viewBoxWidth: viewBox.width, viewBoxHeight: viewBox.height, line,
+      };
+      this.updateVariableDrag(event);
+      return;
+    }
     if (
       !auxiliaryPan && !spacePan && !inkReleasedTouchPan
       && control && svg && alias && variable && this.variableInputHandler
@@ -3243,10 +3274,22 @@ export class InfiniteBoardView {
     this.variableDragging = undefined;
     this.variableInputHandler?.(drag.alias, drag.lastValue, {
       phase: "commit",
-      control: "geometry_point",
+      control: drag.line ? "number_line_point" : "geometry_point",
       input: drag.input,
       ...(drag.operationId ? { operation_id: drag.operationId } : {}),
     });
+  }
+}
+
+/** The drag geometry a number line put on its point's handle (number-line-view.ts). */
+function numberLineDrag(control: SVGElement): { x0: number; x1: number; min: number; max: number; grid: Pick<NumberLineContent, "range" | "ticks"> } | undefined {
+  const { lineX0, lineX1, lineMin, lineMax, lineTicks } = control.dataset;
+  const [x0, x1, min, max] = [lineX0, lineX1, lineMin, lineMax].map(Number);
+  if (![x0, x1, min, max].every(Number.isFinite) || !(x1! > x0!) || !(max! > min!) || !lineTicks) return undefined;
+  try {
+    return { x0: x0!, x1: x1!, min: min!, max: max!, grid: JSON.parse(lineTicks) };
+  } catch {
+    return undefined;
   }
 }
 

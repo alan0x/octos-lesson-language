@@ -23,55 +23,39 @@
     },
     "lesson-learner-context-number-line-v2-001:node:number-line": {
       "id": "lesson-learner-context-number-line-v2-001:node:number-line",
-      "kind": "diagram",
+      "kind": "number_line",
       "role": "model",
       "content": {
-        "elements": [
+        "title": "从 3 出发，加上 −5",
+        "range": {
+          "min": -4,
+          "max": 4
+        },
+        "ticks": {
+          "step": 1
+        },
+        "points": [
           {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-three",
-            "kind": "point",
-            "label": "-3"
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "value": 3,
+            "label": "起点 3"
           },
           {
             "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two",
-            "kind": "point",
-            "label": "-2"
-          },
-          {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-one",
-            "kind": "point",
-            "label": "-1"
-          },
-          {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:zero",
-            "kind": "point",
-            "label": "0"
-          },
-          {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:one",
-            "kind": "point",
-            "label": "1"
-          },
-          {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:two",
-            "kind": "point",
-            "label": "2"
-          },
-          {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
-            "kind": "point",
-            "label": "3"
+            "value": -2,
+            "label": "终点 −2",
+            "shown": "when_emphasized"
           }
         ],
-        "edges": [
+        "jumps": [
           {
-            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:axis",
-            "from": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-three",
-            "to": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
-            "label": "数轴"
+            "id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:move",
+            "from": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three",
+            "by": -5,
+            "label": "向左 5 格",
+            "hops": true
           }
-        ],
-        "caption": "从 3 出发"
+        ]
       },
       "placement": {
         "relation": "below",
@@ -93,6 +77,13 @@
             "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three"
           },
           "emphasis": "resolved"
+        },
+        {
+          "target": {
+            "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
+            "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:move"
+          },
+          "emphasis": "focus"
         },
         {
           "target": {
@@ -218,19 +209,6 @@
       },
       "relation": "becomes",
       "label": "终点"
-    },
-    "lesson-learner-context-number-line-v2-001:connection:move": {
-      "id": "lesson-learner-context-number-line-v2-001:connection:move",
-      "from": {
-        "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
-        "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:three"
-      },
-      "to": {
-        "node_id": "lesson-learner-context-number-line-v2-001:node:number-line",
-        "fragment_id": "lesson-learner-context-number-line-v2-001:node:number-line:fragment:minus-two"
-      },
-      "relation": "moves_left",
-      "label": "向左 5 格"
     }
   },
   "groups": {
@@ -279,6 +257,7 @@
     "lesson-learner-context-number-line-v2-001:action:2:2:3",
     "lesson-learner-context-number-line-v2-001:action:2:2:4",
     "lesson-learner-context-number-line-v2-001:action:2:2:5",
+    "lesson-learner-context-number-line-v2-001:action:2:2:6",
     "lesson-learner-context-number-line-v2-001:action:3:1:1",
     "lesson-learner-context-number-line-v2-001:action:3:1:2",
     "lesson-learner-context-number-line-v2-001:action:3:1:3",

@@ -25,6 +25,7 @@ import {
   type StudentScene3dViewState,
   type StudentVariableOperation,
   type StudentVariableOperationContext,
+  STUDENT_VARIABLE_CONTROLS,
 } from "./student-operations.js";
 import {
   emptyStudentTaskProgressLog,
@@ -962,7 +963,7 @@ export class BrowserLessonSession {
     const variable = this.player.snapshot.board?.variables?.[alias];
     if (!variable) throw new Error(`Unknown lesson variable '${alias}'`);
     if (!Number.isFinite(variable.value)) throw new Error(`Lesson variable '${alias}' has no finite value`);
-    if (!["slider", "geometry_point", "reset"].includes(context.control)) {
+    if (!STUDENT_VARIABLE_CONTROLS.has(context.control)) {
       throw new Error(`Unsupported student variable control '${String(context.control)}'`);
     }
     if (!["mouse", "touch", "pen", "keyboard", "unknown"].includes(context.input)) {

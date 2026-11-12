@@ -1418,3 +1418,40 @@ test("a wrapping angle animates the shorter way round, across the end of its ran
   assert.ok(Math.abs(animatedVariableValue(6.2, 0.4, .5, { min: 0, max: turn }) - 3.3) < 1e-9);
   assert.equal(animatedVariableValue(1, 2, .5, angle), 1.5);
 });
+
+test("a learner drags a number-line point through the session, and the task judges it (decision 0013)", () => {
+  const document = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "zh-CN", title: "3/4 在哪里", goals: ["在数轴上找到 3/4"],
+      variables: [{ as: "p", initial: 0, min: 0, max: 2, label: "点的位置" }],
+      tasks: [{
+        as: "place", prompt: "把点拖到 3/4。", availability: { kind: "after_lesson" },
+        allowed_operations: [{ kind: "variable_change", variable: "p", controls: ["number_line_point"] }],
+        completion: { kind: "expression_target", expression: "p", value: 0.75, tolerance: 0.01 },
+        hints: ["每个大格分成四份。"],
+      }],
+    },
+    steps: [{ key: "s", purpose: "放点", beats: [{ key: "b", say: "这是从 0 到 2 的数轴，每格是四分之一。", actions: [{
+      do: "write", as: "line", kind: "number_line", role: "main_visual", place: { relation: "new_region" },
+      content: {
+        range: { min: 0, max: 2 }, ticks: { step: 1, subdivisions: 4 },
+        points: [{ as: "dot", value: 0, label: "你的点", interaction: { kind: "drag", variable: "p" } }],
+        bindings: [{ target: "dot.value", expression: "p" }],
+      },
+    }] }] }],
+    close: { summary: "3/4 在 0 和 1 之间的第三格。", focus: ["line"] },
+  } as unknown as AuthoringLesson;
+  const lessonEvents = normalizeAuthoringLesson(document, { lessonId: "number-line", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+  const session = new BrowserLessonSession(lessonEvents, new MemoryStore(), "number-line");
+  while (session.projection.status !== "completed") session.advance();
+  const operation = session.beginStudentVariableOperation("p", { control: "number_line_point", input: "mouse" });
+  session.updateStudentVariableOperation(operation, 0.5);
+  session.commitStudentVariableOperation(operation, 0.75);
+  const logged = session.studentOperations.at(-1);
+  assert.equal(logged?.kind === "variable_change" ? logged.control : undefined, "number_line_point");
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  const dot = (session.projection.board!.nodes["number-line:node:line"]!.content.points as Array<{ value: number }>)[0]!;
+  assert.equal(dot.value, 0.75, "the point follows the dragged variable");
+  assert.throws(() => session.beginStudentVariableOperation("p", { control: "lasso" as never, input: "mouse" }), /Unsupported student variable control 'lasso'/);
+});

@@ -169,6 +169,8 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     return { width: 440, height: (content.caption ? 420 : 380) + (measurementRows ? 16 + measurementRows * 40 : 0) };
   }
   if (kind === "scene3d") return { width: 460, height: 360 };
+  // A wide, low strip; the board measures its real height after drawing.
+  if (kind === "number_line") return { width: 560, height: 120 + (Array.isArray(content.jumps) && content.jumps.length ? 58 : 0) + (content.title ? 32 : 0) };
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
   if (kind === "ink") return inkDrawnSize(content) ?? { width: 340, height: 230 };

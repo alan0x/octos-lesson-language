@@ -1,3 +1,5 @@
+import { NUMBER_LINE_BINDINGS, NUMBER_LINE_KIND } from "../../plugin-math/src/number-line.js";
+
 /**
  * Executable capabilities implemented by the current OLL core/runtime.
  *
@@ -20,7 +22,14 @@ export const OLL_NODE_KINDS = [
   "ink",
 ] as const;
 
-export type OllNodeKind = typeof OLL_NODE_KINDS[number];
+/**
+ * Node kinds of first-party subject plugins (decision 0013 §3). They ship with
+ * OLL and are always installed; their execution feature is the plugin's, not
+ * `node:<kind>`, so an older player refuses them before playback.
+ */
+export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND] as const;
+
+export type OllNodeKind = typeof OLL_NODE_KINDS[number] | typeof OLL_PLUGIN_NODE_KINDS[number];
 
 export const OLL_ACTION_NAMES = [
   "write",
@@ -54,6 +63,7 @@ export const OLL_BINDING_CAPABILITIES = {
     sections: ["value"],
     objects: ["unfold"],
   },
+  number_line: NUMBER_LINE_BINDINGS,
 } as const;
 
 /** Formula fields that may read declared lesson variables directly. */
@@ -97,7 +107,7 @@ function collectBindingCapabilities(): OllBindingCollections {
 /** Canonical content has fragment IDs instead of authoring aliases. */
 export const OLL_CANONICAL_BINDING_CAPABILITIES = collectBindingCapabilities();
 
-export const OLL_VARIABLE_CONTROL_KINDS = ["slider", "geometry_point"] as const;
+export const OLL_VARIABLE_CONTROL_KINDS = ["slider", "geometry_point", "number_line_point"] as const;
 export const OLL_SCENE3D_CONTROL_KINDS = ["orbit", "zoom", "preset", "reset"] as const;
 export const OLL_TASK_COMPLETION_KINDS = ["expression_target", "scene3d_view_target", "numeric_answer"] as const;
 export const OLL_SCENE3D_VIEW_MATCH_KINDS = ["view_direction", "camera_pose"] as const;
@@ -111,6 +121,8 @@ export const OLL_SCENE3D_VIEW_PRESETS = ["front", "top", "side", "isometric"] as
 export const OLL_EXECUTION_CAPABILITIES = {
   version: "0.1",
   node_kinds: OLL_NODE_KINDS,
+  /** First-party plugin node kinds, each required through its plugin feature. */
+  plugin_node_kinds: OLL_PLUGIN_NODE_KINDS,
   action_names: OLL_ACTION_NAMES,
   value_bindings: OLL_BINDING_CAPABILITIES,
   binding_labels: { precision: { min: 0, max: 6 }, prefix: true, suffix: true },
