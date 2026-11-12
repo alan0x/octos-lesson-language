@@ -386,7 +386,11 @@ export function stackLabels(labels: ReadonlyArray<{ x: number; width: number }>,
 }
 
 /** The tick labels to draw, and the row each sits in (0 is just under the line). */
-export interface TickLabelPlan { shown: Set<number>; rows: Map<number, number>; rowCount: number }
+export interface TickLabelPlan {
+  shown: Set<number>; rows: Map<number, number>; rowCount: number;
+  /** Whether labels thin out at all: it depends only on the range and ticks, not on where points are. */
+  thinned: boolean;
+}
 
 /**
  * Like `visibleTickLabels`, but the values the card marks (its points and jump
@@ -409,7 +413,7 @@ export function planTickLabels(boxes: readonly LabelBox[], step: number, marked:
   const firstRow = pinned.filter((index) => rows.get(index) === 0);
   // On a thinned line a marked number stands apart: its labelled neighbours give way ("5", not "5 6").
   const free = (index: number) => firstRow.every((other) => other === index || (Math.abs(other - index) > 1 && clear(boxes[other]!, boxes[index]!)));
-  if (fits(all)) return { shown: new Set(all), rows: new Map(all.map((index) => [index, 0])), rowCount: 1 };
+  if (fits(all)) return { shown: new Set(all), rows: new Map(all.map((index) => [index, 0])), rowCount: 1, thinned: false };
   const majors = all.filter((index) => boxes[index]!.major);
   let chosen: number[] = [];
   for (let stride = 1; stride <= Math.max(1, majors.length); stride += 1) {
@@ -418,7 +422,7 @@ export function planTickLabels(boxes: readonly LabelBox[], step: number, marked:
   }
   const shown = new Set([...chosen.filter((index) => !rows.has(index) && free(index)), ...pinned]);
   for (const index of shown) if (!rows.has(index)) rows.set(index, 0);
-  return { shown, rows, rowCount: Math.max(1, ...pinnedRows.map((row) => row + 1)) };
+  return { shown, rows, rowCount: Math.max(1, ...pinnedRows.map((row) => row + 1)), thinned: true };
 }
 
 /**

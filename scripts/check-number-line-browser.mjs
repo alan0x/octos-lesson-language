@@ -69,6 +69,16 @@ const marked = normalizeAuthoringLesson(markedLesson, host("marked"));
 const hiddenLesson = structuredClone(markedLesson);
 hiddenLesson.steps[0].beats[0].actions[0].content.points[1].shown = "when_emphasized";
 const hidden = normalizeAuthoringLesson(hiddenLesson, host("hidden"));
+// Names above the line (no jumps), one point dragged across the other: the axis and the card keep
+// their geometry in every state, so nothing jumps under the pointer.
+const crossing = normalizeAuthoringLesson(lesson({
+  range: { min: -20, max: 20 }, ticks: { step: 1 },
+  points: [
+    { as: "mover", value: -6, label: "起点", interaction: { kind: "drag", variable: "m" } },
+    { as: "fixed", value: 0, label: "终点" },
+  ],
+  bindings: [{ target: "mover.value", expression: "m" }],
+}, { variables: [{ as: "m", initial: -6, min: -20, max: 20, label: "位置" }] }), host("crossing"));
 // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
 const names = normalizeAuthoringLesson(lesson({
   range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
@@ -227,6 +237,39 @@ try {
     return [...document.querySelectorAll(".number-line-tick-label")].map((node) => node.textContent);
   }, hidden);
   check(hiddenLabels.includes("−3") && !hiddenLabels.includes("7"), `a hidden end keeps its value back: ${hiddenLabels.join(" ")}`);
+  const geometry = () => page.evaluate(() => {
+    const svg = document.querySelector(".number-line-preview");
+    return { axis: svg.querySelector(".number-line-axis").getAttribute("y1"), box: svg.getAttribute("viewBox"), m: window.session.projection.board.variables.m.value };
+  });
+  await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "crossing");
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    mounted.view.setVariableInputHandler((alias, value, event) => {
+      if (event.phase === "start") return session.beginStudentVariableOperation(alias, { control: event.control, input: event.input });
+      if (!event.operation_id) return;
+      if (event.phase === "update") session.updateStudentVariableOperation(event.operation_id, value);
+      else session.commitStudentVariableOperation(event.operation_id, value);
+      mounted.view.render(session.projection.board);
+    });
+    mounted.view.render(session.projection.board);
+    Object.assign(window, { session, mounted });
+  }, crossing);
+  const before = await geometry();
+  const crossLine = await (await page.$(".number-line-preview")).boundingBox();
+  const crossHandle = await (await page.$(".number-line-drag-handle")).boundingBox();
+  const crossY = crossHandle.y + crossHandle.height / 2;
+  await page.mouse.move(crossHandle.x + crossHandle.width / 2, crossY);
+  await page.mouse.down();
+  const seen = [];
+  for (const target of [-3, -1, 0, 1, 3, 6]) {
+    await page.mouse.move(crossLine.x + crossLine.width * (30 + 460 * (target + 20) / 40) / 520, crossY, { steps: 3 });
+    seen.push(await geometry());
+  }
+  await page.mouse.up();
+  check(seen.some((state) => state.m >= 0) && seen.some((state) => state.m < 0), `the drag crossed the other point: ${seen.map((state) => state.m).join(", ")}`);
+  check(seen.every((state) => state.axis === before.axis && state.box === before.box), `the axis and card stay put while names cross: ${JSON.stringify([before, ...seen])}`);
   const nameBoxes = await page.evaluate((events) => {
     document.querySelector("#board").replaceChildren();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
@@ -247,4 +290,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging");
