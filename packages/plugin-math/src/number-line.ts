@@ -209,9 +209,15 @@ export function validateNumberLineContent(raw: unknown, path: string, fail: Fail
     if (typeof point.as === "string") pointAliases.add(point.as);
   }
 
+  // A value a variable drives is only where that variable starts; the core checks
+  // it at every value the variable can take (boundValues), so the rules for
+  // authored values (a jump moves, hops are whole) do not apply to it here.
+  const bound = new Set((Array.isArray(content.bindings) ? content.bindings : [])
+    .map((binding) => (binding as { target?: unknown }).target).filter((target): target is string => typeof target === "string"));
   for (const [index, jump] of list(content.jumps, `${path}/jumps`, NUMBER_LINE_LIMITS.jumps, fail).entries()) {
     const jumpPath = `${path}/jumps/${index}`;
     only(jump, ["as", "from", "by", "label", "hops"], jumpPath, fail);
+    const loose = options.boundValues || bound.has(`${jump.as}.by`) || bound.has(`${jump.as}.from`);
     let start: number;
     if (typeof jump.from === "string" && numberLineValue(jump.from) === undefined) {
       if (!pointAliases.has(jump.from)) fail(`${jumpPath}/from`, `Jump start '${jump.from}' is not a point of this number line`);
@@ -222,7 +228,7 @@ export function validateNumberLineContent(raw: unknown, path: string, fail: Fail
     }
     const by = value(jump.by, `${jumpPath}/by`, fail);
     // A variable may pass through 0 (a jump growing from nothing); an authored jump moves.
-    if (by === 0 && !options.boundValues) fail(`${jumpPath}/by`, "A jump moves by a nonzero amount");
+    if (by === 0 && !loose) fail(`${jumpPath}/by`, "A jump moves by a nonzero amount");
     const end = start + by;
     if (start < min - 1e-9 || start > max + 1e-9 || end < min - 1e-9 || end > max + 1e-9) fail(jumpPath, "A jump starts and ends inside the line's range");
     text(jump.label, `${jumpPath}/label`, fail, 32);
@@ -231,7 +237,7 @@ export function validateNumberLineContent(raw: unknown, path: string, fail: Fail
       const count = Math.abs(by) / unit;
       // A variable may stop between ticks (the last hop is then drawn short), but never needs more hops than the limit.
       const whole = near(count, Math.round(count), count);
-      if ((!whole && !options.boundValues) || Math.ceil(count - 1e-9) > NUMBER_LINE_LIMITS.hops) {
+      if ((!whole && !loose) || Math.ceil(count - 1e-9) > NUMBER_LINE_LIMITS.hops) {
         fail(`${jumpPath}/hops`, `A jump drawn hop by hop moves a whole number of the smallest ticks, at most ${NUMBER_LINE_LIMITS.hops}`);
       }
     }
