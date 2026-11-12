@@ -44,7 +44,7 @@ const boundJump = lesson({
 }, { variables: [{ as: "delta", initial: 1, min: 1, max: 2.6, label: "跳多远" }] });
 boundJump.steps[0].beats.push({ key: "c", say: "跳得更远。", actions: [{ do: "animate", variable: "delta", value: 2.6 }] });
 const bound = normalizeAuthoringLesson(boundJump, host("bound"));
-// Run 4's NL-05 shape: a 34-unit line labelled every 3. The end point is animated to 7, then the
+// Run 4's NL-05 shape: a 34-unit line, thinned to every 5. The end point is animated to 7, then the
 // learner drags the start; the numbers under both points must be drawn wherever they are.
 const markedLesson = lesson({
   range: { min: -17, max: 17 }, ticks: { step: 1 },
@@ -79,6 +79,20 @@ const crossing = normalizeAuthoringLesson(lesson({
   ],
   bindings: [{ target: "mover.value", expression: "m" }],
 }, { variables: [{ as: "m", initial: -6, min: -20, max: 20, label: "位置" }] }), host("crossing"));
+// The tallest number line: thinned fraction labels, moving points with names, a jump, a title. Its
+// reserved rows make it taller than the board's first estimate; the board measures it after drawing,
+// so the note placed below it must start below its real bottom.
+const tallLesson = lesson({
+  title: "从 −1/2 出发", range: { min: -10, max: 10 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
+  points: [
+    { as: "start", value: "-1/2", label: "起点", interaction: { kind: "drag", variable: "s" } },
+    { as: "end", value: "1/4", label: "终点" },
+  ],
+  jumps: [{ as: "move", from: "start", by: "3/4", hops: true }],
+  bindings: [{ target: "start.value", expression: "s" }, { target: "end.value", expression: "s + 0.75" }],
+}, { variables: [{ as: "s", initial: -0.5, min: -9, max: 9, label: "起点" }] });
+tallLesson.steps[0].beats[0].actions.push({ do: "write", as: "note", kind: "note", role: "note", place: { relation: "below", anchor: "line" }, content: { title: "下面的卡片" } });
+const tall = normalizeAuthoringLesson(tallLesson, host("tall"));
 // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
 const names = normalizeAuthoringLesson(lesson({
   range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
@@ -215,7 +229,7 @@ try {
   }, marked);
   const animated = await markedLabels();
   check(animated.texts.includes("7") && animated.texts.includes("−3"), `after the animation, −3 and 7 are labelled: ${animated.texts.join(" ")}`);
-  check(!animated.texts.includes("5") || animated.texts.includes("6"), "5 is not kept once the end has moved on");
+  check(!animated.texts.includes("4") && !animated.texts.includes("8"), `labels off the stride appear only under points: ${animated.texts.join(" ")}`);
   check(animated.overlaps === 0, `marked labels overlap ${animated.overlaps} times`);
   const markedLine = await (await page.$(".number-line-preview")).boundingBox();
   const markedHandle = await (await page.$(".number-line-drag-handle")).boundingBox();
@@ -270,6 +284,18 @@ try {
   await page.mouse.up();
   check(seen.some((state) => state.m >= 0) && seen.some((state) => state.m < 0), `the drag crossed the other point: ${seen.map((state) => state.m).join(", ")}`);
   check(seen.every((state) => state.axis === before.axis && state.box === before.box), `the axis and card stay put while names cross: ${JSON.stringify([before, ...seen])}`);
+  const stacking = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "tall");
+    while (session.projection.status !== "completed") session.advance();
+    window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+    const card = (id) => document.querySelector(`.board-node[data-id$=":node:${id}"]`);
+    const line = card("line").getBoundingClientRect(), note = card("note").getBoundingClientRect();
+    const svg = document.querySelector(".number-line-preview").getBoundingClientRect();
+    return { lineBottom: line.bottom, svgBottom: svg.bottom, noteTop: note.top, clipped: card("line").scrollHeight > card("line").clientHeight + 1 };
+  }, tall);
+  check(!stacking.clipped && stacking.svgBottom <= stacking.lineBottom + 1, `the tall number line fits its card: ${JSON.stringify(stacking)}`);
+  check(stacking.noteTop >= stacking.lineBottom - 1, `the note below starts below the number line's real bottom: ${JSON.stringify(stacking)}`);
   const nameBoxes = await page.evaluate((events) => {
     document.querySelector("#board").replaceChildren();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
@@ -290,4 +316,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured");

@@ -358,7 +358,8 @@ export interface LabelBox { x: number; width: number; major: boolean; value: num
 /**
  * Which tick labels to draw so none overlap (decision 0013 §1): every tick
  * stays, but labels thin out on a regular stride. Major labels come first, on
- * the smallest stride that fits, counted from 0 so 0 keeps its label; minor
+ * the smallest stride people count by (2, 5, 10, 20, 25, 50 …) that fits,
+ * counted from 0 so 0 keeps its label; minor
  * labels are added only if all of them fit between. Returns the indexes of
  * the boxes to draw.
  */
@@ -383,6 +384,15 @@ export function stackLabels(labels: ReadonlyArray<{ x: number; width: number }>,
     rows[index] = row;
   }
   return rows;
+}
+
+/** 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500 … up to the first at or past `limit`. */
+function niceStrides(limit: number): number[] {
+  const strides: number[] = [];
+  for (let scale = 1; strides.at(-1) === undefined || strides.at(-1)! < limit; scale *= 10) {
+    for (const factor of scale === 1 ? [1, 2, 5] : [1, 2, 2.5, 5]) strides.push(factor * scale);
+  }
+  return strides.filter((stride) => Number.isInteger(stride));
 }
 
 /** The tick labels to draw, and the row each sits in (0 is just under the line). */
@@ -416,7 +426,8 @@ export function planTickLabels(boxes: readonly LabelBox[], step: number, marked:
   if (fits(all)) return { shown: new Set(all), rows: new Map(all.map((index) => [index, 0])), rowCount: 1, thinned: false };
   const majors = all.filter((index) => boxes[index]!.major);
   let chosen: number[] = [];
-  for (let stride = 1; stride <= Math.max(1, majors.length); stride += 1) {
+  // Strides people count by (every 2, 5, 10, 20, 25, 50 …), never every 3 or 13.
+  for (const stride of niceStrides(Math.max(1, majors.length))) {
     const candidate = majors.filter((index) => Math.round(boxes[index]!.value / step) % stride === 0);
     if (fits(candidate)) { chosen = candidate; break; }
   }

@@ -134,13 +134,13 @@ const noOverlap = (labels: ReturnType<typeof drawn>) => {
 };
 
 test("thinning never hides the value a point sits on", () => {
-  // Run 4's NL-05: −3 + 8 on a line from −17 to 17, labelled every 3, so the end at 5 had no number.
+  // Run 4's NL-05 shape: a line from −17 to 17 thins to every 5, so an end at 7 has no number of its own.
   const boxes = labelBoxes({ range: { min: -17, max: 17 }, ticks: { step: 1 } });
-  assert.ok(!drawn(boxes, planTickLabels(boxes, 1, [])).some((label) => label.value === 5), "thinned without marks, 5 is unlabelled");
-  const labels = drawn(boxes, planTickLabels(boxes, 1, [-3, 5]));
-  assert.ok(labels.some((label) => label.value === 5 && label.row === 0) && labels.some((label) => label.value === -3));
+  const stride = drawn(boxes, planTickLabels(boxes, 1, []));
+  assert.deepEqual(stride.map((label) => label.value), [-15, -10, -5, 0, 5, 10, 15], "thinned on a stride people count by");
+  const labels = drawn(boxes, planTickLabels(boxes, 1, [-3, 7]));
+  assert.ok(labels.some((label) => label.value === 7 && label.row === 0) && labels.some((label) => label.value === -3));
   assert.ok(labels.some((label) => label.value === 0), "0 keeps its label when no mark crowds it");
-  assert.ok(!labels.some((label) => label.value === 6 || label.value === -4), "a marked number's labelled neighbours give way");
   noOverlap(labels);
   // Unmarked, the plan is the stride alone.
   assert.deepEqual([...planTickLabels(boxes, 1, []).shown], [...visibleTickLabels(boxes, 1)]);
