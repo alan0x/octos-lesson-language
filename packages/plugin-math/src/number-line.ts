@@ -358,22 +358,82 @@ export interface LabelBox { x: number; width: number; major: boolean; value: num
 /**
  * Which tick labels to draw so none overlap (decision 0013 §1): every tick
  * stays, but labels thin out on a regular stride. Major labels come first, on
- * the smallest stride that fits, counted from 0 so 0 keeps its label; minor
+ * the smallest stride people count by (2, 5, 10, 20, 25, 50 …) that fits,
+ * counted from 0 so 0 keeps its label; minor
  * labels are added only if all of them fit between. Returns the indexes of
  * the boxes to draw.
  */
 export function visibleTickLabels(boxes: readonly LabelBox[], step: number, gap = 6): Set<number> {
-  const fits = (chosen: number[]) => chosen.every((index, position) => position === 0
-    || boxes[index]!.x - boxes[index]!.width / 2 - (boxes[chosen[position - 1]!]!.x + boxes[chosen[position - 1]!]!.width / 2) >= gap);
-  const majors = boxes.map((box, index) => ({ box, index })).filter(({ box }) => box.major);
+  return planTickLabels(boxes, step, [], gap).shown;
+}
+
+/**
+ * Rows for labels that must all be drawn (point names, marked tick values):
+ * each takes the first row, counted from 0, where it clears the labels already
+ * there. Returns each label's row, in the order given.
+ */
+export function stackLabels(labels: ReadonlyArray<{ x: number; width: number }>, gap = 6): number[] {
+  const rows: number[] = new Array(labels.length).fill(0);
+  const lastInRow: Array<{ x: number; width: number }> = [];
+  const order = labels.map((_label, index) => index).sort((a, b) => labels[a]!.x - labels[b]!.x);
+  for (const index of order) {
+    const label = labels[index]!;
+    let row = lastInRow.findIndex((previous) => label.x - label.width / 2 - (previous.x + previous.width / 2) >= gap);
+    if (row < 0) row = lastInRow.length;
+    lastInRow[row] = label;
+    rows[index] = row;
+  }
+  return rows;
+}
+
+/** 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500 … up to the first at or past `limit`. */
+function niceStrides(limit: number): number[] {
+  const strides: number[] = [];
+  for (let scale = 1; strides.at(-1) === undefined || strides.at(-1)! < limit; scale *= 10) {
+    for (const factor of scale === 1 ? [1, 2, 5] : [1, 2, 2.5, 5]) strides.push(factor * scale);
+  }
+  return strides.filter((stride) => Number.isInteger(stride));
+}
+
+/** The tick labels to draw, and the row each sits in (0 is just under the line). */
+export interface TickLabelPlan {
+  shown: Set<number>; rows: Map<number, number>; rowCount: number;
+  /** Whether labels thin out at all: it depends only on the range and ticks, not on where points are. */
+  thinned: boolean;
+}
+
+/**
+ * Like `visibleTickLabels`, but the values the card marks (its points and jump
+ * ends) always keep their tick's label, so thinning never hides the number a
+ * point sits on (−7 on a line labelled every 2). Only a tick the label policy
+ * labels can be kept: a marked value on an unlabelled tick (a fourth under
+ * "major" labels) stays unlabelled, as the author chose.
+ * - On a thinned line, a stride label next to a marked label (the
+ *   neighbouring labelled tick) or overlapping it is dropped; a marked value wins over 0.
+ * - Marked labels that would overlap each other (−3 and −2 on a long line)
+ *   go on further rows below, so every one is drawn and none overlap.
+ */
+export function planTickLabels(boxes: readonly LabelBox[], step: number, marked: readonly number[], gap = 6): TickLabelPlan {
+  const clear = (a: LabelBox, b: LabelBox) => Math.abs(a.x - b.x) - a.width / 2 - b.width / 2 >= gap;
+  const fits = (chosen: number[]) => chosen.every((index, position) => position === 0 || clear(boxes[chosen[position - 1]!]!, boxes[index]!));
+  const all = boxes.map((_box, index) => index);
+  const pinned = all.filter((index) => marked.some((value) => Math.abs(value - boxes[index]!.value) <= 1e-9 * Math.max(1, Math.abs(value))));
+  const pinnedRows = stackLabels(pinned.map((index) => boxes[index]!), gap);
+  const rows = new Map(pinned.map((index, position) => [index, pinnedRows[position]!]));
+  const firstRow = pinned.filter((index) => rows.get(index) === 0);
+  // On a thinned line a marked number stands apart: its labelled neighbours give way ("5", not "5 6").
+  const free = (index: number) => firstRow.every((other) => other === index || (Math.abs(other - index) > 1 && clear(boxes[other]!, boxes[index]!)));
+  if (fits(all)) return { shown: new Set(all), rows: new Map(all.map((index) => [index, 0])), rowCount: 1, thinned: false };
+  const majors = all.filter((index) => boxes[index]!.major);
   let chosen: number[] = [];
-  for (let stride = 1; stride <= Math.max(1, majors.length); stride += 1) {
-    const candidate = majors.filter(({ box }) => Math.round(box.value / step) % stride === 0).map(({ index }) => index);
+  // Strides people count by (every 2, 5, 10, 20, 25, 50 …), never every 3 or 13.
+  for (const stride of niceStrides(Math.max(1, majors.length))) {
+    const candidate = majors.filter((index) => Math.round(boxes[index]!.value / step) % stride === 0);
     if (fits(candidate)) { chosen = candidate; break; }
   }
-  const all = boxes.map((_box, index) => index);
-  const minorsFit = chosen.length === majors.length && fits(all);
-  return new Set(minorsFit ? all : chosen);
+  const shown = new Set([...chosen.filter((index) => !rows.has(index) && free(index)), ...pinned]);
+  for (const index of shown) if (!rows.has(index)) rows.set(index, 0);
+  return { shown, rows, rowCount: Math.max(1, ...pinnedRows.map((row) => row + 1)), thinned: true };
 }
 
 /**

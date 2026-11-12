@@ -44,6 +44,87 @@ const boundJump = lesson({
 }, { variables: [{ as: "delta", initial: 1, min: 1, max: 2.6, label: "跳多远" }] });
 boundJump.steps[0].beats.push({ key: "c", say: "跳得更远。", actions: [{ do: "animate", variable: "delta", value: 2.6 }] });
 const bound = normalizeAuthoringLesson(boundJump, host("bound"));
+// Run 4's NL-05 shape: a 34-unit line, thinned to every 5. The end point is animated to 7, then the
+// learner drags the start; the numbers under both points must be drawn wherever they are.
+const markedLesson = lesson({
+  range: { min: -17, max: 17 }, ticks: { step: 1 },
+  points: [
+    { as: "start", value: -3, label: "起点", interaction: { kind: "drag", variable: "s" } },
+    { as: "end", value: 5, label: "终点" },
+  ],
+  jumps: [{ as: "move", from: "start", by: 8, hops: true }],
+  bindings: [{ target: "start.value", expression: "s" }, { target: "end.value", expression: "s + c" }, { target: "move.by", expression: "c" }],
+}, {
+  variables: [{ as: "s", initial: -3, min: -10, max: 0, label: "起点" }, { as: "c", initial: 8, min: 0, max: 10, label: "移动" }],
+  tasks: [{
+    as: "drag-start", prompt: "把起点拖到 −10。", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "s", controls: ["number_line_point"] }],
+    completion: { kind: "expression_target", expression: "s", value: -10, tolerance: 0.5 },
+    hints: ["往左拖。"],
+  }],
+});
+markedLesson.steps[0].beats.push({ key: "c", say: "再多走两格。", actions: [{ do: "animate", variable: "c", value: 10 }] });
+const marked = normalizeAuthoringLesson(markedLesson, host("marked"));
+// The same line with the end kept back until it is emphasized: its value must not be pinned.
+const hiddenLesson = structuredClone(markedLesson);
+hiddenLesson.steps[0].beats[0].actions[0].content.points[1].shown = "when_emphasized";
+const hidden = normalizeAuthoringLesson(hiddenLesson, host("hidden"));
+// Names above the line (no jumps), one point dragged across the other: the axis and the card keep
+// their geometry in every state, so nothing jumps under the pointer.
+const crossing = normalizeAuthoringLesson(lesson({
+  range: { min: -20, max: 20 }, ticks: { step: 1 },
+  points: [
+    { as: "mover", value: -6, label: "起点", interaction: { kind: "drag", variable: "m" } },
+    { as: "fixed", value: 0, label: "终点" },
+  ],
+  bindings: [{ target: "mover.value", expression: "m" }],
+}, { variables: [{ as: "m", initial: -6, min: -20, max: 20, label: "位置" }] }), host("crossing"));
+// The tallest number line: thinned fraction labels, moving points with names, a jump, a title. Its
+// reserved rows make it taller than the board's first estimate; the board measures it after drawing,
+// so the note placed below it must start below its real bottom.
+const tallLesson = lesson({
+  title: "从 −1/2 出发", range: { min: -10, max: 10 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
+  points: [
+    { as: "start", value: "-1/2", label: "起点", interaction: { kind: "drag", variable: "s" } },
+    { as: "end", value: "1/4", label: "终点" },
+  ],
+  jumps: [{ as: "move", from: "start", by: "3/4", hops: true }],
+  bindings: [{ target: "start.value", expression: "s" }, { target: "end.value", expression: "s + 0.75" }],
+}, { variables: [{ as: "s", initial: -0.5, min: -9, max: 9, label: "起点" }] });
+tallLesson.steps[0].beats[0].actions.push({ do: "write", as: "note", kind: "note", role: "note", place: { relation: "below", anchor: "line" }, content: { title: "下面的卡片" } });
+const tall = normalizeAuthoringLesson(tallLesson, host("tall"));
+// Review of #51: one named start, and a jump whose end has no point of its own, its change animated
+// 0 → 1 → 5 → 0 on a thinned line. The card keeps one height throughout.
+const jumpOnlyLesson = lesson({
+  range: { min: -20, max: 20 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 0, label: "起点" }],
+  jumps: [{ as: "move", from: "start", by: 0, hops: false }],
+  bindings: [{ target: "move.by", expression: "delta" }],
+}, { variables: [{ as: "delta", initial: 0, min: 0, max: 5, label: "移动" }] });
+for (const value of [1, 5, 0]) jumpOnlyLesson.steps[0].beats.push({ key: `j${value}`, say: "看。", actions: [{ do: "animate", variable: "delta", value }] });
+const jumpOnly = normalizeAuthoringLesson(jumpOnlyLesson, host("jump-only"));
+// A point shown only when emphasized: pointing at it leaves it hidden; emphasizing it shows it; emphasis
+// "none" hides it again (Coach's quality judge relies on exactly this; review of Coach #63).
+const latentLesson = (extra) => lesson({
+  range: { min: -1, max: 2 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
+  points: [{ as: "start", value: 0, label: "起点" }, { as: "end", value: "3/4", label: "终点", shown: "when_emphasized" }],
+});
+const latentWith = (actions) => {
+  const authored = latentLesson();
+  authored.steps[0].beats.push({ key: "c", say: "终点。", actions });
+  return normalizeAuthoringLesson(authored, host(`latent-${actions.map((action) => action.do + (action.emphasis ?? "")).join("-")}`));
+};
+const latentCases = [
+  ["point", latentWith([{ do: "point", target: "line#end" }]), false],
+  ["emphasize", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }]), true],
+  ["emphasize then none", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }, { do: "emphasize", target: "line#end", emphasis: "none" }]), false],
+];
+// Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
+const names = normalizeAuthoringLesson(lesson({
+  range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
+  points: [{ as: "start", value: 0, label: "Start" }, { as: "end", value: "1/4", label: "End" }],
+  jumps: [{ as: "move", from: "start", by: "1/4", hops: true }],
+}), host("names"));
 
 const bundle = await build({
   stdin: { contents: `
@@ -146,6 +227,139 @@ try {
   const expectedEnd = 30 + 2.6 / 4 * 460;
   check(arrowEnd.by === 2.6 && Math.abs(arrowEnd.end - expectedEnd) < 0.01, `the bound jump should end at x=${expectedEnd} (2.6), got x=${arrowEnd.end} for delta=${arrowEnd.by}`);
   check(arrowEnd.arcs === 3, `2.6 is drawn as two whole hops and a short one, got ${arrowEnd.arcs} arcs`);
+
+  // 5. Points keep the number under them on a thinned line, after an animation and during a drag.
+  const markedLabels = () => page.evaluate(() => {
+    const svg = document.querySelector(".number-line-preview");
+    const labels = [...svg.querySelectorAll(".number-line-tick-label")].map((node) => {
+      const box = node.getBBox();
+      return { text: node.textContent, x: box.x, right: box.x + box.width, y: Math.round(box.y) };
+    });
+    const overlaps = labels.filter((a, i) => labels.some((b, j) => j < i && a.y === b.y && a.x < b.right && b.x < a.right)).length;
+    return { texts: labels.map((label) => label.text), overlaps, s: window.session.projection.board.variables.s.value };
+  });
+  await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "marked");
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    mounted.view.setVariableInputHandler((alias, value, event) => {
+      if (event.phase === "start") return session.beginStudentVariableOperation(alias, { control: event.control, input: event.input });
+      if (!event.operation_id) return;
+      if (event.phase === "update") session.updateStudentVariableOperation(event.operation_id, value);
+      else session.commitStudentVariableOperation(event.operation_id, value);
+      mounted.view.render(session.projection.board);
+    });
+    mounted.view.render(session.projection.board);
+    Object.assign(window, { session, mounted });
+  }, marked);
+  const animated = await markedLabels();
+  check(animated.texts.includes("7") && animated.texts.includes("−3"), `after the animation, −3 and 7 are labelled: ${animated.texts.join(" ")}`);
+  check(!animated.texts.includes("4") && !animated.texts.includes("8"), `labels off the stride appear only under points: ${animated.texts.join(" ")}`);
+  check(animated.overlaps === 0, `marked labels overlap ${animated.overlaps} times`);
+  const markedLine = await (await page.$(".number-line-preview")).boundingBox();
+  const markedHandle = await (await page.$(".number-line-drag-handle")).boundingBox();
+  const markedY = markedHandle.y + markedHandle.height / 2;
+  await page.mouse.move(markedHandle.x + markedHandle.width / 2, markedY);
+  await page.mouse.down();
+  await page.mouse.move(markedLine.x + markedLine.width * (30 + 460 * 7.8 / 34) / 520, markedY, { steps: 8 });
+  const dragging = await markedLabels();
+  await page.mouse.up();
+  const sign = (value) => (value < 0 ? `−${-value}` : String(value));
+  check(dragging.s !== -3, "the drag moved the start");
+  check(dragging.texts.includes(sign(dragging.s)) && dragging.texts.includes(sign(dragging.s + 10)), `while dragging, the start ${dragging.s} and its end ${dragging.s + 10} are labelled: ${dragging.texts.join(" ")}`);
+  check(dragging.overlaps === 0, `labels overlap ${dragging.overlaps} times while dragging`);
+  const hiddenLabels = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "hidden");
+    while (session.projection.status !== "completed") session.advance();
+    window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+    return [...document.querySelectorAll(".number-line-tick-label")].map((node) => node.textContent);
+  }, hidden);
+  check(hiddenLabels.includes("−3") && !hiddenLabels.includes("7"), `a hidden end keeps its value back: ${hiddenLabels.join(" ")}`);
+  const geometry = () => page.evaluate(() => {
+    const svg = document.querySelector(".number-line-preview");
+    return { axis: svg.querySelector(".number-line-axis").getAttribute("y1"), box: svg.getAttribute("viewBox"), m: window.session.projection.board.variables.m.value };
+  });
+  await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "crossing");
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    mounted.view.setVariableInputHandler((alias, value, event) => {
+      if (event.phase === "start") return session.beginStudentVariableOperation(alias, { control: event.control, input: event.input });
+      if (!event.operation_id) return;
+      if (event.phase === "update") session.updateStudentVariableOperation(event.operation_id, value);
+      else session.commitStudentVariableOperation(event.operation_id, value);
+      mounted.view.render(session.projection.board);
+    });
+    mounted.view.render(session.projection.board);
+    Object.assign(window, { session, mounted });
+  }, crossing);
+  const before = await geometry();
+  const crossLine = await (await page.$(".number-line-preview")).boundingBox();
+  const crossHandle = await (await page.$(".number-line-drag-handle")).boundingBox();
+  const crossY = crossHandle.y + crossHandle.height / 2;
+  await page.mouse.move(crossHandle.x + crossHandle.width / 2, crossY);
+  await page.mouse.down();
+  const seen = [];
+  for (const target of [-3, -1, 0, 1, 3, 6]) {
+    await page.mouse.move(crossLine.x + crossLine.width * (30 + 460 * (target + 20) / 40) / 520, crossY, { steps: 3 });
+    seen.push(await geometry());
+  }
+  await page.mouse.up();
+  check(seen.some((state) => state.m >= 0) && seen.some((state) => state.m < 0), `the drag crossed the other point: ${seen.map((state) => state.m).join(", ")}`);
+  check(seen.every((state) => state.axis === before.axis && state.box === before.box), `the axis and card stay put while names cross: ${JSON.stringify([before, ...seen])}`);
+  const stacking = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "tall");
+    while (session.projection.status !== "completed") session.advance();
+    window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+    const card = (id) => document.querySelector(`.board-node[data-id$=":node:${id}"]`);
+    const line = card("line").getBoundingClientRect(), note = card("note").getBoundingClientRect();
+    const svg = document.querySelector(".number-line-preview").getBoundingClientRect();
+    return { lineBottom: line.bottom, svgBottom: svg.bottom, noteTop: note.top, clipped: card("line").scrollHeight > card("line").clientHeight + 1 };
+  }, tall);
+  check(!stacking.clipped && stacking.svgBottom <= stacking.lineBottom + 1, `the tall number line fits its card: ${JSON.stringify(stacking)}`);
+  check(stacking.noteTop >= stacking.lineBottom - 1, `the note below starts below the number line's real bottom: ${JSON.stringify(stacking)}`);
+  const jumpBoxes = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "jump-only");
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    const seen = [];
+    while (session.projection.status !== "completed") {
+      session.advance();
+      mounted.view.render(session.projection.board);
+      const svg = document.querySelector(".number-line-preview");
+      if (svg) seen.push([session.projection.board.variables.delta.value, svg.getAttribute("viewBox")]);
+    }
+    return seen;
+  }, jumpOnly);
+  const deltas = new Set(jumpBoxes.map(([delta]) => delta));
+  check([0, 1, 5].every((value) => deltas.has(value)), `the jump's change passed 0, 1 and 5: ${[...deltas].join(", ")}`);
+  check(new Set(jumpBoxes.map(([, box]) => box)).size === 1, `a jump whose end has no point keeps one card height: ${JSON.stringify([...new Set(jumpBoxes.map(([delta, box]) => `${delta}:${box}`))])}`);
+  for (const [name, events, visible] of latentCases) {
+    const shown = await page.evaluate((events) => {
+      document.querySelector("#board").replaceChildren();
+      const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), events[0].lesson_id ?? "latent");
+      while (session.projection.status !== "completed") session.advance();
+      window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+      const end = [...document.querySelectorAll(".number-line-point")].find((group) => /end/.test(group.dataset.id ?? ""));
+      return end ? getComputedStyle(end).display !== "none" : null;
+    }, events);
+    check(shown === visible, `a point shown only when emphasized, after ${name}: expected ${visible ? "visible" : "hidden"}, got ${shown}`);
+  }
+  const nameBoxes = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
+    while (session.projection.status !== "completed") session.advance();
+    window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+    return [...document.querySelectorAll(".number-line-point-label")].map((node) => { const box = node.getBBox(); return { x: box.x, right: box.x + box.width, y: box.y, bottom: box.y + box.height }; });
+  }, names);
+  const [first, second] = nameBoxes;
+  // On the same row, names need a clear gap; touching reads as one word ("Start End").
+  const sameRow = first && second && first.y < second.bottom && second.y < first.bottom;
+  check(nameBoxes.length === 2 && (!sameRow || Math.max(first.x, second.x) - Math.min(first.right, second.right) >= 5), `point names run together: ${JSON.stringify(nameBoxes)}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -155,4 +369,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point");

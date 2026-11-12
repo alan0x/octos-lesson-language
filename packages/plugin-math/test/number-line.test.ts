@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  decimalPlaces, jumpEnds, jumpHops, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, snapToTick, validateNumberLineContent, visibleTickLabels,
+  decimalPlaces, jumpEnds, jumpHops, numberLineValue, parseFraction, planNumberLineTicks, planTickStep, planTickLabels, snapToTick, stackLabels, validateNumberLineContent, visibleTickLabels,
   type NumberLineContent, type TickLabel,
 } from "../src/number-line.js";
 
@@ -113,6 +113,65 @@ test("dense labels thin out on a regular stride that fits; every tick stays", ()
   const roomy = planNumberLineTicks({ range: { min: 0, max: 2 }, ticks: { step: 1, subdivisions: 4, labels: "all" } });
   const roomyBoxes = roomy.map((tick) => ({ x: 30 + tick.value / 2 * 460, width: width(tick.label!), major: tick.major, value: tick.value }));
   assert.equal(visibleTickLabels(roomyBoxes, 1).size, roomy.length);
+});
+
+// Boxes for a line on the 460-unit axis, as the view plans them.
+const labelBoxes = (content: Pick<NumberLineContent, "range" | "ticks">) => {
+  const { min, max } = content.range;
+  const width = (label: TickLabel) => label.kind === "text" ? label.text.length * 7.2 : 18 + (label.negative ? 8 : 0);
+  return planNumberLineTicks(content).filter((tick) => tick.label)
+    .map((tick) => ({ x: 30 + (tick.value - min) / (max - min) * 460, width: width(tick.label!), major: tick.major, value: tick.value }));
+};
+const drawn = (boxes: ReturnType<typeof labelBoxes>, plan: ReturnType<typeof planTickLabels>) =>
+  [...plan.shown].sort((a, b) => a - b).map((index) => ({ ...boxes[index]!, row: plan.rows.get(index)! }));
+const noOverlap = (labels: ReturnType<typeof drawn>) => {
+  for (const row of new Set(labels.map((label) => label.row))) {
+    const inRow = labels.filter((label) => label.row === row);
+    for (let index = 1; index < inRow.length; index += 1) {
+      assert.ok(inRow[index]!.x - inRow[index]!.width / 2 - (inRow[index - 1]!.x + inRow[index - 1]!.width / 2) >= 6, `labels ${inRow[index - 1]!.value} and ${inRow[index]!.value} overlap in row ${row}`);
+    }
+  }
+};
+
+test("thinning never hides the value a point sits on", () => {
+  // Run 4's NL-05 shape: a line from −17 to 17 thins to every 5, so an end at 7 has no number of its own.
+  const boxes = labelBoxes({ range: { min: -17, max: 17 }, ticks: { step: 1 } });
+  const stride = drawn(boxes, planTickLabels(boxes, 1, []));
+  assert.deepEqual(stride.map((label) => label.value), [-15, -10, -5, 0, 5, 10, 15], "thinned on a stride people count by");
+  const labels = drawn(boxes, planTickLabels(boxes, 1, [-3, 7]));
+  assert.ok(labels.some((label) => label.value === 7 && label.row === 0) && labels.some((label) => label.value === -3));
+  assert.ok(labels.some((label) => label.value === 0), "0 keeps its label when no mark crowds it");
+  noOverlap(labels);
+  // Unmarked, the plan is the stride alone.
+  assert.deepEqual([...planTickLabels(boxes, 1, []).shown], [...visibleTickLabels(boxes, 1)]);
+});
+
+test("marked labels that would collide take further rows; a marked value wins over 0", () => {
+  const boxes = labelBoxes({ range: { min: -21, max: 18 }, ticks: { step: 1 } });
+  const close = planTickLabels(boxes, 1, [-3, -2, -1]);
+  const labels = drawn(boxes, close);
+  for (const value of [-3, -2, -1]) assert.ok(labels.some((label) => label.value === value), `${value} is labelled`);
+  assert.ok(close.rowCount >= 2, "neighbouring marks cannot share one row on a 39-unit line");
+  noOverlap(labels);
+  const nearZero = drawn(boxes, planTickLabels(boxes, 1, [1]));
+  assert.ok(nearZero.some((label) => label.value === 1));
+  noOverlap(nearZero);
+});
+
+test("labels that must all be drawn take the first row where they clear the others", () => {
+  // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line, 29 units apart.
+  assert.deepEqual(stackLabels([{ x: 145, width: 36 }, { x: 174, width: 22 }]), [0, 1]);
+  assert.deepEqual(stackLabels([{ x: 100, width: 30 }, { x: 300, width: 30 }]), [0, 0]);
+  // A third label back in row 0 once it clears the first; order given is kept.
+  assert.deepEqual(stackLabels([{ x: 160, width: 30 }, { x: 130, width: 30 }, { x: 100, width: 30 }]), [0, 1, 0]);
+});
+
+test("a marked value on a tick the policy leaves unlabelled stays unlabelled", () => {
+  // Fourths under the default "major" labels: dragging to 3/4 stays a task of reading the ticks.
+  const boxes = labelBoxes({ range: { min: -10, max: 10 }, ticks: { step: 1, subdivisions: 4 } });
+  const labels = drawn(boxes, planTickLabels(boxes, 1, [0.75]));
+  assert.ok(!labels.some((label) => label.value === 0.75));
+  noOverlap(labels);
 });
 
 test("integer labels never round a fraction tick: the combination is rejected, and the planner leaves such ticks unlabelled", () => {

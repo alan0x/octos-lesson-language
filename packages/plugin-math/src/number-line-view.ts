@@ -5,7 +5,7 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, jumpHops, numberLineValue, planNumberLineTicks, planTickStep, visibleTickLabels,
+  jumpEnds, jumpHops, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
 
@@ -44,6 +44,9 @@ function tickLabelWidth(tick: TickLabel): number {
   return fraction + whole + (tick.negative ? 8 : 0);
 }
 
+/** About how wide a point's name is drawn (12px; a CJK character is about 13 units). */
+const textWidth = (text: string) => [...text].reduce((width, char) => width + (char.codePointAt(0)! >= 0x2e80 ? 13 : 7.2), 0);
+
 /** A tick label; a fraction is drawn stacked, with its whole part to the left. Returns its height below y. */
 function tickLabel(svg: SVGSVGElement, tick: TickLabel, x: number, y: number): void {
   if (tick.kind === "text") { label(svg, tick.text, x, y + 12, "number-line-tick-label"); return; }
@@ -71,12 +74,40 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   // Point labels sit above the line unless jump arcs are there; below, they clear the tick labels.
   const labelsAbove = jumps.length === 0;
   const labelledPoints = points.some((point) => point.label);
-  const lineY = 18 + jumpZone + intervalZone + (labelsAbove && labelledPoints ? 24 : 0);
-  const tickLabelHeight = fractions ? 32 : 18;
-  const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
-  const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY) + 8;
   const x0 = SIDE, x1 = NUMBER_LINE_VIEW_WIDTH - SIDE;
   const mapX = (value: number) => x0 + (value - min) / (max - min) * (x1 - x0);
+  // Point names that would overlap (Start and End a quarter apart) go on further rows, away from the line.
+  // A card whose points move (bound or dragged) keeps one geometry in every state: it reserves the
+  // rows its labels could need, so the axis never jumps under the pointer and the card never resizes.
+  const moving = points.some((point) => (point as NumberLinePoint).interaction) || (content.bindings ?? []).length > 0;
+  const named = points.flatMap((point) => { const value = numberLineValue(point.value); return point.label && value !== undefined ? [{ point, x: mapX(value), width: textWidth(point.label) }] : []; });
+  const nameRows = new Map(stackLabels(named).map((row, index) => [named[index]!.point, row]));
+  const nameRowCount = Math.max(1, ...[...nameRows.values()].map((row) => row + 1), moving ? named.length : 1);
+  const nameRowHeight = 16;
+  const lineY = 18 + jumpZone + intervalZone + (labelsAbove && labelledPoints ? 24 + (nameRowCount - 1) * nameRowHeight : 0);
+  // Labels thin out on a regular stride when they would overlap, but the values the card marks
+  // (points the learner sees, and where jumps start and end) keep theirs, on extra rows if needed.
+  // A point shown only when emphasized is an answer kept back: its value is never pinned, even where a jump ends.
+  const latent = points.filter((point) => point.shown === "when_emphasized").map((point) => numberLineValue(point.value));
+  const marked = [
+    ...points.filter((point) => point.shown !== "when_emphasized").map((point) => numberLineValue(point.value)),
+    ...jumps.flatMap((jump) => { const ends = jumpEnds(content, jump as NumberLineJump); return ends ? [ends.from, ends.to] : []; }),
+  ].filter((value): value is number => value !== undefined && !latent.some((hidden) => hidden !== undefined && Math.abs(hidden - value) < 1e-9));
+  const labelled = ticks.filter((tick) => tick.label);
+  const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
+  const labelRow = new Map([...labelPlan.shown].map((index) => [labelled[index]!.value, labelPlan.rows.get(index) ?? 0]));
+  const rowHeight = fractions ? 32 : 18;
+  // As many rows as there could be marked numbers in any state, counted from the card's parts, never
+  // from their current values (review of #51: a jump whose end has no point of its own separates from
+  // its start as its change grows from 0, and the card grew mid-animation): one per visible point, and
+  // one per jump end, plus its start unless that is one of the points.
+  const visiblePoints = points.filter((point) => point.shown !== "when_emphasized").length;
+  const jumpMarks = jumps.reduce((count, jump) => count + 1
+    + (typeof jump.from === "string" && points.some((point) => point.as === jump.from) ? 0 : 1), 0);
+  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, visiblePoints + jumpMarks) : labelPlan.rowCount;
+  const tickLabelHeight = rowHeight * tickRows;
+  const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
+  const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight) + 8;
 
   const svg = element("svg", { viewBox: `0 0 ${NUMBER_LINE_VIEW_WIDTH} ${height}`, role: "img" }, "number-line-preview");
   const defs = element("defs", {});
@@ -112,14 +143,12 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     svg.append(group);
   }
 
-  // Every tick is drawn; labels thin out on a regular stride when they would overlap.
-  const labelled = ticks.filter((tick) => tick.label);
-  const shown = visibleTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content));
-  const shownValues = new Set([...shown].map((index) => labelled[index]!.value));
+  // Every tick is drawn; its label only when the plan above keeps it.
   for (const tick of ticks) {
     const x = mapX(tick.value);
     svg.append(element("line", { x1: x, x2: x, y1: lineY - (tick.major ? 8 : 5), y2: lineY + (tick.major ? 8 : 5) }, tick.major ? "number-line-tick" : "number-line-tick number-line-tick-minor"));
-    if (tick.label && shownValues.has(tick.value)) tickLabel(svg, tick.label, x, lineY + 10);
+    const row = labelRow.get(tick.value);
+    if (tick.label && row !== undefined) tickLabel(svg, tick.label, x, lineY + 10 + row * rowHeight);
   }
 
   for (const jump of jumps) {
@@ -156,9 +185,11 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     group.dataset.id = idOf(point as Part);
     group.append(element("circle", { cx: x, cy: lineY, r: 6.5 }, point.style === "open" ? "number-line-dot-open" : "number-line-dot"));
     if (point.label) {
-      const text = element("text", { x, y: pointLabelY, "text-anchor": "middle" }, "number-line-point-label");
+      const row = nameRows.get(point) ?? 0;
+      const y = labelsAbove ? pointLabelY - row * nameRowHeight : pointLabelY + row * nameRowHeight;
+      const text = element("text", { x, y, "text-anchor": "middle" }, "number-line-point-label");
       text.textContent = point.label;
-      if (!labelsAbove) group.append(element("line", { x1: x, x2: x, y1: lineY + 8, y2: pointLabelY - 12 }, "number-line-point-leader"));
+      if (!labelsAbove) group.append(element("line", { x1: x, x2: x, y1: lineY + 8, y2: y - 12 }, "number-line-point-leader"));
       group.append(text);
     }
     const variable = (point as NumberLinePoint).interaction?.variable;
