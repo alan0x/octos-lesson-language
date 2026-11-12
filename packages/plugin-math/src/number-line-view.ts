@@ -97,10 +97,14 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
   const labelRow = new Map([...labelPlan.shown].map((index) => [labelled[index]!.value, labelPlan.rows.get(index) ?? 0]));
   const rowHeight = fractions ? 32 : 18;
-  const distinctMarks = marked.filter((value, index) => marked.findIndex((other) => Math.abs(other - value) < 1e-9) === index).length;
-  // At least one row per visible point, whether or not two of them coincide right now (a change of 0).
+  // As many rows as there could be marked numbers in any state, counted from the card's parts, never
+  // from their current values (review of #51: a jump whose end has no point of its own separates from
+  // its start as its change grows from 0, and the card grew mid-animation): one per visible point, and
+  // one per jump end, plus its start unless that is one of the points.
   const visiblePoints = points.filter((point) => point.shown !== "when_emphasized").length;
-  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, distinctMarks, visiblePoints) : labelPlan.rowCount;
+  const jumpMarks = jumps.reduce((count, jump) => count + 1
+    + (typeof jump.from === "string" && points.some((point) => point.as === jump.from) ? 0 : 1), 0);
+  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, visiblePoints + jumpMarks) : labelPlan.rowCount;
   const tickLabelHeight = rowHeight * tickRows;
   const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
   const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight) + 8;

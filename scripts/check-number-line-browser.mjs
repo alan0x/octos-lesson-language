@@ -93,6 +93,16 @@ const tallLesson = lesson({
 }, { variables: [{ as: "s", initial: -0.5, min: -9, max: 9, label: "起点" }] });
 tallLesson.steps[0].beats[0].actions.push({ do: "write", as: "note", kind: "note", role: "note", place: { relation: "below", anchor: "line" }, content: { title: "下面的卡片" } });
 const tall = normalizeAuthoringLesson(tallLesson, host("tall"));
+// Review of #51: one named start, and a jump whose end has no point of its own, its change animated
+// 0 → 1 → 5 → 0 on a thinned line. The card keeps one height throughout.
+const jumpOnlyLesson = lesson({
+  range: { min: -20, max: 20 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 0, label: "起点" }],
+  jumps: [{ as: "move", from: "start", by: 0, hops: false }],
+  bindings: [{ target: "move.by", expression: "delta" }],
+}, { variables: [{ as: "delta", initial: 0, min: 0, max: 5, label: "移动" }] });
+for (const value of [1, 5, 0]) jumpOnlyLesson.steps[0].beats.push({ key: `j${value}`, say: "看。", actions: [{ do: "animate", variable: "delta", value }] });
+const jumpOnly = normalizeAuthoringLesson(jumpOnlyLesson, host("jump-only"));
 // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
 const names = normalizeAuthoringLesson(lesson({
   range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
@@ -296,6 +306,22 @@ try {
   }, tall);
   check(!stacking.clipped && stacking.svgBottom <= stacking.lineBottom + 1, `the tall number line fits its card: ${JSON.stringify(stacking)}`);
   check(stacking.noteTop >= stacking.lineBottom - 1, `the note below starts below the number line's real bottom: ${JSON.stringify(stacking)}`);
+  const jumpBoxes = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "jump-only");
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    const seen = [];
+    while (session.projection.status !== "completed") {
+      session.advance();
+      mounted.view.render(session.projection.board);
+      const svg = document.querySelector(".number-line-preview");
+      if (svg) seen.push([session.projection.board.variables.delta.value, svg.getAttribute("viewBox")]);
+    }
+    return seen;
+  }, jumpOnly);
+  const deltas = new Set(jumpBoxes.map(([delta]) => delta));
+  check([0, 1, 5].every((value) => deltas.has(value)), `the jump's change passed 0, 1 and 5: ${[...deltas].join(", ")}`);
+  check(new Set(jumpBoxes.map(([, box]) => box)).size === 1, `a jump whose end has no point keeps one card height: ${JSON.stringify([...new Set(jumpBoxes.map(([delta, box]) => `${delta}:${box}`))])}`);
   const nameBoxes = await page.evaluate((events) => {
     document.querySelector("#board").replaceChildren();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
@@ -316,4 +342,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves");
