@@ -103,6 +103,22 @@ const jumpOnlyLesson = lesson({
 }, { variables: [{ as: "delta", initial: 0, min: 0, max: 5, label: "移动" }] });
 for (const value of [1, 5, 0]) jumpOnlyLesson.steps[0].beats.push({ key: `j${value}`, say: "看。", actions: [{ do: "animate", variable: "delta", value }] });
 const jumpOnly = normalizeAuthoringLesson(jumpOnlyLesson, host("jump-only"));
+// A point shown only when emphasized: pointing at it leaves it hidden; emphasizing it shows it; emphasis
+// "none" hides it again (Coach's quality judge relies on exactly this; review of Coach #63).
+const latentLesson = (extra) => lesson({
+  range: { min: -1, max: 2 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
+  points: [{ as: "start", value: 0, label: "起点" }, { as: "end", value: "3/4", label: "终点", shown: "when_emphasized" }],
+});
+const latentWith = (actions) => {
+  const authored = latentLesson();
+  authored.steps[0].beats.push({ key: "c", say: "终点。", actions });
+  return normalizeAuthoringLesson(authored, host(`latent-${actions.map((action) => action.do + (action.emphasis ?? "")).join("-")}`));
+};
+const latentCases = [
+  ["point", latentWith([{ do: "point", target: "line#end" }]), false],
+  ["emphasize", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }]), true],
+  ["emphasize then none", latentWith([{ do: "emphasize", target: "line#end", emphasis: "focus" }, { do: "emphasize", target: "line#end", emphasis: "none" }]), false],
+];
 // Run 4's NL-04: Start at 0 and End at 1/4 on a 4-unit line; their names must not run together.
 const names = normalizeAuthoringLesson(lesson({
   range: { min: -1, max: 3 }, ticks: { step: 1, subdivisions: 4, labels: "all" },
@@ -322,6 +338,17 @@ try {
   const deltas = new Set(jumpBoxes.map(([delta]) => delta));
   check([0, 1, 5].every((value) => deltas.has(value)), `the jump's change passed 0, 1 and 5: ${[...deltas].join(", ")}`);
   check(new Set(jumpBoxes.map(([, box]) => box)).size === 1, `a jump whose end has no point keeps one card height: ${JSON.stringify([...new Set(jumpBoxes.map(([delta, box]) => `${delta}:${box}`))])}`);
+  for (const [name, events, visible] of latentCases) {
+    const shown = await page.evaluate((events) => {
+      document.querySelector("#board").replaceChildren();
+      const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), events[0].lesson_id ?? "latent");
+      while (session.projection.status !== "completed") session.advance();
+      window.mountInfiniteBoard(document.querySelector("#board")).view.render(session.projection.board);
+      const end = [...document.querySelectorAll(".number-line-point")].find((group) => /end/.test(group.dataset.id ?? ""));
+      return end ? getComputedStyle(end).display !== "none" : null;
+    }, events);
+    check(shown === visible, `a point shown only when emphasized, after ${name}: expected ${visible ? "visible" : "hidden"}, got ${shown}`);
+  }
   const nameBoxes = await page.evaluate((events) => {
     document.querySelector("#board").replaceChildren();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "names");
@@ -342,4 +369,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point");
