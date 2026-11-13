@@ -1329,3 +1329,27 @@ test("ink drawn very wide is scaled down to fit; ink without a drawn size keeps 
   assert.deepEqual(measureSemanticNode({ kind: "ink", content: { drawn_size: { width: 2400, height: 300 } } }), { width: 1200, height: 150 });
   assert.deepEqual(measureSemanticNode({ kind: "ink", content: {} }), { width: 340, height: 230 });
 });
+
+test("a plugin visual (the number line) gets a teaching stage: its controls and practice never cover the cards around it", () => {
+  // The AI lesson for −3 + 5 as Learn laid it out (2026-11-12): the number line, the equation and a
+  // note in step 1, a typed question attached to the note, plus the line's slider panel and practice.
+  // Treated as text, the line had no stage, and its panels landed on the equation and the note.
+  for (const kind of ["number_line", "plot"]) {
+    const board = emptyBoard({
+      line: card("line", kind), eq: card("eq", "math"), rule: card("rule", "note"),
+    });
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { line: "1", eq: "1", rule: "1" }, composition: wideComposition,
+      attachments: [
+        { id: "controls", kind: "control" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 360, height: 64, gap: 24 },
+        { id: "tasks", kind: "task" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 330, height: 180, gap: 28 },
+        { id: "question", kind: "reflection" as const, anchorNodeId: "rule", width: 330, height: 160 },
+      ] };
+    const layout = computeBoardLayout(board, { line: { width: 560, height: 200 }, eq: { width: 440, height: 72 }, rule: { width: 440, height: 130 } }, { regions: { r: region } });
+    const rects = Object.entries({ ...layout.nodes, ...layout.attachments });
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+      const [an, a] = rects[i]!, [bn, b] = rects[j]!;
+      assert.ok(!(a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y), `${kind}: ${an} overlaps ${bn}`);
+    }
+    assert.equal(layout.attachments.controls!.x, layout.nodes.line!.x, `${kind}: controls dock under the visual`);
+  }
+});
