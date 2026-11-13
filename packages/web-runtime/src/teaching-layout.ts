@@ -648,15 +648,25 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
   }
 
   // A thinking-question card opens after the lesson directly under the card
-  // that poses it, at that card's width. Content below it in the same
-  // columns moves down once, like opening practice.
+  // that poses it, at that card's width but never narrower than the host
+  // asked: under a short formula ("−3 + 5 = 2") the question and its answer
+  // box would not fit. Content below it in the same columns moves down once,
+  // like opening practice.
   for (const spec of region.attachments ?? []) {
     if (spec.kind !== 'reflection') continue;
     const anchor = nodes[spec.anchorNodeId];
     if (!anchor) continue;
     const anchorBottom = anchor.y + anchor.height;
-    const card = { x: anchor.x, y: anchorBottom + CARD_GAP, width: anchor.width, height: spec.height };
-    const shift = card.height + CARD_GAP;
+    const card = { x: anchor.x, y: anchorBottom + CARD_GAP, width: Math.max(anchor.width, spec.width), height: spec.height };
+    // Wider than its anchor, the card can reach a card that starts beside the
+    // anchor; it then opens below that card instead of over it.
+    const beside = [...Object.values(nodes), ...Object.values(attachments)]
+      .filter(rect => rect !== anchor && rect.y < anchorBottom - 1)
+      .sort((a, b) => a.y - b.y);
+    for (const rect of beside) {
+      if (overlaps(card, rect)) card.y = rect.y + rect.height + CARD_GAP;
+    }
+    const shift = card.y + card.height - anchorBottom;
     const moved: Rect[] = [card];
     const below = [...Object.values(nodes), ...Object.values(attachments)]
       .filter(rect => rect !== anchor && rect.y >= anchorBottom - 1)
