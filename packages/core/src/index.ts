@@ -45,6 +45,7 @@ export type * from "./types.js";
 export * from "./math-expression.js";
 export * from "./capabilities.js";
 export * from "./inline-math.js";
+export * from "./spoken-math.js";
 export * from "./execution-requirements.js";
 export * from "./opening.js";
 
