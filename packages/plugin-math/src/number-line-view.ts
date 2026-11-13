@@ -107,7 +107,10 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const jumpMarks = jumps.reduce((count, jump) => count + 1
     + (typeof jump.from === "string" && points.some((point) => point.as === jump.from) ? 0 : 1), 0);
   const intervalMarks = intervals.reduce((count, interval) => count + (interval.from === null ? 0 : 1) + (interval.to === null ? 0 : 1), 0);
-  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, visiblePoints + jumpMarks + intervalMarks) : labelPlan.rowCount;
+  // At most two of them can crowd one label's width at once in practice (a point next to a jump's end);
+  // reserving a row for every part left a rounding line's four points and jump with five empty rows
+  // (decision 0016). A rarer state that needs a third row grows the card when it happens.
+  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, Math.min(2, visiblePoints + jumpMarks + intervalMarks)) : labelPlan.rowCount;
   const tickLabelHeight = rowHeight * tickRows;
   const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
   const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight) + 8;
