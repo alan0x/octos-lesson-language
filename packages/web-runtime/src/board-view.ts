@@ -7,7 +7,9 @@ import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
-import { referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
+import { inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
+// The inline-math rule lives in core so the player shortens titles by it too; re-exported for hosts.
+export { inlineMathSegments, type InlineTextSegment } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
 import katex from "katex";
 import type { ImageAssetResolver } from "./assets.js";
@@ -95,61 +97,6 @@ const EMPHASIS_KINDS = new Set(["focus", "supporting", "warning", "resolved"]);
 function text(value: unknown): string { return typeof value === "string" || typeof value === "number" ? String(value) : ""; }
 function setRect(element: HTMLElement, rect: Rect): void {
   Object.assign(element.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.width}px`, height: `${rect.height}px` });
-}
-
-export interface InlineTextSegment {
-  kind: "text" | "math";
-  value: string;
-}
-
-function isEscaped(value: string, cursor: number): boolean {
-  let escapes = 0;
-  for (let prior = cursor - 1; prior >= 0 && value[prior] === "\\"; prior -= 1) escapes += 1;
-  return escapes % 2 !== 0;
-}
-
-function closingDollar(value: string, start: number, delimiter: "$" | "$$"): number {
-  for (let cursor = start; cursor < value.length; cursor += 1) {
-    if (!value.startsWith(delimiter, cursor) || isEscaped(value, cursor)) continue;
-    if (delimiter === "$" && value[cursor + 1] === "$") continue;
-    // A closing single dollar follows a non-space and is not followed by a digit (as in Pandoc), so
-    // "costs $5 and $10" stays text: prices are common in word problems.
-    if (delimiter === "$" && (/\s/u.test(value[cursor - 1] ?? " ") || /[0-9]/u.test(value[cursor + 1] ?? ""))) continue;
-    if (delimiter === "$$" && value[cursor + 2] === "$") continue;
-    return cursor;
-  }
-  return -1;
-}
-
-export function inlineMathSegments(value: string): InlineTextSegment[] {
-  const segments: InlineTextSegment[] = [];
-  let textStart = 0;
-  let cursor = 0;
-  const appendMath = (start: number, end: number, delimiterLength: number): boolean => {
-    const source = value.slice(start + delimiterLength, end).trim();
-    if (!source) return false;
-    if (start > textStart) segments.push({ kind: "text", value: value.slice(textStart, start) });
-    segments.push({ kind: "math", value: source });
-    cursor = end + delimiterLength;
-    textStart = cursor;
-    return true;
-  };
-
-  while (cursor < value.length) {
-    if (value.startsWith("$$", cursor) && !isEscaped(value, cursor)) {
-      const end = closingDollar(value, cursor + 2, "$$");
-      if (end >= 0 && appendMath(cursor, end, 2)) continue;
-    } else if (value.startsWith("\\(", cursor) && !isEscaped(value, cursor)) {
-      const end = value.indexOf("\\)", cursor + 2);
-      if (end >= 0 && appendMath(cursor, end, 2)) continue;
-    } else if (value[cursor] === "$" && value[cursor + 1] !== "$" && !/\s/u.test(value[cursor + 1] ?? " ") && !isEscaped(value, cursor)) {
-      const end = closingDollar(value, cursor + 1, "$");
-      if (end >= 0 && appendMath(cursor, end, 1)) continue;
-    }
-    cursor += 1;
-  }
-  if (textStart < value.length) segments.push({ kind: "text", value: value.slice(textStart) });
-  return segments.length ? segments : [{ kind: "text", value }];
 }
 
 /**

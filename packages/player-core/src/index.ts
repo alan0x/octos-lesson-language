@@ -8,6 +8,7 @@ import {
   canonicalizeState,
   commitCanonicalStep,
   createSemanticBoardState,
+  inlineMathSegments,
   reduceCanonicalEvents,
   setLessonVariable,
   setLessonVariables,
@@ -124,12 +125,33 @@ export function compilePlaybackOperations(
   return operations;
 }
 
+const PREVIEW_LENGTH = 42;
+
+/**
+ * A beat's outline title: its narration's first sentence, at most 42 characters. A formula is kept
+ * whole or left out, never cut, and a "." inside one ("$0.1$") does not end the sentence; cut through,
+ * the title showed raw dollars ("比如 $0.").
+ */
 function narrationPreview(text: string | undefined, fallback: string): string {
   const normalized = text?.replace(/\s+/g, " ").trim();
   if (!normalized) return fallback;
-  const sentence = normalized.match(/^.*?[。！？.!?]/)?.[0]?.trim();
-  const preview = sentence || normalized;
-  return preview.length > 42 ? `${preview.slice(0, 41).trimEnd()}…` : preview;
+  let preview = "";
+  let length = 0;
+  for (const segment of inlineMathSegments(normalized)) {
+    if (segment.kind === "math") {
+      if (length + segment.value.length > PREVIEW_LENGTH) return `${preview.trimEnd()}…`;
+      preview += `$${segment.value}$`;
+      length += segment.value.length;
+      continue;
+    }
+    const sentenceEnd = segment.value.search(/[。！？.!?]/);
+    const piece = sentenceEnd >= 0 ? segment.value.slice(0, sentenceEnd + 1) : segment.value;
+    if (length + piece.length > PREVIEW_LENGTH) return `${(preview + piece.slice(0, Math.max(0, PREVIEW_LENGTH - 1 - length))).trimEnd()}…`;
+    preview += piece;
+    length += piece.length;
+    if (sentenceEnd >= 0) break;
+  }
+  return preview.trim();
 }
 
 function actionTargetIds(action: PlaybackOperation["action"]): string[] {

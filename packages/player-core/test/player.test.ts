@@ -530,3 +530,23 @@ test("unknown executable features are rejected before an incremental append is a
   assert.equal(player.canonicalEvents.length, 1);
   assert.equal(player.cursor, 0);
 });
+
+test("a beat title never cuts through a formula, and a '.' inside one does not end the sentence", () => {
+  // A quadratic lesson (2026-11-12): "比如 $0.1$，…" was shortened to "比如 $0." and showed raw dollars.
+  const titleFor = (text: string) => {
+    const events = structuredClone(quadratic.events);
+    events[1]!.step!.beats[0]!.narration!.text = text;
+    return buildPlaybackOutline(events)[0]!.beats[0]!.title;
+  };
+  assert.equal(titleFor("思考一下：如果 $a$ 变成一个非常小的正数，比如 $0.1$，抛物线的开口会发生什么变化呢？后面还有。"),
+    "思考一下：如果 $a$ 变成一个非常小的正数，比如 $0.1$，抛物线的开口会发生什么变化…");
+  assert.equal(titleFor("比如 $0.1$ 时开口更宽。下一句。"), "比如 $0.1$ 时开口更宽。");
+  // Too long: the formula that would not fit is left out whole, not cut.
+  assert.equal(titleFor("我们把这一长串式子写出来看看规律到底是什么吧 $y = a x^3 + b x^2 + c x + d$ 再继续"),
+    "我们把这一长串式子写出来看看规律到底是什么吧…");
+  // Plain text keeps the old behavior: first sentence, at most 42 characters.
+  assert.equal(titleFor("第一句。第二句。"), "第一句。");
+  assert.equal(titleFor("一".repeat(60)), `${"一".repeat(41)}…`);
+  // A price is text, so its "." can end the sentence as before.
+  assert.equal(titleFor("It costs $5. Then more."), "It costs $5.");
+});
