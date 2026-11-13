@@ -1394,3 +1394,20 @@ test("a question card under a short formula keeps the width the host asked for a
     }
   }
 });
+
+test("a question card wider than its formula opens below a card beside the formula instead of over it", () => {
+  // The formula is 150 wide with a plot 28 px to its right: a 330 card directly under the formula
+  // would cover the plot, so it opens below the plot, still at the formula's x.
+  for (const width of [1440, 1920]) {
+    const board = emptyBoard({ eq: card("eq", "math"), p: card("p", "plot") });
+    const layout = computeBoardLayout(board, { eq: { width: 150, height: 72 }, p: { width: 440, height: 300 } }, { regions: { r: {
+      x: 20, y: 20, flow: "teaching" as const, nodeSections: { eq: "1", p: "1" },
+      composition: { ...wideComposition, width, mode: "overview" as const },
+      attachments: [{ id: "answer", kind: "reflection" as const, anchorNodeId: "eq", width: 330, height: 160 }] } } });
+    const answer = layout.attachments.answer!, plot = layout.nodes.p!;
+    assert.ok(plot.x < layout.nodes.eq!.x + 330, `${width}: the plot is within reach of a 330 card`);
+    assert.equal(answer.width, 330);
+    assert.equal(answer.x, layout.nodes.eq!.x);
+    assert.ok(answer.y >= plot.y + plot.height, `${width}: the card opens below the plot (${answer.y} vs ${plot.y + plot.height})`);
+  }
+});
