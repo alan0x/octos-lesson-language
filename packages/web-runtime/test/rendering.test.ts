@@ -1121,3 +1121,33 @@ test("a label with no room on its arrow sits beside it, outside both cards", () 
   assert.ok(placed.label.x - placed.label.width / 2 >= 360, "beside the cards, not over them");
   assert.ok(placed.label.y > 180 && placed.label.y < 194, "level with the arrow");
 });
+
+test("hosts get the same inline-math reading as board cards from the package entry", async () => {
+  // Learn draws practice prompts, questions and the lesson title itself; a model writes them like card
+  // text (a quadratic lesson, 2026-11-12), so the host must split them by the same rule.
+  const entry = await import("../src/index.js");
+  assert.equal(entry.inlineMathSegments, inlineMathSegments);
+  assert.equal(typeof entry.renderInlineText, "function");
+  assert.deepEqual(entry.inlineMathSegments("请你把滑块 $a$ 的数值调到 $5$。"), [
+    { kind: "text", value: "请你把滑块 " },
+    { kind: "math", value: "a" },
+    { kind: "text", value: " 的数值调到 " },
+    { kind: "math", value: "5" },
+    { kind: "text", value: "。" },
+  ]);
+  assert.deepEqual(entry.inlineMathSegments("价格是 \\$5，不是公式"), [{ kind: "text", value: "价格是 \\$5，不是公式" }]);
+});
+
+test("prices stay text: a closing dollar follows a non-space and is not followed by a digit", () => {
+  // US word problems: two prices in one sentence were read as one formula ("5 and a pen costs").
+  assert.deepEqual(inlineMathSegments("A book costs $5 and a pen costs $10."), [{ kind: "text", value: "A book costs $5 and a pen costs $10." }]);
+  assert.deepEqual(inlineMathSegments("费用为 $5，另付 $3"), [{ kind: "text", value: "费用为 $5，另付 $3" }]);
+  assert.deepEqual(inlineMathSegments("It costs $ 4 or $ 5"), [{ kind: "text", value: "It costs $ 4 or $ 5" }]);
+  // Math written the way lessons write it is unchanged.
+  assert.deepEqual(inlineMathSegments("Solve $x+1=2$ for $x$."), [
+    { kind: "text", value: "Solve " }, { kind: "math", value: "x+1=2" }, { kind: "text", value: " for " }, { kind: "math", value: "x" }, { kind: "text", value: "." },
+  ]);
+  assert.deepEqual(inlineMathSegments("调到 $5$，再看 $a = 4$ 时"), [
+    { kind: "text", value: "调到 " }, { kind: "math", value: "5" }, { kind: "text", value: "，再看 " }, { kind: "math", value: "a = 4" }, { kind: "text", value: " 时" },
+  ]);
+});
