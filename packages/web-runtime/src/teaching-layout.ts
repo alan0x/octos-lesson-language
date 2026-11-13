@@ -1,8 +1,11 @@
 import { planFocusCamera } from './camera.js';
-import type { SemanticBoardState } from '../../core/src/index.js';
+import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from '../../core/src/index.js';
 import type { Rect, MeasuredNodeSizes, RegionLayoutConstraint } from './layout.js';
 
-const visualKinds = new Set(['geometry', 'scene3d', 'plot', 'image', 'diagram']);
+// Plugin visuals (the number line) are visuals: they open a teaching stage, and their controls and
+// practice dock beside them. As text, a number line's panels were never placed and covered the cards
+// below it (Learn, 2026-11-12).
+const visualKinds = new Set<string>(['geometry', 'scene3d', 'plot', 'image', 'diagram', ...OLL_PLUGIN_NODE_KINDS]);
 const gap = 28;
 const bounds = (rects: Rect[]): Rect => {
   const x = Math.min(...rects.map(r => r.x)), y = Math.min(...rects.map(r => r.y));
