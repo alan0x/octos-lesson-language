@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spokenText } from "../src/index.js";
+import { inlineMathSegments, spokenText } from "../src/index.js";
 
 // Every construct found in narration of generated lessons (171 local lessons, 2026-11-13): equals,
 // signs, coordinates, subscripts, powers, fractions, ×; plus the common ones a lesson can reach.
@@ -50,4 +50,46 @@ test("plain text, prices and escaped dollars are left as written", () => {
   assert.equal(spokenText("今天我们学习一次函数。"), "今天我们学习一次函数。");
   assert.equal(spokenText("A book costs $5 and a pen costs $10."), "A book costs $5 and a pen costs $10.");
   assert.equal(spokenText("价格是 \\$3"), "价格是 $3");
+});
+
+test("style wrappers are read as the math they wrap, and \\text as its text (review of #59)", () => {
+  assert.equal(spokenText("$\\mathbf{x_1^2}$", "en-US"), "x 1 squared");
+  assert.equal(spokenText("$\\mathrm{\\frac{2}{3}}$", "en-US"), "2 over 3");
+  assert.equal(spokenText("$\\text{50\\%}$", "en-US"), "50%");
+  assert.equal(spokenText("$\\text{面积 } S = \\pi r^2$", "zh-CN"), "面积 S 等于 派 r 的平方");
+});
+
+test("a power of a group is read as the whole group, so different expressions never sound the same (review of #59)", () => {
+  assert.equal(spokenText("$(xy)^2$", "en-US"), "the quantity x y, squared");
+  assert.equal(spokenText("$xy^2$", "en-US"), "x y squared");
+  assert.equal(spokenText("${x+1}^2$", "en-US"), "the quantity x plus 1, squared");
+  assert.equal(spokenText("$x+1^2$", "en-US"), "x plus 1 squared");
+  assert.equal(spokenText("$(xy)^2$", "zh-CN"), "x y 整体的平方");
+  assert.equal(spokenText("$xy^2$", "zh-CN"), "x y 的平方");
+  assert.equal(spokenText("${x+1}^2$", "zh-CN"), "x 加 1 整体的平方");
+  assert.equal(spokenText("$x+1^2$", "zh-CN"), "x 加 1 的平方");
+});
+
+test("malformed formulas never throw or leak markup (review of #59)", () => {
+  assert.equal(spokenText("$\\sqrt[3{x}$", "en-US"), "the square root of [3 x");
+  assert.equal(spokenText("$\\sqrt[3]{8} = 2$", "en-US"), "the cube root of 8 equals 2");
+  for (const text of ["$\\frac{1}{$", "$x^{2$", "$\\frac$", "$\\sqrt[$", "$\\text{a$", "$}{}{x_$", "$\\$", "$^^__$"]) {
+    const spoken = spokenText(text, "en-US");
+    assert.doesNotMatch(spoken.replace(/\$(?=\d)/gu, ""), /[\\^_{}]/u, `${text} → ${spoken}`);
+  }
+  // Random formulas built from LaTeX fragments: every one terminates without throwing and without markup.
+  const pieces = ["\\frac", "\\sqrt", "[", "]", "{", "}", "^", "_", "x", "2", "+", "-", "(", ")", "\\mathbf", "\\text", "\\%", "\\left", "\\right", "\\foo", "'", "=", "\\circ", " "];
+  let seed = 7;
+  const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  let judged = 0;
+  for (let i = 0; i < 3000; i++) {
+    const formula = Array.from({ length: 1 + Math.floor(random() * 12) }, () => pieces[Math.floor(random() * pieces.length)]).join("");
+    const text = `看 $${formula}$ 呢`;
+    // Only strings the shared rule reads as one formula: "$ ^$" (a space after the dollar) is plain text.
+    if (inlineMathSegments(text).filter((segment) => segment.kind === "math").length !== 1) continue;
+    const spoken = spokenText(text);
+    assert.doesNotMatch(spoken, /[\\^_{}$]/u, `${formula} → ${spoken}`);
+    judged += 1;
+  }
+  assert.ok(judged > 1500, `judged ${judged} random formulas`);
 });

@@ -12,13 +12,24 @@ export function spokenText(text: string, language?: string): string {
   const words = chinese ? ZH : EN;
   return inlineMathSegments(text)
     .map((segment) => segment.kind === "math"
-      ? ` ${speakMath(segment.value, words)} `
+      ? ` ${speakSafely(segment.value, words)} `
       : segment.value.replace(/\\\$/gu, "$"))
     .join("")
     .replace(/ {2,}/gu, " ")
     .replace(/ ([，。！？、；：,.!?;:）)])/gu, "$1")
     .replace(/([（(，。！？、；：]) /gu, "$1")
     .trim();
+}
+
+/**
+ * A formula as words. Whatever the input, nothing that reads as markup survives: an unexpected
+ * failure falls back to the formula's plain letters, and any `$ \ ^ _ { }` left is removed.
+ */
+function speakSafely(source: string, words: Words): string {
+  let spoken: string;
+  try { spoken = speakMath(source, words).text; }
+  catch { spoken = source.replace(/\\([A-Za-z]+)/gu, " $1 "); }
+  return spoken.replace(/[$\\^_{}]/gu, " ").replace(/ {2,}/gu, " ").trim();
 }
 
 interface Words {
@@ -33,7 +44,11 @@ interface Words {
   greek: Record<string, string>;
 }
 
-interface Part { text: string; compound: boolean }
+/**
+ * `compound`: the part holds an operation ("y2 − y1"), so a fraction is read part by part.
+ * `grouped`: the part is more than one item ("x + 1", "xy"), so a power applies to all of it.
+ */
+interface Part { text: string; compound: boolean; grouped?: boolean }
 
 const GREEK_EN: Record<string, string> = {
   alpha: "alpha", beta: "beta", gamma: "gamma", delta: "delta", theta: "theta", lambda: "lambda", mu: "mu",
@@ -46,7 +61,7 @@ const ZH: Words = {
   degree: "度", percent: "百分之", prime: "撇",
   fraction: (n, d) => n.compound || d.compound ? `分子 ${n.text}，分母 ${d.text}` : `${d.text} 分之 ${n.text}`,
   power: (base, exponent) => {
-    const of = base.compound ? `${base.text} 整体的` : `${base.text} 的`;
+    const of = base.grouped ? `${base.text} 整体的` : `${base.text} 的`;
     return exponent === "2" ? `${of}平方` : exponent === "3" ? `${of}立方` : `${of} ${exponent} 次方`;
   },
   root: (radicand, index) => index && index !== "2" ? `${index} 次根号 ${radicand}` : `根号 ${radicand}`,
@@ -63,7 +78,7 @@ const EN: Words = {
     ? `${n.compound ? `the quantity ${n.text}` : n.text}, over ${d.compound ? `the quantity ${d.text}` : d.text}`
     : `${n.text} over ${d.text}`,
   power: (base, exponent) => {
-    const of = base.compound ? `the quantity ${base.text},` : base.text;
+    const of = base.grouped ? `the quantity ${base.text},` : base.text;
     return exponent === "2" ? `${of} squared` : exponent === "3" ? `${of} cubed` : `${of} to the power ${exponent}`;
   },
   root: (radicand, index) => index === "3" ? `the cube root of ${radicand}` : index && index !== "2" ? `the ${index}th root of ${radicand}` : `the square root of ${radicand}`,
@@ -73,15 +88,19 @@ const EN: Words = {
 
 /** Commands that only space or size a formula. */
 const SILENT = new Set(["left", "right", "displaystyle", "textstyle", ",", ";", ":", "!", "quad", "qquad", " ", "big", "Big", "bigl", "bigr"]);
-/** Commands whose argument is plain text. */
-const TEXT_COMMANDS = new Set(["text", "mathrm", "mathbf", "mathit", "operatorname", "textbf", "boldsymbol", "mathbb"]);
+/** Commands that only style the formula they wrap: their argument is read as math. */
+const MATH_WRAPPERS = new Set(["mathrm", "mathbf", "mathit", "mathsf", "mathtt", "mathcal", "mathbb", "boldsymbol", "bm", "operatorname"]);
+/** Commands whose argument is ordinary text (which may itself hold `$…$`). */
+const TEXT_COMMANDS = new Set(["text", "textbf", "textit", "textrm", "mbox"]);
 
 /** An operation at the top of a formula part (a leading sign does not count). */
 function isCompound(source: string): boolean {
   return /[+\-−=<>±×÷]|\\(?:times|cdot|div|pm|le|ge|ne)\b/u.test(source.trim().replace(/^[-−+]/u, ""));
 }
 
-function speakMath(source: string, words: Words): string {
+interface Spoken { text: string; size: number }
+
+function speakMath(source: string, words: Words): Spoken {
   let cursor = 0;
   const peek = () => source[cursor];
   const skipSpace = () => { while (cursor < source.length && /\s/u.test(source[cursor]!)) cursor += 1; };
@@ -94,21 +113,28 @@ function speakMath(source: string, words: Words): string {
     return source.slice(start, cursor);
   };
 
+  /** The source of a balanced `{…}` at the cursor (to the end if it never closes); the cursor moves past it. */
+  const readBraced = (): string => {
+    cursor += 1;
+    const start = cursor;
+    let depth = 1;
+    while (cursor < source.length) {
+      if (source[cursor] === "\\") { cursor += 2; continue; }
+      if (source[cursor] === "{") depth += 1;
+      if (source[cursor] === "}" && --depth === 0) { cursor += 1; return source.slice(start, cursor - 1); }
+      cursor += 1;
+    }
+    cursor = source.length;
+    return source.slice(start);
+  };
+
   /** A `{…}` group or one token, read as a whole expression. */
   const readArgument = (): Part => {
     skipSpace();
     if (peek() === "{") {
-      cursor += 1;
-      const start = cursor;
-      let depth = 1;
-      while (cursor < source.length && depth > 0) {
-        if (source[cursor] === "\\") { cursor += 2; continue; }
-        if (source[cursor] === "{") depth += 1;
-        if (source[cursor] === "}") depth -= 1;
-        cursor += 1;
-      }
-      const inner = source.slice(start, cursor - 1);
-      return { text: speakMath(inner, words), compound: isCompound(inner) };
+      const inner = readBraced();
+      const spoken = speakMath(inner, words);
+      return { text: spoken.text, compound: isCompound(inner), grouped: spoken.size > 1 };
     }
     if (/\d/u.test(peek() ?? "")) { cursor += 1; return { text: source[cursor - 1]!, compound: false }; }
     return { text: readAtom()?.text ?? "", compound: false };
@@ -126,7 +152,7 @@ function speakMath(source: string, words: Words): string {
       return { text: match[0] };
     }
     if (/[A-Za-z]/u.test(char)) { cursor += 1; return { text: char }; }
-    if (char === "{") return { text: readArgument().text };
+    if (char === "{") { const group = readArgument(); return { text: group.text, grouped: group.grouped }; }
     if (char === "\\") {
       const command = readCommand();
       if (SILENT.has(command)) return { text: "" };
@@ -137,17 +163,19 @@ function speakMath(source: string, words: Words): string {
       if (command === "sqrt") {
         skipSpace();
         let index: string | undefined;
-        if (peek() === "[") { const end = source.indexOf("]", cursor); index = speakMath(source.slice(cursor + 1, end), words); cursor = end + 1; }
+        // An index without its "]" is left to be read as plain text.
+        const end = peek() === "[" ? source.indexOf("]", cursor) : -1;
+        if (end > cursor) { index = speakMath(source.slice(cursor + 1, end), words).text; cursor = end + 1; }
         return { text: words.root(readArgument().text, index) };
+      }
+      if (MATH_WRAPPERS.has(command)) {
+        const wrapped = readArgument();
+        return { text: wrapped.text, grouped: wrapped.grouped };
       }
       if (TEXT_COMMANDS.has(command)) {
         skipSpace();
         if (peek() !== "{") return { text: "" };
-        cursor += 1;
-        const end = source.indexOf("}", cursor);
-        const inner = source.slice(cursor, end < 0 ? source.length : end);
-        cursor = end < 0 ? source.length : end + 1;
-        return { text: inner };
+        return { text: textModeWords(readBraced(), words) };
       }
       const operator = ({ times: words.times, cdot: words.times, div: words.divided, pm: words.plusMinus,
         le: words.lessEq, leq: words.lessEq, ge: words.greaterEq, geq: words.greaterEq, ne: words.notEqual,
@@ -191,7 +219,7 @@ function speakMath(source: string, words: Words): string {
   const popBase = (): Part => {
     const last = atoms.pop();
     if (!last) return { text: "", compound: false };
-    if (last.text !== ")") return { text: last.text, compound: false };
+    if (last.text !== ")") return { text: last.text, compound: false, grouped: last.grouped };
     const inner: Atom[] = [];
     let depth = 1;
     while (atoms.length) {
@@ -200,7 +228,7 @@ function speakMath(source: string, words: Words): string {
       if (atom.open && atom.text === "(" && --depth === 0) break;
       inner.unshift(atom);
     }
-    return { text: assemble(inner, words), compound: inner.some((atom) => atom.operator) };
+    return { text: assemble(inner, words), compound: inner.some((atom) => atom.operator), grouped: inner.length > 1 };
   };
 
   while (cursor < source.length) {
@@ -230,10 +258,20 @@ function speakMath(source: string, words: Words): string {
     if (atom.text) atoms.push(atom);
   }
 
-  return assemble(atoms, words);
+  return { text: assemble(atoms, words), size: atoms.length };
 }
 
-interface Atom { text: string; operator?: boolean; open?: boolean }
+/** Text inside `\text{…}`: escapes become their characters, an inner `$…$` is read as math, other commands as letters. */
+function textModeWords(source: string, words: Words): string {
+  return source
+    .replace(/\$([^$]+)\$/gu, (_formula, math: string) => ` ${speakMath(math, words).text} `)
+    .replace(/\\([%$&_#{}])/gu, "$1")
+    .replace(/\\([A-Za-z]+)/gu, " $1 ")
+    .replace(/[{}]/gu, "")
+    .trim();
+}
+
+interface Atom { text: string; operator?: boolean; open?: boolean; grouped?: boolean }
 
 /**
  * Words from atoms. A minus sign is "negative" where no value precedes it: at the start, after an
