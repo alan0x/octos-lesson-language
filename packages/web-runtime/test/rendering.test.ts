@@ -1137,3 +1137,17 @@ test("hosts get the same inline-math reading as board cards from the package ent
   ]);
   assert.deepEqual(entry.inlineMathSegments("价格是 \\$5，不是公式"), [{ kind: "text", value: "价格是 \\$5，不是公式" }]);
 });
+
+test("prices stay text: a closing dollar follows a non-space and is not followed by a digit", () => {
+  // US word problems: two prices in one sentence were read as one formula ("5 and a pen costs").
+  assert.deepEqual(inlineMathSegments("A book costs $5 and a pen costs $10."), [{ kind: "text", value: "A book costs $5 and a pen costs $10." }]);
+  assert.deepEqual(inlineMathSegments("费用为 $5，另付 $3"), [{ kind: "text", value: "费用为 $5，另付 $3" }]);
+  assert.deepEqual(inlineMathSegments("It costs $ 4 or $ 5"), [{ kind: "text", value: "It costs $ 4 or $ 5" }]);
+  // Math written the way lessons write it is unchanged.
+  assert.deepEqual(inlineMathSegments("Solve $x+1=2$ for $x$."), [
+    { kind: "text", value: "Solve " }, { kind: "math", value: "x+1=2" }, { kind: "text", value: " for " }, { kind: "math", value: "x" }, { kind: "text", value: "." },
+  ]);
+  assert.deepEqual(inlineMathSegments("调到 $5$，再看 $a = 4$ 时"), [
+    { kind: "text", value: "调到 " }, { kind: "math", value: "5" }, { kind: "text", value: "，再看 " }, { kind: "math", value: "a = 4" }, { kind: "text", value: " 时" },
+  ]);
+});
