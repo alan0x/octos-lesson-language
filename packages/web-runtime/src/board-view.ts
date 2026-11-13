@@ -7,7 +7,7 @@ import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
-import { inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
+import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
 // The inline-math rule lives in core so the player shortens titles by it too; re-exported for hosts.
 export { inlineMathSegments, type InlineTextSegment } from "../../core/src/index.js";
 import type { PlaybackOperation } from "../../player-core/src/index.js";
@@ -244,7 +244,7 @@ const SUPPORTING_VISUAL_MIN_SCALE_SHARE = .85;
 /** Lowest camera scale at which an animation is framed together with the Beat target. */
 export const ANIMATION_CONTEXT_MIN_SCALE = .75;
 
-const PRIMARY_TEACHING_VISUAL_KINDS = new Set([
+const PRIMARY_TEACHING_VISUAL_KINDS = new Set<string>([
   "geometry",
   "plot",
   "scene3d",
@@ -252,6 +252,7 @@ const PRIMARY_TEACHING_VISUAL_KINDS = new Set([
   "image",
   "ink",
   "table",
+  ...OLL_PLUGIN_NODE_KINDS,
 ]);
 
 function connectionPeerId(

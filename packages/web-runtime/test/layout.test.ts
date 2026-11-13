@@ -1353,3 +1353,18 @@ test("a plugin visual (the number line) gets a teaching stage: its controls and 
     assert.equal(layout.attachments.controls!.x, layout.nodes.line!.x, `${kind}: controls dock under the visual`);
   }
 });
+
+test("in reading flow a plugin visual (the number line) takes the visual lane exactly like a plot", () => {
+  // Saved and imported courses use reading flow. Before, a number line counted as text there, so the
+  // cards explaining it were stacked into its column instead of beside it.
+  const layoutFor = (kind: string) => computeBoardLayout(emptyBoard({
+    visual: card("visual", kind, { region_id: "course-a", placement: { relation: "new_region" } }),
+    eq: card("eq", "math", { region_id: "course-a", placement: { relation: "below", anchor: "visual" } }),
+    rule: card("rule", "note", { region_id: "course-a", placement: { relation: "below", anchor: "eq" } }),
+  }) as SemanticBoardState, {
+    visual: { width: 560, height: 200 }, eq: { width: 440, height: 72 }, rule: { width: 440, height: 130 },
+  }, { regions: { "course-a": { x: 420, y: 160, reservedWidth: 1_100, flow: "reading" } } });
+  const line = layoutFor("number_line");
+  assert.deepEqual(line.nodes, layoutFor("plot").nodes);
+  assert.ok(line.nodes.eq!.x >= line.nodes.visual!.x + line.nodes.visual!.width, "the equation sits beside the line");
+});
