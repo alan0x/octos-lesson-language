@@ -1368,3 +1368,29 @@ test("in reading flow a plugin visual (the number line) takes the visual lane ex
   assert.deepEqual(line.nodes, layoutFor("plot").nodes);
   assert.ok(line.nodes.eq!.x >= line.nodes.visual!.x + line.nodes.visual!.width, "the equation sits beside the line");
 });
+
+test("a question card under a short formula keeps the width the host asked for and covers nothing", () => {
+  // A real −3 + 5 lesson (2026-11-13): the typed question hung under "−3 + 5 = 2", about 150 wide,
+  // and took that width, so its question and answer box spilled out of the card.
+  // The formula's column holds nothing wider (the note comes a step later), as in that lesson.
+  for (const width of [1440, 1920]) for (const mode of ["progressive", "overview"] as const) {
+    const board = emptyBoard({ line: card("line", "number_line"), eq: card("eq", "math"), rule: card("rule", "note") });
+    const region = { x: 20, y: 20, flow: "teaching" as const, nodeSections: { line: "1", eq: "1", rule: "2" },
+      composition: { ...wideComposition, width, mode },
+      attachments: [
+        { id: "controls", kind: "control" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 360, height: 64, gap: 24 },
+        { id: "tasks", kind: "task" as const, anchorNodeId: "line", ownerNodeId: "line", anchorNodeIds: ["line"], width: 330, height: 180, gap: 28 },
+        { id: "answer", kind: "reflection" as const, anchorNodeId: "eq", width: 330, height: 150 },
+      ] };
+    const layout = computeBoardLayout(board, { line: { width: 560, height: 200 }, eq: { width: 150, height: 72 }, rule: { width: 440, height: 130 } }, { regions: { r: region } });
+    const answer = layout.attachments.answer!;
+    assert.ok(answer.width >= 330, `${width} ${mode}: the card keeps at least its width (${answer.width})`);
+    assert.equal(answer.x, layout.nodes.eq!.x, `${width} ${mode}: it opens under its formula`);
+    assert.ok(answer.y >= layout.nodes.eq!.y + layout.nodes.eq!.height, `${width} ${mode}: below the formula`);
+    const rects = Object.entries({ ...layout.nodes, ...layout.attachments });
+    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+      const [an, a] = rects[i]!, [bn, b] = rects[j]!;
+      assert.ok(!(a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y), `${width} ${mode}: ${an} overlaps ${bn}`);
+    }
+  }
+});
