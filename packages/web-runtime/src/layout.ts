@@ -1,5 +1,5 @@
 import { layoutTeachingRegion } from "./teaching-layout.js";
-import type { SemanticBoardState } from "../../core/src/index.js";
+import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from "../../core/src/index.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -84,7 +84,9 @@ const TOPIC_GUTTER = 180;
 const MAX_READING_COLUMN_HEIGHT = 760;
 const MAX_READING_COLUMN_ITEMS = 4;
 const MAX_AUTHORED_COLUMN_HEIGHT = 1_150;
-const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "ink", "diagram"]);
+// Plugin visuals (the number line) take the visual lane like a plot; as text, a number line was
+// stacked into the reading column with the cards that explain it.
+const VISUAL_LANE_KINDS = new Set<string>(["geometry", "scene3d", "plot", "image", "ink", "diagram", ...OLL_PLUGIN_NODE_KINDS]);
 
 interface RegionCursor {
   x: number;

@@ -1151,3 +1151,24 @@ test("prices stay text: a closing dollar follows a non-space and is not followed
     { kind: "text", value: "调到 " }, { kind: "math", value: "5" }, { kind: "text", value: "，再看 " }, { kind: "math", value: "a = 4" }, { kind: "text", value: " 时" },
   ]);
 });
+
+test("focusing a formula keeps a plugin visual (the number line) in frame, as it keeps a plot", () => {
+  // A beat on "−3 + 5 = 2" under its number line must not frame the equation alone.
+  const board = {
+    nodes: {
+      line: { id: "line", kind: "number_line", region_id: "topic" },
+      formula: { id: "formula", kind: "math", region_id: "topic" },
+    },
+    connections: {},
+  } as any;
+  const layout = {
+    nodes: {
+      line: { x: 100, y: 100, width: 560, height: 200 },
+      formula: { x: 120, y: 340, width: 280, height: 72 },
+    },
+    groups: {},
+    attachments: {},
+    bounds: { x: 0, y: 0, width: 1200, height: 900 },
+  };
+  assert.deepEqual(supportingVisualFocusTargets(["formula"], board, layout), ["line"]);
+});
