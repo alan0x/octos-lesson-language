@@ -17,6 +17,8 @@ export {
   diagramLayout,
   diagramConnectionGeometry,
   focusTargetsInRegion,
+  inlineMathSegments,
+  renderInlineText,
   wrapDiagramLabel,
   mathSource,
   mountInfiniteBoard,
@@ -27,6 +29,7 @@ export {
   type DiagramPointLayout,
   type DiagramConnectionGeometry,
   type InfiniteBoardElements,
+  type InlineTextSegment,
   type MountedInfiniteBoard,
   type VariableInputHandler,
 } from "./board-view.js";

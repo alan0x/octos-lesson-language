@@ -149,7 +149,13 @@ export function inlineMathSegments(value: string): InlineTextSegment[] {
   return segments.length ? segments : [{ kind: "text", value }];
 }
 
-function renderInlineText(element: HTMLElement, value: string): void {
+/**
+ * Renders lesson text with inline math (`$…$`, `$$…$$`, `\(…\)`; an escaped `\$` is not math) the way
+ * board cards do, replacing the element's content. Hosts use it for lesson text they draw themselves
+ * (titles, practice prompts, questions), so `$` means the same on every card.
+ */
+export function renderInlineText(element: HTMLElement, value: string): void {
+  element.replaceChildren();
   const segments = inlineMathSegments(value);
   if (segments.every((segment) => segment.kind === "text")) {
     element.textContent = value;

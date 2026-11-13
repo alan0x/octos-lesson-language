@@ -1121,3 +1121,19 @@ test("a label with no room on its arrow sits beside it, outside both cards", () 
   assert.ok(placed.label.x - placed.label.width / 2 >= 360, "beside the cards, not over them");
   assert.ok(placed.label.y > 180 && placed.label.y < 194, "level with the arrow");
 });
+
+test("hosts get the same inline-math reading as board cards from the package entry", async () => {
+  // Learn draws practice prompts, questions and the lesson title itself; a model writes them like card
+  // text (a quadratic lesson, 2026-11-12), so the host must split them by the same rule.
+  const entry = await import("../src/index.js");
+  assert.equal(entry.inlineMathSegments, inlineMathSegments);
+  assert.equal(typeof entry.renderInlineText, "function");
+  assert.deepEqual(entry.inlineMathSegments("请你把滑块 $a$ 的数值调到 $5$。"), [
+    { kind: "text", value: "请你把滑块 " },
+    { kind: "math", value: "a" },
+    { kind: "text", value: " 的数值调到 " },
+    { kind: "math", value: "5" },
+    { kind: "text", value: "。" },
+  ]);
+  assert.deepEqual(entry.inlineMathSegments("价格是 \\$5，不是公式"), [{ kind: "text", value: "价格是 \\$5，不是公式" }]);
+});
