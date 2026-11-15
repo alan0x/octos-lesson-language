@@ -1,6 +1,9 @@
 import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES, OLL_PLUGIN_NODE_KINDS } from "./capabilities.js";
 import { MATH_PLUGIN_MANIFEST } from "../../plugin-math/src/manifest.js";
-import { NUMBER_LINE_FEATURE, NUMBER_LINE_KIND, NUMBER_LINE_PLUGIN_VERSION } from "../../plugin-math/src/number-line.js";
+import {
+  NUMBER_LINE_FEATURE, NUMBER_LINE_JUMP_LANES_FEATURE, NUMBER_LINE_JUMP_LANES_VERSION, NUMBER_LINE_KIND, NUMBER_LINE_PLUGIN_VERSION, usesJumpLanes,
+  type NumberLineContent,
+} from "../../plugin-math/src/number-line.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
@@ -89,9 +92,12 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION },
     detect(content, kind, use) {
-      if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) use(NUMBER_LINE_FEATURE);
+      if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
+        use(NUMBER_LINE_FEATURE);
+        if (usesJumpLanes(content as unknown as NumberLineContent)) use(NUMBER_LINE_JUMP_LANES_FEATURE);
+      }
     },
   },
 ]);

@@ -15,6 +15,24 @@ export const NUMBER_LINE_KIND = "number_line";
 export const NUMBER_LINE_FEATURE = "plugin:math/number-line@1";
 /** The math plugin version that introduced the number line. */
 export const NUMBER_LINE_PLUGIN_VERSION = "0.2.0";
+/**
+ * Several jumps on one line drawn on lanes (decision 0017): a jump that overlaps an earlier one is raised,
+ * with leaders to its ends, and drawn as one arc. An older player would draw crossing arcs.
+ */
+export const NUMBER_LINE_JUMP_LANES_FEATURE = "plugin:math/number-line-jump-lanes@1";
+/** The math plugin version that introduced jump lanes. */
+export const NUMBER_LINE_JUMP_LANES_VERSION = "0.3.0";
+
+/**
+ * Whether a number line can draw differently with jump lanes: a jump overlaps an earlier one as written,
+ * or the card moves (bound or dragged) and has several jumps, so a lane can appear or the arcs are kept low.
+ */
+export function usesJumpLanes(content: NumberLineContent): boolean {
+  const jumps = content.jumps ?? [];
+  if (jumps.length < 2) return false;
+  const moving = (content.bindings ?? []).length > 0 || (content.points ?? []).some((point) => point.interaction);
+  return moving || planJumpLanes(content, jumps).some((lane) => lane > 0);
+}
 
 /** Numeric fields of a number line that lesson variables may drive. */
 export const NUMBER_LINE_BINDINGS = {
@@ -342,6 +360,24 @@ export function jumpEnds(content: NumberLineContent, jump: NumberLineJump): { fr
   const by = numberLineValue(jump.by);
   if (start === undefined || by === undefined) return undefined;
   return { from: start, to: start + by };
+}
+
+/**
+ * Lanes for jump arcs: each jump goes one lane above the highest earlier jump whose span it overlaps
+ * (sharing an end is not overlapping), so later moves sit above earlier ones in reading order.
+ * Zero-length jumps are not drawn and take lane 0.
+ */
+export function planJumpLanes(content: NumberLineContent, jumps: readonly unknown[]): number[] {
+  const placed: Array<{ low: number; high: number; tier: number }> = [];
+  return jumps.map((jump) => {
+    const ends = jumpEnds(content, jump as NumberLineJump);
+    if (!ends || ends.from === ends.to) return 0;
+    const low = Math.min(ends.from, ends.to), high = Math.max(ends.from, ends.to);
+    const overlapped = placed.filter((other) => low < other.high - 1e-9 && other.low < high - 1e-9);
+    const tier = overlapped.length ? Math.max(...overlapped.map((other) => other.tier)) + 1 : 0;
+    placed.push({ low, high, tier });
+    return tier;
+  });
 }
 
 /** The value nearest `value` on the smallest-tick grid, kept inside the range. */

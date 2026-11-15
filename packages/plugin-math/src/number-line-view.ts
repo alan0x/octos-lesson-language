@@ -5,7 +5,7 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, jumpHops, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
+  jumpEnds, jumpHops, planJumpLanes, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
 import { evaluateMathExpression, referencedMathVariables } from "../../core/src/math-expression.js";
@@ -61,24 +61,6 @@ function tickLabel(svg: SVGSVGElement, tick: TickLabel, x: number, y: number): v
   label(svg, top, x + offset, y + 10, "number-line-tick-label number-line-fraction");
   svg.append(element("line", { x1: x + offset - width / 2, x2: x + offset + width / 2, y1: y + 14, y2: y + 14 }, "number-line-fraction-bar"));
   label(svg, bottom, x + offset, y + 26, "number-line-tick-label number-line-fraction");
-}
-
-/**
- * Lanes for jump arcs: each jump goes one lane above the highest earlier jump whose span it overlaps
- * (sharing an end is not overlapping), so later moves sit above earlier ones in reading order.
- * Zero-length jumps are not drawn and take lane 0.
- */
-function planJumpLanes(content: NumberLineContent, jumps: readonly unknown[]): number[] {
-  const placed: Array<{ low: number; high: number; tier: number }> = [];
-  return jumps.map((jump) => {
-    const ends = jumpEnds(content, jump as NumberLineJump);
-    if (!ends || ends.from === ends.to) return 0;
-    const low = Math.min(ends.from, ends.to), high = Math.max(ends.from, ends.to);
-    const overlapped = placed.filter((other) => low < other.high - 1e-9 && other.low < high - 1e-9);
-    const tier = overlapped.length ? Math.max(...overlapped.map((other) => other.tier)) + 1 : 0;
-    placed.push({ low, high, tier });
-    return tier;
-  });
 }
 
 /** Lane counts already worked out, by the card's unbound parts, bindings and variable ranges. */

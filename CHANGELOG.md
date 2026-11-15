@@ -4,6 +4,12 @@
 
 ### Added
 
+- Several jumps on one number line (decision 0017; `plugin:math/number-line-jump-lanes@1`, math plugin 0.3.0):
+  - A jump whose span overlaps an earlier jump's (up 4 then down 6; up 6, down 4, up 3) is drawn on a raised lane, with dashed leaders down to its start and its end and the arrow on the end's leader, so no arc crosses another and each label stays over its own arc. Chained jumps in one direction only touch at their ends and stay on the line.
+  - A raised jump is one arc even with `hops: true`; hops stay on the line's own lane.
+  - A moving card (bound or dragged) keeps one height: it reserves the lanes its variables can reach, sampled at each variable's ends, its start and an even grid between them (about a thousand states). An overlap narrower than a grid step can still be missed; the card then grows while it lasts.
+  - Lessons whose jumps overlap as written, and moving cards with several jumps, require the feature, so a player with the math plugin 0.2.0 refuses them instead of drawing crossing arcs. Other number lines need only `plugin:math/number-line@1` and 0.2.0, as before.
+
 - Number line (decision 0013), the first card of a subject plugin: kind `number_line` in `plugin-math` (math plugin 0.2.0).
   - Content: a range and ticks (major step and subdivisions; labels as integers, decimals, or stacked fractions such as 3/4, which are not reduced, or mixed numbers; decimals keep the places the step needs, so quarters read 0.25 and 0.75; when labels would overlap they thin out on a regular stride, 0 keeps its label, and every tick stays); points at numbers or exact fractions (`"3/4"`, `"1 1/2"`), closed or open, optionally shown only when emphasized; jumps from a point or a value, drawn as an arc or one hop per smallest tick, whose end the program computes (a variable may stop a hop-by-hop jump between ticks; its last hop is drawn shorter so the arrow still ends there); and intervals with open, closed or unbounded ends.
   - Points, jumps and intervals are addressable parts, and their values can be bound to lesson variables and animated. A bound number line is checked with each variable at its minimum, maximum and starting value, so no reachable value carries a part off the line. Integer labels go only on integer ticks, and integer labels on every tick of a subdivided line are rejected.
