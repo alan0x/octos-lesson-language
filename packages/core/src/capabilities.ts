@@ -58,6 +58,7 @@ export const OLL_BINDING_CAPABILITIES = {
   plot: {
     points: ["x", "y"],
     guides: ["value"],
+    intervals: ["from", "to"],
   },
   scene3d: {
     sections: ["value"],

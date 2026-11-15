@@ -643,9 +643,11 @@ function validateValueBindings(action: WriteAction, path: string, variables: Map
     if (!targets.get(alias)?.has(property)) {
       fail("OLL_REFERENCE_NOT_FOUND", `${bindingPath}/target`, `Binding target '${binding.target}' is not a supported numeric field`);
     }
-    if (binding.hide_when_undefined !== undefined
-      && (binding.hide_when_undefined !== true || action.kind !== "plot" && action.kind !== "geometry" || !["x", "y"].includes(property))) {
-      fail("OLL_INVALID_BINDING", `${bindingPath}/hide_when_undefined`, "hide_when_undefined is only valid on point x/y bindings and must be true");
+    // A mark that does not exist for some values (an intercept that leaves the axis, the symmetry axis of a
+    // flattened parabola, a range bar for the other sign) is hidden instead of failing the lesson.
+    const hideable = action.kind === "geometry" ? ["x", "y"] : action.kind === "plot" ? ["x", "y", "value", "from", "to"] : [];
+    if (binding.hide_when_undefined !== undefined && (binding.hide_when_undefined !== true || !hideable.includes(property))) {
+      fail("OLL_INVALID_BINDING", `${bindingPath}/hide_when_undefined`, "hide_when_undefined is only valid on point x/y, plot guide value and plot interval from/to bindings, and must be true");
     }
     if (binding.allow_zero !== undefined && (binding.allow_zero !== true || property !== "radius")) {
       fail("OLL_INVALID_BINDING", `${bindingPath}/allow_zero`, "allow_zero is only valid on radius bindings and must be true");
@@ -667,7 +669,8 @@ function validateValueBindings(action: WriteAction, path: string, variables: Map
     try {
       const evaluate = compileMathExpression(binding.expression as string, variables.keys());
       const result = evaluate(Object.fromEntries(variables));
-      if (!Number.isFinite(result)) throw new Error("result is not finite");
+      // A hidden-when-undefined mark may start hidden (a parabola that starts above the x-axis has no x-intercept).
+      if (!Number.isFinite(result) && binding.hide_when_undefined !== true) throw new Error("result is not finite");
     } catch (error) {
       const message = error instanceof Error ? error.message : "invalid expression";
       fail("OLL_INVALID_BINDING", `${bindingPath}/expression`, message);
@@ -1146,6 +1149,61 @@ function validateScene3dContent(
   }
 }
 
+/**
+ * A curve drawn only on an interval (one piece of a piecewise function): `from` and `to` are finite x
+ * values, either may be left out for an unbounded side, and each given end is closed (filled dot) or
+ * open (ring). Pieces of one function share a `series` name, so they are styled and listed as one.
+ */
+function validateCurveInterval(curve: JsonObject, curvePath: string): void {
+  const interval = ["from", "to", "from_closed", "to_closed"].some((field) => curve[field] !== undefined);
+  if (curve.series !== undefined && (typeof curve.series !== "string" || !/^[a-z][a-z0-9-]{0,31}$/u.test(curve.series))) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", `${curvePath}/series`, "A curve series is a name of 1 to 32 lowercase letters, digits or hyphens");
+  }
+  if (!interval) return;
+  if (curve.kind === "implicit") fail("OLL_INVALID_OPERATION_PAYLOAD", curvePath, "Only y = f(x) curves can be drawn on an interval");
+  for (const end of ["from", "to"] as const) {
+    if (curve[end] !== undefined) requireFiniteNumber(curve[end], `${curvePath}/${end}`);
+    const closed = curve[`${end}_closed`];
+    if (closed !== undefined && typeof closed !== "boolean") fail("OLL_INVALID_OPERATION_PAYLOAD", `${curvePath}/${end}_closed`, "An end is closed (true) or open (false)");
+    if (closed !== undefined && curve[end] === undefined) fail("OLL_INVALID_OPERATION_PAYLOAD", `${curvePath}/${end}_closed`, `An unbounded side has no ${end}_closed`);
+  }
+  if (curve.from !== undefined && curve.to !== undefined && Number(curve.from) >= Number(curve.to)) {
+    fail("OLL_INVALID_OPERATION_PAYLOAD", curvePath, "A curve interval needs from < to");
+  }
+}
+
+/**
+ * Intervals marked on a plot's axes (a domain on the x-axis, a range on the y-axis), drawn like the
+ * number line's: `from` and `to` are finite or null (unbounded), each finite end closed or open. One
+ * value is an interval from it to itself, closed at both ends.
+ */
+function validatePlotIntervals(content: JsonObject, path: string): void {
+  if (content.intervals === undefined) return;
+  requireArray(content.intervals, `${path}/content/intervals`);
+  if (content.intervals.length > 8) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/intervals`, "A plot marks at most 8 intervals");
+  content.intervals.forEach((interval: unknown, index: number) => {
+    const intervalPath = `${path}/content/intervals/${index}`;
+    requireObject(interval, intervalPath);
+    for (const field of Object.keys(interval)) {
+      if (!["as", "id", "axis", "from", "to", "from_closed", "to_closed", "label"].includes(field)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${intervalPath}/${field}`, `Unknown interval field '${field}'`);
+    }
+    if (interval.axis !== "x" && interval.axis !== "y") fail("OLL_INVALID_OPERATION_PAYLOAD", `${intervalPath}/axis`, "An interval lies on the x or the y axis");
+    if (!("from" in interval) || !("to" in interval)) fail("OLL_INVALID_OPERATION_PAYLOAD", intervalPath, "An interval has from and to (null for an unbounded end)");
+    for (const end of ["from", "to"] as const) {
+      if (interval[end] !== null) requireFiniteNumber(interval[end], `${intervalPath}/${end}`);
+      const closed = interval[`${end}_closed`];
+      if (closed !== undefined && typeof closed !== "boolean") fail("OLL_INVALID_OPERATION_PAYLOAD", `${intervalPath}/${end}_closed`, "An end is closed (true) or open (false)");
+      if (closed !== undefined && interval[end] === null) fail("OLL_INVALID_OPERATION_PAYLOAD", `${intervalPath}/${end}_closed`, `An unbounded end has no ${end}_closed`);
+    }
+    if (interval.from !== null && interval.to !== null) {
+      const from = Number(interval.from), to = Number(interval.to);
+      if (from > to) fail("OLL_INVALID_OPERATION_PAYLOAD", intervalPath, "An interval needs from <= to");
+      if (from === to && (interval.from_closed === false || interval.to_closed === false)) fail("OLL_INVALID_OPERATION_PAYLOAD", intervalPath, "A single value is closed at both ends");
+    }
+    if (interval.label !== undefined && (typeof interval.label !== "string" || interval.label.length > 64)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${intervalPath}/label`, "An interval label is text up to 64 characters");
+  });
+}
+
 function validatePlotContent(
   action: WriteAction,
   path: string,
@@ -1189,11 +1247,13 @@ function validatePlotContent(
   };
   const xRange = plotRange(axes.x, `${path}/content/axes/x`, { min: -5, max: 5 });
   const yRange = plotRange(axes.y, `${path}/content/axes/y`, { min: -5, max: 5 });
+  validatePlotIntervals(action.content, path);
   action.content.curves.forEach((rawCurve: unknown, index: number) => {
     const curvePath = `${path}/content/curves/${index}`;
     requireObject(rawCurve, curvePath);
     const curve = rawCurve;
     requireString(curve.expression, `${curvePath}/expression`);
+    validateCurveInterval(curve, curvePath);
     if (curve.kind !== "implicit") {
       const expression = curve.expression.trim().replace(/^y\s*=/iu, "").trim();
       try {
