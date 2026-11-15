@@ -161,3 +161,15 @@
 - `pieces` 是第一个元素为对象的配方参数。Coach 的参数校验接受嵌套对象，数值端点在发给模型的 schema 里换成已有的小数表示（已计入上表）。每段的 `formula` 要和 `formulas` 一样解析。
 - 视觉复用按 `semantic_parameters` 判断两个视觉是否相同，所以 `marks` 和 `pieces` 都要列进去，否则只有标记不同的两张图会被合并。
 - 请求的哈希记录（`eval/request-hashes.json`）要重新记录。
+
+**定稿（2026-11-15，Coach #89–#92）：**
+- **试验开关：** 四步共用一个试验选项 `function_plot_extensions`，一起冻结、一起检查速度。
+- **试验关闭时**，所有请求逐字节不变（请求哈希测试）。
+- **请求大小**（试验打开，全部选项）：
+  - 首个请求 +698 B（schema +388 B）；
+  - 提供函数图的节请求 +698 B（schema +388 B），其他节请求 +310 B；
+  - 备用大纲和练习不变，没有路径超过上限。
+- **占用：** 函数图选项占 713 B（上限 800 B），规则措辞为此压缩过。
+- **定稿规则：** `marks：intercepts 截距、vertex 顶点、symmetry_axis 对称轴（一次或二次）、slope_triangle 两点 Δx Δy、domain 定义域、range 值域；位置由程序算。分段写 pieces（formulas 照写各段）：每段 formula、x_from、x_to（无界不写）、ends 开闭如 [)，可为常数。`
+- **`marks` 的取值：** intercepts、vertex、symmetry_axis、slope_triangle、domain、range。
+- **`pieces` 的 schema** 与原型相同。
