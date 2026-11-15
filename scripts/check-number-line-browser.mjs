@@ -5,7 +5,9 @@
 //   tick, and completes the drag task;
 // - dense tick labels thin out so no two drawn labels overlap, while every
 //   tick stays;
-// - quarter-step decimal labels read 0.25 and 0.75.
+// - quarter-step decimal labels read 0.25 and 0.75;
+// - several jumps on one line (0017): landing numbers drawn, labels apart, a move that reverses over an
+//   earlier one on its own lane with no arc crossing another, steady card height while moves animate.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 import { existsSync } from "node:fs";
@@ -132,6 +134,58 @@ const names = normalizeAuthoringLesson(lesson({
   points: [{ as: "start", value: 0, label: "Start" }, { as: "end", value: "1/4", label: "End" }],
   jumps: [{ as: "move", from: "start", by: "1/4", hops: true }],
 }), host("names"));
+
+// 0017: several jumps on one line.
+const makeTen = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 20 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 8, label: "起点" }, { as: "ten", value: 10, label: "凑十" }, { as: "end", value: 13, label: "终点" }],
+  jumps: [{ as: "j1", from: "start", by: 2, label: "+2", hops: true }, { as: "j2", from: "ten", by: 3, label: "+3", hops: true }],
+}), host("make-ten"));
+// Up 6, down 4, up 3 with hops: the second and third moves overlap earlier ones.
+const upDownUp = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 12 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 2, label: "起点" }, { as: "end", value: 7, label: "终点" }],
+  jumps: [{ as: "j1", from: 2, by: 6, label: "+6", hops: true }, { as: "j2", from: 8, by: -4, label: "−4", hops: true }, { as: "j3", from: 4, by: 3, label: "+3", hops: true }],
+}), host("up-down-up"));
+// Moves animated from 0 on a bound card: up 4, then down 6 back over it.
+const reverseLesson = lesson({
+  range: { min: -2, max: 12 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 5, label: "起点" }, { as: "end", value: 5, label: "终点" }],
+  jumps: [{ as: "j1", from: "start", by: 0, label: "+4" }, { as: "j2", from: 5, by: 0, label: "−6" }],
+  bindings: [{ target: "j1.by", expression: "a" }, { target: "j2.from", expression: "5 + a" }, { target: "j2.by", expression: "-b" }, { target: "end.value", expression: "5 + a - b" }],
+}, { variables: [{ as: "a", initial: 0, min: 0, max: 4, label: "上" }, { as: "b", initial: 0, min: 0, max: 6, label: "下" }] });
+reverseLesson.steps[0].beats.push({ key: "up", say: "上 4。", actions: [{ do: "animate", variable: "a", value: 4 }] }, { key: "down", say: "下 6。", actions: [{ do: "animate", variable: "b", value: 6 }] });
+const reverse = normalizeAuthoringLesson(reverseLesson, host("reverse"));
+// G68-01's shape on a bound card: up 6, down 4, up 3, each animated from 0; three lanes at the end.
+const boundUpDownUpLesson = lesson({
+  range: { min: -3, max: 12 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 2, label: "起点" }, { as: "end", value: 2, label: "终点" }],
+  jumps: [{ as: "j1", from: "start", by: 0, label: "+6" }, { as: "j2", from: 2, by: 0, label: "−4" }, { as: "j3", from: 2, by: 0, label: "+3" }],
+  bindings: [
+    { target: "j1.by", expression: "a" }, { target: "j2.from", expression: "2 + a" }, { target: "j2.by", expression: "-b" },
+    { target: "j3.from", expression: "2 + a - b" }, { target: "j3.by", expression: "c" }, { target: "end.value", expression: "2 + a - b + c" },
+  ],
+}, { variables: [{ as: "a", initial: 0, min: 0, max: 6, label: "上" }, { as: "b", initial: 0, min: 0, max: 4, label: "下" }, { as: "c", initial: 0, min: 0, max: 3, label: "上" }] });
+for (const [variable, value] of [["a", 6], ["b", 4], ["c", 3]]) boundUpDownUpLesson.steps[0].beats.push({ key: `k${variable}`, say: "走。", actions: [{ do: "animate", variable, value }] });
+const boundUpDownUp = normalizeAuthoringLesson(boundUpDownUpLesson, host("bound-up-down-up"));
+// Tens then ones on a bound card: 27 + 10 + 10 + 5, each landing number labelled on a thinned line.
+const stepsLesson = lesson({
+  range: { min: 20, max: 60 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 27, label: "起点" }, { as: "end", value: 27, label: "终点" }],
+  jumps: [{ as: "j1", from: "start", by: 0, label: "+10" }, { as: "j2", from: 27, by: 0, label: "+10" }, { as: "j3", from: 27, by: 0, label: "+5", hops: true }],
+  bindings: [
+    { target: "j1.by", expression: "a" }, { target: "j2.from", expression: "27 + a" }, { target: "j2.by", expression: "b" },
+    { target: "j3.from", expression: "27 + a + b" }, { target: "j3.by", expression: "c" }, { target: "end.value", expression: "27 + a + b + c" },
+  ],
+}, { variables: [{ as: "a", initial: 0, min: 0, max: 10, label: "一" }, { as: "b", initial: 0, min: 0, max: 10, label: "二" }, { as: "c", initial: 0, min: 0, max: 5, label: "三" }] });
+for (const [variable, value] of [["a", 10], ["b", 10], ["c", 5]]) stepsLesson.steps[0].beats.push({ key: `k${variable}`, say: "走。", actions: [{ do: "animate", variable, value }] });
+const steps = normalizeAuthoringLesson(stepsLesson, host("steps"));
+// Counting by 25 on a 25-unit line: one jump, five hops.
+const by25 = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 200 }, ticks: { step: 25 },
+  points: [{ as: "start", value: 0, label: "起点" }, { as: "end", value: 125, label: "终点" }],
+  jumps: [{ as: "j1", from: "start", by: 125, label: "5 个 25", hops: true }],
+}), host("by-25"));
 
 const bundle = await build({
   stdin: { contents: `
@@ -388,6 +442,74 @@ try {
   // On the same row, names need a clear gap; touching reads as one word ("Start End").
   const sameRow = first && second && first.y < second.bottom && second.y < first.bottom;
   check(nameBoxes.length === 2 && (!sameRow || Math.max(first.x, second.x) - Math.min(first.right, second.right) >= 5), `point names run together: ${JSON.stringify(nameBoxes)}`);
+  // 0017: several jumps. Each state of the lesson is drawn and measured.
+  const jumpStates = (events, id) => page.evaluate(({ events, id }) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), id);
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    const box = (node) => { const b = node.getBBox(); return { x: b.x, right: b.x + b.width, y: b.y, bottom: b.y + b.height }; };
+    const seen = [];
+    while (session.projection.status !== "completed") {
+      session.advance();
+      mounted.view.render(session.projection.board);
+      const svg = document.querySelector(".number-line-preview");
+      if (!svg) continue;
+      const jumps = [...svg.querySelectorAll(".number-line-jump")].map((group) => ({
+        label: group.querySelector(".number-line-jump-label")?.textContent,
+        labelBox: group.querySelector(".number-line-jump-label") ? box(group.querySelector(".number-line-jump-label")) : undefined,
+        arcs: [...group.querySelectorAll(".number-line-jump-arc")].map(box),
+        // Points along each arc and leader, for tests against the drawn curve rather than its box.
+        trace: [...group.querySelectorAll(".number-line-jump-arc, .number-line-jump-leader")].flatMap((node) => {
+          const length = node.getTotalLength();
+          return Array.from({ length: 41 }, (_, i) => { const p = node.getPointAtLength(length * i / 40); return { x: p.x, y: p.y }; });
+        }),
+        leaders: group.querySelectorAll(".number-line-jump-leader").length,
+      }));
+      const texts = [...svg.querySelectorAll("text")].map((node) => ({ text: node.textContent, ...box(node) }));
+      const overlaps = texts.filter((a, i) => texts.some((b, j) => j < i && a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom)).map((t) => t.text);
+      seen.push({
+        viewBox: svg.getAttribute("viewBox"),
+        ticks: [...svg.querySelectorAll(".number-line-tick-label")].map((node) => node.textContent),
+        jumps, overlaps,
+      });
+    }
+    return seen;
+  }, { events, id });
+  // A label belongs to its own arc: no other jump's arc or leader runs through it.
+  const labelOnOtherArc = (state) => state.jumps.some((jump, i) => jump.labelBox && state.jumps.some((other, j) => j !== i
+    && other.trace.some((p) => p.x > jump.labelBox.x && p.x < jump.labelBox.right && p.y > jump.labelBox.y + 2 && p.y < jump.labelBox.bottom - 2)));
+  const [makeTenView] = (await jumpStates(makeTen, "make-ten")).slice(-1);
+  check(["8", "10", "13"].every((value) => makeTenView.ticks.includes(value)), `make ten keeps 8, 10 and 13 labelled: ${makeTenView.ticks.join(" ")}`);
+  check(makeTenView.jumps.map((jump) => jump.label).join(" ") === "+2 +3" && makeTenView.jumps.every((jump) => jump.leaders === 0), `make ten draws two jumps on the line: ${JSON.stringify(makeTenView.jumps)}`);
+  check(makeTenView.overlaps.length === 0, `make ten labels overlap: ${makeTenView.overlaps.join(", ")}`);
+  check(makeTenView.viewBox === "0 0 520 130", `chained jumps in one direction share one lane, as tall as one jump: ${makeTenView.viewBox}`);
+  const [upDownUpView] = (await jumpStates(upDownUp, "up-down-up")).slice(-1);
+  check(upDownUpView.jumps.map((jump) => jump.leaders).join(" ") === "0 2 2", `the moves that overlap earlier ones are raised with leaders: ${upDownUpView.jumps.map((jump) => jump.leaders).join(" ")}`);
+  check(upDownUpView.jumps[1].arcs.length === 1 && upDownUpView.jumps[0].arcs.length === 6, `a raised move is one arc; the first keeps its hops: ${upDownUpView.jumps.map((jump) => jump.arcs.length).join(" ")}`);
+  // No crossing: each raised arc lies wholly above the arcs of the lanes below it.
+  const [low, middle, high] = upDownUpView.jumps;
+  const above = (upper, lower) => upper.arcs.every((arc) => lower.arcs.every((other) => arc.right <= other.x || other.right <= arc.x || arc.bottom <= other.y + 0.5));
+  check(above(middle, low) && above(high, middle) && above(high, low), `raised arcs stay above the lanes below: ${JSON.stringify(upDownUpView.jumps.map((jump) => jump.arcs))}`);
+  check(!labelOnOtherArc(upDownUpView) && upDownUpView.overlaps.length === 0, `up, down, up: every label clears the other arcs and texts: ${upDownUpView.overlaps.join(", ")}`);
+  const reverseViews = await jumpStates(reverse, "reverse");
+  check(new Set(reverseViews.map((state) => state.viewBox)).size === 1, `a reversing move keeps the card's height as it animates: ${[...new Set(reverseViews.map((state) => state.viewBox))].join(" | ")}`);
+  const reverseEnd = reverseViews.at(-1);
+  // The first arc keeps its shape when the reversing move appears over it.
+  const firstArcs = new Set(reverseViews.filter((state) => state.jumps[0]?.arcs.length).map((state) => JSON.stringify(state.jumps[0].arcs)));
+  check(firstArcs.size === 1, `up 4 keeps its arc when down 6 appears: ${[...firstArcs].join(" | ")}`);
+  check(reverseEnd.jumps.map((jump) => jump.leaders).join(" ") === "0 2" && !labelOnOtherArc(reverseEnd), `down 6 over up 4 is raised and labelled clear: ${JSON.stringify(reverseEnd.jumps)}`);
+  check(["3", "5", "9"].every((value) => reverseEnd.ticks.includes(value)), `up 4 then down 6 keeps 5, 9 and 3 labelled: ${reverseEnd.ticks.join(" ")}`);
+  const boundUpDownUpViews = await jumpStates(boundUpDownUp, "bound-up-down-up");
+  check(new Set(boundUpDownUpViews.map((state) => state.viewBox)).size === 1, `up, down, up on a bound card keeps one height as the third lane appears: ${[...new Set(boundUpDownUpViews.map((state) => state.viewBox))].join(" | ")}`);
+  const boundUpDownUpEnd = boundUpDownUpViews.at(-1);
+  check(boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ") === "0 2 2" && !labelOnOtherArc(boundUpDownUpEnd), `up, down, up on a bound card ends on three lanes, labels clear: ${boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ")}`);
+  const stepViews = await jumpStates(steps, "steps");
+  check(new Set(stepViews.map((state) => state.viewBox)).size === 1, `tens then ones keeps one card height: ${[...new Set(stepViews.map((state) => state.viewBox))].join(" | ")}`);
+  const stepsEnd = stepViews.at(-1);
+  check(["27", "37", "47", "52"].every((value) => stepsEnd.ticks.includes(value)), `tens then ones keeps 27, 37, 47 and 52 labelled on a thinned line: ${stepsEnd.ticks.join(" ")}`);
+  check(stepsEnd.jumps.every((jump) => jump.leaders === 0) && stepsEnd.overlaps.length === 0, `tens then ones stays on one lane, labels apart: ${stepsEnd.overlaps.join(", ")}`);
+  const [by25View] = (await jumpStates(by25, "by-25")).slice(-1);
+  check(by25View.jumps[0].arcs.length === 5 && by25View.ticks.join(" ") === "0 25 50 75 100 125 150 175 200", `counting by 25: five hops on 25-unit ticks: ${by25View.jumps[0].arcs.length} hops, ${by25View.ticks.join(" ")}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -397,4 +519,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point, solution sets readable");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, several jumps (landing numbers, lanes for reversing moves, no crossing arcs, steady height), hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point, solution sets readable");
