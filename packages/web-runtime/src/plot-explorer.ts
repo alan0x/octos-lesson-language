@@ -167,7 +167,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
       const label=document.createElement('label');label.className=`plot-legend-item plot-series-${series%6}`;
       if(seriesCount>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!members.some(i=>current.hidden.has(i));
         checkbox.onchange=()=>{for(const i of members)checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
-      const displayText = members.map(i=>curveLegendText(curves[i], variables, defaultAxisNames)).join('；');
+      const displayText = members.map(i=>curveLegendText(curves[i], variables, defaultAxisNames)).join(ui(parent,'；'));
       label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
     const readout=document.createElement('output');readout.className='plot-probe-readout';bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,current.hidden.size

@@ -65,6 +65,14 @@ const cases = {
   curve: lesson({ axes: axes(-2, 4, -6, 6), curves: [{ as: "primary-curve", expression: "x^2/2 - 3" }], measurement: "secant", sample_input: "fixed_x",
     points: [{ as: "reference-a", x: 0, y: -3, label: "A" }, { as: "reference-b", x: 2, y: -1, label: "B" }],
     bindings: [{ target: "reference-a.y", expression: "0^2/2 - 3" }, { target: "reference-b.y", expression: "2^2/2 - 3" }] }),
+  // A tangent line drawn before the parabola the points sample: the readout follows the parabola.
+  tangent: lesson({ axes: axes(-2, 4, -6, 6), curves: [{ as: "tangent-line", expression: "2*x - 5" }, { as: "primary-curve", expression: "x^2/2 - 3" }], measurement: "secant", sample_input: "fixed_x",
+    points: [{ as: "reference-a", x: 0, y: -3, label: "A" }, { as: "reference-b", x: 2, y: -1, label: "B" }],
+    bindings: [{ target: "reference-a.y", expression: "0^2/2 - 3" }, { target: "reference-b.y", expression: "2^2/2 - 3" }] }),
+  // y = 0.3x sampled at 1 and 3 (0.6 / 2 computes as 0.29999999999999993): the computed rise has rounding noise, the slope is still exactly 0.3.
+  tenths: lesson({ axes: axes(-2, 4, -6, 6), curves: [{ as: "primary-curve", expression: "0.3*x" }], measurement: "secant", sample_input: "fixed_x",
+    points: [{ as: "reference-a", x: 1, y: 0.3, label: "A" }, { as: "reference-b", x: 3, y: 0.9, label: "B" }],
+    bindings: [{ target: "reference-a.y", expression: "0.3*1" }, { target: "reference-b.y", expression: "0.3*3" }] }),
   marks: lesson({ axes: axes(-2, 4, -6, 6), curves: [{ as: "primary-curve", expression: "m*x + c" }], measurement: "secant", sample_input: "fixed_x",
     points: [{ as: "reference-a", x: 0, y: -3, label: "A" }, { as: "reference-b", x: 1, y: -1, label: "B" }, { as: "yi", x: 0, y: -3, label: "y 截距" }, { as: "xi", x: 1.5, y: 0, label: "x 截距" }],
     bindings: [{ target: "reference-a.y", expression: "m*0 + c" }, { target: "reference-b.y", expression: "m*1 + c" }, { target: "yi.y", expression: "c" }, { target: "xi.x", expression: "-c/m", hide_when_undefined: true }] },
@@ -203,6 +211,10 @@ try {
   check(line.readout.includes("斜率 = 2") && !line.readout.includes("割线"), `a straight line reads "斜率", not "割线斜率": ${line.readout.replace(/\s+/gu, " ")}`);
   const [curve] = await states("curve");
   check(curve.readout.includes("割线斜率 ≈ 1"), `a curve keeps "割线斜率": ${curve.readout.replace(/\s+/gu, " ")}`);
+  const [tangent] = await states("tangent");
+  check(tangent.readout.includes("割线斜率 ≈ 1"), `points on a parabola drawn after a line keep "割线斜率": ${tangent.readout.replace(/\s+/gu, " ")}`);
+  const [tenths] = await states("tenths");
+  check(tenths.readout.includes("斜率 = 0.3") && !tenths.readout.includes("割线"), `rounding noise does not turn "=" into "≈": ${tenths.readout.replace(/\s+/gu, " ")}`);
   const overlapping = (state) => state.labels.filter((a, i) => state.labels.some((b, j) => j < i && a.x < b.right - 0.5 && b.x < a.right - 0.5 && a.y < b.bottom - 0.5 && b.y < a.bottom - 0.5)).map((label) => label.text);
   const marks = await states("marks");
   for (const state of marks) {

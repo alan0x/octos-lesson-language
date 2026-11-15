@@ -21,7 +21,7 @@ const EN: Readonly<Record<string, string>> = {
   "可旋转三维场景": "Rotatable 3D scene",
   "静态说明：{description}": "Static description: {description}",
   "请结合旁白和标注理解这个三维场景。": "Use the narration and labels to understand this 3D scene.",
-  "（空公式）": "(Empty formula)", "说明": "Description", "两点": "the two points",
+  "（空公式）": "(Empty formula)", "；": "; ", "说明": "Description", "两点": "the two points",
   "Δx = {dx} · Δy = {dy} · 割线斜率 ≈ {slope}": "Δx = {dx} · Δy = {dy} · Secant slope ≈ {slope}",
   "Δx = {dx} · Δy = {dy} · 斜率 = {slope}": "Δx = {dx} · Δy = {dy} · Slope = {slope}",
   "Δx = {dx} · Δy = {dy} · 斜率 ≈ {slope}": "Δx = {dx} · Δy = {dy} · Slope ≈ {slope}",
