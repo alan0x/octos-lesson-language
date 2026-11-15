@@ -48,6 +48,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "plot:curve-intervals": "0.11.0",
   "plot:axis-intervals": "0.11.0",
   "plot:guide-hide-undefined": "0.11.0",
+  // A secant over the first two of more points (marks after A and B); an older player drew no triangle then.
+  "plot:secant-first-two": "0.11.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
@@ -198,6 +200,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
       const curves = Array.isArray(value.curves) ? value.curves as Array<Record<string, unknown>> : [];
       if (curves.some((curve) => ["from", "to", "from_closed", "to_closed", "series"].some((field) => curve[field] !== undefined))) add("plot:curve-intervals", `${path}/curves`);
       if (Array.isArray(value.intervals) && value.intervals.length) add("plot:axis-intervals", `${path}/intervals`);
+      if (value.measurement === "secant" && Array.isArray(value.points) && value.points.length > 2) add("plot:secant-first-two", `${path}/points`);
       const guideIds = new Set((Array.isArray(value.guides) ? value.guides as Array<Record<string, unknown>> : []).map((guide) => String(guide.id ?? guide.as)));
       if (Array.isArray(value.bindings) && value.bindings.some((binding) => (binding as { hide_when_undefined?: unknown }).hide_when_undefined === true
         && guideIds.has(String((binding as { target?: unknown }).target).split(".").slice(0, -1).join(".")))) add("plot:guide-hide-undefined", `${path}/bindings`);

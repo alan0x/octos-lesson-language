@@ -1217,12 +1217,24 @@ test("decision 0018: pieces of a function, intervals on the axes and hidden guid
   const unflagged = structuredClone(roots);
   delete (unflagged.bindings[0] as Record<string, unknown>).hide_when_undefined;
   assert.throws(() => validateAuthoringLesson(lesson(unflagged, k)), (error) => error instanceof OllError && error.code === "OLL_INVALID_BINDING", "without the option the start must be defined");
+  // Pieces that meet where one end is open are one function: a jump at 1, and a hole between open ends.
+  validateAuthoringLesson(lesson({ axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }));
+  validateAuthoringLesson(lesson({ axes, curves: [{ as: "l", expression: "x", to: 1, to_closed: false, series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }));
+  // A secant over the first two of more points (an intercept mark after A and B) needs the new player:
+  // an older one drew no triangle unless there were exactly two points.
+  const secant = { axes, curves: [{ as: "f", expression: "2*x-1" }], measurement: "secant",
+    points: [{ as: "a", x: 0, y: -1 }, { as: "b", x: 1, y: 1 }, { as: "yi", x: 0, y: -1 }] };
+  assert.ok(requirements(secant).requiredCapabilities.includes("plot:secant-first-two"));
+  assert.ok(!requirements({ ...secant, points: secant.points.slice(0, 2) }).requiredCapabilities.includes("plot:secant-first-two"));
   // Lessons without the new fields keep their requirements.
   assert.equal(requirements({ axes, curves: [{ as: "f", expression: "x^2" }] }).minimumPlayerVersion, "0.1.0");
   const invalid: Array<[string, Record<string, unknown>, string]> = [
     ["reversed piece", { axes, curves: [{ as: "f", expression: "x", from: 2, to: 1 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
     ["closed flag on an unbounded side", { axes, curves: [{ as: "f", expression: "x", to: 1, from_closed: true }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
     ["implicit piece", { axes, curves: [{ as: "f", kind: "implicit", expression: "x^2+y^2", level: 1, from: 0 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["pieces overlapping", { axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 0, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["pieces both closed where they meet", { axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 1, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["two unbounded pieces", { axes, curves: [{ as: "l", expression: "x", series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
     ["bad series name", { axes, curves: [{ as: "f", expression: "x", series: "Piece 1" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
     ["interval off the axes", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "z", from: 0, to: 1 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
     ["interval without to", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "x", from: 0 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],

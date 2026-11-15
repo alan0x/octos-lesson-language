@@ -867,28 +867,29 @@ function drawPlot(
       if (rise >= 18 && inFrame(riseLabel.x, riseLabel.y)) legLabel("Δy", riseLabel.x, riseLabel.y, b.x >= a.x ? "start" : "end");
     }
     const display = (n:number) => Number(n.toPrecision(5)).toString();
-    // On a straight line the two points' slope is the line's slope: say "slope", not "secant slope".
-    // The line is the curve both points lie on (not simply the first curve: a lesson may draw a tangent
-    // line before the parabola it samples). A whole curve is probed beyond the points as well; a piece
-    // only between them, inside its interval.
-    let straight = false;
+    // On a straight line the two points' slope is the line's slope: say "slope", not "secant slope";
+    // "slope" only when every curve both points lie on is straight there (not simply the first curve: a
+    // lesson may draw a tangent line before the parabola it samples, or a line through A and B over a
+    // curve). A whole curve is probed beyond the points as well; a piece only between them.
+    let onCurves = 0, straight = true;
     for (const curve of measurement && Array.isArray(content.curves) ? content.curves : []) {
       if (curve.kind === "implicit" || typeof curve.expression !== "string") continue;
+      let counted = false;
       try {
         const f = (x: number) => evaluatePlotExpression(curve.expression, x, variables);
         const near = (x: number, y: number) => Math.abs(f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y));
-        if (!near(a.x, a.y) || !near(b.x, b.y) || !onCurveInterval(curve, a.x) || !onCurveInterval(curve, b.x)) continue;
+        if (!onCurveInterval(curve, a.x) || !onCurveInterval(curve, b.x) || !near(a.x, a.y) || !near(b.x, b.y)) continue;
+        onCurves += 1; counted = true;
         const span = Math.max(1, Math.abs(a.x), Math.abs(b.x));
         const piece = typeof curve.from === "number" || typeof curve.to === "number";
         const xs = piece
           ? [a.x, a.x + (b.x - a.x) / 4, (a.x + b.x) / 2, a.x + 3 * (b.x - a.x) / 4, b.x]
           : [a.x - span, a.x, (a.x + b.x) / 2, b.x, b.x + span];
-        const probes = xs.map(x => ({ x, y: f(x) }));
         const slope = (b.y - a.y) / (b.x - a.x);
-        straight = probes.every(p => Number.isFinite(p.y) && Math.abs(p.y - (a.y + slope * (p.x - a.x))) <= 1e-9 * Math.max(1, Math.abs(p.y)));
-        break;
-      } catch { continue; }
+        if (!xs.every((x) => { const y = f(x); return Number.isFinite(y) && Math.abs(y - (a.y + slope * (x - a.x))) <= 1e-9 * Math.max(1, Math.abs(y)); })) straight = false;
+      } catch { if (counted) straight = false; }
     }
+    straight = straight && onCurves > 0;
     measurementText = ()=>{
       if (!measurement) return ui(parent,"两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。");
       const values = {dx:display(measurement.dx),dy:display(measurement.dy),slope:display(measurement.slope)};

@@ -1173,6 +1173,33 @@ function validateCurveInterval(curve: JsonObject, curvePath: string): void {
 }
 
 /**
+ * Pieces of one function (curves sharing a `series`) cover each x at most once: their intervals may
+ * meet only at an end that at most one of them includes. Malformed ends are left to the curve check.
+ */
+function validateSeriesPieces(curves: readonly unknown[], path: string): void {
+  const bySeries = new Map<string, Array<{ index: number; from: number; to: number; fromClosed: boolean; toClosed: boolean }>>();
+  curves.forEach((raw, index) => {
+    if (typeof raw !== "object" || raw === null) return;
+    const curve = raw as JsonObject;
+    if (typeof curve.series !== "string") return;
+    const from = curve.from === undefined ? -Infinity : curve.from, to = curve.to === undefined ? Infinity : curve.to;
+    if (typeof from !== "number" || typeof to !== "number") return;
+    const pieces = bySeries.get(curve.series) ?? [];
+    pieces.push({ index, from, to, fromClosed: curve.from_closed !== false, toClosed: curve.to_closed !== false });
+    bySeries.set(curve.series, pieces);
+  });
+  for (const pieces of bySeries.values()) {
+    pieces.sort((a, b) => a.from - b.from);
+    for (let i = 1; i < pieces.length; i += 1) {
+      const before = pieces[i - 1]!, piece = pieces[i]!;
+      if (piece.from < before.to || (piece.from === before.to && piece.fromClosed && before.toClosed && Number.isFinite(piece.from))) {
+        fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/curves/${piece.index}`, `Pieces of one function overlap: curves ${before.index} and ${piece.index} both cover x = ${Number.isFinite(piece.from) ? piece.from : before.to}`);
+      }
+    }
+  }
+}
+
+/**
  * Intervals marked on a plot's axes (a domain on the x-axis, a range on the y-axis), drawn like the
  * number line's: `from` and `to` are finite or null (unbounded), each finite end closed or open. One
  * value is an interval from it to itself, closed at both ends.
@@ -1248,6 +1275,7 @@ function validatePlotContent(
   const xRange = plotRange(axes.x, `${path}/content/axes/x`, { min: -5, max: 5 });
   const yRange = plotRange(axes.y, `${path}/content/axes/y`, { min: -5, max: 5 });
   validatePlotIntervals(action.content, path);
+  validateSeriesPieces(action.content.curves, path);
   action.content.curves.forEach((rawCurve: unknown, index: number) => {
     const curvePath = `${path}/content/curves/${index}`;
     requireObject(rawCurve, curvePath);
