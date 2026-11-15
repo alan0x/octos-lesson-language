@@ -5,9 +5,10 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, jumpHops, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
+  jumpEnds, jumpHops, planJumpLanes, tickUnit, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
+import { evaluateMathExpression, referencedMathVariables } from "../../core/src/math-expression.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 export const NUMBER_LINE_VIEW_WIDTH = 520;
@@ -16,6 +17,8 @@ const SIDE = 30;
 export interface NumberLineViewContext {
   /** Applies the latest emphasis of a part (`data-id`) to its element. */
   applyEmphasis(element: Element, id: string): void;
+  /** The lesson's variables with their ranges, so a moving card can size itself for every reachable state. */
+  variables?: Readonly<Record<string, { value: number; initial: number; min: number; max: number; control?: { step?: number } }>>;
 }
 
 type Part = { id?: string; as?: string };
@@ -60,6 +63,78 @@ function tickLabel(svg: SVGSVGElement, tick: TickLabel, x: number, y: number): v
   label(svg, bottom, x + offset, y + 26, "number-line-tick-label number-line-fraction");
 }
 
+/** Lane counts already worked out, by the card's unbound parts, bindings and variable ranges. */
+const reachableLaneCache = new Map<string, number>();
+
+/**
+ * The most lanes a bound card needs over the states its variables can reach. Two jumps can overlap only in
+ * the middle of a slider (a short jump dragged past a fixed one), so each variable its bindings read is
+ * sampled at every stop it can rest on (its slider step, or the smallest tick for a point dragged on this
+ * card) when there are few enough, else at its ends, its start and an even grid between them. About a
+ * thousand states in all: every stop of one variable up to 1,000 (32 each for two, 10 for three, 5 for
+ * four). An overlap narrower than both a stop and a grid step can still be missed, while the value passes
+ * between stops in an animation, and the card then grows while it lasts. Without the variables' ranges, a
+ * moving card with several jumps reserves one lane per jump.
+ */
+function reachableLaneCount(content: NumberLineContent, variables: NumberLineViewContext["variables"]): number {
+  const jumps = content.jumps ?? [];
+  const bindings = (content.bindings ?? []) as Array<{ target?: unknown; expression?: unknown }>;
+  if (!variables) return jumps.length;
+  const names = Object.keys(variables);
+  const referenced = [...new Set(bindings.flatMap((binding) => typeof binding.expression === "string" ? referencedMathVariables(binding.expression, names) : []))];
+  const sampled = referenced.slice(0, 4);
+  const dragged = new Set((content.points ?? []).flatMap((point) => point.interaction ? [point.interaction.variable] : []));
+  const stopOf = (name: string) => dragged.has(name) ? tickUnit(content) : variables[name]!.control?.step;
+  const targetOf = (state: Record<string, unknown>, target: string) => {
+    const separator = target.lastIndexOf(".");
+    const id = target.slice(0, separator);
+    const part = (["points", "jumps", "intervals"] as const).flatMap((field) => (state[field] ?? []) as Array<Record<string, unknown>>)
+      .find((item) => item.id === id || item.as === id);
+    return part ? { part, property: target.slice(separator + 1) } : undefined;
+  };
+  // The key holds only what lanes depend on, without the bound values (every sampled state overwrites
+  // them) or labels (a bound label changes as its value moves), so renders while a variable moves reuse it.
+  const unbound: Record<string, unknown> = {
+    points: (content.points ?? []).map((point) => ({ id: (point as { id?: string }).id, as: point.as, value: point.value })),
+    jumps: jumps.map((jump) => ({ id: (jump as { id?: string }).id, as: jump.as, from: jump.from, by: jump.by })),
+  };
+  for (const binding of bindings) {
+    const found = typeof binding.target === "string" ? targetOf(unbound, binding.target) : undefined;
+    if (found) delete found.part[found.property];
+  }
+  const key = JSON.stringify([unbound, bindings.map((binding) => [binding.target, binding.expression]), content.range, content.ticks,
+    sampled.map((name) => [name, variables[name]!.min, variables[name]!.max, variables[name]!.initial, stopOf(name)]),
+    referenced.slice(4).map((name) => [name, variables[name]!.value])]);
+  const cached = reachableLaneCache.get(key);
+  if (cached !== undefined) return cached;
+  const perVariable = sampled.length ? Math.min(1000, Math.floor(1024 ** (1 / sampled.length) + 1e-9)) : 0;
+  let combinations: Array<Record<string, number>> = [Object.fromEntries(names.map((name) => [name, variables[name]!.value]))];
+  for (const name of sampled) {
+    const { min, max, initial } = variables[name]!;
+    const stop = stopOf(name);
+    const stops = stop && stop > 0 ? Math.floor((max - min) / stop + 1e-9) + 1 : Infinity;
+    const values = stops + 2 <= perVariable
+      ? Array.from({ length: stops }, (_, index) => min + index * stop!)
+      : Array.from({ length: Math.max(1, perVariable - 3) }, (_, index) => min + (max - min) * (index + 1) / (Math.max(1, perVariable - 3) + 1));
+    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial, ...values])].map((v) => ({ ...combination, [name]: v })));
+  }
+  let most = 1;
+  for (const values of combinations) {
+    const state = structuredClone(content) as NumberLineContent & Record<string, unknown>;
+    let defined = true;
+    for (const binding of bindings) {
+      if (typeof binding.target !== "string" || typeof binding.expression !== "string") continue;
+      const found = targetOf(state, binding.target);
+      if (!found) continue;
+      try { found.part[found.property] = evaluateMathExpression(binding.expression, values); } catch { defined = false; }
+    }
+    if (defined) most = Math.max(most, ...planJumpLanes(state, state.jumps ?? []).map((lane) => lane + 1));
+  }
+  if (reachableLaneCache.size >= 64) reachableLaneCache.delete(reachableLaneCache.keys().next().value!);
+  reachableLaneCache.set(key, most);
+  return most;
+}
+
 /** The SVG for a number line, with its parts marked for emphasis and dragging. */
 export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknown>, context: NumberLineViewContext): void {
   const content = raw as unknown as NumberLineContent;
@@ -69,7 +144,19 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const jumps = content.jumps ?? [];
   const intervals = content.intervals ?? [];
   const points = content.points ?? [];
-  const jumpZone = jumps.length ? 58 : 0;
+  // Moving cards keep one geometry (below), so the arc zone is sized from the card's parts.
+  const moving = points.some((point) => (point as NumberLinePoint).interaction) || (content.bindings ?? []).length > 0;
+  // A jump whose span overlaps an earlier jump's (up 6, down 4, up 3) goes on a higher lane: a raised
+  // baseline with dashed leaders down to its start and end, so no arc crosses another and each label sits
+  // over its own arc (0017). Raising the arc alone is not enough: a later jump ending inside an earlier
+  // one's span crosses it. Chained jumps in one direction only touch at their ends and share lane 0.
+  const jumpLanes = planJumpLanes(content, jumps);
+  const laneCount = Math.max(1, ...jumpLanes.map((lane) => lane + 1));
+  // A static card is as tall as its lanes. A moving card reserves the most lanes any state can need: a
+  // reversing jump appears only once its change grows from 0, and the card must not grow then.
+  const reservedLanes = moving && jumps.length > 1 ? Math.max(laneCount, reachableLaneCount(content, context.variables)) : laneCount;
+  const JUMP_LANE = 36, LANE_ARC = 22;
+  const jumpZone = !jumps.length ? 0 : reservedLanes === 1 ? 58 : 44 + (reservedLanes - 1) * JUMP_LANE;
   const intervalZone = intervals.some((interval) => interval.label) ? 20 : 0;
   // Point labels sit above the line unless jump arcs are there; below, they clear the tick labels.
   const labelsAbove = jumps.length === 0;
@@ -79,7 +166,6 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   // Point names that would overlap (Start and End a quarter apart) go on further rows, away from the line.
   // A card whose points move (bound or dragged) keeps one geometry in every state: it reserves the
   // rows its labels could need, so the axis never jumps under the pointer and the card never resizes.
-  const moving = points.some((point) => (point as NumberLinePoint).interaction) || (content.bindings ?? []).length > 0;
   const named = points.flatMap((point) => { const value = numberLineValue(point.value); return point.label && value !== undefined ? [{ point, x: mapX(value), width: textWidth(point.label) }] : []; });
   const nameRows = new Map(stackLabels(named).map((row, index) => [named[index]!.point, row]));
   const nameRowCount = Math.max(1, ...[...nameRows.values()].map((row) => row + 1), moving ? named.length : 1);
@@ -165,20 +251,35 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     if (!ends || ends.from === ends.to) continue;
     const group = element("g", {}, "number-line-jump");
     group.dataset.id = idOf(jump as Part);
+    // Lane 0 stands on the line; higher lanes on a raised baseline. Hops stand on the line, under any arc
+    // over them, so a jump on a higher lane is one arc even when it has hops.
+    const lane = jumpLanes[jumps.indexOf(jump)] ?? 0;
+    const hops = Boolean(jump.hops) && lane === 0;
+    const base = lineY - 4 - lane * JUMP_LANE;
     // Whole hops, then a shorter last one when a variable stops between ticks: the arrow ends at ends.to.
-    const pieces = jumpHops(content, ends, Boolean(jump.hops));
+    const pieces = jumpHops(content, ends, hops);
     const span = (piece: { from: number; to: number }) => Math.abs(mapX(piece.to) - mapX(piece.from));
-    const hopHeight = jump.hops ? 18 : Math.min(46, 14 + span(ends) / 5);
+    const natural = hops ? 18 : Math.min(46, 14 + span(ends) / 5);
+    // With lanes, every arc stays low enough to clear the lane above it. The cap follows the reserved
+    // lanes, so an arc keeps its height when a reversing jump appears.
+    const hopHeight = reservedLanes > 1 ? Math.min(natural, LANE_ARC) : natural;
     pieces.forEach((piece, index) => {
       const a = mapX(piece.from), b = mapX(piece.to);
       // A short last hop is lower, in proportion to its length.
-      const height = jump.hops && pieces.length > 1 && index === pieces.length - 1 ? hopHeight * Math.min(1, span(piece) / span(pieces[0]!)) : hopHeight;
-      const path = element("path", { d: `M${a},${lineY - 4} Q${(a + b) / 2},${lineY - 4 - height * 2} ${b},${lineY - 4}` }, "number-line-jump-arc");
-      if (index === pieces.length - 1) path.setAttribute("marker-end", arrow);
+      const height = hops && pieces.length > 1 && index === pieces.length - 1 ? hopHeight * Math.min(1, span(piece) / span(pieces[0]!)) : hopHeight;
+      const path = element("path", { d: `M${a},${base} Q${(a + b) / 2},${base - height * 2} ${b},${base}` }, "number-line-jump-arc");
+      if (index === pieces.length - 1 && lane === 0) path.setAttribute("marker-end", arrow);
       group.append(path);
     });
+    if (lane > 0) {
+      // Leaders tie a raised arc to the line: plain at its start, with the arrow at its end.
+      group.append(element("line", { x1: mapX(ends.from), x2: mapX(ends.from), y1: base, y2: lineY - 4 }, "number-line-jump-leader"));
+      const leader = element("line", { x1: mapX(ends.to), x2: mapX(ends.to), y1: base, y2: lineY - 6 }, "number-line-jump-leader");
+      leader.setAttribute("marker-end", arrow);
+      group.append(leader);
+    }
     if (jump.label) {
-      const text = element("text", { x: (mapX(ends.from) + mapX(ends.to)) / 2, y: lineY - 8 - hopHeight - 4, "text-anchor": "middle" }, "number-line-jump-label");
+      const text = element("text", { x: (mapX(ends.from) + mapX(ends.to)) / 2, y: base - 4 - hopHeight - 4, "text-anchor": "middle" }, "number-line-jump-label");
       text.textContent = jump.label;
       group.append(text);
     }

@@ -1552,6 +1552,8 @@ function renderContent(
   /** Draw ink strokes from this stroke on, one after another; undefined shows it still. */
   replayInkFrom?: number,
   plotAnimation?: PlotSampleAnimation,
+  /** The board's variables with their ranges (number lines size moving cards from them). */
+  variableStates?: Readonly<Record<string, { value: number; initial: number; min: number; max: number }>>,
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
@@ -1559,7 +1561,7 @@ function renderContent(
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   // The math plugin's number line (decision 0013); it marks its own parts for emphasis.
-  if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
+  if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)), ...(variableStates ? { variables: variableStates } : {}) }); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
@@ -2513,6 +2515,7 @@ export class InfiniteBoardView {
             created && node.id === activeCreateId ? 0
               : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
             plotAnimation,
+            board.variables,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
         }

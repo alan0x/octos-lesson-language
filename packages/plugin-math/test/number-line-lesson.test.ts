@@ -3,11 +3,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson,
+  assertAuthoringSchema, assertDeclarationPlayable, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson,
   reduceCanonicalEvents, validateAuthoringLesson, type AuthoringLesson,
 } from "../../core/src/index.js";
 import { MATH_PLUGIN_MANIFEST } from "../src/index.js";
-import { NUMBER_LINE_PLUGIN_VERSION } from "../src/number-line.js";
+import { NUMBER_LINE_JUMP_LANES_VERSION } from "../src/number-line.js";
 
 const host = { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" as const };
 
@@ -53,13 +53,37 @@ test("a number line requires the math plugin's feature, not a core node feature"
   assert.ok(requirements.requiredCapabilities.includes("plugin:math/number-line@1"));
   assert.ok(!requirements.requiredCapabilities.some((feature) => feature === "node:number_line"));
   assert.deepEqual(requirements.requiredPlugins, { math: "0.2.0" });
-  assert.equal(MATH_PLUGIN_MANIFEST.version, NUMBER_LINE_PLUGIN_VERSION);
+  assert.equal(MATH_PLUGIN_MANIFEST.version, NUMBER_LINE_JUMP_LANES_VERSION);
   assert.doesNotThrow(() => assertExecutionSupported(events));
   // A player without the math plugin, or with an older one, refuses the lesson before playback.
   assert.throws(() => assertExecutionSupported(events, undefined, undefined, { firstParty: false }), /requires the 'math' plugin 0.2.0, which is not installed/);
   assert.throws(() => assertExecutionSupported(events, undefined, undefined, {
     extensions: [{ plugin: { id: "math", version: "0.1.0" }, features: {} }],
   }), /requires the 'math' plugin 0.2.0; installed 0.1.0/);
+});
+
+test("several jumps that can need a raised lane require jump lanes and the math plugin 0.3.0 (decision 0017)", () => {
+  const lanes = "plugin:math/number-line-jump-lanes@1";
+  const requirements = (content: Record<string, unknown>, extra?: Partial<AuthoringLesson["lesson"]>) =>
+    deriveExecutionRequirements(normalizeAuthoringLesson(lesson(content, extra), host));
+  const still = { range: { min: 0, max: 12 }, ticks: { step: 1 }, points: [{ as: "start", value: 5, label: "起点" }] };
+  // Up 4 then down 6 back over it: the second jump is raised.
+  const reverse = requirements({ ...still, jumps: [{ as: "up", from: "start", by: 4 }, { as: "down", from: 9, by: -6 }] });
+  assert.ok(reverse.requiredCapabilities.includes(lanes));
+  assert.deepEqual(reverse.requiredPlugins, { math: "0.3.0" });
+  // Chained jumps in one direction share the line and draw as before.
+  const chained = requirements({ ...still, jumps: [{ as: "a", from: "start", by: 2 }, { as: "b", from: 7, by: 3 }] });
+  assert.ok(!chained.requiredCapabilities.includes(lanes));
+  assert.deepEqual(chained.requiredPlugins, { math: "0.2.0" });
+  // A moving card with several jumps can raise one as its variable changes.
+  const moving = requirements({ ...still, jumps: [{ as: "a", from: "start", by: 2 }, { as: "b", from: 7, by: 3 }], bindings: [{ target: "b.by", expression: "change" }] });
+  assert.ok(moving.requiredCapabilities.includes(lanes));
+  // One jump never needs a lane.
+  assert.ok(!requirements(integers).requiredCapabilities.includes(lanes));
+  // A player with the math plugin 0.2.0 refuses the lesson from its declaration, before playback.
+  assert.throws(() => assertDeclarationPlayable(reverse, undefined, {
+    extensions: [{ plugin: { id: "math", version: "0.2.0" }, features: { "plugin:math/number-line@1": "0.2.0" } }],
+  }), /number-line-jump-lanes@1', which the installed 'math' plugin 0\.2\.0 does not have/);
 });
 
 test("lessons without a number line need no plugin", () => {

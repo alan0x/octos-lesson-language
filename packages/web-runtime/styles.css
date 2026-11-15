@@ -117,9 +117,11 @@
 .number-line-drag-handle { fill: transparent; cursor: grab; }
 .number-line-draggable .number-line-dot { stroke: #fff4d6; stroke-width: 3; }
 .number-line-jump-arc { fill: none; stroke: #167d78; stroke-width: 2.4; stroke-linecap: round; }
+.number-line-jump-leader { stroke: #167d78; stroke-width: 1.6; stroke-dasharray: 3 3; }
 .number-line-arrowhead { fill: #167d78; }
 .number-line-jump-label { fill: #0d5f5b; font: 700 13px/1 ui-sans-serif, system-ui, sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
 .number-line-jump.emphasis-focus .number-line-jump-arc { stroke: #e15d45; stroke-width: 3.4; }
+.number-line-jump.emphasis-focus .number-line-jump-leader { stroke: #e15d45; }
 .number-line-interval-bar { fill: none; stroke: #2a9386; stroke-width: 6; stroke-linecap: round; opacity: .85; }
 .number-line-end-closed { fill: #2a9386; stroke: #fffdf7; stroke-width: 1.5; }
 .number-line-end-open { fill: #fffdf7; stroke: #2a9386; stroke-width: 2.6; }
