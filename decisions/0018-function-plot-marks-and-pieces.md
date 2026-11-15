@@ -131,3 +131,33 @@
    - 所有函数族同样处理：根式、反比例、指数在 a = 0 时都变成常数，值域条隐藏。直线 m = 0 时同样隐藏。
 7. **分段函数的值域只做各段都是直线或常数的情况**（端点值和开闭可以精确合并，常数段是一个点）。含二次或其他段时只画定义域，值域在节里拒绝。
 8. **纵轴上的区间是新代码**，数轴的画法只能借鉴。0 不在窗口里时没有坐标轴线，区间画在边框上。
+
+## 请求大小实测（2026-11-15，原型）
+
+测量方法：在 Coach 一个不提交的分支上（基于 Coach #86，OLL 8e85fe1）加上配方卡片和 schema，不写编译逻辑，用 `scripts/measure-lesson-payload.mjs` 和 `pluginFootprint` 与同一提交的构建比较。字节 = 系统提示 + 提示 + 响应 schema，取各路径在测试夹具上的最大值。两个扩展一起测：
+
+| 请求 | 增加 | 其中 schema | 增加后距上限 |
+|---|---|---|---|
+| 首个请求（五种输入路径） | +948 B | +403 B | 6,553 B |
+| 备用大纲 | +271 B | +15 B | 1,887 B |
+| 提供 `function_plot` 的节请求（夹具里是首节重试） | +677 B | +388 B | 1,809 B（该路径的最大值由别的夹具决定） |
+| 其他节请求（后续节、修复、首节重试） | +289 B | 0 | 1,809 B |
+| 练习 | 0 | 0 | 不变 |
+
+- 数学插件的占用 5,602 → 6,562 B，预算 9,900 B。没有路径超过上限。
+- 函数图的规则写在 `section.formulas` 里，每一节的提示都带它，所以不用函数图的节，包括非数学课，也多 289 B。速度检查会测到这一项。
+- 卡片是草稿措辞。数轴分步还没写两步时怎么表示没有第三步，也没写往回走的一步不讲逐格；`marks`、`pieces` 还没写拒绝的说法。所以上面是下限。**上限定为估计的上端：数轴分步 350 B，函数图两个选项 800 B。** 写定卡片后重新测量，超过就先压缩措辞，不提高上限。
+
+本决定的两个选项占 **692 B**（估计 450–800 B）：规则 289 B，`marks` 的 schema 120 B，`pieces` 的 schema 247 B，其余是参数名。新增特征名零个。草稿：
+
+- 规则（接在 `section.formulas` 的函数图规则后）：`marks 选要画的：intercepts、vertex、symmetry_axis（一次或二次）、slope_triangle（A、B 两点的 Δx、Δy）、domain、range；位置由程序算。分段函数写 pieces：每段 formula、x_from、x_to（无界不写）、ends 写端点开闭如 [)，可有常数段。`
+- schema：
+  - `marks: { type: "array", maxItems: 6, items: { enum: ["intercepts", "vertex", "symmetry_axis", "slope_triangle", "domain", "range"] } }`
+  - `pieces: { type: "array", maxItems: 4, items: { type: "object", additionalProperties: false, required: ["formula", "ends"], properties: { formula: text, x_from: number, x_to: number, ends: { enum: ["[]", "[)", "(]", "()"] } } } }`
+
+**放在哪里：** `marks` 和 `pieces` 是 `function_plot` 这个视觉的参数，所以只在提供函数图的节里出现。第 1 节说的“节级选项”指每节的函数图各自选，不是节的新字段：节的新字段会让每一节的 schema 都变大。
+
+实现时要注意：
+- `pieces` 是第一个元素为对象的配方参数。Coach 的参数校验接受嵌套对象，数值端点在发给模型的 schema 里换成已有的小数表示（已计入上表）。每段的 `formula` 要和 `formulas` 一样解析。
+- 视觉复用按 `semantic_parameters` 判断两个视觉是否相同，所以 `marks` 和 `pieces` 都要列进去，否则只有标记不同的两张图会被合并。
+- 请求的哈希记录（`eval/request-hashes.json`）要重新记录。
