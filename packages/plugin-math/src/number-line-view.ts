@@ -5,7 +5,7 @@
  * bindings already applied.
  */
 import {
-  jumpEnds, jumpHops, planJumpLanes, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
+  jumpEnds, jumpHops, planJumpLanes, tickUnit, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
   type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
 } from "./number-line.js";
 import { evaluateMathExpression, referencedMathVariables } from "../../core/src/math-expression.js";
@@ -18,7 +18,7 @@ export interface NumberLineViewContext {
   /** Applies the latest emphasis of a part (`data-id`) to its element. */
   applyEmphasis(element: Element, id: string): void;
   /** The lesson's variables with their ranges, so a moving card can size itself for every reachable state. */
-  variables?: Readonly<Record<string, { value: number; initial: number; min: number; max: number }>>;
+  variables?: Readonly<Record<string, { value: number; initial: number; min: number; max: number; control?: { step?: number } }>>;
 }
 
 type Part = { id?: string; as?: string };
@@ -67,12 +67,14 @@ function tickLabel(svg: SVGSVGElement, tick: TickLabel, x: number, y: number): v
 const reachableLaneCache = new Map<string, number>();
 
 /**
- * The most lanes a bound card needs over the states its variables can reach. Each variable its bindings
- * read is sampled at its minimum, maximum and starting value and on an even grid between them, since
- * two jumps can overlap only in the middle of a slider (a short jump dragged past a fixed one). The grid
- * is as fine as about a thousand states allow (33 steps for one variable, 2 for four); an overlap
- * narrower than a grid step can still be missed, and the card then grows while it lasts. Without the
- * variables' ranges, a moving card with several jumps reserves one lane per jump.
+ * The most lanes a bound card needs over the states its variables can reach. Two jumps can overlap only in
+ * the middle of a slider (a short jump dragged past a fixed one), so each variable its bindings read is
+ * sampled at every stop it can rest on (its slider step, or the smallest tick for a point dragged on this
+ * card) when there are few enough, else at its ends, its start and an even grid between them. About a
+ * thousand states in all: every stop of one variable up to 1,000 (32 each for two, 10 for three, 5 for
+ * four). An overlap narrower than both a stop and a grid step can still be missed, while the value passes
+ * between stops in an animation, and the card then grows while it lasts. Without the variables' ranges, a
+ * moving card with several jumps reserves one lane per jump.
  */
 function reachableLaneCount(content: NumberLineContent, variables: NumberLineViewContext["variables"]): number {
   const jumps = content.jumps ?? [];
@@ -81,6 +83,8 @@ function reachableLaneCount(content: NumberLineContent, variables: NumberLineVie
   const names = Object.keys(variables);
   const referenced = [...new Set(bindings.flatMap((binding) => typeof binding.expression === "string" ? referencedMathVariables(binding.expression, names) : []))];
   const sampled = referenced.slice(0, 4);
+  const dragged = new Set((content.points ?? []).flatMap((point) => point.interaction ? [point.interaction.variable] : []));
+  const stopOf = (name: string) => dragged.has(name) ? tickUnit(content) : variables[name]!.control?.step;
   const targetOf = (state: Record<string, unknown>, target: string) => {
     const separator = target.lastIndexOf(".");
     const id = target.slice(0, separator);
@@ -88,23 +92,31 @@ function reachableLaneCount(content: NumberLineContent, variables: NumberLineVie
       .find((item) => item.id === id || item.as === id);
     return part ? { part, property: target.slice(separator + 1) } : undefined;
   };
-  // Every sampled state overwrites the bound fields, so their current values do not change the answer:
-  // a card re-rendered while its variable moves reuses it.
-  const unbound = structuredClone({ points: content.points ?? [], jumps }) as unknown as Record<string, unknown>;
+  // The key holds only what lanes depend on, without the bound values (every sampled state overwrites
+  // them) or labels (a bound label changes as its value moves), so renders while a variable moves reuse it.
+  const unbound: Record<string, unknown> = {
+    points: (content.points ?? []).map((point) => ({ id: (point as { id?: string }).id, as: point.as, value: point.value })),
+    jumps: jumps.map((jump) => ({ id: (jump as { id?: string }).id, as: jump.as, from: jump.from, by: jump.by })),
+  };
   for (const binding of bindings) {
     const found = typeof binding.target === "string" ? targetOf(unbound, binding.target) : undefined;
     if (found) delete found.part[found.property];
   }
-  const key = JSON.stringify([unbound, bindings, sampled.map((name) => [name, variables[name]!.min, variables[name]!.max, variables[name]!.initial]),
+  const key = JSON.stringify([unbound, bindings.map((binding) => [binding.target, binding.expression]), content.range, content.ticks,
+    sampled.map((name) => [name, variables[name]!.min, variables[name]!.max, variables[name]!.initial, stopOf(name)]),
     referenced.slice(4).map((name) => [name, variables[name]!.value])]);
   const cached = reachableLaneCache.get(key);
   if (cached !== undefined) return cached;
-  const steps = sampled.length ? Math.min(33, Math.max(1, Math.floor(1024 ** (1 / sampled.length)) - 3)) : 0;
+  const perVariable = sampled.length ? Math.min(1000, Math.floor(1024 ** (1 / sampled.length) + 1e-9)) : 0;
   let combinations: Array<Record<string, number>> = [Object.fromEntries(names.map((name) => [name, variables[name]!.value]))];
   for (const name of sampled) {
     const { min, max, initial } = variables[name]!;
-    const grid = Array.from({ length: steps }, (_, index) => min + (max - min) * (index + 1) / (steps + 1));
-    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial, ...grid])].map((v) => ({ ...combination, [name]: v })));
+    const stop = stopOf(name);
+    const stops = stop && stop > 0 ? Math.floor((max - min) / stop + 1e-9) + 1 : Infinity;
+    const values = stops + 2 <= perVariable
+      ? Array.from({ length: stops }, (_, index) => min + index * stop!)
+      : Array.from({ length: Math.max(1, perVariable - 3) }, (_, index) => min + (max - min) * (index + 1) / (Math.max(1, perVariable - 3) + 1));
+    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial, ...values])].map((v) => ({ ...combination, [name]: v })));
   }
   let most = 1;
   for (const values of combinations) {

@@ -196,6 +196,21 @@ const sliding = normalizeAuthoringLesson(lesson({
     hints: ["拖动起点。"],
   }],
 }), host("sliding"));
+// Unit jumps on a 0..100 line: the dragged +1 overlaps the fixed −1 (50 to 49) only from the start 49.
+const unitSliding = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 101 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 0, label: "起点", interaction: { kind: "drag", variable: "s" } }],
+  jumps: [{ as: "j1", from: "start", by: 1, label: "+1" }, { as: "j2", from: 50, by: -1, label: "−1" }],
+  bindings: [{ target: "start.value", expression: "s" }],
+}, {
+  variables: [{ as: "s", initial: 0, min: 0, max: 100, label: "起点" }],
+  tasks: [{
+    as: "move", prompt: "把起点拖到 80。", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "s", controls: ["number_line_point"] }],
+    completion: { kind: "expression_target", expression: "s", value: 80, tolerance: 0.01 },
+    hints: ["拖动起点。"],
+  }],
+}), host("unit-sliding"));
 // Counting by 25 on a 25-unit line: one jump, five hops.
 const by25 = normalizeAuthoringLesson(lesson({
   range: { min: 0, max: 200 }, ticks: { step: 25 },
@@ -519,23 +534,29 @@ try {
   check(new Set(boundUpDownUpViews.map((state) => state.viewBox)).size === 1, `up, down, up on a bound card keeps one height as the third lane appears: ${[...new Set(boundUpDownUpViews.map((state) => state.viewBox))].join(" | ")}`);
   const boundUpDownUpEnd = boundUpDownUpViews.at(-1);
   check(boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ") === "0 2 2" && !labelOnOtherArc(boundUpDownUpEnd), `up, down, up on a bound card ends on three lanes, labels clear: ${boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ")}`);
-  const slidingBoxes = await page.evaluate((events) => {
+  const dragStates = (events, id, top, step) => page.evaluate(({ events, id, top, step }) => {
     document.querySelector("#board").replaceChildren();
-    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "sliding");
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), id);
     while (session.projection.status !== "completed") session.advance();
     const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
     const seen = [];
     const operation = session.beginStudentVariableOperation("s", { control: "number_line_point", input: "mouse" });
-    for (let value = 0; value <= 10; value += 0.5) {
+    for (let value = 0; value <= top; value += step) {
       session.updateStudentVariableOperation(operation, value);
       mounted.view.render(session.projection.board);
       const svg = document.querySelector(".number-line-preview");
-      seen.push(`${value}:${svg.getAttribute("viewBox")}:${svg.querySelectorAll(".number-line-jump-leader").length}`);
+      seen.push(`${value}:${svg.getAttribute("viewBox")}:${svg.querySelector(".number-line-axis").getAttribute("y1")}:${svg.querySelectorAll(".number-line-jump-leader").length}`);
     }
     return seen;
-  }, sliding);
+  }, { events, id, top, step });
+  const slidingBoxes = await dragStates(sliding, "sliding", 10, 0.5);
   check(slidingBoxes.some((state) => state.endsWith(":2")), `the sliding jump is raised while it overlaps: ${slidingBoxes.join(" ")}`);
   check(new Set(slidingBoxes.map((state) => state.split(":")[1])).size === 1, `dragging a jump past another keeps one card height: ${slidingBoxes.join(" ")}`);
+  const unitBoxes = await dragStates(unitSliding, "unit-sliding", 100, 1);
+  // The lanes above the line are reserved: the axis never moves. (Tick labels crowding under the line near
+  // 49 to 50 add label rows below it; that predates the lanes and is not checked here.)
+  check(unitBoxes.some((state) => state.endsWith(":2")) && new Set(unitBoxes.map((state) => state.split(":")[2])).size === 1,
+    `a unit jump dragged past another on a 0..100 line keeps the line where it is: ${[...new Set(unitBoxes.map((state) => state.split(":").slice(2).join(":")))].join(" ")}`);
   const stepViews = await jumpStates(steps, "steps");
   check(new Set(stepViews.map((state) => state.viewBox)).size === 1, `tens then ones keeps one card height: ${[...new Set(stepViews.map((state) => state.viewBox))].join(" | ")}`);
   const stepsEnd = stepViews.at(-1);
