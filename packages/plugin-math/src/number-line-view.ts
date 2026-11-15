@@ -81,21 +81,48 @@ function planJumpLanes(content: NumberLineContent, jumps: readonly unknown[]): n
   });
 }
 
+/** Lane counts already worked out, by the card's unbound parts, bindings and variable ranges. */
+const reachableLaneCache = new Map<string, number>();
+
 /**
- * The most lanes a bound card needs, with each variable its bindings read at its minimum, maximum,
- * starting and current value (as core checks bound number lines). Without the variables' ranges, a
- * moving card with several jumps reserves one lane per jump.
+ * The most lanes a bound card needs over the states its variables can reach. Each variable its bindings
+ * read is sampled at its minimum, maximum and starting value and on an even grid between them, since
+ * two jumps can overlap only in the middle of a slider (a short jump dragged past a fixed one). The grid
+ * is as fine as about a thousand states allow (33 steps for one variable, 2 for four); an overlap
+ * narrower than a grid step can still be missed, and the card then grows while it lasts. Without the
+ * variables' ranges, a moving card with several jumps reserves one lane per jump.
  */
 function reachableLaneCount(content: NumberLineContent, variables: NumberLineViewContext["variables"]): number {
   const jumps = content.jumps ?? [];
   const bindings = (content.bindings ?? []) as Array<{ target?: unknown; expression?: unknown }>;
   if (!variables) return jumps.length;
   const names = Object.keys(variables);
-  const referenced = [...new Set(bindings.flatMap((binding) => typeof binding.expression === "string" ? referencedMathVariables(binding.expression, names) : []))].slice(0, 4);
+  const referenced = [...new Set(bindings.flatMap((binding) => typeof binding.expression === "string" ? referencedMathVariables(binding.expression, names) : []))];
+  const sampled = referenced.slice(0, 4);
+  const targetOf = (state: Record<string, unknown>, target: string) => {
+    const separator = target.lastIndexOf(".");
+    const id = target.slice(0, separator);
+    const part = (["points", "jumps", "intervals"] as const).flatMap((field) => (state[field] ?? []) as Array<Record<string, unknown>>)
+      .find((item) => item.id === id || item.as === id);
+    return part ? { part, property: target.slice(separator + 1) } : undefined;
+  };
+  // Every sampled state overwrites the bound fields, so their current values do not change the answer:
+  // a card re-rendered while its variable moves reuses it.
+  const unbound = structuredClone({ points: content.points ?? [], jumps }) as unknown as Record<string, unknown>;
+  for (const binding of bindings) {
+    const found = typeof binding.target === "string" ? targetOf(unbound, binding.target) : undefined;
+    if (found) delete found.part[found.property];
+  }
+  const key = JSON.stringify([unbound, bindings, sampled.map((name) => [name, variables[name]!.min, variables[name]!.max, variables[name]!.initial]),
+    referenced.slice(4).map((name) => [name, variables[name]!.value])]);
+  const cached = reachableLaneCache.get(key);
+  if (cached !== undefined) return cached;
+  const steps = sampled.length ? Math.min(33, Math.max(1, Math.floor(1024 ** (1 / sampled.length)) - 3)) : 0;
   let combinations: Array<Record<string, number>> = [Object.fromEntries(names.map((name) => [name, variables[name]!.value]))];
-  for (const name of referenced) {
-    const { min, max, initial, value } = variables[name]!;
-    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial, value])].map((v) => ({ ...combination, [name]: v })));
+  for (const name of sampled) {
+    const { min, max, initial } = variables[name]!;
+    const grid = Array.from({ length: steps }, (_, index) => min + (max - min) * (index + 1) / (steps + 1));
+    combinations = combinations.flatMap((combination) => [...new Set([min, max, initial, ...grid])].map((v) => ({ ...combination, [name]: v })));
   }
   let most = 1;
   for (const values of combinations) {
@@ -103,15 +130,14 @@ function reachableLaneCount(content: NumberLineContent, variables: NumberLineVie
     let defined = true;
     for (const binding of bindings) {
       if (typeof binding.target !== "string" || typeof binding.expression !== "string") continue;
-      const separator = binding.target.lastIndexOf(".");
-      const id = binding.target.slice(0, separator), property = binding.target.slice(separator + 1);
-      const part = (["points", "jumps", "intervals"] as const).flatMap((field) => (state[field] ?? []) as unknown as Array<Record<string, unknown>>)
-        .find((item) => item.id === id || item.as === id);
-      if (!part) continue;
-      try { part[property] = evaluateMathExpression(binding.expression, values); } catch { defined = false; }
+      const found = targetOf(state, binding.target);
+      if (!found) continue;
+      try { found.part[found.property] = evaluateMathExpression(binding.expression, values); } catch { defined = false; }
     }
     if (defined) most = Math.max(most, ...planJumpLanes(state, state.jumps ?? []).map((lane) => lane + 1));
   }
+  if (reachableLaneCache.size >= 64) reachableLaneCache.delete(reachableLaneCache.keys().next().value!);
+  reachableLaneCache.set(key, most);
   return most;
 }
 

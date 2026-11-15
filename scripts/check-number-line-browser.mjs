@@ -180,6 +180,22 @@ const stepsLesson = lesson({
 }, { variables: [{ as: "a", initial: 0, min: 0, max: 10, label: "一" }, { as: "b", initial: 0, min: 0, max: 10, label: "二" }, { as: "c", initial: 0, min: 0, max: 5, label: "三" }] });
 for (const [variable, value] of [["a", 10], ["b", 10], ["c", 5]]) stepsLesson.steps[0].beats.push({ key: `k${variable}`, say: "走。", actions: [{ do: "animate", variable, value }] });
 const steps = normalizeAuthoringLesson(stepsLesson, host("steps"));
+// A dragged start whose short jump slides past a fixed one: they overlap only for starts in the middle of
+// the slider (3 to 4), never at its ends or its starting value, and the card must not grow mid-drag.
+const sliding = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 12 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 0, label: "起点", interaction: { kind: "drag", variable: "s" } }],
+  jumps: [{ as: "j1", from: "start", by: 1, label: "+1" }, { as: "j2", from: 5, by: -2, label: "−2" }],
+  bindings: [{ target: "start.value", expression: "s" }],
+}, {
+  variables: [{ as: "s", initial: 0, min: 0, max: 10, label: "起点" }],
+  tasks: [{
+    as: "move", prompt: "把起点拖到 8。", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "s", controls: ["number_line_point"] }],
+    completion: { kind: "expression_target", expression: "s", value: 8, tolerance: 0.01 },
+    hints: ["拖动起点。"],
+  }],
+}), host("sliding"));
 // Counting by 25 on a 25-unit line: one jump, five hops.
 const by25 = normalizeAuthoringLesson(lesson({
   range: { min: 0, max: 200 }, ticks: { step: 25 },
@@ -503,6 +519,23 @@ try {
   check(new Set(boundUpDownUpViews.map((state) => state.viewBox)).size === 1, `up, down, up on a bound card keeps one height as the third lane appears: ${[...new Set(boundUpDownUpViews.map((state) => state.viewBox))].join(" | ")}`);
   const boundUpDownUpEnd = boundUpDownUpViews.at(-1);
   check(boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ") === "0 2 2" && !labelOnOtherArc(boundUpDownUpEnd), `up, down, up on a bound card ends on three lanes, labels clear: ${boundUpDownUpEnd.jumps.map((jump) => jump.leaders).join(" ")}`);
+  const slidingBoxes = await page.evaluate((events) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "sliding");
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    const seen = [];
+    const operation = session.beginStudentVariableOperation("s", { control: "number_line_point", input: "mouse" });
+    for (let value = 0; value <= 10; value += 0.5) {
+      session.updateStudentVariableOperation(operation, value);
+      mounted.view.render(session.projection.board);
+      const svg = document.querySelector(".number-line-preview");
+      seen.push(`${value}:${svg.getAttribute("viewBox")}:${svg.querySelectorAll(".number-line-jump-leader").length}`);
+    }
+    return seen;
+  }, sliding);
+  check(slidingBoxes.some((state) => state.endsWith(":2")), `the sliding jump is raised while it overlaps: ${slidingBoxes.join(" ")}`);
+  check(new Set(slidingBoxes.map((state) => state.split(":")[1])).size === 1, `dragging a jump past another keeps one card height: ${slidingBoxes.join(" ")}`);
   const stepViews = await jumpStates(steps, "steps");
   check(new Set(stepViews.map((state) => state.viewBox)).size === 1, `tens then ones keeps one card height: ${[...new Set(stepViews.map((state) => state.viewBox))].join(" | ")}`);
   const stepsEnd = stepViews.at(-1);
