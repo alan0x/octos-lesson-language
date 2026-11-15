@@ -16,6 +16,8 @@ import {
   referencedPlotVariables,
   sampleImplicitPlotExpression,
   samplePlotExpression,
+  curveSeriesIndices,
+  onCurveInterval,
 } from "../src/plot.js";
 
 test("plot invalidation tracks only variables actually used by a curve", () => {
@@ -301,4 +303,13 @@ test("large views keep plots inside the height band on desktops and phones", () 
   assert.ok(desktop.height <= desktop.width && desktop.height >= desktop.width * 0.55, JSON.stringify(desktop));
   const card = plotSurfaceSize({ large: false, adaptive: false, viewport: { width: 1280, height: 800 }, ...sine });
   assert.deepEqual(card, { width: 404, height: 235 });
+});
+
+test("pieces of one function share a series; other curves keep their own, in order", () => {
+  assert.deepEqual(curveSeriesIndices([{ series: "f" }, { series: "f" }, {}, { series: "g" }, {}]), [0, 0, 1, 2, 3]);
+  assert.deepEqual(curveSeriesIndices([{}, {}, {}]), [0, 1, 2]);
+  assert.equal(onCurveInterval({ from: 0, to: 2 }, 1), true);
+  assert.equal(onCurveInterval({ from: 0, to: 2 }, -0.5), false);
+  assert.equal(onCurveInterval({ to: 0 }, -10), true);
+  assert.equal(onCurveInterval({}, 1e9), true);
 });

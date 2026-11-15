@@ -1,5 +1,5 @@
 import { bindUi, ui, inheritUiLocale } from "./ui-localization.js";
-import { plotFrame, extendPlotRanges, plotSurfaceSize, followPlotSamples, compilePlotExpression, curveLegendText, type PlotRange, type PlotSampleAnimation } from "./plot.js";
+import { plotFrame, extendPlotRanges, plotSurfaceSize, followPlotSamples, compilePlotExpression, curveLegendText, curveSeriesIndices, onCurveInterval, type PlotRange, type PlotSampleAnimation } from "./plot.js";
 import {
   coordinateWheelZoomFactor,
   panCoordinateRanges,
@@ -155,15 +155,19 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
     const requested = ranges;
     ranges = fitRanges(requested);
     const frame=plotFrame(width,height,ranges.x,ranges.y,axes.equal_scale===true);
-    const content={...node.content,axes:{...axes,x:{...axes.x,...ranges.x},y:{...axes.y,...ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:i})).filter((_,i)=>!current.hidden.has(i))};
+    // Pieces of one piecewise function share a series: one colour, one legend entry, shown and hidden together.
+    const seriesOf=curveSeriesIndices(curves);
+    const content={...node.content,axes:{...axes,x:{...axes.x,...ranges.x},y:{...axes.y,...ranges.y}},curves:curves.map((c,i)=>({...c,plotSeries:seriesOf[i]})).filter((_,i)=>!current.hidden.has(i))};
     inheritUiLocale(host,parent);
     draw(host,{...node,content},variables,width,height);
     host.querySelector('.plot-legend')?.remove();
     const legend=document.createElement('div');legend.className='plot-legend';legend.dataset.ollBoardInput='ignore';legend.dataset.ollInkInput='ignore';
-    curves.forEach((c,i)=>{const label=document.createElement('label');label.className=`plot-legend-item plot-series-${i%6}`;
-      if(curves.length>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!current.hidden.has(i);
-        checkbox.onchange=()=>{checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
-      const displayText = curveLegendText(c, variables, defaultAxisNames);
+    const seriesCount=new Set(seriesOf).size;
+    [...new Set(seriesOf)].forEach(series=>{const members=curves.flatMap((_,i)=>seriesOf[i]===series?[i]:[]);
+      const label=document.createElement('label');label.className=`plot-legend-item plot-series-${series%6}`;
+      if(seriesCount>1){const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=!members.some(i=>current.hidden.has(i));
+        checkbox.onchange=()=>{for(const i of members)checkbox.checked?current.hidden.delete(i):current.hidden.add(i);refresh();};label.append(checkbox);}
+      const displayText = members.map(i=>curveLegendText(curves[i], variables, defaultAxisNames)).join(ui(parent,'；'));
       label.append(document.createTextNode(displayText));legend.append(label);
     });host.append(legend);
     const readout=document.createElement('output');readout.className='plot-probe-readout';bindUi(parent,readout,'text',()=>{readout.textContent=ui(parent,current.hidden.size
@@ -220,7 +224,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
         schedule();return;
       }
       const point=anchor(event.clientX,event.clientY),x=ranges.x.min+point.x*(ranges.x.max-ranges.x.min);
-      const candidates=evaluators.flatMap((f,i)=>{if(!f||current.hidden.has(i))return [];let y;try{y=f(x);}catch{return [];}
+      const candidates=evaluators.flatMap((f,i)=>{if(!f||current.hidden.has(i)||!onCurveInterval(curves[i],x))return [];let y;try{y=f(x);}catch{return [];}
         return Number.isFinite(y)&&y>=ranges.y.min&&y<=ranges.y.max?[{i,y,distance:Math.abs((y-ranges.y.min)/(ranges.y.max-ranges.y.min)-point.y)}]:[];});
       candidates.sort((a,b)=>a.distance-b.distance);const hit=candidates[0];
       svg.querySelectorAll('[data-plot-probe]').forEach(e=>e.remove());

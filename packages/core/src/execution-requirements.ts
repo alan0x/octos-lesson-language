@@ -7,7 +7,7 @@ import {
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.10.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.11.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -44,6 +44,12 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "scene3d:more-solids": "0.9.0",
   "scene3d:unfold": "0.9.0",
   "scene3d:face-targets": "0.10.0",
+  // Decision 0018. An older player would draw a piece as the whole curve, or a guide at a stale value.
+  "plot:curve-intervals": "0.11.0",
+  "plot:axis-intervals": "0.11.0",
+  "plot:guide-hide-undefined": "0.11.0",
+  // A secant over the first two of more points (marks after A and B); an older player drew no triangle then.
+  "plot:secant-first-two": "0.11.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
@@ -190,6 +196,15 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     if (Array.isArray(value.objects) && value.objects.some((object) => object.face_targets === true)) add("scene3d:face-targets", path);
+    if (kind === "plot") {
+      const curves = Array.isArray(value.curves) ? value.curves as Array<Record<string, unknown>> : [];
+      if (curves.some((curve) => ["from", "to", "from_closed", "to_closed", "series"].some((field) => curve[field] !== undefined))) add("plot:curve-intervals", `${path}/curves`);
+      if (Array.isArray(value.intervals) && value.intervals.length) add("plot:axis-intervals", `${path}/intervals`);
+      if (value.measurement === "secant" && Array.isArray(value.points) && value.points.length > 2) add("plot:secant-first-two", `${path}/points`);
+      const guideIds = new Set((Array.isArray(value.guides) ? value.guides as Array<Record<string, unknown>> : []).map((guide) => String(guide.id ?? guide.as)));
+      if (Array.isArray(value.bindings) && value.bindings.some((binding) => (binding as { hide_when_undefined?: unknown }).hide_when_undefined === true
+        && guideIds.has(String((binding as { target?: unknown }).target).split(".").slice(0, -1).join(".")))) add("plot:guide-hide-undefined", `${path}/bindings`);
+    }
     const bindings = value.bindings;
     if (Array.isArray(bindings) && bindings.length) {
       add("value-bindings", path);

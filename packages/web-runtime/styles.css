@@ -56,6 +56,14 @@
 .plot-axis { stroke: #8b857b; stroke-width: 1.4; }
 .plot-axis-label { fill: #6f685e; font: 10.5px/1 system-ui, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
 .plot-hole { fill: #fffdf7; stroke: var(--plot-series-color); stroke-width: 2; }
+.plot-leg-label { fill: #6f685e; font: italic 600 11px/1 system-ui, -apple-system, "Segoe UI", sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
+.plot-curve-end { fill: var(--plot-series-color); stroke: #fffdf7; stroke-width: 1.2; }
+.plot-interval-bar { fill: none; stroke: #2a9386; stroke-width: 6; stroke-linecap: round; opacity: .55; }
+.plot-interval-arrow { stroke-width: 3; opacity: .85; }
+.plot-interval-end-closed { fill: #2a9386; stroke: #fffdf7; stroke-width: 1.5; }
+.plot-interval-end-open { fill: #fffdf7; stroke: #2a9386; stroke-width: 2.2; }
+.plot-interval-label { fill: #1d6f66; font: 700 11px/1 system-ui, -apple-system, "Segoe UI", sans-serif; paint-order: stroke; stroke: #fffdf7; stroke-width: 3px; }
+.plot-interval.emphasis-focus .plot-interval-bar { stroke: #e19b35; opacity: .8; }
 .plot-edge-indicator { fill: #e15d45; stroke: #fffdf7; stroke-width: 1; }
 .plot-curve { fill: none; stroke: var(--plot-series-color); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .plot-curve.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }

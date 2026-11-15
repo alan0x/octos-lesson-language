@@ -70,6 +70,9 @@ import {
   formatPointLabel,
   curveLegendText,
   plotEdgeIndicator,
+  curveSeriesIndices,
+  onCurveInterval,
+  evaluatePlotExpression,
   type PlotRange,
   plotSampleAnimation,
   type PlotSampleAnimation,
@@ -549,6 +552,81 @@ const plotFrames = new WeakMap<HTMLElement, {
 }>();
 const geometryTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
 
+/**
+ * Intervals marked on a plot's axes (decision 0018): a domain along the x-axis, a range along the
+ * y-axis, drawn like the number line's. They sit on the zero axis, or on the frame's bottom or left edge
+ * when 0 is outside the window. A finite end in the window is a filled dot (closed) or a ring (open);
+ * an unbounded end that leaves the window gets an arrowhead at the frame edge; a finite end beyond the
+ * window has no mark. An interval whose bound end does not exist for the current values is not drawn.
+ */
+function drawPlotIntervals(
+  svg: SVGSVGElement,
+  node: Record<string, any>,
+  content: Record<string, any>,
+  frame: { xRange: PlotRange; yRange: PlotRange; mapX: (value: number) => number; mapY: (value: number) => number; left: number; right: number; top: number; bottom: number },
+): void {
+  const { xRange, yRange, mapX, mapY } = frame;
+  for (const interval of Array.isArray(content.intervals) ? content.intervals : []) {
+    if (interval.binding_undefined === true) continue;
+    const horizontal = interval.axis === "x";
+    const range = horizontal ? xRange : yRange;
+    const map = horizontal ? mapX : mapY;
+    const from = interval.from === null ? -Infinity : Number(interval.from);
+    const to = interval.to === null ? Infinity : Number(interval.to);
+    if (Number.isNaN(from) || Number.isNaN(to) || from > to) continue;
+    const low = Math.max(from, range.min), high = Math.min(to, range.max);
+    if (low > high) continue;
+    // Where the bar lies across the axis: on the zero axis, else on the frame edge.
+    const across = horizontal ? (zeroAxisPosition(yRange, mapY) ?? frame.bottom) : (zeroAxisPosition(xRange, mapX) ?? frame.left);
+    const at = (value: number) => horizontal ? { x: map(value), y: across } : { x: across, y: map(value) };
+    const group = document.createElementNS(SVG_NS, "g");
+    group.classList.add("plot-interval");
+    group.dataset.id = text(interval.id);
+    if (low < high) {
+      const a = at(low), b = at(high);
+      appendPlotLine(svg, "plot-interval-bar", a.x, a.y, b.x, b.y);
+      group.append(svg.lastChild!);
+    }
+    for (const [value, unbounded, sign] of [[from, interval.from === null, -1], [to, interval.to === null, 1]] as const) {
+      if (unbounded && (sign < 0 ? range.min > from : range.max < to)) {
+        // An arrowhead at the frame edge, pointing out of the window.
+        const edge = at(sign < 0 ? range.min : range.max);
+        const direction = horizontal ? sign : -sign;
+        const head = document.createElementNS(SVG_NS, "path");
+        head.setAttribute("d", horizontal
+          ? `M${edge.x},${edge.y} l${-direction * 9},-6 m${direction * 9},6 l${-direction * 9},6`
+          : `M${edge.x},${edge.y} l-6,${-direction * 9} m6,${direction * 9} l6,${-direction * 9}`);
+        head.classList.add("plot-interval-bar", "plot-interval-arrow");
+        group.append(head);
+      }
+    }
+    // Closed ends after open ones, so a single value (both ends closed) reads as one filled dot.
+    const ends = ([[from, interval.from_closed !== false], [to, interval.to_closed !== false]] as const)
+      .filter(([value]) => Number.isFinite(value) && value >= range.min && value <= range.max);
+    for (const [value, closed] of [...ends.filter(([, closed]) => !closed), ...ends.filter(([, closed]) => closed)]) {
+      const point = at(value);
+      const dot = document.createElementNS(SVG_NS, "circle");
+      dot.setAttribute("cx", String(point.x));
+      dot.setAttribute("cy", String(point.y));
+      dot.setAttribute("r", "5");
+      dot.classList.add(closed ? "plot-interval-end-closed" : "plot-interval-end-open");
+      group.append(dot);
+    }
+    if (typeof interval.label === "string" && interval.label) {
+      const middle = at((low + high) / 2);
+      const label = document.createElementNS(SVG_NS, "text");
+      label.setAttribute("x", String(horizontal ? middle.x : middle.x + 9));
+      label.setAttribute("y", String(horizontal ? middle.y - 9 : middle.y + 4));
+      label.setAttribute("text-anchor", horizontal ? "middle" : "start");
+      label.classList.add("plot-interval-label");
+      label.textContent = interval.label;
+      group.append(label);
+    }
+    applyEmphasisClass(group, latestEmphasis(node, text(interval.id)));
+    svg.append(group);
+  }
+}
+
 function drawPlot(
   parent: HTMLElement,
   node: Record<string, any>,
@@ -635,6 +713,8 @@ function drawPlot(
   }
 
   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
+    // A guide whose bound value does not exist for the current values (decision 0018) is not drawn.
+    if (guide.binding_undefined === true) continue;
     const value = Number(guide.value);
     if (!Number.isFinite(value)) continue;
     const horizontal = guide.kind === "horizontal_line";
@@ -655,12 +735,20 @@ function drawPlot(
     }
   }
 
+  drawPlotIntervals(svg, node, content, { xRange, yRange, mapX, mapY, left: PLOT_LEFT, right: PLOT_RIGHT, top: PLOT_TOP, bottom: PLOT_BOTTOM });
+
   const curves = Array.isArray(content.curves) ? content.curves : [];
+  const seriesOf = curveSeriesIndices(curves);
   const renderedCurves: Array<{ curve: Record<string, any>; series: number }> = [];
   curves.forEach((curve: Record<string, any>, index: number) => {
     const expression = text(curve.expression);
     if (!expression) return;
     try {
+      // A piece of a piecewise function is sampled only on its interval, ends included (decision 0018).
+      const from = typeof curve.from === "number" ? curve.from : -Infinity;
+      const to = typeof curve.to === "number" ? curve.to : Infinity;
+      const pieceRange = { min: Math.max(from, xRange.min), max: Math.min(to, xRange.max) };
+      if (curve.kind !== "implicit" && pieceRange.max <= pieceRange.min) return;
       const pathData = plotPathData(
         curve.kind === "implicit"
           ? sampleImplicitPlotExpression(expression, xRange, yRange, {
@@ -668,13 +756,14 @@ function drawPlot(
               samples: Number(curve.samples ?? 80),
               variables,
             })
-          : samplePlotExpression(expression, xRange, yRange, Math.min(1001, Math.max(241, width)), variables),
+          : samplePlotExpression(expression, pieceRange, yRange,
+            Math.max(2, Math.round(Math.min(1001, Math.max(241, width)) * (pieceRange.max - pieceRange.min) / (xRange.max - xRange.min))), variables),
         mapX,
         mapY,
       );
       if (!pathData) return;
       const path = document.createElementNS(SVG_NS, "path");
-      const series = Number(curve.plotSeries ?? index) % 6;
+      const series = Number(curve.plotSeries ?? seriesOf[index]) % 6;
       path.setAttribute("d", pathData);
       path.setAttribute("clip-path", `url(#${clipId})`);
       path.classList.add("plot-curve", `plot-series-${series}`);
@@ -694,10 +783,34 @@ function drawPlot(
     }
   });
 
+  // A piece's ends: a filled dot where the piece includes its end, a ring where it does not. Rings go
+  // first, so where one piece's open end meets the next piece's closed end the filled dot shows.
+  const curveEnds: Array<{ x: number; y: number; closed: boolean; series: number; id: string }> = [];
+  curves.forEach((curve: Record<string, any>, index: number) => {
+    if (curve.kind === "implicit") return;
+    for (const end of ["from", "to"] as const) {
+      const x = curve[end];
+      if (typeof x !== "number" || x < xRange.min || x > xRange.max) continue;
+      let y: number;
+      try { y = evaluatePlotExpression(text(curve.expression), x, variables); } catch { continue; }
+      if (!Number.isFinite(y) || y < yRange.min || y > yRange.max) continue;
+      curveEnds.push({ x, y, closed: curve[`${end}_closed`] !== false, series: Number(curve.plotSeries ?? seriesOf[index]) % 6, id: text(curve.id) });
+    }
+  });
+  for (const end of [...curveEnds.filter((item) => !item.closed), ...curveEnds.filter((item) => item.closed)]) {
+    const dot = document.createElementNS(SVG_NS, "circle");
+    dot.setAttribute("cx", String(mapX(end.x)));
+    dot.setAttribute("cy", String(mapY(end.y)));
+    dot.setAttribute("r", "4.5");
+    dot.classList.add(end.closed ? "plot-curve-end" : "plot-hole", `plot-series-${end.series}`);
+    if (end.id) dot.dataset.curve = end.id;
+    svg.append(dot);
+  }
+
   // Removable discontinuities: an open circle where the curve has no value.
   curves.forEach((curve: Record<string, any>, index: number) => {
     if (!Array.isArray(curve.holes)) return;
-    const series = Number(curve.plotSeries ?? index) % 6;
+    const series = Number(curve.plotSeries ?? seriesOf[index]) % 6;
     for (const hole of curve.holes) {
       const hx = Number(hole?.x), hy = Number(hole?.y);
       if (![hx, hy].every(Number.isFinite) || hx < xRange.min || hx > xRange.max || hy < yRange.min || hy > yRange.max) continue;
@@ -710,9 +823,23 @@ function drawPlot(
     }
   });
 
+  // Labels placed so far (estimated boxes; a new frame is not in the document yet, so it cannot be
+  // measured). Marks often coincide (a y-intercept on reference point A, a vertex on a double root), so
+  // each point label takes the first free spot around its point (decision 0018).
+  const placedLabels: Array<{ x: number; y: number; right: number; bottom: number; text: string }> = [];
+  const labelBox = (value: string, x: number, y: number, anchor: string) => {
+    const width = [...value].reduce((sum, char) => sum + (char.codePointAt(0)! > 0x2e80 ? 11 : 6.5), 0);
+    const left = anchor === "end" ? x - width : anchor === "middle" ? x - width / 2 : x;
+    return { x: left, y: y - 11, right: left + width, bottom: y + 2, text: value };
+  };
+  const collides = (box: { x: number; y: number; right: number; bottom: number }) =>
+    placedLabels.some((other) => box.x < other.right && other.x < box.right && box.y < other.bottom && other.y < box.bottom);
+
   let measurementText: (()=>string) | undefined;
   let controlHint: (()=>string) | undefined;
-  if (content.measurement === "secant" && content.points?.length === 2) {
+  // The secant measures the first two points (the samples or slope references); points after them are
+  // marks such as an intercept or a vertex (decision 0018), which must not turn the measurement off.
+  if (content.measurement === "secant" && Array.isArray(content.points) && content.points.length >= 2) {
     const [a,b] = content.points;
     const measurement = secantMeasurement(a,b);
     if (measurement) {
@@ -721,15 +848,61 @@ function drawPlot(
       const dx = appendPlotLine(svg, "plot-guide", mapX(a.x), mapY(a.y), mapX(b.x), mapY(a.y));
       const dy = appendPlotLine(svg, "plot-guide", mapX(b.x), mapY(a.y), mapX(b.x), mapY(b.y));
       dx.setAttribute("clip-path", `url(#${clipId})`); dy.setAttribute("clip-path", `url(#${clipId})`);
+      // The legs are named where there is room (decision 0018: the slope triangle reads as run and rise).
+      const run = Math.abs(mapX(b.x) - mapX(a.x)), rise = Math.abs(mapY(b.y) - mapY(a.y));
+      const legLabel = (value: string, x: number, y: number, anchor: string) => {
+        const label = document.createElementNS(SVG_NS, "text");
+        label.setAttribute("x", String(x)); label.setAttribute("y", String(y)); label.setAttribute("text-anchor", anchor);
+        label.classList.add("plot-leg-label");
+        label.textContent = value;
+        svg.append(label);
+        placedLabels.push(labelBox(value, x, y, anchor));
+      };
+      // Δx sits on the side of its leg away from the triangle; Δy outside the vertical leg. A label whose
+      // spot falls outside the frame (a point off the window, a panned view) is left out, like its clipped leg.
+      const inFrame = (x: number, y: number) => x >= PLOT_LEFT && x <= PLOT_RIGHT && y >= PLOT_TOP + 8 && y <= PLOT_BOTTOM + 2;
+      const runLabel = { x: (mapX(a.x) + mapX(b.x)) / 2, y: mapY(a.y) + (b.y >= a.y ? 14 : -6) };
+      const riseLabel = { x: mapX(b.x) + (b.x >= a.x ? 6 : -6), y: (mapY(a.y) + mapY(b.y)) / 2 + 4 };
+      if (run >= 22 && inFrame(runLabel.x, runLabel.y)) legLabel("Δx", runLabel.x, runLabel.y, "middle");
+      if (rise >= 18 && inFrame(riseLabel.x, riseLabel.y)) legLabel("Δy", riseLabel.x, riseLabel.y, b.x >= a.x ? "start" : "end");
     }
     const display = (n:number) => Number(n.toPrecision(5)).toString();
-    measurementText = ()=>measurement
-      ? ui(parent,"Δx = {dx} · Δy = {dy} · 割线斜率 ≈ {slope}",{dx:display(measurement.dx),dy:display(measurement.dy),slope:display(measurement.slope)})
-      : ui(parent,"两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。");
+    // On a straight line the two points' slope is the line's slope: say "slope", not "secant slope";
+    // "slope" only when every curve both points lie on is straight there (not simply the first curve: a
+    // lesson may draw a tangent line before the parabola it samples, or a line through A and B over a
+    // curve). A whole curve is probed beyond the points as well; a piece only between them.
+    let onCurves = 0, straight = true;
+    for (const curve of measurement && Array.isArray(content.curves) ? content.curves : []) {
+      if (curve.kind === "implicit" || typeof curve.expression !== "string") continue;
+      let counted = false;
+      try {
+        const f = (x: number) => evaluatePlotExpression(curve.expression, x, variables);
+        const near = (x: number, y: number) => Math.abs(f(x) - y) <= 1e-6 * Math.max(1, Math.abs(y));
+        if (!onCurveInterval(curve, a.x) || !onCurveInterval(curve, b.x) || !near(a.x, a.y) || !near(b.x, b.y)) continue;
+        onCurves += 1; counted = true;
+        const span = Math.max(1, Math.abs(a.x), Math.abs(b.x));
+        const piece = typeof curve.from === "number" || typeof curve.to === "number";
+        const xs = piece
+          ? [a.x, a.x + (b.x - a.x) / 4, (a.x + b.x) / 2, a.x + 3 * (b.x - a.x) / 4, b.x]
+          : [a.x - span, a.x, (a.x + b.x) / 2, b.x, b.x + span];
+        const slope = (b.y - a.y) / (b.x - a.x);
+        if (!xs.every((x) => { const y = f(x); return Number.isFinite(y) && Math.abs(y - (a.y + slope * (x - a.x))) <= 1e-9 * Math.max(1, Math.abs(y)); })) straight = false;
+      } catch { if (counted) straight = false; }
+    }
+    straight = straight && onCurves > 0;
+    measurementText = ()=>{
+      if (!measurement) return ui(parent,"两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。");
+      const values = {dx:display(measurement.dx),dy:display(measurement.dy),slope:display(measurement.slope)};
+      // "=" when the shown digits are the slope (up to rounding noise: 0.3 from 0.6 - 0.3), else "≈".
+      const exact = Math.abs(Number(values.slope) - measurement.slope) <= 1e-12 * Math.max(1, Math.abs(measurement.slope));
+      return straight
+        ? ui(parent, exact ? "Δx = {dx} · Δy = {dy} · 斜率 = {slope}" : "Δx = {dx} · Δy = {dy} · 斜率 ≈ {slope}", values)
+        : ui(parent,"Δx = {dx} · Δy = {dy} · 割线斜率 ≈ {slope}", values);
+    };
     if (typeof content.hint === "string" && content.hint.trim()) {
       controlHint = ()=>content.hint.trim();
     } else {
-      const pointNames = content.points.map((p: any) => text(p.label)).filter(Boolean);
+      const pointNames = content.points.slice(0, 2).map((p: any) => text(p.label)).filter(Boolean);
       const pointsRef = ()=>pointNames.length === 2 ? ui(parent,"{first}、{second}",{first:pointNames[0],second:pointNames[1]}) : ui(parent,"两点");
       controlHint = ()=>ui(parent,content.sample_input === "fixed_x"
         ? "{points}的横坐标固定；曲线参数变化时同步观察两点与割线。"
@@ -796,15 +969,29 @@ function drawPlot(
     svg.append(dot);
     if (point.label) {
       const formattedLabel = formatPointLabel(text(point.label), pointX, pointY);
-      const pointLabel = document.createElementNS(SVG_NS, "text");
       const isNearRight = x > PLOT_RIGHT - 44;
       const isNearTop = y < PLOT_TOP + 18;
-      pointLabel.setAttribute("x", String(isNearRight ? x - 8 : x + 8));
-      pointLabel.setAttribute("y", String(isNearTop ? y + 16 : y - 8));
-      if (isNearRight) pointLabel.setAttribute("text-anchor", "end");
-      pointLabel.classList.add("plot-label");
-      pointLabel.textContent = formattedLabel;
-      svg.append(pointLabel);
+      // The usual spot first (above right, or flipped near an edge), then the other three corners.
+      const spots = [
+        { x: isNearRight ? x - 8 : x + 8, y: isNearTop ? y + 16 : y - 8, anchor: isNearRight ? "end" : "start" },
+        { x: isNearRight ? x - 8 : x + 8, y: isNearTop ? y - 8 : y + 16, anchor: isNearRight ? "end" : "start" },
+        { x: isNearRight ? x + 8 : x - 8, y: isNearTop ? y + 16 : y - 8, anchor: isNearRight ? "start" : "end" },
+        { x: isNearRight ? x + 8 : x - 8, y: isNearTop ? y - 8 : y + 16, anchor: isNearRight ? "start" : "end" },
+      ];
+      const usual = labelBox(formattedLabel, spots[0]!.x, spots[0]!.y, spots[0]!.anchor);
+      // Two marks with the same name at the same spot (a double root's two x-intercepts) read as one label.
+      const duplicate = placedLabels.some((other) => other.text === formattedLabel && Math.abs(other.x - usual.x) < 1 && Math.abs(other.y - usual.y) < 1);
+      if (!duplicate) {
+        const spot = spots.find((candidate) => !collides(labelBox(formattedLabel, candidate.x, candidate.y, candidate.anchor))) ?? spots[0]!;
+        const pointLabel = document.createElementNS(SVG_NS, "text");
+        pointLabel.setAttribute("x", String(spot.x));
+        pointLabel.setAttribute("y", String(spot.y));
+        if (spot.anchor !== "start") pointLabel.setAttribute("text-anchor", spot.anchor);
+        pointLabel.classList.add("plot-label");
+        pointLabel.textContent = formattedLabel;
+        svg.append(pointLabel);
+        placedLabels.push(labelBox(formattedLabel, spot.x, spot.y, spot.anchor));
+      }
     }
   }
   // Explorer redraws keep the previous SVG mounted; a new frame replaces it.

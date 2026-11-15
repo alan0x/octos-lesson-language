@@ -4,6 +4,12 @@
 
 ### Added
 
+- Function plot parts for decision 0018 (player 0.11.0):
+  - **Pieces of a piecewise function** (`plot:curve-intervals`): a `y = f(x)` curve may set `from` and `to` (either side may be left unbounded) and `from_closed` / `to_closed`. It is drawn only on its interval, with a filled dot at a closed end and a ring at an open one; where they meet the filled dot is on top, and an end with no finite value gets no dot. Pieces of one function share a `series` name, so they share one colour, dash and legend entry, and are shown or hidden together in the explorer. Pieces of one function may meet only at an end that at most one of them includes; overlapping pieces are refused.
+  - **Intervals on the axes** (`plot:axis-intervals`): `intervals` with `axis: "x" | "y"`, `from` and `to` (finite or null), and closed or open ends, to mark a domain or a range. They are drawn like the number line's intervals, on the zero axis or on the frame edge when 0 is outside the window, with arrowheads for unbounded ends. Their ends can be bound to variables.
+  - **Hidden while undefined:** `hide_when_undefined` now also applies to plot guide values (`plot:guide-hide-undefined`, for example the symmetry axis of a parabola that flattens) and interval ends. A binding with the option may also start undefined, for example the x-intercepts of a parabola that starts above the axis.
+  - **Slope triangle:** the legs of a secant measurement are named Δx and Δy. When every curve the two points lie on is a straight line, the readout says "斜率" (slope) rather than "割线斜率" (secant slope). The measurement uses the first two points, so marks added after them leave it in place (`plot:secant-first-two`, since an older player drew no triangle with more than two points), and point labels that would collide take another spot around their point.
+  - Browser check: `npm run check:plot-browser`.
 - Several jumps on one number line (decision 0017; `plugin:math/number-line-jump-lanes@1`, math plugin 0.3.0):
   - A jump whose span overlaps an earlier jump's (up 4 then down 6; up 6, down 4, up 3) is drawn on a raised lane, with dashed leaders down to its start and its end and the arrow on the end's leader, so no arc crosses another and each label stays over its own arc. Chained jumps in one direction only touch at their ends and stay on the line.
   - A raised jump is one arc even with `hops: true`; hops stay on the line's own lane.

@@ -763,14 +763,17 @@ test("every declared geometry and plot binding capability validates and executes
     { target: "theta.end_angle", expression: "theta" },
   ];
   plot.content.guides = [{ as: "current-guide", axis: "x", value: 0, label: "当前角度" }];
+  plot.content.intervals = [{ as: "current-range", axis: "y", from: 0, to: 1 }];
   plot.content.bindings = [
     { target: "current-angle.x", expression: "theta" },
     { target: "current-angle.y", expression: "theta" },
     { target: "current-guide.value", expression: "theta" },
+    { target: "current-range.from", expression: "theta - 1" },
+    { target: "current-range.to", expression: "theta" },
   ];
 
   assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.geometry), ["points", "circles", "regular_polygons", "arcs"]);
-  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.plot), ["points", "guides"]);
+  assert.deepEqual(Object.keys(OLL_BINDING_CAPABILITIES.plot), ["points", "guides", "intervals"]);
   validateAuthoringLesson(interactive);
 
   const host = lessons.find(({ entry }) => entry.name === "unit-circle-sine")!.entry;
@@ -789,6 +792,8 @@ test("every declared geometry and plot binding capability validates and executes
   assert.equal(byId(plotNode.content, "points", "current-angle").x, 1);
   assert.equal(byId(plotNode.content, "points", "current-angle").y, 1);
   assert.equal(byId(plotNode.content, "guides", "current-guide").value, 1);
+  assert.equal(byId(plotNode.content, "intervals", "current-range").from, 0);
+  assert.equal(byId(plotNode.content, "intervals", "current-range").to, 1);
 });
 
 test("student tasks use declared variables and safe expression targets", () => {
@@ -1160,6 +1165,86 @@ test("plot view fields: adaptive layout, sample following, π ticks and holes ar
     change(content);
     assert.throws(() => validateAuthoringLesson(lesson(content)),
       (error) => error instanceof OllError && error.code === "OLL_INVALID_OPERATION_PAYLOAD", name);
+  }
+});
+
+test("decision 0018: pieces of a function, intervals on the axes and hidden guides are validated and need player 0.11.0", () => {
+  const lesson = (content: Record<string, unknown>, variables?: AuthoringLesson["lesson"]["variables"]): AuthoringLesson => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode: "explain", language: "zh-CN", title: "函数图像", goals: ["观察图像"], ...(variables ? { variables } : {}) },
+    steps: [{ key: "show", purpose: "显示图像", beats: [{ key: "draw", say: "这是图像。", actions: [{
+      do: "write", as: "graph", kind: "plot", role: "diagram", content, place: { relation: "new_region" },
+    }] }] }],
+    close: { summary: "看过图像。", focus: ["graph"] },
+  });
+  const host = { lessonId: "pieces", boardId: "board", baseRevision: 0, regionIntent: "new_topic" } as const;
+  const requirements = (content: Record<string, unknown>, variables?: AuthoringLesson["lesson"]["variables"]) =>
+    deriveExecutionRequirements(normalizeAuthoringLesson(lesson(content, variables), host));
+  const axes = { x: { min: -4, max: 4 }, y: { min: -3, max: 4 } };
+  const pieces = { axes, curves: [
+    { as: "left", expression: "x + 1", to: 0, to_closed: false, series: "f" },
+    { as: "right", expression: "2", from: 0, from_closed: true, series: "f" },
+  ] };
+  const piecesNeed = requirements(pieces);
+  assert.ok(piecesNeed.requiredCapabilities.includes("plot:curve-intervals"));
+  assert.equal(piecesNeed.minimumPlayerVersion, "0.11.0", "an older player would draw each piece as the whole curve");
+  const domain = { axes, curves: [{ as: "f", expression: "sqrt(x)" }], intervals: [
+    { as: "dom", axis: "x", from: 0, to: null, from_closed: true, label: "定义域" },
+    { as: "point", axis: "y", from: 1, to: 1 },
+  ] };
+  assert.ok(requirements(domain).requiredCapabilities.includes("plot:axis-intervals"));
+  // A range that flips with the sign of a: each bar's end exists only for one sign, the other is hidden.
+  const a = [{ as: "a", initial: 1, min: -2, max: 2, label: "a" }];
+  const flip = { axes, curves: [{ as: "f", expression: "a*(x-1)^2+1" }],
+    intervals: [{ as: "up", axis: "y", from: 1, to: null }, { as: "down", axis: "y", from: null, to: 1 }],
+    bindings: [{ target: "up.from", expression: "1 + 0*log(a)", hide_when_undefined: true }, { target: "down.to", expression: "1 + 0*log(-a)", hide_when_undefined: true }] };
+  validateAuthoringLesson(lesson(flip, a));
+  const events = normalizeAuthoringLesson(lesson(flip, a), host);
+  const node = Object.values(reduceCanonicalEvents(events).nodes)[0]!;
+  const down = evaluateContentBindings(node.content as Record<string, any>, { a: -1 });
+  assert.deepEqual(down.intervals.map((interval: Record<string, unknown>) => interval.binding_undefined ?? false), [true, false]);
+  // A guide hidden when undefined (the symmetry axis of a flattened parabola) is a new player feature.
+  const axis = { axes, curves: [{ as: "f", expression: "a*x^2+2*x" }], guides: [{ as: "sym", kind: "vertical_line", value: -1 }],
+    bindings: [{ target: "sym.value", expression: "-1/a", hide_when_undefined: true }] };
+  const axisNeed = requirements(axis, a);
+  assert.ok(axisNeed.requiredCapabilities.includes("plot:guide-hide-undefined"));
+  const flattened = evaluateContentBindings(Object.values(reduceCanonicalEvents(normalizeAuthoringLesson(lesson(axis, a), host)).nodes)[0]!.content as Record<string, any>, { a: 0 });
+  assert.equal(flattened.guides[0].binding_undefined, true);
+  // A point hidden when undefined may start hidden: the parabola starts above the x-axis.
+  const k = [{ as: "k", initial: 2, min: -3, max: 3, label: "k" }];
+  const roots = { axes, curves: [{ as: "f", expression: "x^2+k" }], points: [{ as: "root", x: 0, y: 0 }], bindings: [{ target: "root.x", expression: "sqrt(-k)", hide_when_undefined: true }] };
+  validateAuthoringLesson(lesson(roots, k));
+  const unflagged = structuredClone(roots);
+  delete (unflagged.bindings[0] as Record<string, unknown>).hide_when_undefined;
+  assert.throws(() => validateAuthoringLesson(lesson(unflagged, k)), (error) => error instanceof OllError && error.code === "OLL_INVALID_BINDING", "without the option the start must be defined");
+  // Pieces that meet where one end is open are one function: a jump at 1, and a hole between open ends.
+  validateAuthoringLesson(lesson({ axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }));
+  validateAuthoringLesson(lesson({ axes, curves: [{ as: "l", expression: "x", to: 1, to_closed: false, series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }));
+  // A secant over the first two of more points (an intercept mark after A and B) needs the new player:
+  // an older one drew no triangle unless there were exactly two points.
+  const secant = { axes, curves: [{ as: "f", expression: "2*x-1" }], measurement: "secant",
+    points: [{ as: "a", x: 0, y: -1 }, { as: "b", x: 1, y: 1 }, { as: "yi", x: 0, y: -1 }] };
+  assert.ok(requirements(secant).requiredCapabilities.includes("plot:secant-first-two"));
+  assert.ok(!requirements({ ...secant, points: secant.points.slice(0, 2) }).requiredCapabilities.includes("plot:secant-first-two"));
+  // Lessons without the new fields keep their requirements.
+  assert.equal(requirements({ axes, curves: [{ as: "f", expression: "x^2" }] }).minimumPlayerVersion, "0.1.0");
+  const invalid: Array<[string, Record<string, unknown>, string]> = [
+    ["reversed piece", { axes, curves: [{ as: "f", expression: "x", from: 2, to: 1 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["closed flag on an unbounded side", { axes, curves: [{ as: "f", expression: "x", to: 1, from_closed: true }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["implicit piece", { axes, curves: [{ as: "f", kind: "implicit", expression: "x^2+y^2", level: 1, from: 0 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["pieces overlapping", { axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 0, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["pieces both closed where they meet", { axes, curves: [{ as: "l", expression: "x", to: 1, series: "f" }, { as: "r", expression: "2", from: 1, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["two unbounded pieces", { axes, curves: [{ as: "l", expression: "x", series: "f" }, { as: "r", expression: "2", from: 1, from_closed: false, series: "f" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["bad series name", { axes, curves: [{ as: "f", expression: "x", series: "Piece 1" }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["interval off the axes", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "z", from: 0, to: 1 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["interval without to", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "x", from: 0 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["reversed interval", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "x", from: 2, to: 1 }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["open single value", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "y", from: 1, to: 1, to_closed: false }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["closed flag on an unbounded end", { axes, curves: [{ as: "f", expression: "x" }], intervals: [{ as: "i", axis: "x", from: null, to: 1, from_closed: true }] }, "OLL_INVALID_OPERATION_PAYLOAD"],
+    ["hide_when_undefined set to false", { axes, curves: [{ as: "f", expression: "x" }], guides: [{ as: "g", kind: "vertical_line", value: 1 }], bindings: [{ target: "g.value", expression: "1", hide_when_undefined: false }] }, "OLL_INVALID_BINDING"],
+  ];
+  for (const [name, content, code] of invalid) {
+    assert.throws(() => validateAuthoringLesson(lesson(content)), (error) => error instanceof OllError && error.code === code, name);
   }
 });
 

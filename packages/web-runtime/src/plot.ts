@@ -258,6 +258,24 @@ export function plotPathData(
 }
 
 
+/**
+ * The style series of each curve: curves sharing a `series` name (the pieces of one piecewise function)
+ * share one colour, dash and legend entry; every other curve is its own series, in order.
+ */
+export function curveSeriesIndices(curves: readonly { series?: unknown }[]): number[] {
+  const groups = new Map<string, number>();
+  return curves.map((curve, index) => {
+    const key = typeof curve.series === "string" ? `series:${curve.series}` : `curve:${index}`;
+    if (!groups.has(key)) groups.set(key, groups.size);
+    return groups.get(key)!;
+  });
+}
+
+/** Whether x lies on a curve's interval (a piece of a piecewise function); curves without one cover every x. */
+export function onCurveInterval(curve: { from?: unknown; to?: unknown }, x: number): boolean {
+  return !(typeof curve.from === "number" && x < curve.from) && !(typeof curve.to === "number" && x > curve.to);
+}
+
 /** A frame edge is not a zero axis when the origin is outside the window. */
 export function zeroAxisPosition(range: PlotRange, map: (value: number) => number): number | undefined {
   return range.min <= 0 && range.max >= 0 ? map(0) : undefined;

@@ -35,7 +35,8 @@
     "teaching:observe:calibration": "npm run teaching:observe -- --lesson geometry-v1 --expect fail --screenshots none --output evals/teaching-playback/geometry-v1-negative-control/report.json",
     "teaching:observe:quadratic-probe": "npm run teaching:observe -- --lesson quadratic-v1 --expect fail --screenshots none --output evals/teaching-playback/quadratic-probe/report.json",
     "teaching:observe:number-line": "npm run teaching:observe -- --lesson number-line --output evals/teaching-playback/number-line-v2/report.json",
-    "check:number-line-browser": "npm run build && node scripts/check-number-line-browser.mjs"
+    "check:number-line-browser": "npm run build && node scripts/check-number-line-browser.mjs",
+    "check:plot-browser": "npm run build && node scripts/check-plot-browser.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
