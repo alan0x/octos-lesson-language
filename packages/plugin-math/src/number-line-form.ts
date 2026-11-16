@@ -60,19 +60,23 @@ export function numberLineFormProblem(form: NumberLineFormInput): NumberLineForm
     if (move.slider && index !== moves.length - 1) return { code: "slider_not_last", move: number };
     const by = asNumber(move.by);
     if (by === undefined || by === 0) return { code: "move_value", move: number };
-    if (at + by < min || at + by > max) return { code: "move_outside", move: number };
+    // The builder's validator allows 1e-9 at the ends; so does the form (0.1 + 2.7 + 0.2 ends at 3).
+    if (at + by < min - 1e-9 || at + by > max + 1e-9) return { code: "move_outside", move: number };
     changes.push(by);
     // A slider lets the move reach either end of the line from where it starts; hop by hop, that must stay
     // within the hop limit, and every value it reaches is whole parts only if it starts on a tick.
     const longest = move.slider ? Math.max(at - min, max - at) : Math.abs(by);
     if (move.hops && (!whole(by) || (move.slider && !whole(at)) || Math.ceil(longest / unit - 1e-9) > NUMBER_LINE_LIMITS.hops)) return { code: "hops", move: number };
-    at += by;
+    at = Number((at + by).toPrecision(12));
   }
   // A move that turns back is drawn raised as one arc, never hop by hop (OLL #61), and a slider can turn
   // either way: hops only when every move goes the same way and none has a slider beside another move.
   const oneWay = changes.every((change) => change > 0) || changes.every((change) => change < 0);
   if (moves.some((move) => move.hops) && moves.length > 1 && (!oneWay || moves.some((move) => move.slider))) {
-    return { code: "hops_turn_back", move: moves.findIndex((move) => move.hops) + 1 };
+    // Name the move that turns back (or the slider), the one the person must change.
+    const turning = changes.findIndex((change) => Math.sign(change) !== Math.sign(changes[0]!));
+    const slider = moves.findIndex((move) => move.slider);
+    return { code: "hops_turn_back", move: (turning >= 0 ? turning : slider) + 1 };
   }
   return undefined;
 }

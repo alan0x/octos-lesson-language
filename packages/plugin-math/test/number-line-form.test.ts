@@ -41,8 +41,12 @@ test("only the last move takes a slider, and hops only when every move goes one 
   assert.deepEqual(numberLineFormProblem({ range: [-10, 10], subdivisions: 1, start: "0", moves: [{ by: "2", slider: true }, { by: "3" }] }), { code: "slider_not_last", move: 1 });
   assert.equal(code({ range: [-10, 10], subdivisions: 1, start: "0", moves: [{ by: "2" }, { by: "3", slider: true }] }), undefined);
   // Up then down: the move that turns back is drawn raised, never hop by hop.
-  assert.deepEqual(numberLineFormProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: true }, { by: "-6" }] }), { code: "hops_turn_back", move: 1 });
+  assert.deepEqual(numberLineFormProblem({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4", hops: true }, { by: "-6" }] }), { code: "hops_turn_back", move: 2 });
   assert.equal(code({ range: [-10, 10], subdivisions: 1, start: "5", moves: [{ by: "4" }, { by: "-6" }] }), undefined);
   // A slider can turn either way.
   assert.equal(code({ range: [-10, 10], subdivisions: 1, start: "0", moves: [{ by: "2", hops: true }, { by: "3", slider: true }] }), "hops_turn_back");
+});
+
+test("landings add up without floating error at the ends of the line (review of #68)", () => {
+  assert.equal(code({ range: [0, 3], subdivisions: 10, start: "0.1", moves: [{ by: "2.7" }, { by: "0.2" }] }), undefined);
 });

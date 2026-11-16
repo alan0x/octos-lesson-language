@@ -4,6 +4,8 @@
 
 ### Added
 
+- **Number-line form checks in plugin-math** (decision 0017, Studio section): `numberLineFormProblem` checks a form's range, ticks, start and up to three moves (each from where the one before lands; only the last may have a slider; hops only when every move goes one way) and returns a code and the move it concerns, for the form to word in its own language. `numberLineFormValue` and `NUMBER_LINE_FORM_LIMITS` come with it.
+
 - Function plot parts for decision 0018 (player 0.11.0):
   - **Pieces of a piecewise function** (`plot:curve-intervals`): a `y = f(x)` curve may set `from` and `to` (either side may be left unbounded) and `from_closed` / `to_closed`. It is drawn only on its interval, with a filled dot at a closed end and a ring at an open one; where they meet the filled dot is on top, and an end with no finite value gets no dot. Pieces of one function share a `series` name, so they share one colour, dash and legend entry, and are shown or hidden together in the explorer. Pieces of one function may meet only at an end that at most one of them includes; overlapping pieces are refused.
   - **Intervals on the axes** (`plot:axis-intervals`): `intervals` with `axis: "x" | "y"`, `from` and `to` (finite or null), and closed or open ends, to mark a domain or a range. They are drawn like the number line's intervals, on the zero axis or on the frame edge when 0 is outside the window, with arrowheads for unbounded ends. Their ends can be bound to variables.
