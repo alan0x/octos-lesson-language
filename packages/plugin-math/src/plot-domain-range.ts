@@ -201,6 +201,9 @@ export function formulaBars(tokens: PlotFormula, want: { domain: boolean; range:
       bars.push(all("x"));
     }
     else if (shape.family === "reciprocal") {
+      // Where x's coefficient reaches 0 the curve is a constant, defined everywhere: bars that leave out
+      // x = −q/p would contradict it (Coach's paired check of 2026-11-16, a/(px + q) with p on a slider).
+      if (pSign === 0 || !proved(shape.p.text)) refuse("domain", "leaves out a point that disappears where x's coefficient is 0");
       bars.push({ axis: "x", from: null, to: edge, from_closed: false, to_closed: false }, { axis: "x", from: edge, to: null, from_closed: false, to_closed: false });
     } else {
       if (pSign === undefined) refuse("domain", "needs x with a fixed coefficient inside the root or logarithm");

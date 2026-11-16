@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- **A reciprocal's domain bars where x's coefficient can reach 0** (`formulaBars`): a/(px + q) with p on a slider drew bars leaving out x = −q/p even at p = 0, where the curve is a constant defined everywhere. The domain is now refused there, as the range already was. Found by Coach's paired check of 2026-11-16 (plot judge: "the function is defined at x = 4.8, outside the domain bars").
+
 ### Added
 
 - **Number-line form checks in plugin-math** (decision 0017, Studio section): `numberLineFormProblem` checks a form's range, ticks, start and up to three moves (each from where the one before lands; only the last may have a slider; hops only when every move goes one way) and returns a code and the move it concerns, for the form to word in its own language. `numberLineFormValue` and `NUMBER_LINE_FORM_LIMITS` come with it.

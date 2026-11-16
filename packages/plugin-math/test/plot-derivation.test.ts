@@ -80,3 +80,12 @@ test("the shared API refuses or keeps working where outside callers could break 
   // A power of constants is a constant, so (2^0 − 1)x² + x is a line: no vertex.
   assert.throws(() => markParts(plotFormulaTokens("(2^0-1)*x^2+x"), ["vertex"], labels, { variables: [], samples: [{}] }, "$plot"), /needs a quadratic/u);
 });
+
+test("a reciprocal's domain is refused where x's coefficient can reach 0, and kept where it cannot", () => {
+  const bounds = { p: [-1, 2] as const, q: [-5, 5] as const, a: [1, 3] as const };
+  const sign = (text: string) => signOf(intervalOf(text, bounds));
+  assert.throws(() => formulaBars(plotFormulaTokens("a/(p*x+q)", ["a", "p", "q"]), { domain: true, range: false }, { sign }, "$plot"),
+    (error) => error instanceof PlotDerivationRefusal && /coefficient is 0/u.test(error.message));
+  const fixed = formulaBars(plotFormulaTokens("2/(x+1)"), { domain: true, range: false }, { sign }, "$plot");
+  assert.equal(fixed.length, 2);
+});
