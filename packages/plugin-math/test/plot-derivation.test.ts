@@ -62,3 +62,21 @@ test("signs are proved over the variables' ranges", () => {
   assert.equal(signOf(intervalOf("n1^2+1", { n1: [-3, 3] })), "positive");
   assert.equal(signOf(intervalOf("n1^2-1", { n1: [-3, 3] })), "unknown");
 });
+
+test("the shared API refuses or keeps working where outside callers could break it (review of #69)", () => {
+  // A Studio slider keeps its spelling, and its sign is still proved.
+  const tokens = plotFormulaTokens("A*x^2+1", ["A"]);
+  assert.deepEqual(tokens.filter((token) => token.kind === "variable"), [{ kind: "variable", name: "A" }]);
+  assert.equal(markParts(tokens, ["vertex"], labels, { variables: ["A"], samples: [{ A: 1 }] }, "$plot").length, 1);
+  // Names that would read as something else, and numbers that are not finite, are refused when parsing.
+  assert.throws(() => plotFormulaTokens("sqrt*x", ["sqrt"]), /cannot name a variable/u);
+  assert.throws(() => plotFormulaTokens("1e400*x+1"), /invalid number/u);
+  // Only the marks derived here are drawn; none asked is none drawn.
+  assert.deepEqual(markParts(plotFormulaTokens("x^2-1"), ["domain", "range", "slope_triangle"], labels, { variables: [], samples: [{}] }, "$plot"), []);
+  // Malformed tokens and a formula too long to compile once bracketed are refusals with a path, not crashes.
+  assert.throws(() => formulaBars([{ kind: "negate" }], { domain: true, range: false }, { sign: () => "unknown" }, "$plot"), PlotDerivationRefusal);
+  const long = plotFormulaTokens(`x^2+2*x+1+${Array.from({ length: 20 }, (_, i) => `a*${i + 1}`).join("+")}`, ["a"]);
+  assert.throws(() => markParts(long, ["vertex"], labels, { variables: ["a"], samples: [{ a: 1 }] }, "$plot"), PlotDerivationRefusal);
+  // A power of constants is a constant, so (2^0 − 1)x² + x is a line: no vertex.
+  assert.throws(() => markParts(plotFormulaTokens("(2^0-1)*x^2+x"), ["vertex"], labels, { variables: [], samples: [{}] }, "$plot"), /needs a quadratic/u);
+});

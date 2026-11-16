@@ -8,7 +8,7 @@
 // that mark out and draws the rest (0018 as amended after the trial: refusing the section cost a whole
 // call, and the model asked again for marks it cannot have).
 import { compileMathExpression } from "../../core/src/math-expression.js";
-import { PlotDerivationRefusal, plotFormulaText, type PlotFormula } from "./plot-tokens.js";
+import { PlotDerivationRefusal, checkPlotFormula, plotFormulaText, type PlotFormula } from "./plot-tokens.js";
 
 /** The marks a function plot can draw (OLL decision 0018 §1). */
 export const PLOT_MARKS = ["intercepts", "vertex", "symmetry_axis", "slope_triangle", "domain", "range"] as const;
@@ -88,7 +88,12 @@ export function polynomialOf(tokens: PlotFormula, maxDegree = 2): Polynomial | u
         // A power: of x only by a whole constant (x^2); of the numbers alone, any power.
         const exponent = coefficient(right, 0);
         if (degree(right) > 0) return undefined;
-        if (degree(left) === 0) result = [{ text: `${wrap(coefficient(left, 0))}^${wrap(exponent)}` }];
+        if (degree(left) === 0) {
+          const base = coefficient(left, 0);
+          // A power of two constants is a constant (2^0 is 1), so a zero coefficient is still seen as zero.
+          result = base.value !== undefined && exponent.value !== undefined && Number.isFinite(base.value ** exponent.value)
+            ? [constant(base.value ** exponent.value)] : [{ text: `${wrap(base)}^${wrap(exponent)}` }];
+        }
         else if (exponent.value === 0) result = [constant(1)];
         else if (exponent.value === 1) result = left;
         else if (exponent.value !== undefined && Number.isInteger(exponent.value) && exponent.value >= 2 && exponent.value <= maxDegree) {
@@ -128,7 +133,11 @@ export interface MarkPart {
  * The parts the named marks draw for a formula, or a section-owned fault naming the mark it cannot give.
  * `check` holds the variables the formula reads and values to cross-check the coefficients at.
  */
-export function markParts(tokens: PlotFormula, marks: readonly PlotMark[], labels: (source: string) => string, check: { variables: string[]; samples: Array<Record<string, number>> }, path: string): MarkPart[] {
+export function markParts(tokens: PlotFormula, requested: readonly PlotMark[], labels: (source: string) => string, check: { variables: string[]; samples: Array<Record<string, number>> }, path: string): MarkPart[] {
+  // Only the marks derived here (the slope triangle is placed by points; domain and range are bars).
+  const marks = requested.filter((mark) => mark === "intercepts" || mark === "vertex" || mark === "symmetry_axis");
+  if (!marks.length) return [];
+  checkPlotFormula(tokens, `${path}.marks`);
   const polynomial = polynomialOf(tokens);
   const refuse = (mark: string, why: string): never => {
     throw new PlotDerivationRefusal(`${path}.marks`, `the ${mark} mark ${why}; leave it out of marks and do not narrate it`);
@@ -175,9 +184,17 @@ const polynomialText = ([c, b, a]: Scalar[]) => `${wrap(a!)}*x^2+${wrap(b!)}*x+$
 /** The coefficients must give back the formula at sampled values: a guard on the algebra above. */
 function crossCheck(tokens: PlotFormula, [c, b, a]: Scalar[], { variables, samples }: { variables: string[]; samples: Array<Record<string, number>> }, path: string): void {
   const names = ["x", ...variables];
-  const formula = compileMathExpression(plotFormulaText(tokens), names);
-  const polynomial = compileMathExpression(polynomialText([c!, b!, a!]), names);
-  for (const values of samples) for (const x of [-2.5, -1, 0, 0.5, 3]) {
+  let formula: ReturnType<typeof compileMathExpression>, polynomial: ReturnType<typeof compileMathExpression>;
+  try {
+    formula = compileMathExpression(plotFormulaText(tokens), names);
+    polynomial = compileMathExpression(polynomialText([c!, b!, a!]), names);
+  } catch {
+    // A formula whose bracketed text OLL cannot compile (over 256 characters): refused, never thrown raw.
+    throw new PlotDerivationRefusal(`${path}.marks`, "the marks could not be derived for this formula; leave marks out");
+  }
+  // OLL's compiler reads variables without case, by their lowercase names.
+  const lowered = samples.map((values) => Object.fromEntries(Object.entries(values).map(([name, value]) => [name.toLowerCase(), value])));
+  for (const values of lowered) for (const x of [-2.5, -1, 0, 0.5, 3]) {
     const expected = formula({ ...values, x }), actual = polynomial({ ...values, x });
     if (!Number.isFinite(expected) && !Number.isFinite(actual)) continue;
     if (!(Math.abs(expected - actual) <= 1e-6 * Math.max(1, Math.abs(expected)))) {

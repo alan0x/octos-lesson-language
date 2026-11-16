@@ -26,7 +26,7 @@
 // min to max), never read from sampled states: samples miss a sign change between them (review). One bar
 // is written only for a proved sign; otherwise the guarded pair, or the refusal.
 import { polynomialOf } from "./plot-marks.js";
-import { PlotDerivationRefusal, type PlotFormula } from "./plot-tokens.js";
+import { PlotDerivationRefusal, checkPlotFormula, type PlotFormula } from "./plot-tokens.js";
 
 export interface AxisBar {
   axis: "x" | "y";
@@ -135,6 +135,7 @@ export interface SignCheck {
  * The bars for `domain` and/or `range` of one formula, or a section-owned fault naming what it cannot give.
  */
 export function formulaBars(tokens: PlotFormula, want: { domain: boolean; range: boolean }, check: SignCheck, path: string): AxisBar[] {
+  checkPlotFormula(tokens, `${path}.marks`);
   const refuse = (what: string, why: string): never => {
     throw new PlotDerivationRefusal(`${path}.marks`, `the ${what} mark ${why}; leave it out of marks and do not narrate it`);
   };
@@ -242,6 +243,7 @@ function guarded(bars: AxisBar[], first: string, refuse: (what: string, why: str
  * constants only: each piece's values on its interval, joined), all fixed numbers.
  */
 export function pieceBars(pieces: ReadonlyArray<{ tokens: PlotFormula; from: number | null; to: number | null; from_closed: boolean; to_closed: boolean }>, want: { domain: boolean; range: boolean }, path: string): AxisBar[] {
+  for (const piece of pieces) checkPlotFormula(piece.tokens, `${path}.marks`);
   type Span = { from: number | null; to: number | null; from_closed: boolean; to_closed: boolean };
   const bars: AxisBar[] = [];
   // A piece's interval is its domain only where its formula is defined throughout: a constant, line or

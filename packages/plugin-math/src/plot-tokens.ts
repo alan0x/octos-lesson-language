@@ -60,7 +60,16 @@ export function plotFormulaText(tokens: PlotFormula): string {
  * compiler: + and − lowest, then * and /, then a unary sign, then ^ (right of it, a signed power).
  */
 export function plotFormulaTokens(expression: string, variables: Iterable<string> = []): PlotFormula {
-  const known = new Set([...variables].map((name) => name.toLowerCase()));
+  // Variables keep the caller's spelling (a Studio slider "A"), matched without case as OLL's compiler does.
+  // A variable may not be named like x, a constant or a function: derived texts would read it as that.
+  const known = new Map<string, string>();
+  for (const name of variables) {
+    const lower = name.toLowerCase();
+    if (!/^[a-z][a-z0-9_]*$/u.test(lower) || lower === "x" || lower === "pi" || lower === "e" || FUNCTION_NAMES.has(lower)) {
+      throw new Error(`'${name}' cannot name a variable in a plot formula`);
+    }
+    known.set(lower, name);
+  }
   const text = expression.trim().replaceAll("π", "pi").replaceAll("−", "-").replaceAll("×", "*").replaceAll("÷", "/");
   if (!text || text.length > 256) throw new Error("expected a formula of 1 to 256 characters");
   const lexemes = text.match(/(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|[a-z][a-z0-9_]*|[-+*/^()]|\S/giu) ?? [];
@@ -92,13 +101,18 @@ export function plotFormulaTokens(expression: string, variables: Iterable<string
   const primary = (): void => {
     const lexeme = take();
     if (lexeme === undefined) throw new Error("formula ended before a value");
-    if (/^(?:\d|\.\d)/u.test(lexeme)) { out.push({ kind: "literal", value: Number(lexeme) }); return; }
+    if (/^(?:\d|\.\d)/u.test(lexeme)) {
+      const value = Number(lexeme);
+      if (!Number.isFinite(value)) throw new Error(`invalid number '${lexeme}'`);
+      out.push({ kind: "literal", value });
+      return;
+    }
     if (lexeme === "(") { sum(); take(")"); return; }
     const name = lexeme.toLowerCase();
     if (!/^[a-z]/u.test(name)) throw new Error(`unexpected '${lexeme}'`);
     if (name === "x") { out.push({ kind: "input" }); return; }
     if (name === "pi" || name === "e") { out.push({ kind: "constant", name }); return; }
-    if (known.has(name)) { out.push({ kind: "variable", name }); return; }
+    if (known.has(name)) { out.push({ kind: "variable", name: known.get(name)! }); return; }
     if (!FUNCTION_NAMES.has(name)) throw new Error(`unknown variable or function '${lexeme}'`);
     take("(");
     sum();
@@ -108,4 +122,17 @@ export function plotFormulaTokens(expression: string, variables: Iterable<string
   sum();
   if (position !== lexemes.length) throw new Error(`unexpected '${peek()}'`);
   return out;
+}
+
+/**
+ * A formula handed to a derivation must be well formed (each operator has its operands, one result, finite
+ * literals); otherwise the derivation refuses with this path instead of failing on the malformed tokens.
+ */
+export function checkPlotFormula(tokens: PlotFormula, path: string): void {
+  try {
+    plotFormulaText(tokens);
+    if (tokens.some((token) => token.kind === "literal" && !Number.isFinite(token.value))) throw new Error("non-finite literal");
+  } catch (error) {
+    throw new PlotDerivationRefusal(path, `the formula is not well formed (${(error as Error).message})`);
+  }
 }
