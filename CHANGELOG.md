@@ -4,6 +4,7 @@
 
 ### Added
 
+- **Number-line form checks in plugin-math** (decision 0017, Studio section): `numberLineFormProblem` checks a form's range, ticks, start and up to three moves (each from where the one before lands; only the last may have a slider; hops only when every move goes one way) and returns a code and the move it concerns, for the form to word in its own language. `numberLineFormValue` and `NUMBER_LINE_FORM_LIMITS` come with it.
 - **Function-plot derivations in plugin-math** (decision 0018; shared by Coach and Studio): `markParts` (intercepts, vertex, symmetry axis), `formulaBars` and `pieceBars` (domain and range), `intervalOf` and `signOf` (signs proved over variable ranges), on postfix `PlotToken` formulas. `plotFormulaTokens` parses a formula by the grammar of the expression compiler (a 20,000-case fuzz agreed exactly), keeping the caller's variable names; `plotFormulaText` writes tokens back. A derivation the program cannot make throws `PlotDerivationRefusal` with a path and a message the caller reports. Malformed tokens, non-finite numbers, variables named like a function or constant, and formulas too long to compile once bracketed are refusals, never raw errors. Moved from Coach unchanged, plus these guards and folding a power of two constants into its value.
 
 - Function plot parts for decision 0018 (player 0.11.0):

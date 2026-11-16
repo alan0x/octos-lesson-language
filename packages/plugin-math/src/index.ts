@@ -325,6 +325,7 @@ import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from
 import { buildNumberLine } from "./number-line-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
+export * from "./number-line-form.js";
 // Function-plot derivations shared by Coach and Studio (decision 0018): marks, domain and range bars.
 export * from "./plot-tokens.js";
 export { PLOT_MARKS, markParts, polynomialOf, type MarkPart, type PlotMark } from "./plot-marks.js";
