@@ -325,6 +325,7 @@ import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from
 import { buildNumberLine } from "./number-line-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
+export * from "./number-line-form.js";
 export { renderNumberLine, NUMBER_LINE_VIEW_WIDTH } from "./number-line-view.js";
 
 export const MATH_BUILDERS = {
