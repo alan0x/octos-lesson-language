@@ -7,12 +7,15 @@
 // - marks hidden while undefined: a symmetry axis at a = 0, x-intercepts that appear as k falls;
 // - the slope triangle: legs named Δx and Δy, "斜率" on a straight line, "割线斜率" on a curve; it stays
 //   when mark points (intercepts) follow the two references; leg labels stay inside the frame;
-// - coinciding marks keep readable labels: no two overlap, and two identical labels at one spot draw once.
+// - coinciding marks keep readable labels: no two overlap, and two identical labels at one spot draw once;
+// - moving points across a pole (plan 6e): A or B dragged onto x = -1 of 2/(x + 1) hides, with no secant and
+//   a readout that says why, and both come back; the lesson does not fail there.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 import { existsSync } from "node:fs";
 import { createServer } from "node:http";
 import { normalizeAuthoringLesson } from "../dist/packages/core/src/index.js";
+import { buildFunctionPlot } from "../dist/packages/plugin-math/src/index.js";
 
 const lesson = (content, extra = {}, beats = []) => ({
   dsl: "octos.lesson", version: "0.1", profile: "authoring",
@@ -88,6 +91,15 @@ const cases = {
     points: [{ as: "r1", x: 0, y: 0, label: "x 截距" }, { as: "r2", x: 0, y: 0, label: "x 截距" }, { as: "v", x: 0, y: 0, label: "顶点" }],
     bindings: [{ target: "r1.x", expression: "h" }, { target: "r2.x", expression: "h" }, { target: "v.x", expression: "h" }] },
   { variables: [{ as: "h", initial: 0, min: -2, max: 2, label: "h" }] }),
+  // The builder's own output: A at n1, B two units to its right, on y = 2/(x + 1), which has no value at x = -1.
+  crossPole: (() => {
+    const built = buildFunctionPlot({ as: "graph", role: "main_visual", place: { relation: "new_region" }, axes: axes(-5, 5, -6, 6),
+      curves: [{ expression: "2/(x+1)", label: "y = 2/(x + 1)" }],
+      samples: [{ x: 1, y: 1, label: "A", x_expression: "n1" }, { x: 3, y: 0.5, label: "B", x_expression: "n1+2" }] });
+    const authored = lesson(built.actions[0].content, { variables: [{ as: "n1", initial: 1, min: -5, max: 3, label: "A 的横坐标", control: { kind: "slider", step: 0.5 } }] },
+      [animate("a-on-pole", "n1", -1), animate("b-on-pole", "n1", -3), animate("back", "n1", 0)]);
+    return authored;
+  })(),
 };
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
@@ -125,7 +137,9 @@ try {
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), name);
     const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
     const seen = [];
-    while (session.projection.status !== "completed") {
+    // A lesson that fails part-way never completes: stop after a bound and report it.
+    for (let step = 0; session.projection.status !== "completed"; step += 1) {
+      if (step > 200) { seen.push({ stuck: session.projection.status }); break; }
       session.advance();
       mounted.view.render(session.projection.board);
       const svg = document.querySelector(".plot-preview");
@@ -231,6 +245,14 @@ try {
   check(offscreen.legLabelsInFrame && !offscreen.legs.includes("Δy"), `a leg whose label spot is off the frame is left unnamed: ${offscreen.legs.join(" ")}`);
   const [double] = await states("double");
   check(double.labels.filter((label) => label.text === "x 截距").length === 1 && double.labels.some((label) => label.text === "顶点") && overlapping(double).length === 0, `a double root under the vertex: one "x 截距", one "顶点", apart: ${JSON.stringify(double.labels)}`);
+  const crossPole = await states("crossPole");
+  check(!crossPole.some((state) => state.stuck), `the lesson plays through the pole: ${JSON.stringify(crossPole.find((state) => state.stuck))}`);
+  const poleState = new Map(crossPole.filter((state) => !state.stuck).map((state) => [state.variables.n1, { points: state.points, secant: state.secant, readout: state.readout.replace(/\s+/gu, " ") }]));
+  const startPole = poleState.get(1), aPole = poleState.get(-1), bPole = poleState.get(-3), backPole = poleState.get(0);
+  check(startPole?.points === 2 && startPole.secant === 1 && /割线斜率/u.test(startPole.readout), `two points and a secant at the start: ${JSON.stringify(startPole)}`);
+  check(aPole?.points === 1 && aPole.secant === 0 && aPole.readout.includes("函数在A的横坐标处没有定义") && !/Δx =/u.test(aPole.readout), `A on the pole hides, no secant, the readout says why: ${JSON.stringify(aPole)}`);
+  check(bPole?.points === 1 && bPole.secant === 0 && bPole.readout.includes("函数在B的横坐标处没有定义"), `B on the pole hides, no secant: ${JSON.stringify(bPole)}`);
+  check(backPole?.points === 2 && backPole.secant === 1 && /割线斜率 ≈ -0.66667/u.test(backPole.readout), `both come back with the secant: ${JSON.stringify(backPole)}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -240,4 +262,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("plot browser checks passed: pieces on their intervals with filled and open ends, one legend entry per function, domain and range bars on the axes and frame edges, a range that flips with a, hidden symmetry axis and intercepts, named slope legs, slope wording, the triangle kept beside marks, leg labels inside the frame, coinciding marks labelled apart");
+console.log("plot browser checks passed: pieces on their intervals with filled and open ends, one legend entry per function, domain and range bars on the axes and frame edges, a range that flips with a, hidden symmetry axis and intercepts, named slope legs, slope wording, the triangle kept beside marks, leg labels inside the frame, coinciding marks labelled apart, moving points that hide on a pole and come back");

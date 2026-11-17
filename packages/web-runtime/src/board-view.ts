@@ -841,7 +841,9 @@ function drawPlot(
   // marks such as an intercept or a vertex (decision 0018), which must not turn the measurement off.
   if (content.measurement === "secant" && Array.isArray(content.points) && content.points.length >= 2) {
     const [a,b] = content.points;
-    const measurement = secantMeasurement(a,b);
+    // A point hidden where the curve has no value keeps a stale y: there is nothing to measure.
+    const hidden = [a, b].find((point) => point.binding_undefined === true);
+    const measurement = hidden ? undefined : secantMeasurement(a,b);
     if (measurement) {
       const line = appendPlotLine(svg, "plot-secant", mapX(a.x), mapY(a.y), mapX(b.x), mapY(b.y));
       line.setAttribute("clip-path", `url(#${clipId})`);
@@ -891,6 +893,9 @@ function drawPlot(
     }
     straight = straight && onCurves > 0;
     measurementText = ()=>{
+      if (hidden) return text(hidden.label)
+        ? ui(parent,"函数在{point}的横坐标处没有定义，不能计算斜率。",{point:text(hidden.label)})
+        : ui(parent,"函数在其中一点的横坐标处没有定义，不能计算斜率。");
       if (!measurement) return ui(parent,"两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。");
       const values = {dx:display(measurement.dx),dy:display(measurement.dy),slope:display(measurement.slope)};
       // "=" when the shown digits are the slope (up to rounding noise: 0.3 from 0.6 - 0.3), else "≈".

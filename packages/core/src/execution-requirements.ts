@@ -7,7 +7,7 @@ import {
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.11.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.12.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -50,6 +50,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "plot:guide-hide-undefined": "0.11.0",
   // A secant over the first two of more points (marks after A and B); an older player drew no triangle then.
   "plot:secant-first-two": "0.11.0",
+  // A secant point hidden where the curve has no value; an older player measured it at a stale y.
+  "plot:secant-hide-undefined": "0.12.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
@@ -201,6 +203,10 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
       if (curves.some((curve) => ["from", "to", "from_closed", "to_closed", "series"].some((field) => curve[field] !== undefined))) add("plot:curve-intervals", `${path}/curves`);
       if (Array.isArray(value.intervals) && value.intervals.length) add("plot:axis-intervals", `${path}/intervals`);
       if (value.measurement === "secant" && Array.isArray(value.points) && value.points.length > 2) add("plot:secant-first-two", `${path}/points`);
+      const secantIds = value.measurement === "secant" && Array.isArray(value.points)
+        ? new Set((value.points as Array<Record<string, unknown>>).slice(0, 2).map((point) => String(point.id ?? point.as))) : new Set<string>();
+      if (Array.isArray(value.bindings) && value.bindings.some((binding) => (binding as { hide_when_undefined?: unknown }).hide_when_undefined === true
+        && secantIds.has(String((binding as { target?: unknown }).target).split(".").slice(0, -1).join(".")))) add("plot:secant-hide-undefined", `${path}/bindings`);
       const guideIds = new Set((Array.isArray(value.guides) ? value.guides as Array<Record<string, unknown>> : []).map((guide) => String(guide.id ?? guide.as)));
       if (Array.isArray(value.bindings) && value.bindings.some((binding) => (binding as { hide_when_undefined?: unknown }).hide_when_undefined === true
         && guideIds.has(String((binding as { target?: unknown }).target).split(".").slice(0, -1).join(".")))) add("plot:guide-hide-undefined", `${path}/bindings`);
