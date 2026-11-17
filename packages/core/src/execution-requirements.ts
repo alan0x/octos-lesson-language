@@ -200,6 +200,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     if (Array.isArray(value.objects) && value.objects.some((object) => object.face_targets === true)) add("scene3d:face-targets", path);
+    // Written or revised: a caption the player draws (decision 0019); an older player left it out.
+    if (kind === "scene3d" && typeof value.caption === "string" && value.caption.trim()) add("scene3d:caption", `${path}/caption`);
     if (kind === "plot") {
       const curves = Array.isArray(value.curves) ? value.curves as Array<Record<string, unknown>> : [];
       if (curves.some((curve) => ["from", "to", "from_closed", "to_closed", "series"].some((field) => curve[field] !== undefined))) add("plot:curve-intervals", `${path}/curves`);
@@ -269,7 +271,6 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
             if ((scene.objects ?? []).some((object) => object.unfold !== undefined) || (scene.bindings ?? []).some((binding) => String(binding.target).endsWith(".unfold"))) {
               add("scene3d:unfold", `${actionPath}/node/content`);
             }
-            if (typeof (scene as { caption?: unknown }).caption === "string") add("scene3d:caption", `${actionPath}/node/content/caption`);
           }
         }
         if (action.revision) {

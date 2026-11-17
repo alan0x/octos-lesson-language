@@ -298,7 +298,7 @@ export function buildFunctionPlot(input: FunctionPlotInput): BuiltRecipe {
 }
 
 export {
-  SOLID_PAIR_CAMERA, SOLID_SCENE_CAMERA, baseCorners, boxFaces, buildSolid, compositeHeight, describeSolid, solidNetXReach, solidObjects, solidUnfolds, solidXReach, solidZRange,
+  SOLID_PAIR_CAMERA, SOLID_SCENE_CAMERA, baseCorners, boxFaces, buildSolid, compositeHeight, describeSolid, centredBaseCorners, solidNetXReach, solidObjects, solidUnfolds, solidXReach, solidZRange,
   type BoxFaceNames, type CompositeSolid, type Solid, type SolidBase, type SolidSceneInput, type SolidShape,
 } from "./solids.js";
 export {

@@ -88,6 +88,24 @@ export function baseCorners(base: SolidBase): Array<{ x: number; y: number }> | 
   }
 }
 
+/** A prism's or pyramid's base corners, centred on the base's area centroid (where the player puts the solid's centre and a pyramid's apex). */
+export function centredBaseCorners(solid: Extract<Solid, { shape: "prism" | "pyramid" }>): Array<{ x: number; y: number }> {
+  const corners = "base" in solid
+    ? baseCorners(solid.base)
+    : Array.from({ length: solid.sides }, (_, index) => ({
+      x: solid.radius * Math.cos(2 * Math.PI * index / solid.sides),
+      y: solid.radius * Math.sin(2 * Math.PI * index / solid.sides),
+    }));
+  if (!corners) throw new Error("The three sides do not make a triangle");
+  let twice = 0, cx = 0, cy = 0;
+  corners.forEach((point, index) => {
+    const next = corners[(index + 1) % corners.length]!, k = point.x * next.y - next.x * point.y;
+    twice += k; cx += (point.x + next.x) * k; cy += (point.y + next.y) * k;
+  });
+  const middle = { x: cx / (3 * twice), y: cy / (3 * twice) };
+  return corners.map((point) => ({ x: point.x - middle.x, y: point.y - middle.y }));
+}
+
 /** A composite's two parts: stacked from the bottom ("solid", then "solid-top"), or two boxes from the left ("solid", then "solid-side"). */
 function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>): Array<Record<string, unknown>> {
   const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
@@ -114,14 +132,15 @@ function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>):
 
 /**
  * How far a solid's net reaches along x from its centre while it opens, from
- * the player's own facets (sampled from closed to flat), so two opening nets
- * never run into each other.
+ * the player's own facets (sampled in 40 steps from closed to flat), so two
+ * opening nets never run into each other. The OLL test checks the spacing
+ * against the player's facets, so a change to the player's nets fails it.
  */
 export function solidNetXReach(solid: Solid): number {
   let reach = solidXReach(solid);
   for (const object of solidObjects(solid)) {
-    for (let step = 1; step <= 10; step += 1) {
-      for (const facet of solidFacets({ ...object, unfold: step / 10 })) for (const point of facet.points) reach = Math.max(reach, Math.abs(point.x));
+    for (let step = 1; step <= 40; step += 1) {
+      for (const facet of solidFacets({ ...object, unfold: step / 40 })) for (const point of facet.points) reach = Math.max(reach, Math.abs(point.x));
     }
   }
   return reach;
@@ -134,15 +153,7 @@ export function solidXReach(solid: Solid): number {
     case "ellipsoid": return solid.radii.x;
     case "torus": return solid.radius + solid.tube;
     case "frustum": return Math.max(solid.radius, solid.topRadius);
-    case "prism": case "pyramid": {
-      if (!("base" in solid)) return solid.radius;
-      const corners = baseCorners(solid.base);
-      if (!corners) throw new Error("The three sides do not make a triangle");
-      // The player centres a base on its centroid; the corners' farthest distance from it bounds the reach.
-      const twice = corners.reduce((sum, point, index) => { const next = corners[(index + 1) % corners.length]!; return sum + point.x * next.y - next.x * point.y; }, 0);
-      const cx = corners.reduce((sum, point, index) => { const next = corners[(index + 1) % corners.length]!; return sum + (point.x + next.x) * (point.x * next.y - next.x * point.y); }, 0) / (3 * twice);
-      return Math.max(...corners.map((point) => Math.abs(point.x - cx)));
-    }
+    case "prism": case "pyramid": return "base" in solid ? Math.max(...centredBaseCorners(solid).map((point) => Math.abs(point.x))) : solid.radius;
     case "composite": switch (solid.parts) {
       case "box_pyramid": return solid.width / 2;
       case "two_cylinders": return Math.max(solid.radius, solid.topRadius);
@@ -289,7 +300,7 @@ export const SOLID_SCENE_CAMERA = { yaw: 0.72, pitch: 0.55, zoom: 1 } as const;
 /** Two solids side by side: turned less, so the pair runs across the view and the front one does not hide the other. */
 export const SOLID_PAIR_CAMERA = { yaw: 0.3, pitch: 0.45, zoom: 1 } as const;
 
-/** A solid's short name for the measures line when two stand side by side; undefined when both would read the same. */
+/** A solid's short name for the measures line when two stand side by side (the caller falls back to Left and Right when both read the same). */
 function solidName(solid: Solid, zh: boolean): string {
   switch (solid.shape) {
     case "box": return solid.size.x === solid.size.y && solid.size.y === solid.size.z ? (zh ? "正方体" : "Cube") : (zh ? "长方体" : "Box");
@@ -299,7 +310,7 @@ function solidName(solid: Solid, zh: boolean): string {
     case "hemisphere": return zh ? "半球" : "Hemisphere";
     case "frustum": return zh ? "圆台" : "Frustum";
     case "prism": return zh ? "棱柱" : "Prism";
-    case "pyramid": return solid.topScale !== undefined ? (zh ? "棱台" : "Truncated pyramid") : (zh ? "棱锥" : "Pyramid");
+    case "pyramid": return (solid.topScale ?? 0) > 0 ? (zh ? "棱台" : "Truncated pyramid") : (zh ? "棱锥" : "Pyramid");
     case "composite": return zh ? "组合体" : "Composite";
     default: return zh ? "立体" : "Solid";
   }
@@ -317,7 +328,11 @@ function shifted(objects: Array<Record<string, unknown>>, dx: number, dz: number
   });
 }
 
-export function buildSolid(input: SolidSceneInput): { actions: AuthoringAction[]; whole: string; parts: Record<string, string> } {
+/**
+ * The scene, its parts, and with `cut` the heights the plane must travel,
+ * bottom to top of the solid or of the pair, for the caller's slider.
+ */
+export function buildSolid(input: SolidSceneInput): { actions: AuthoringAction[]; whole: string; parts: Record<string, string>; cutRange?: [number, number] } {
   const { solid, beside } = input;
   if (input.cut && input.unfold) throw new Error("A solid is either cut or unfolded, not both");
   if (input.unfold && !solidUnfolds(solid)) throw new Error(`A ${solid.shape} has no net to unfold`);
@@ -381,5 +396,6 @@ export function buildSolid(input: SolidSceneInput): { actions: AuthoringAction[]
       ...(input.cut ? { section: `${input.as}#cut`, primary_control: `${input.as}#cut` } : {}),
       ...(input.unfold ? { primary_control: `${input.as}#solid` } : {}),
     },
+    ...(input.cut ? { cutRange: [Number(zRange[0].toFixed(6)), Number(zRange[1].toFixed(6))] as [number, number] } : {}),
   };
 }

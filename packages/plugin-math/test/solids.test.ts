@@ -163,6 +163,12 @@ test("beside: one plane cuts both, both nets open together, box faces stay for a
   const cut = buildSolid({ as: "c", role: "diagram", place, solid: cone, beside: cylinder, fallback: "x", cut: { expression: "h" } });
   validates(cut, [slider("h", -1.5, 1.5)]);
   assert.deepEqual(content(cut).sections[0], { as: "cut", axis: "z", value: 0, targets: ["solid", "beside"], display: "plane_and_intersection", color: "orange" });
+  assert.deepEqual(cut.cutRange, [-1.5, 1.5], "the plane travels the pair's height, for the caller's slider");
+  // A hemisphere (its own range 0..2) beside a taller cone: the pair's range, not the hemisphere's.
+  const dome = buildSolid({ as: "d", role: "diagram", place, solid: { shape: "hemisphere", radius: 2 }, beside: { shape: "cone", radius: 1, height: 4 }, fallback: "x", cut: { expression: "h" } });
+  assert.deepEqual(dome.cutRange, [-2, 2]);
+  assert.deepEqual(content(dome).objects.map((object: { center: { z: number } }) => object.center.z), [-2, 0], "the dome's flat face and the cone's centre: both bottoms at -2");
+  assert.deepEqual(buildSolid({ as: "c", role: "diagram", place, solid: { shape: "hemisphere", radius: 2 }, fallback: "x", cut: { expression: "h" } }).cutRange, [0, 2]);
   const net = buildSolid({ as: "n", role: "diagram", place, solid: cone, beside: cylinder, fallback: "x", unfold: { expression: "u" } });
   validates(net, [slider("u", 0, 1)]);
   assert.deepEqual(content(net).bindings, [{ target: "solid.unfold", expression: "u" }, { target: "beside.unfold", expression: "u" }]);
@@ -170,14 +176,26 @@ test("beside: one plane cuts both, both nets open together, box faces stay for a
   for (const [first, second] of [[{ shape: "box", size: { x: 2, y: 2, z: 2 } }, { shape: "cylinder", radius: 1, height: 2 }], [{ shape: "cylinder", radius: 3, height: 1 }, { shape: "box", size: { x: 1, y: 1, z: 4 } }],
     [{ shape: "pyramid", base: { kind: "rectangle", length: 4, width: 2 }, height: 3, topScale: 0.5 }, { shape: "cone", radius: 1, height: 3 }]] as Array<[Solid, Solid]>) {
     const objects = content(buildSolid({ as: "n", role: "diagram", place, solid: first, beside: second, fallback: "x", unfold: { expression: "u" } })).objects as Array<Record<string, any>>;
-    for (let step = 0; step <= 20; step += 1) {
+    for (let step = 0; step <= 40; step += 1) {
       const xs = (as: string) => objects.filter((object) => object.as.startsWith(as))
-        .flatMap((object) => solidFacets({ ...object, unfold: step / 20 }).flatMap((facet) => facet.points.map((point) => point.x)));
-      assert.ok(Math.max(...xs("solid")) < Math.min(...xs("beside")), `${first.shape} and ${second.shape} nets apart at ${step / 20}`);
+        .flatMap((object) => solidFacets({ ...object, unfold: step / 40 }).flatMap((facet) => facet.points.map((point) => point.x)));
+      assert.ok(Math.max(...xs("solid")) < Math.min(...xs("beside")), `${first.shape} and ${second.shape} nets apart at ${step / 40}`);
     }
   }
   assert.throws(() => buildSolid({ as: "n", role: "diagram", place, solid: cone, beside: { shape: "sphere", radius: 1 }, fallback: "x", unfold: { expression: "u" } }), /no net/);
   assert.throws(() => buildSolid({ as: "n", role: "diagram", place, solid: { shape: "box", size: { x: 1, y: 1, z: 1 } }, beside: cone, fallback: "x", box_faces: { names } }), /on its own/);
+});
+
+test("the measures line is gated where it is written or revised in; an empty caption needs nothing", () => {
+  const built = buildSolid({ as: "scene", role: "diagram", place, solid: { shape: "cone", radius: 1, height: 2 }, fallback: "A cone." });
+  const revised = lessonOf(built);
+  revised.steps[0]!.beats.push({ key: "r", say: "Its volume.", actions: [{ do: "revise", target: "scene", content: { ...content(built), caption: "Volume = 2π/3 ≈ 2.09" }, reason: "Show the volume" }] } as never);
+  assert.ok(deriveExecutionRequirements(normalizeAuthoringLesson(revised, { lessonId: "s", boardId: "board", baseRevision: 0, regionIntent: "new_topic" })).requiredCapabilities.includes("scene3d:caption"));
+  const empty = buildSolid({ as: "scene", role: "diagram", place, solid: { shape: "cone", radius: 1, height: 2 }, fallback: "A cone." });
+  (empty.actions[0] as { content: Record<string, unknown> }).content.caption = " ";
+  assert.ok(!needs(empty).requiredCapabilities.includes("scene3d:caption"));
+  const pair = buildSolid({ as: "p", role: "diagram", place, solid: { shape: "pyramid", sides: 4, radius: 1, height: 2, topScale: 0 }, beside: { shape: "cone", radius: 1, height: 2 }, fallback: "x", show: { measures: ["volume"], language: "en-US" } });
+  assert.match(String(content(pair).caption), /^Pyramid: /u, "top scale 0 is a whole pyramid");
 });
 
 test("a lesson without beside or show builds exactly as before", () => {

@@ -4,7 +4,7 @@
  * under the scene. The model names which quantities to show; it never writes
  * their values.
  */
-import { baseCorners, type CompositeSolid, type Solid } from "./solids.js";
+import { centredBaseCorners, type CompositeSolid, type Solid } from "./solids.js";
 
 export type SolidMeasureKind = "volume" | "surface_area" | "counts";
 
@@ -29,24 +29,6 @@ function polygonAreaPerimeter(corners: Array<{ x: number; y: number }>): { area:
     perimeter += Math.hypot(next.x - point.x, next.y - point.y);
   });
   return { area: Math.abs(twice) / 2, perimeter };
-}
-
-/** The base's corners, centred on its area centroid (where the player raises a pyramid's apex). */
-function centredBase(solid: Extract<Solid, { shape: "prism" | "pyramid" }>): Array<{ x: number; y: number }> {
-  const corners = "base" in solid
-    ? baseCorners(solid.base)
-    : Array.from({ length: solid.sides }, (_, index) => ({
-      x: solid.radius * Math.cos(2 * Math.PI * index / solid.sides),
-      y: solid.radius * Math.sin(2 * Math.PI * index / solid.sides),
-    }));
-  if (!corners) throw new Error("The three sides do not make a triangle");
-  let twice = 0, cx = 0, cy = 0;
-  corners.forEach((point, index) => {
-    const next = corners[(index + 1) % corners.length]!, k = point.x * next.y - next.x * point.y;
-    twice += k; cx += (point.x + next.x) * k; cy += (point.y + next.y) * k;
-  });
-  const middle = { x: cx / (3 * twice), y: cy / (3 * twice) };
-  return corners.map((point) => ({ x: point.x - middle.x, y: point.y - middle.y }));
 }
 
 /**
@@ -98,7 +80,7 @@ export function solidMeasures(solid: Solid): SolidMeasures {
       return { volume: ofPi(h * (r1 * r1 + r1 * r2 + r2 * r2) / 3), surfaceArea: ofPi(r1 * r1 + r2 * r2 + (r1 + r2) * Math.hypot(h, r1 - r2)) };
     }
     case "prism": case "pyramid": {
-      const corners = centredBase(solid);
+      const corners = centredBaseCorners(solid);
       const { area, perimeter } = polygonAreaPerimeter(corners);
       const n = corners.length;
       if (solid.shape === "prism") {
