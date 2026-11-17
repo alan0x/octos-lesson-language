@@ -26,6 +26,8 @@ const EN: Readonly<Record<string, string>> = {
   "Δx = {dx} · Δy = {dy} · 斜率 = {slope}": "Δx = {dx} · Δy = {dy} · Slope = {slope}",
   "Δx = {dx} · Δy = {dy} · 斜率 ≈ {slope}": "Δx = {dx} · Δy = {dy} · Slope ≈ {slope}",
   "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。": "The points have equal or nearly equal x-coordinates; Δy/Δx cannot be used to calculate the slope.",
+  "函数在{point}的横坐标处没有定义，不能计算斜率。": "The function is not defined at the x-coordinate of {point}, so the slope cannot be calculated.",
+  "函数在其中一点的横坐标处没有定义，不能计算斜率。": "The function is not defined at the x-coordinate of one of the points, so the slope cannot be calculated.",
   "{points}的横坐标固定；曲线参数变化时同步观察两点与割线。": "The x-coordinates of {points} are fixed. Watch the points and secant as the curve parameters change.",
   "通过滑块调整{points}的横坐标。": "Use the sliders to adjust the x-coordinates of {points}.",
   "{label}，{sides} 边": "{label}, {sides} sides",

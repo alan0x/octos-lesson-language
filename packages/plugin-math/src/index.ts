@@ -274,8 +274,10 @@ export function buildFunctionPlot(input: FunctionPlotInput): BuiltRecipe {
     content.points = input.samples.map((sample, index) => ({ as: FUNCTION_PLOT_POINT_IDS.samples[index], x: sample.x, y: sample.y, label: sample.label }));
     content.bindings = input.samples.flatMap((sample, index) => {
       const point = FUNCTION_PLOT_POINT_IDS.samples[index];
+      // A point dragged to where the curve has no value (a pole such as x = -1 on 2/(x + 1)) hides there
+      // instead of failing the lesson; its x is the slider's value, always defined.
       return [{ target: `${point}.x`, expression: sample.x_expression },
-        { target: `${point}.y`, expression: substituteX(primary, sample.x_expression) }];
+        { target: `${point}.y`, expression: substituteX(primary, sample.x_expression), hide_when_undefined: true }];
     });
     if (input.samples.length === 2) content.measurement = "secant";
   } else if (input.references?.length) {

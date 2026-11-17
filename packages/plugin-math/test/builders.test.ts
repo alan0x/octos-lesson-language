@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateAuthoringLesson, type AuthoringLesson } from "../../core/src/index.js";
+import { deriveExecutionRequirements, evaluateContentBindings, normalizeAuthoringLesson, reduceCanonicalEvents, validateAuthoringLesson, type AuthoringLesson } from "../../core/src/index.js";
 import {
   MATH_BUILDERS,
   MATH_PLUGIN_MANIFEST,
@@ -96,8 +96,8 @@ test("a function plot names its curves and makes sample points follow the primar
   const content = (secant.actions[0] as { content: Record<string, any> }).content;
   assert.deepEqual(content.curves.map((curve: { as: string }) => curve.as), ["primary-curve", "curve-02"]);
   assert.deepEqual(content.bindings, [
-    { target: "moving-point.x", expression: "n1" }, { target: "moving-point.y", expression: "n1^2" },
-    { target: "second-point.x", expression: "n2" }, { target: "second-point.y", expression: "n2^2" },
+    { target: "moving-point.x", expression: "n1" }, { target: "moving-point.y", expression: "n1^2", hide_when_undefined: true },
+    { target: "second-point.x", expression: "n2" }, { target: "second-point.y", expression: "n2^2", hide_when_undefined: true },
   ]);
   assert.equal(content.measurement, "secant");
 
@@ -112,6 +112,31 @@ test("a function plot names its curves and makes sample points follow the primar
   const fixed = (references.actions[0] as { content: Record<string, any> }).content;
   assert.deepEqual(fixed.bindings, [{ target: "reference-a.y", expression: "n1*0" }, { target: "reference-b.y", expression: "n1*1" }]);
   assert.equal(fixed.sample_input, "fixed_x");
+});
+
+test("plan 6e: a sample point dragged onto a pole hides there and comes back, and the secant needs player 0.12.0", () => {
+  const a = { as: "n1", initial: 1, min: -5, max: 5, label: "x of A", control: { kind: "slider", step: 0.5 } };
+  const plot = buildFunctionPlot({
+    as: "plot", role: "main_visual", place: { relation: "new_region" },
+    axes: { x: { min: -5, max: 5 }, y: { min: -6, max: 6 } },
+    curves: [{ expression: "2/(x+1)", label: "y = 2/(x + 1)" }],
+    samples: [{ x: 1, y: 1, label: "A", x_expression: "n1" }, { x: 3, y: 0.5, label: "B", x_expression: "n1+2" }],
+  });
+  const lesson = normalizeAuthoringLesson(lessonWith(plot, [a]), { lessonId: "pole", boardId: "board", baseRevision: 0, regionIntent: "new_topic" });
+  const content = (reduceCanonicalEvents(lesson).nodes["pole:node:plot"] as { content: Record<string, any> }).content;
+  const at = (n1: number) => evaluateContentBindings(content, { n1 }).points.slice(0, 2)
+    .map((point: { binding_undefined?: boolean; y: number }) => (point.binding_undefined ? "hidden" : point.y));
+  assert.deepEqual(at(1), [1, 0.5]);
+  assert.deepEqual(at(-1), ["hidden", 1], "A at the pole hides; before the change the lesson failed here");
+  assert.deepEqual(at(-3), [-1, "hidden"], "B at the pole hides");
+  assert.deepEqual(at(0), [2, 2 / 3], "both come back");
+  const needs = deriveExecutionRequirements(lesson);
+  assert.ok(needs.requiredCapabilities.includes("plot:secant-hide-undefined"));
+  assert.equal(needs.minimumPlayerVersion, "0.12.0", "an older player measured a hidden point at a stale y");
+  const single = buildFunctionPlot({ as: "plot", role: "main_visual", place: { relation: "new_region" }, axes: {},
+    curves: [{ expression: "2/(x+1)", label: "" }], samples: [{ x: 1, y: 1, label: "P", x_expression: "n1" }] });
+  const one = deriveExecutionRequirements(normalizeAuthoringLesson(lessonWith(single, [a]), { lessonId: "pole", boardId: "board", baseRevision: 0, regionIntent: "new_topic" }));
+  assert.ok(!one.requiredCapabilities.includes("plot:secant-hide-undefined"), "one point has no secant: an older player hides it already");
 });
 
 test("a sample point at a compound x stays on the curve, and the builder names every curve", () => {
