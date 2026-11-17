@@ -5,6 +5,8 @@
  * it for AI lessons.
  */
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
+import { solidFacets } from "../../web-runtime/src/solids.js";
+import { solidMeasuresText, type SolidMeasureKind } from "./solid-measures.js";
 
 /** A prism's or pyramid's base other than a regular polygon: a rectangle, a right triangle by its legs, or a triangle by its three sides. */
 export type SolidBase =
@@ -12,12 +14,18 @@ export type SolidBase =
   | { kind: "right_triangle"; a: number; b: number }
   | { kind: "triangle"; a: number; b: number; c: number };
 
-/** Two solids stacked: a cylinder with a cone or a hemisphere on top, a box with a pyramid roof, or a smaller cylinder on a larger one. */
+/**
+ * Two solids joined: stacked (a cylinder with a cone or a hemisphere on top, a
+ * box with a pyramid roof, or a smaller cylinder on a larger one), or two boxes
+ * side by side along x on one floor (an L shape when their heights differ).
+ */
 export type CompositeSolid =
   | { shape: "composite"; parts: "cylinder_cone"; radius: number; height: number; topHeight: number }
   | { shape: "composite"; parts: "cylinder_hemisphere"; radius: number; height: number }
   | { shape: "composite"; parts: "box_pyramid"; width: number; height: number; topHeight: number }
-  | { shape: "composite"; parts: "two_cylinders"; radius: number; height: number; topRadius: number; topHeight: number };
+  | { shape: "composite"; parts: "two_cylinders"; radius: number; height: number; topRadius: number; topHeight: number }
+  /** `size` on the left, `sideSize` against its right side; both stand on one floor, centred front to back. */
+  | { shape: "composite"; parts: "two_boxes"; size: { x: number; y: number; z: number }; sideSize: { x: number; y: number; z: number } };
 
 /** A 3D solid, centred on the origin, its height along z (a hemisphere's flat face on the origin). */
 export type Solid =
@@ -56,6 +64,7 @@ export function solidZRange(solid: Solid): [number, number] {
 
 /** A composite solid's total height, bottom to top. */
 export function compositeHeight(solid: CompositeSolid): number {
+  if (solid.parts === "two_boxes") return Math.max(solid.size.z, solid.sideSize.z);
   return solid.parts === "cylinder_hemisphere" ? solid.height + solid.radius : solid.height + solid.topHeight;
 }
 
@@ -79,10 +88,18 @@ export function baseCorners(base: SolidBase): Array<{ x: number; y: number }> | 
   }
 }
 
-/** A composite's two parts, stacked from the bottom: "solid", then "solid-top". */
+/** A composite's two parts: stacked from the bottom ("solid", then "solid-top"), or two boxes from the left ("solid", then "solid-side"). */
 function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>): Array<Record<string, unknown>> {
   const at = (z: number) => ({ x: 0, y: 0, z: Number(z.toFixed(6)) });
   const bottom = -compositeHeight(solid) / 2;
+  if (solid.parts === "two_boxes") {
+    const left = -(solid.size.x + solid.sideSize.x) / 2;
+    const place = (x: number, z: number) => ({ x: Number(x.toFixed(6)), y: 0, z: Number(z.toFixed(6)) });
+    return [
+      { ...base, kind: "box", center: place(left + solid.size.x / 2, bottom + solid.size.z / 2), size: solid.size },
+      { as: "solid-side", kind: "box", center: place(left + solid.size.x + solid.sideSize.x / 2, bottom + solid.sideSize.z / 2), size: solid.sideSize },
+    ];
+  }
   const lower = { ...base, center: at(bottom + solid.height / 2) };
   const upper = { as: "solid-top", center: at(bottom + solid.height + ("topHeight" in solid ? solid.topHeight / 2 : 0)) };
   switch (solid.parts) {
@@ -92,6 +109,47 @@ function compositeObjects(solid: CompositeSolid, base: Record<string, unknown>):
     case "box_pyramid": return [{ ...lower, kind: "box", size: { x: solid.width, y: solid.width, z: solid.height } },
       { ...upper, kind: "pyramid", sides: 4, radius: Number((solid.width / Math.SQRT2).toFixed(6)), height: solid.topHeight }];
     case "two_cylinders": return [{ ...lower, kind: "cylinder", radius: solid.radius, height: solid.height }, { ...upper, kind: "cylinder", radius: solid.topRadius, height: solid.topHeight }];
+  }
+}
+
+/**
+ * How far a solid's net reaches along x from its centre while it opens, from
+ * the player's own facets (sampled from closed to flat), so two opening nets
+ * never run into each other.
+ */
+export function solidNetXReach(solid: Solid): number {
+  let reach = solidXReach(solid);
+  for (const object of solidObjects(solid)) {
+    for (let step = 1; step <= 10; step += 1) {
+      for (const facet of solidFacets({ ...object, unfold: step / 10 })) for (const point of facet.points) reach = Math.max(reach, Math.abs(point.x));
+    }
+  }
+  return reach;
+}
+
+/** How far a solid reaches along x from its centre, to stand a second solid beside it. */
+export function solidXReach(solid: Solid): number {
+  switch (solid.shape) {
+    case "box": return solid.size.x / 2;
+    case "ellipsoid": return solid.radii.x;
+    case "torus": return solid.radius + solid.tube;
+    case "frustum": return Math.max(solid.radius, solid.topRadius);
+    case "prism": case "pyramid": {
+      if (!("base" in solid)) return solid.radius;
+      const corners = baseCorners(solid.base);
+      if (!corners) throw new Error("The three sides do not make a triangle");
+      // The player centres a base on its centroid; the corners' farthest distance from it bounds the reach.
+      const twice = corners.reduce((sum, point, index) => { const next = corners[(index + 1) % corners.length]!; return sum + point.x * next.y - next.x * point.y; }, 0);
+      const cx = corners.reduce((sum, point, index) => { const next = corners[(index + 1) % corners.length]!; return sum + (point.x + next.x) * (point.x * next.y - next.x * point.y); }, 0) / (3 * twice);
+      return Math.max(...corners.map((point) => Math.abs(point.x - cx)));
+    }
+    case "composite": switch (solid.parts) {
+      case "box_pyramid": return solid.width / 2;
+      case "two_cylinders": return Math.max(solid.radius, solid.topRadius);
+      case "two_boxes": return (solid.size.x + solid.sideSize.x) / 2;
+      default: return solid.radius;
+    }
+    default: return solid.radius;
   }
 }
 
@@ -158,6 +216,10 @@ function compositeDescription(solid: CompositeSolid, zh: boolean): string {
     case "cylinder_hemisphere": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半球。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a hemisphere on top.`;
     case "box_pyramid": return zh ? `底面边长 ${solid.width}、高 ${solid.height} 的长方体，上面是高 ${solid.topHeight} 的四棱锥。` : `A box ${solid.width} wide and ${solid.height} high with a square pyramid of height ${solid.topHeight} on top.`;
     case "two_cylinders": return zh ? `半径 ${solid.radius}、高 ${solid.height} 的圆柱，上面是半径 ${solid.topRadius}、高 ${solid.topHeight} 的圆柱。` : `A cylinder of radius ${solid.radius} and height ${solid.height} with a cylinder of radius ${solid.topRadius} and height ${solid.topHeight} on top.`;
+    case "two_boxes": {
+      const [a, b] = [solid.size, solid.sideSize];
+      return zh ? `长 ${a.x}、宽 ${a.y}、高 ${a.z} 的长方体，右边紧挨着长 ${b.x}、宽 ${b.y}、高 ${b.z} 的长方体。` : `A box ${a.x} by ${a.y} by ${a.z} with a box ${b.x} by ${b.y} by ${b.z} against its right side.`;
+    }
   }
 }
 
@@ -197,50 +259,125 @@ export interface SolidSceneInput {
   place: Placement | Record<string, unknown>;
   title?: string;
   solid: Solid;
+  /**
+   * A second solid beside the first along x (decision 0019 §3). Both stand on
+   * one floor, the pair centred on the origin so the view turns about it and
+   * the camera frames both. Its objects are "beside" (and "beside-top" or
+   * "beside-side" for a composite).
+   */
+  beside?: Solid;
   /** Text shown under the scene, and instead of it if it cannot be drawn. */
   fallback: string;
   /** Give every object stable face targets (`<scene>#<object>-<surface>-face`). */
   face_targets?: boolean;
-  /** A box's six highlightable faces. */
+  /** A box's six highlightable faces. Not with `beside`. */
   box_faces?: { names: BoxFaceNames; legacy?: boolean };
-  /** The net opens from 0 (closed) to 1 (flat) as this expression. Only for a solid that unfolds. */
+  /** The net opens from 0 (closed) to 1 (flat) as this expression. Only for a solid that unfolds (with `beside`, both must). */
   unfold?: { expression: string };
-  /** A horizontal cutting plane at this expression's height, starting halfway up. */
+  /** A horizontal cutting plane at this expression's height, starting halfway up; it cuts both solids. */
   cut?: { expression: string };
+  /**
+   * Quantities the program computes and shows in a line under the scene
+   * (the scene's caption), one line per solid, each named when there are two.
+   * Throws when a solid has no formula for one (see `solidMeasures`).
+   */
+  show?: { measures: SolidMeasureKind[]; language: string };
 }
 
 /** The scene's initial camera. */
 export const SOLID_SCENE_CAMERA = { yaw: 0.72, pitch: 0.55, zoom: 1 } as const;
+/** Two solids side by side: turned less, so the pair runs across the view and the front one does not hide the other. */
+export const SOLID_PAIR_CAMERA = { yaw: 0.3, pitch: 0.45, zoom: 1 } as const;
+
+/** A solid's short name for the measures line when two stand side by side; undefined when both would read the same. */
+function solidName(solid: Solid, zh: boolean): string {
+  switch (solid.shape) {
+    case "box": return solid.size.x === solid.size.y && solid.size.y === solid.size.z ? (zh ? "正方体" : "Cube") : (zh ? "长方体" : "Box");
+    case "cylinder": return zh ? "圆柱" : "Cylinder";
+    case "cone": return zh ? "圆锥" : "Cone";
+    case "sphere": return zh ? "球" : "Sphere";
+    case "hemisphere": return zh ? "半球" : "Hemisphere";
+    case "frustum": return zh ? "圆台" : "Frustum";
+    case "prism": return zh ? "棱柱" : "Prism";
+    case "pyramid": return solid.topScale !== undefined ? (zh ? "棱台" : "Truncated pyramid") : (zh ? "棱锥" : "Pyramid");
+    case "composite": return zh ? "组合体" : "Composite";
+    default: return zh ? "立体" : "Solid";
+  }
+}
+
+/** Objects moved by (dx, dz), and renamed from "solid…" to `prefix…`. */
+function shifted(objects: Array<Record<string, unknown>>, dx: number, dz: number, prefix = "solid") {
+  return objects.map((object) => {
+    const center = object.center as { x: number; y: number; z: number };
+    return {
+      ...object,
+      as: String(object.as).replace(/^solid/, prefix),
+      center: { x: Number((center.x + dx).toFixed(6)), y: center.y, z: Number((center.z + dz).toFixed(6)) },
+    };
+  });
+}
 
 export function buildSolid(input: SolidSceneInput): { actions: AuthoringAction[]; whole: string; parts: Record<string, string> } {
-  const { solid } = input;
+  const { solid, beside } = input;
   if (input.cut && input.unfold) throw new Error("A solid is either cut or unfolded, not both");
   if (input.unfold && !solidUnfolds(solid)) throw new Error(`A ${solid.shape} has no net to unfold`);
-  const objects = solidObjects(solid);
-  if (input.face_targets) for (const object of objects) object.face_targets = true;
+  if (input.unfold && beside && !solidUnfolds(beside)) throw new Error(`A ${beside.shape} has no net to unfold`);
+  if (beside && input.box_faces) throw new Error("Box faces are for a box on its own");
+  let objects = solidObjects(solid);
+  let zRange = solidZRange(solid);
+  const besideObjects: Array<Record<string, unknown>> = [];
+  if (beside) {
+    // Both stand on one floor; the pair is centred on the origin with a gap of half the wider reach.
+    const reachOf = input.unfold ? solidNetXReach : solidXReach;
+    const [reachA, reachB] = [reachOf(solid), reachOf(beside)];
+    const gap = Math.max(reachA, reachB) / 2;
+    const width = 2 * reachA + gap + 2 * reachB;
+    const [rangeA, rangeB] = [zRange, solidZRange(beside)];
+    const height = Math.max(rangeA[1] - rangeA[0], rangeB[1] - rangeB[0]);
+    objects = shifted(objects, -width / 2 + reachA, -height / 2 - rangeA[0]);
+    besideObjects.push(...shifted(solidObjects(beside), width / 2 - reachB, -height / 2 - rangeB[0], "beside"));
+    zRange = [-height / 2, height / 2];
+  }
+  const all = [...objects, ...besideObjects];
+  if (input.face_targets) for (const object of all) object.face_targets = true;
+  const caption = input.show && input.show.measures.length ? (() => {
+    const zh = input.show.language.toLowerCase().startsWith("zh");
+    if (!beside) return solidMeasuresText(solid, input.show.measures, input.show.language);
+    let [nameA, nameB] = [solidName(solid, zh), solidName(beside, zh)];
+    if (nameA === nameB) [nameA, nameB] = zh ? ["左", "右"] : ["Left", "Right"];
+    return [[nameA, solid], [nameB, beside] as const].map(([name, each]) => `${name}${zh ? "：" : ": "}${solidMeasuresText(each as Solid, input.show!.measures, input.show!.language)}`).join("\n");
+  })() : undefined;
   const content: Record<string, unknown> = {
     ...(input.title !== undefined ? { title: input.title } : {}),
+    ...(caption !== undefined ? { caption } : {}),
     fallback: input.fallback,
     axes: false,
-    camera: { ...SOLID_SCENE_CAMERA },
-    objects: input.unfold ? objects.map((object) => ({ ...object, unfold: 0 })) : objects,
+    camera: { ...(beside ? SOLID_PAIR_CAMERA : SOLID_SCENE_CAMERA) },
+    objects: input.unfold ? all.map((object) => ({ ...object, unfold: 0 })) : all,
     ...(solid.shape === "box" && input.box_faces
       ? { highlights: boxFaces(solid.size, input.box_faces.names, Boolean(input.unfold), input.box_faces.legacy) } : {}),
   };
-  if (input.unfold) content.bindings = [{ target: "solid.unfold", expression: input.unfold.expression }];
+  if (input.unfold) {
+    content.bindings = [{ target: "solid.unfold", expression: input.unfold.expression },
+      ...(beside ? [{ target: "beside.unfold", expression: input.unfold.expression }] : [])];
+  }
   if (input.cut) {
-    const [bottom, top] = solidZRange(solid);
+    const [bottom, top] = zRange;
     const middle = Number(((bottom + top) / 2).toFixed(6));
-    content.sections = [{ as: "cut", axis: "z", value: middle, targets: objects.map((object) => object.as), display: "plane_and_intersection", color: "orange" }];
+    content.sections = [{ as: "cut", axis: "z", value: middle, targets: all.map((object) => object.as), display: "plane_and_intersection", color: "orange" }];
     content.bindings = [{ target: "cut.value", expression: input.cut.expression }];
   }
+  const partOf = (prefix: string, list: Array<Record<string, unknown>>) => Object.fromEntries(list.map((object) => {
+    const as = String(object.as);
+    return [as.replace("-", "_"), `${input.as}#${as}`];
+  }).filter(([key]) => key!.startsWith(prefix)));
   return {
     actions: [{ do: "write", as: input.as, kind: "scene3d", role: input.role, content, place: input.place } as AuthoringAction],
     whole: input.as,
     parts: {
       whole: input.as,
-      solid: `${input.as}#solid`,
-      ...(objects.length > 1 ? { solid_top: `${input.as}#solid-top` } : {}),
+      ...partOf("solid", objects),
+      ...partOf("beside", besideObjects),
       ...(input.cut ? { section: `${input.as}#cut`, primary_control: `${input.as}#cut` } : {}),
       ...(input.unfold ? { primary_control: `${input.as}#solid` } : {}),
     },

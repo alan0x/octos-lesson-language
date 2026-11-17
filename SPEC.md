@@ -818,3 +818,4 @@ Runtime 在 `axes` 给出的有限范围内本地采样；表达式无效或没�
 - （0.9）`prism/pyramid` 也可以不写 `sides + radius`，改写 `base`：3–12 个 `{x, y}` 组成的凸多边形（如直角三角形、长方形），底面按它的形心放在 `center` 下方，棱锥的顶点在形心正上方；`pyramid` 可写 `top_scale`（0 ≤ k < 1）成为棱台，顶面是底面按 k 缩小的副本；`ellipsoid`（椭球）使用 `center + radii: {x, y, z}`。能力 `scene3d:more-solids`；
 - （0.9）`box/prism/pyramid/cylinder/cone` 可写 `unfold`（0 到 1）：0 是封闭的立体，1 是平放的展开图，中间是正在打开的样子。棱柱、棱锥的侧面绕底边转开，顶面跟着最前面的侧面；圆柱侧面展开成 2πr 宽的长方形，圆锥侧面展开成以母线为半径的扇形，底面贴在旁边。每个面保持原来的大小，所以展开图的面积就是表面积。`unfold` 可以由 Lesson 变量绑定（目标 `<对象 as>.unfold`，超出 0–1 时停在两端），用滑杆演示“打开盒子”。能力 `scene3d:unfold`；
 - （0.10）在立体对象上设置 `face_targets: true` 后，可以用 `<场景 as>#<对象 as>-<面标识>-face` 单独标注一个面。圆柱的面标识为 `top`、`bottom` 和 `side`，转动或展开时标识保持稳定。长方体中与某个启用此选项的面四角唯一吻合的 `when_emphasized` 标注随该面展开。能力 `scene3d:face-targets`。
+- （0.13）`caption` 显示在场景下方，按 `\n` 分行。数学插件的 `buildSolid` 用它显示程序算出的体积、表面积或面棱顶点数（决定 0019），旧的播放器不画这一行。能力 `scene3d:caption`。

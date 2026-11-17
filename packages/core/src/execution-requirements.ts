@@ -7,7 +7,7 @@ import {
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.12.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.13.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -52,6 +52,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "plot:secant-first-two": "0.11.0",
   // A secant point hidden where the curve has no value; an older player measured it at a stale y.
   "plot:secant-hide-undefined": "0.12.0",
+  // A line under a 3D scene (a solid's volume, surface area or counts); an older player left it out.
+  "scene3d:caption": "0.13.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
@@ -267,6 +269,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
             if ((scene.objects ?? []).some((object) => object.unfold !== undefined) || (scene.bindings ?? []).some((binding) => String(binding.target).endsWith(".unfold"))) {
               add("scene3d:unfold", `${actionPath}/node/content`);
             }
+            if (typeof (scene as { caption?: unknown }).caption === "string") add("scene3d:caption", `${actionPath}/node/content/caption`);
           }
         }
         if (action.revision) {

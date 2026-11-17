@@ -1762,6 +1762,8 @@ function renderContent(
       const fallback=appendText(parent,"","scene3d-fallback-error");
       bindUi(parent,fallback,"text",()=>{fallback.textContent=ui(parent,"三维场景暂时无法交互。静态说明：{description}",{description:text(content.fallback||content.caption||ui(parent,"请结合旁白理解空间关系。"))});});
     }
+    // A solid's measures, computed by the program (decision 0019), one line per solid.
+    if (content.caption) appendText(parent, text(content.caption), "node-caption scene3d-caption");
     return;
   }
   if (node.kind === "diagram" && Array.isArray(content.elements)) { renderDiagram(parent, node); return; }
