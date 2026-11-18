@@ -4,6 +4,13 @@
 
 ### Added
 
+- **3D solids for AI lessons: two side by side, the measures line, and an L shape (decision 0019 §5 step 1; player 0.13.0):**
+  - `buildSolid` takes `beside`, a second solid along x. Both stand on one floor, centred together on the origin, so the view turns about the pair and the camera frames both (a frontal camera, `SOLID_PAIR_CAMERA`). Its objects are `beside` (and `beside-top` or `beside-side`). One cutting plane cuts both. With `unfold`, both nets open together, spaced by the player's own net geometry (`solidNetXReach`) so they never run into each other. Box faces stay for a box on its own.
+  - `show: { measures, language }` puts a line under the scene with the program's volume, surface area, or face, edge and vertex counts (`solidMeasures`, `solidMeasuresText`). Each value is exact when it can be (`= 24`, `= 12π ≈ 37.70`, `= 4π/3 ≈ 4.19`) and otherwise rounded (`≈ 75.40`). Two solids get one line each, named by shape, or "Left" and "Right" when the names match. Surface area is left out for composites, and counts are given only for boxes, prisms and pyramids. Asking for a quantity a shape has no formula for throws, so the caller decides what to do.
+  - The player draws a `scene3d` `caption` under the scene, one line per `\n`, and the card grows to fit it (`scene3d:caption`, 0.13.0; an older player left it out).
+  - A new composite, `two_boxes`: `size` with `sideSize` against its right side, on one floor (an L shape when the heights differ). Its objects are `solid` and `solid-side`.
+  - Browser check: `npm run check:solids-browser`.
+
 - **Moving points across a pole (player 0.12.0):** `buildFunctionPlot` binds each sample point's y with `hide_when_undefined`, so a point dragged or animated to where the curve has no value (x = −1 on 2/(x + 1)) hides there and comes back, instead of failing the lesson at that slider value. While either secant point is hidden, the player draws no secant or legs and the readout says the function is not defined at that point's x-coordinate (`plot:secant-hide-undefined`, since an older player measured the hidden point at a stale y). Plan item 6e.
 
 - **Number-line form checks in plugin-math** (decision 0017, Studio section): `numberLineFormProblem` checks a form's range, ticks, start and up to three moves (each from where the one before lands; only the last may have a slider; hops only when every move goes one way) and returns a code and the move it concerns, for the form to word in its own language. `numberLineFormValue` and `NUMBER_LINE_FORM_LIMITS` come with it.

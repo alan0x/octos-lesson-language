@@ -7,7 +7,7 @@ import {
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.12.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.13.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -52,6 +52,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "plot:secant-first-two": "0.11.0",
   // A secant point hidden where the curve has no value; an older player measured it at a stale y.
   "plot:secant-hide-undefined": "0.12.0",
+  // A line under a 3D scene (a solid's volume, surface area or counts); an older player left it out.
+  "scene3d:caption": "0.13.0",
 });
 
 /** 3D solids added in player 0.9.0 (prisms, pyramids, frustums, hemispheres, tori, regular polyhedra). */
@@ -198,6 +200,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     if (Array.isArray(value.objects) && value.objects.some((object) => object.face_targets === true)) add("scene3d:face-targets", path);
+    // Written or revised: a caption the player draws (decision 0019); an older player left it out.
+    if (kind === "scene3d" && typeof value.caption === "string" && value.caption.trim()) add("scene3d:caption", `${path}/caption`);
     if (kind === "plot") {
       const curves = Array.isArray(value.curves) ? value.curves as Array<Record<string, unknown>> : [];
       if (curves.some((curve) => ["from", "to", "from_closed", "to_closed", "series"].some((field) => curve[field] !== undefined))) add("plot:curve-intervals", `${path}/curves`);
