@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { deriveExecutionRequirements, normalizeAuthoringLesson, validateAuthoringLesson, type AuthoringLesson } from "../../core/src/index.js";
 import { solidFacets } from "../../web-runtime/src/solids.js";
-import { buildSolid, describeSolid, solidMeasures, solidMeasuresText, solidXReach, solidZRange, type Solid } from "../src/index.js";
+import { buildSolid, describeSolid, integerSqrt, solidMeasures, solidMeasuresText, solidXReach, solidZRange, type Solid } from "../src/index.js";
 
 const names = { top: "top", bottom: "bottom", front: "front", back: "back", left: "left", right: "right" };
 
@@ -222,4 +222,41 @@ test("a lesson without beside or show builds exactly as before", () => {
   assert.deepEqual(content(built), { fallback: "A cone.", axes: false, camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
     objects: [{ as: "solid", kind: "cone", center: { x: 0, y: 0, z: 0 }, radius: 1, height: 2 }] });
   assert.ok(!needs(built).requiredCapabilities.includes("scene3d:caption"));
+});
+
+test("the integer square root is exact and fast on large values (fourth review of #73)", () => {
+  // The old root, seeded through Number and corrected one step at a time, never finished on 10^40 + 12345.
+  for (const root of [0n, 1n, 2n, 3n, 10n ** 8n + 7n, 2n ** 53n + 1n, 10n ** 40n + 12345n, 7n ** 200n]) {
+    const square = root * root;
+    assert.equal(integerSqrt(square), root);
+    assert.equal(integerSqrt(square + 2n * root), root, "just below the next square");
+    if (root > 0n) assert.equal(integerSqrt(square - 1n), root - 1n, "just below this square");
+  }
+  assert.throws(() => integerSqrt(-1n), RangeError);
+  // A 2000-digit value finishes in Newton's logarithmic number of steps.
+  const big = 10n ** 1000n + 3n;
+  const started = performance.now();
+  assert.equal(integerSqrt(big * big), big);
+  assert.ok(performance.now() - started < 200);
+});
+
+test("a decimal cone's rational slant is found exactly through the square root, quickly (fourth review of #73)", () => {
+  // A 3-4-5 cone scaled by 0.123456789012: slant² has a numerator of about 24 digits, past 2^53.
+  const k = 0.123456789012;
+  const solid: Solid = { shape: "cone", radius: Number((3 * k).toFixed(12)), height: Number((4 * k).toFixed(12)) };
+  const started = performance.now();
+  const measures = solidMeasures(solid);
+  const text = solidMeasuresText(solid, ["volume", "surface_area"], "en");
+  assert.ok(performance.now() - started < 200, "a caption never stalls the compile");
+  // Slant 5k is rational, so the surface area has an exact π coefficient r·(r + s) = 3k·8k = 24k².
+  const k12 = 123456789012n;
+  assert.deepEqual(measures.surfaceArea?.exact, (() => {
+    const n = 24n * k12 * k12, d = 10n ** 24n;
+    let [a, b] = [n, d]; while (b) [a, b] = [b, a % b];
+    return { n: n / a, d: d / a };
+  })());
+  assert.match(text, /Surface area ≈ /u, "far more than three decimal places, so shown as approximate");
+  // An irrational slant (radius 1.1, height 2.3) stays inexact, also quickly.
+  const irrational = solidMeasures({ shape: "cone", radius: 1.1, height: 2.3 });
+  assert.equal(irrational.surfaceArea?.exact, undefined);
 });

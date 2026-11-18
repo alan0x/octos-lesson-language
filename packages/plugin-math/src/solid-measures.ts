@@ -37,17 +37,25 @@ export function exactNumber(value: number): Fraction | undefined {
   return exponent >= 0 ? fraction(digits * 10n ** BigInt(exponent)) : fraction(digits, 10n ** BigInt(-exponent));
 }
 
-const isqrt = (value: bigint): bigint => {
+/**
+ * ⌊√value⌋ by integer Newton iteration, all in BigInt. The seed 2^⌈bits/2⌉ is at least the root, and each
+ * step then decreases until it stops, in about log₂(bits) steps. (A seed through Number lost precision past
+ * 2^53 and the old one-by-one correction could take trillions of steps on a decimal cone's slant: review of #73.)
+ */
+export function integerSqrt(value: bigint): bigint {
+  if (value < 0n) throw new RangeError("integerSqrt of a negative number");
   if (value < 2n) return value;
-  let x = BigInt(Math.floor(Math.sqrt(Number(value))));
-  while (x * x > value) x -= 1n;
-  while ((x + 1n) * (x + 1n) <= value) x += 1n;
-  return x;
-};
+  let x = 1n << BigInt(Math.ceil(value.toString(2).length / 2));
+  for (;;) {
+    const next = (x + value / x) >> 1n;
+    if (next >= x) return x;
+    x = next;
+  }
+}
 /** A square root that is itself a fraction (5 for 25, 1.5 for 2.25); undefined when it is irrational. */
 const root = (value: Fraction): Fraction | undefined => {
   if (value.n < 0n) return undefined;
-  const [n, d] = [isqrt(value.n), isqrt(value.d)];
+  const [n, d] = [integerSqrt(value.n), integerSqrt(value.d)];
   return n * n === value.n && d * d === value.d ? fraction(n, d) : undefined;
 };
 /** All parts exact, or undefined: one irrational or unreadable size makes the whole measure inexact. */

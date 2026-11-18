@@ -302,7 +302,7 @@ export {
   type BoxFaceNames, type CompositeSolid, type Solid, type SolidBase, type SolidSceneInput, type SolidShape,
 } from "./solids.js";
 export {
-  exactNumber, quantityText, solidHasMeasure, solidMeasures, solidMeasuresText,
+  exactNumber, integerSqrt, quantityText, solidHasMeasure, solidMeasures, solidMeasuresText,
   type Fraction, type SolidMeasureKind, type SolidMeasures, type SolidQuantity,
 } from "./solid-measures.js";
 import { buildSolid } from "./solids.js";
