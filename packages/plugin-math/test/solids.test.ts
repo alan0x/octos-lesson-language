@@ -84,8 +84,10 @@ test("measures come from the shape and sizes: exact when they can be, π kept as
   assert.equal(line({ shape: "prism", base: { kind: "right_triangle", a: 3, b: 4 }, height: 10 }), "Volume = 60; Surface area = 132");
   // A square pyramid, slant height 5.
   assert.equal(line({ shape: "pyramid", base: { kind: "rectangle", length: 6, width: 6 }, height: 4 }), "Volume = 48; Surface area = 96");
-  // A square pyramid by its circumradius: the same solid.
-  assert.equal(line({ shape: "pyramid", sides: 4, radius: 3 * Math.SQRT2, height: 4 }), "Volume = 48; Surface area = 96");
+  // A square pyramid by its edge, as a question states it: exact.
+  assert.equal(line({ shape: "pyramid", sides: 4, side: 6, height: 4 }), "Volume = 48; Surface area = 96");
+  // The same solid by an irrational circumradius (3√2 as a float) cannot be called exact.
+  assert.equal(line({ shape: "pyramid", sides: 4, radius: 3 * Math.SQRT2, height: 4 }), "Volume ≈ 48.00; Surface area ≈ 96.00");
   // Truncated at half: h/3 (16 + 4 + 8); sides are trapezoids (4 + 2)/2 × √(3² + 1²).
   assert.equal(line({ shape: "pyramid", base: { kind: "rectangle", length: 4, width: 4 }, height: 3, topScale: 0.5 }), `Volume = 28; Surface area ≈ ${(20 + 12 * Math.sqrt(10)).toFixed(2)}`);
   assert.equal(line({ shape: "prism", sides: 6, radius: 1, height: 2 }), "Volume ≈ 5.20; Surface area ≈ 17.20");
@@ -97,7 +99,15 @@ test("measures come from the shape and sizes: exact when they can be, π kept as
   assert.equal(solidMeasuresText({ shape: "box", size: { x: 0.00001, y: 0.00001, z: 0.00001 } }, ["volume"], "en-US"), "Volume ≈ 1.00e-15");
   assert.equal(solidMeasuresText({ shape: "box", size: { x: 12345.67, y: 12345.67, z: 12345.67 } }, ["volume"], "en-US"), "Volume ≈ 1881672302290.56");
   assert.equal(solidMeasuresText({ shape: "sphere", radius: 0.00001 }, ["volume"], "en-US"), "Volume ≈ 4.19e-15", "no 0π");
-  assert.equal(solidMeasuresText({ shape: "box", size: { x: 10000, y: 10000, z: 100 } }, ["volume"], "en-US"), "Volume = 10000000000", "a large whole number below the limit stays exact");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 10000, y: 10000, z: 100 } }, ["volume"], "en-US"), "Volume = 10000000000", "a large whole number stays exact");
+  // Third review: exactness is decided on exact fractions of the sizes, not floating-point tolerance.
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 1345.87, y: 1345.87, z: 1345.87 } }, ["volume"], "en-US"), "Volume ≈ 2437863235.00", "134587³ / 10⁶ ends in .000003");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 100000, y: 100000, z: 100000 } }, ["volume"], "en-US"), "Volume = 1000000000000000", "exact at any size");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 0.1, y: 0.1, z: 0.1 } }, ["volume"], "en-US"), "Volume = 0.001");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 0.01, y: 0.1, z: 0.1 } }, ["volume"], "en-US"), "Volume ≈ 0.000100", "four places: not written exactly");
+  assert.equal(solidMeasuresText({ shape: "cylinder", radius: 0.1, height: 0.3 }, ["volume"], "en-US"), "Volume = 0.003π ≈ 0.01");
+  // A regular base by its edge: the builder takes the circumradius, the line stays honest.
+  assert.equal(solidMeasuresText({ shape: "prism", sides: 6, side: 2, height: 5 }, ["volume"], "en-US"), "Volume ≈ 51.96", "√3: irrational");
   assert.equal(solidMeasuresText({ shape: "sphere", radius: 3 }, ["volume"], "en-US"), "Volume = 36π ≈ 113.10", "4/3 × 27 computed with noise is still exact");
 });
 

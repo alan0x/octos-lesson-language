@@ -33,6 +33,8 @@ export type Solid =
   | { shape: "cylinder" | "cone"; radius: number; height: number }
   /** A regular base of `sides` in a circle of `radius`; a pyramid with topScale (0 < k < 1) is truncated. */
   | { shape: "prism" | "pyramid"; sides: number; radius: number; height: number; topScale?: number }
+  /** A regular base by its edge, as a question states it (the builder works out the circumradius). */
+  | { shape: "prism" | "pyramid"; sides: number; side: number; height: number; topScale?: number }
   | { shape: "prism" | "pyramid"; base: SolidBase; height: number; topScale?: number }
   | { shape: "ellipsoid"; radii: { x: number; y: number; z: number } }
   | CompositeSolid
@@ -41,6 +43,11 @@ export type Solid =
   | { shape: "sphere" | "hemisphere" | "tetrahedron" | "octahedron" | "dodecahedron" | "icosahedron"; radius: number };
 
 export type SolidShape = Solid["shape"];
+
+/** A regular base's circumradius, whether it was given as the radius or as the edge. */
+export function regularRadius(solid: { sides: number } & ({ radius: number } | { side: number })): number {
+  return "radius" in solid ? solid.radius : solid.side / (2 * Math.sin(Math.PI / solid.sides));
+}
 
 /** How high a regular polyhedron of circumradius 1 reaches above (and below) its centre. */
 const POLYHEDRON_REACH: Record<string, number> = { tetrahedron: 1 / Math.sqrt(3), octahedron: 1, dodecahedron: 0.7947, icosahedron: 0.8507 };
@@ -93,8 +100,8 @@ export function centredBaseCorners(solid: Extract<Solid, { shape: "prism" | "pyr
   const corners = "base" in solid
     ? baseCorners(solid.base)
     : Array.from({ length: solid.sides }, (_, index) => ({
-      x: solid.radius * Math.cos(2 * Math.PI * index / solid.sides),
-      y: solid.radius * Math.sin(2 * Math.PI * index / solid.sides),
+      x: regularRadius(solid) * Math.cos(2 * Math.PI * index / solid.sides),
+      y: regularRadius(solid) * Math.sin(2 * Math.PI * index / solid.sides),
     }));
   if (!corners) throw new Error("The three sides do not make a triangle");
   let twice = 0, cx = 0, cy = 0;
@@ -153,7 +160,7 @@ export function solidXReach(solid: Solid): number {
     case "ellipsoid": return solid.radii.x;
     case "torus": return solid.radius + solid.tube;
     case "frustum": return Math.max(solid.radius, solid.topRadius);
-    case "prism": case "pyramid": return "base" in solid ? Math.max(...centredBaseCorners(solid).map((point) => Math.abs(point.x))) : solid.radius;
+    case "prism": case "pyramid": return "base" in solid ? Math.max(...centredBaseCorners(solid).map((point) => Math.abs(point.x))) : regularRadius(solid);
     case "composite": switch (solid.parts) {
       case "box_pyramid": return solid.width / 2;
       case "two_cylinders": return Math.max(solid.radius, solid.topRadius);
@@ -182,7 +189,7 @@ export function solidObjects(solid: Solid): Array<Record<string, unknown>> {
         if (!corners) throw new Error("The three sides do not make a triangle");
         return [{ ...base, base: corners.map((corner) => ({ x: Number(corner.x.toFixed(6)), y: Number(corner.y.toFixed(6)) })), height: solid.height, ...top }];
       }
-      return [{ ...base, sides: solid.sides, radius: solid.radius, height: solid.height, ...top }];
+      return [{ ...base, sides: solid.sides, radius: regularRadius(solid), height: solid.height, ...top }];
     }
     case "frustum": return [{ ...base, radius: solid.radius, top_radius: solid.topRadius, height: solid.height }];
     case "torus": return [{ ...base, radius: solid.radius, tube: solid.tube }];
@@ -246,7 +253,10 @@ export function describeSolid(solid: Solid, language: string): string {
       const truncated = solid.shape === "pyramid" && solid.topScale !== undefined;
       const kind = zh ? (solid.shape === "prism" ? "棱柱" : truncated ? "棱台" : "棱锥") : solid.shape === "prism" ? "prism" : truncated ? "truncated pyramid" : "pyramid";
       const top = truncated ? (zh ? `，上底是下底的 ${solid.topScale} 倍` : `, its top ${solid.topScale} times the base`) : "";
-      if (!("base" in solid)) return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${kind}，高 ${solid.height}${top}。` : `A ${solid.sides}-sided ${kind} of height ${solid.height}${top}.`;
+      if (!("base" in solid)) {
+        const edge = "side" in solid ? (zh ? `，底面边长 ${solid.side}` : `, base edge ${solid.side}`) : "";
+        return zh ? `底面是正${POLYGON_ZH[solid.sides]}边形的${kind}，高 ${solid.height}${edge}${top}。` : `A ${solid.sides}-sided ${kind} of height ${solid.height}${edge}${top}.`;
+      }
       const base = solid.base;
       const shape = base.kind === "rectangle" ? (zh ? `长 ${base.length}、宽 ${base.width} 的长方形` : `a ${base.length} by ${base.width} rectangle`)
         : base.kind === "right_triangle" ? (zh ? `直角边为 ${base.a} 和 ${base.b} 的直角三角形` : `a right triangle with legs ${base.a} and ${base.b}`)
