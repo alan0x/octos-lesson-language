@@ -93,6 +93,11 @@ test("measures come from the shape and sizes: exact when they can be, π kept as
   // A volume needing more than three places is rounded, and says so (owner review of #73).
   assert.equal(solidMeasuresText({ shape: "box", size: { x: 123.45, y: 123.45, z: 123.45 } }, ["volume"], "en-US"), "Volume ≈ 1881365.96");
   assert.equal(solidMeasuresText({ shape: "box", size: { x: 1.5, y: 1.5, z: 1.5 } }, ["volume"], "en-US"), "Volume = 3.375");
+  // A positive volume is never "= 0", and digits a double cannot carry are never claimed exact (second review).
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 0.00001, y: 0.00001, z: 0.00001 } }, ["volume"], "en-US"), "Volume ≈ 1.00e-15");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 12345.67, y: 12345.67, z: 12345.67 } }, ["volume"], "en-US"), "Volume ≈ 1881672302290.56");
+  assert.equal(solidMeasuresText({ shape: "sphere", radius: 0.00001 }, ["volume"], "en-US"), "Volume ≈ 4.19e-15", "no 0π");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 10000, y: 10000, z: 100 } }, ["volume"], "en-US"), "Volume = 10000000000", "a large whole number below the limit stays exact");
   assert.equal(solidMeasuresText({ shape: "sphere", radius: 3 }, ["volume"], "en-US"), "Volume = 36π ≈ 113.10", "4/3 × 27 computed with noise is still exact");
 });
 

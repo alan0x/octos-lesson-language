@@ -110,23 +110,36 @@ export function solidHasMeasure(solid: Solid, kind: SolidMeasureKind): boolean {
 // passed a rounded volume as exact (123.45³ = 1881365.963625 shown as "= 1881365.964", owner review of #73).
 const whole = (value: number) => Math.abs(value - Math.round(value)) <= 64 * Number.EPSILON * Math.max(1, Math.abs(value));
 
+/**
+ * Beyond this many units of the last place written, a double carries too few digits to tell a value that
+ * really ends there from one rounded there (12345.67³ shown as "= 1881672302290.56", owner review of #73).
+ */
+const EXACT_LIMIT = 1e12;
+
+/**
+ * Whether `scaled` (a value times 10^places) is a whole number that really is the value: within the digits a
+ * double can tell apart, and never a zero standing for a positive value (0.00001³ shown as "= 0").
+ */
+const exactAt = (value: number, scaled: number) => Math.abs(scaled) < EXACT_LIMIT && whole(scaled) && (Math.round(scaled) !== 0 || value === 0);
+
 /** A number written with at most three decimal places, when that is exact. */
 function exactDecimal(value: number): string | undefined {
   for (let places = 0; places <= 3; places += 1) {
     const scaled = value * 10 ** places;
-    if (whole(scaled)) return (Math.round(scaled) / 10 ** places).toFixed(places);
+    if (exactAt(value, scaled)) return (Math.round(scaled) / 10 ** places).toFixed(places);
   }
   return undefined;
 }
 
-const approximate = (value: number) => (Math.round(value * 100) / 100).toFixed(2);
+/** Two decimal places, or three significant digits for a value too small to show in two (never "≈ 0.00"). */
+const approximate = (value: number) => (value !== 0 && Math.abs(value) < 0.005 ? value.toPrecision(3) : (Math.round(value * 100) / 100).toFixed(2));
 
 /** A multiple of π written exactly: 12π, 4.5π, 16π/3, π/3; undefined when the coefficient is not a simple fraction. */
 function piText(coefficient: number): string | undefined {
   const decimal = exactDecimal(coefficient);
   if (decimal !== undefined) return decimal === "1" ? "π" : `${decimal}π`;
   for (let denominator = 2; denominator <= 12; denominator += 1) {
-    if (whole(coefficient * denominator)) {
+    if (exactAt(coefficient, coefficient * denominator)) {
       const numerator = Math.round(coefficient * denominator);
       return `${numerator === 1 ? "" : numerator}π/${denominator}`;
     }
