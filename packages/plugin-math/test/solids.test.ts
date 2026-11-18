@@ -90,6 +90,10 @@ test("measures come from the shape and sizes: exact when they can be, π kept as
   assert.equal(line({ shape: "pyramid", base: { kind: "rectangle", length: 4, width: 4 }, height: 3, topScale: 0.5 }), `Volume = 28; Surface area ≈ ${(20 + 12 * Math.sqrt(10)).toFixed(2)}`);
   assert.equal(line({ shape: "prism", sides: 6, radius: 1, height: 2 }), "Volume ≈ 5.20; Surface area ≈ 17.20");
   assert.equal(line({ shape: "box", size: { x: 0.1, y: 0.2, z: 0.5 } }), "Volume = 0.01; Surface area = 0.34", "no floating-point tails");
+  // A volume needing more than three places is rounded, and says so (owner review of #73).
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 123.45, y: 123.45, z: 123.45 } }, ["volume"], "en-US"), "Volume ≈ 1881365.96");
+  assert.equal(solidMeasuresText({ shape: "box", size: { x: 1.5, y: 1.5, z: 1.5 } }, ["volume"], "en-US"), "Volume = 3.375");
+  assert.equal(solidMeasuresText({ shape: "sphere", radius: 3 }, ["volume"], "en-US"), "Volume = 36π ≈ 113.10", "4/3 × 27 computed with noise is still exact");
 });
 
 test("counts only for polyhedra; a composite has a volume but no surface area", () => {

@@ -106,7 +106,9 @@ export function solidHasMeasure(solid: Solid, kind: SolidMeasureKind): boolean {
 }
 
 /** Whether `value` is a whole number up to floating-point noise. */
-const whole = (value: number) => Math.abs(value - Math.round(value)) <= 1e-9 * Math.max(1, Math.abs(value));
+// Floating-point noise only (a few units in the last place): a relative 1e-9 grew with the scaled value and
+// passed a rounded volume as exact (123.45³ = 1881365.963625 shown as "= 1881365.964", owner review of #73).
+const whole = (value: number) => Math.abs(value - Math.round(value)) <= 64 * Number.EPSILON * Math.max(1, Math.abs(value));
 
 /** A number written with at most three decimal places, when that is exact. */
 function exactDecimal(value: number): string | undefined {
