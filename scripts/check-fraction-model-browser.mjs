@@ -41,6 +41,8 @@ const cases = {
     [animate("three", "n", 3), animate("all", "n", 8), animate("back", "n", 1)]),
   split: lesson({ model: "bar", fractions: [{ numerator: 1, denominator: 3, split: 4, highlight: 1 }] }),
   share: lesson({ model: "circle", fractions: [{ numerator: 2, denominator: 1, split: 3, highlight: 2 }] }),
+  emphasis: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 4 }, { numerator: 2, denominator: 3 }], relation: "compare" }, [],
+    [{ key: "focus", say: "Look at the second one.", actions: [{ do: "emphasize", target: "model#b", emphasis: "focus" }] }]),
 };
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
@@ -89,6 +91,7 @@ try {
         const svg = document.querySelector(".fraction-model-preview");
         if (!svg) continue;
         const fractions = [...svg.querySelectorAll(".fraction-model-fraction")].map((group) => ({
+          id: group.dataset.id, focused: group.classList.contains("emphasis-focus"),
           shaded: [...group.querySelectorAll(".fraction-model-part-shaded")].map((part) => ({ tag: part.tagName, box: rect(part) })),
           empty: group.querySelectorAll(".fraction-model-part-empty").length,
           outlines: [...group.querySelectorAll(".fraction-model-outline")].map(rect),
@@ -159,6 +162,9 @@ try {
   check(piece && outline && Math.abs(piece.width * 12 - outline.width) < 3, `the marked piece is a twelfth of the whole: ${JSON.stringify([piece, outline])}`);
   const share = last(await states("share"));
   check(share?.fractions[0].highlights.length === 2 && share.fractions[0].outlines.length === 2 && inside(share.fractions[0].highlights[0], share.fractions[0].outlines[0]) && inside(share.fractions[0].highlights[1], share.fractions[0].outlines[0]), `two wholes in thirds, a share of two thirds marked in the first: ${JSON.stringify(share?.fractions[0].highlights)}`);
+  const emphasis = last(await states("emphasis"));
+  check(emphasis && emphasis.fractions.every((fraction) => fraction.id && fraction.id !== "undefined"), `each fraction has its canonical id: ${JSON.stringify(emphasis?.fractions.map((fraction) => fraction.id))}`);
+  check(emphasis && !emphasis.fractions[0].focused && emphasis.fractions[1].focused, `emphasizing model#b marks the second fraction only: ${JSON.stringify(emphasis?.fractions.map((fraction) => fraction.focused))}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();

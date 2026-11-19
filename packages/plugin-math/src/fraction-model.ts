@@ -251,7 +251,8 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
     const wholes = counts[index]!;
     const shaded = shadedParts(fraction);
     const split = fraction.split ?? 1;
-    const highlighted = fraction.highlight ?? 0;
+    // The highlight marks shaded parts only, whatever a bound numerator does (review of #77).
+    const highlighted = Math.min(fraction.highlight ?? 0, shaded * split);
     const d = fraction.denominator;
     const top = y;
     const planWholes: PlannedWhole[] = [];
@@ -308,7 +309,10 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
     else if (content.model === "circle") { const rowsOfCircles = Math.ceil(wholes / 4); height = rowsOfCircles * (2 * size + 14) - 14; }
     else height = size;
     planned.push({
-      id: fraction.as, numerator: Math.round(fraction.numerator), denominator: d, wholes: planWholes,
+      // Normalized content names a part by `id`, authoring content by `as` (review of #77).
+      // The label is the shaded count, so it never disagrees with the picture, even for a bound
+      // expression the core's extreme-value check cannot see past (4 − |n − 1| peaks between them).
+      id: String((fraction as { id?: string }).id ?? fraction.as), numerator: shaded, denominator: d, wholes: planWholes,
       label: { x: FRACTION_MODEL_VIEW_WIDTH - SIDE - LABEL_COLUMN / 2, y: top + height / 2 },
       top, bottom: top + height,
     });

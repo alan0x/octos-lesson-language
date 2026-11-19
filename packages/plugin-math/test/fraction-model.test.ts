@@ -72,6 +72,20 @@ test("the plan shades whole parts only: a full turn is a disc, an empty fraction
   assert.equal(planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: 2.6, denominator: 4, wholes: 1 }] }).fractions[0]!.numerator, 3);
 });
 
+test("the picture agrees with itself whatever a bound numerator does (review of #77)", () => {
+  // A bound expression can peak between a slider's extremes (4 − |n − 1| is 4 at n = 1); the label is the
+  // shaded count, never a value the parts cannot show, and the highlight never marks unshaded parts.
+  const over = planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: 4, denominator: 3, wholes: 1 }] }).fractions[0]!;
+  assert.equal(over.numerator, 3);
+  assert.equal(over.wholes[0]!.parts.filter((part) => part.shaded).length, 3);
+  const under = planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: -1, denominator: 3, wholes: 1 }] }).fractions[0]!;
+  assert.equal(under.numerator, 0);
+  const marked = planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: 0, denominator: 4, wholes: 1, highlight: 2 }] }).fractions[0]!;
+  assert.equal(marked.wholes[0]!.highlights.length, 0);
+  // Normalized content names a fraction by id.
+  assert.equal(planFractionModel({ model: "bar", fractions: [{ id: "l:node:m:fragment:b", numerator: 1, denominator: 2 }] }).fractions[0]!.id, "l:node:m:fragment:b");
+});
+
 test("the plan counts parts through the wholes, in order", () => {
   const plan = planFractionModel(bar(7, 4) as unknown as Record<string, unknown>);
   const wholes = plan.fractions[0]!.wholes;
