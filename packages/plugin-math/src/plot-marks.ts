@@ -52,11 +52,19 @@ function divide(a: Scalar, b: Scalar): Scalar {
 /**
  * A sum of lesson-number terms can cancel to a rounding residue instead of 0 (0.1·n1 − 0.3 at n1 = 3 is
  * 5.6e-17), so a mark that should hide while it does not exist is drawn far away instead. Such a value is
- * snapped to a grid of 1e-12 before it divides or goes under a square root; a constant or a single product
- * cannot cancel and is left as written.
+ * set to exactly 0 while it is below 1e-12 before it divides, and is left exact otherwise; a constant or a
+ * single product cannot cancel and is written as before. The discriminant is set to 0 while it is below
+ * 1e-12 of its own size (b² + |4ac|) before its square root.
  */
-const snapped = (text: string) => `round((${text})*1e12)/1e12`;
-const canCancel = (scalar: Scalar) => scalar.value === undefined && /[+-]/u.test(scalar.text.replace(/^-/u, ""));
+/**
+ * `value` itself, or exactly 0 while |value| < 1e-12·scale: with t = floor(|value|/scale·1e12), a whole
+ * number, 1 − floor(1/(1 + t)) is 0 at t = 0 and 1 for every t ≥ 1.
+ */
+const zeroBelow = (value: string, scale?: string) =>
+  `(${value})*(1-floor(1/(1+floor(abs(${value})${scale ? `/${scale}` : ""}*1e12))))`;
+const snapped = (text: string) => zeroBelow(text);
+// A sign inside a number's exponent (1e-7) is not a sum.
+const canCancel = (scalar: Scalar) => scalar.value === undefined && /[+-]/u.test(scalar.text.replace(/^-/u, "").replace(/(\d)e[+-]/gu, "$1e"));
 const snap = (scalar: Scalar): Scalar => (canCancel(scalar) ? { text: snapped(scalar.text) } : scalar);
 
 const degree = (p: Polynomial) => p.reduce((highest, scalar, power) => (isZero(scalar) ? highest : power), 0);
@@ -177,9 +185,13 @@ export function markParts(tokens: PlotFormula, requested: readonly PlotMark[], l
         }
       } else {
         const discriminant = `${wrap(b)}^2-4*${wrap(a)}*${wrap(c)}`;
+        // b² − 4ac scales with the coefficients squared, so it is snapped relative to its own size
+        // (b² + |4ac|), never to a fixed step that would move the roots of a quadratic with tiny coefficients.
+        const scale = `(${wrap(b)}^2+abs(4*${wrap(a)}*${wrap(c)})+1e-300)`;
+        const relative = zeroBelow(discriminant, scale);
         for (const [index, sign] of (["-", "+"] as const).entries()) {
           const part = (root: string, divisor: Scalar): MarkPart => ({ kind: "point", as: `mark-x-intercept-${index + 1}`, label: labels("x 截距"), x: `(${negate(b).text}${sign}${root})/(2*${wrap(divisor)})`, y: "0" });
-          parts.push(written(part(`sqrt(${snapped(discriminant)})`, snap(a)), part(`sqrt(${discriminant})`, a)));
+          parts.push(written(part(`sqrt(${relative})`, snap(a)), part(`sqrt(${discriminant})`, a)));
         }
       }
     } else {

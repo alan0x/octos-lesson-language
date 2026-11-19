@@ -94,5 +94,17 @@ test("a coefficient that cancels to a rounding residue hides its marks as at an 
   for (const part of double.filter((item) => item.as.startsWith("mark-x-intercept"))) assert.ok(Math.abs(at(part.x!, { m: 3 }) - -1) < 1e-5, part.x!);
   // A single product cannot cancel, so it is written as before.
   const plain = markParts(plotFormulaTokens("a*x^2+1", ["a"]), ["vertex"], labels, { variables: ["a"], samples: [{ a: 1 }] }, "$plot");
-  assert.ok(!plain[0]!.x!.includes("round("));
+  assert.ok(!plain[0]!.x!.includes("ceil("));
+});
+
+test("tiny coefficients keep their roots: the discriminant snaps relative to its size (review of #74)", () => {
+  const roots = (formula: string, variables: string[], values: Record<string, number>) =>
+    markParts(plotFormulaTokens(formula, variables), ["intercepts"], labels, { variables, samples: [values] }, "$plot")
+      .filter((part) => part.as.startsWith("mark-x-intercept")).map((part) => at(part.x!, values));
+  for (const x of roots("0.0000001*x^2-0.0000001", [], {})) assert.ok(Math.abs(Math.abs(x) - 1) < 1e-9, String(x));
+  for (const x of roots("0.000001*x^2-0.00000036", [], {})) assert.ok(Math.abs(Math.abs(x) - 0.6) < 1e-9, String(x));
+  for (const x of roots("(p+q)*(x^2+1)", ["p", "q"], { p: 3e-7, q: 0 })) assert.ok(!Number.isFinite(x), "no real roots stay hidden");
+  // An exponent's sign is not a sum: a single product is written as before.
+  const product = markParts(plotFormulaTokens("1e-7*n*x^2+1", ["n"]), ["vertex"], labels, { variables: ["n"], samples: [{ n: 1 }] }, "$plot");
+  assert.ok(!product[0]!.x!.includes("ceil("));
 });
