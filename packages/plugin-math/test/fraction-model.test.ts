@@ -95,9 +95,14 @@ test("the plan counts parts through the wholes, in order", () => {
   const cells = grid.fractions[0]!.wholes[0]!.parts;
   assert.equal(cells.length, 100);
   assert.equal(cells.filter((cell) => cell.shaded).length, 37);
-  // Row by row from the top left: the 37th cell is the seventh of the fourth row.
+  // Column by column from the top left (US hundred grids): the 37th cell is the seventh of the fourth column.
   assert.ok(cells[36]!.shaded && !cells[37]!.shaded);
-  assert.ok(cells[36]!.shape.kind === "rect" && cells[30]!.shape.kind === "rect" && cells[36]!.shape.y === cells[30]!.shape.y);
+  assert.ok(cells[36]!.shape.kind === "rect" && cells[30]!.shape.kind === "rect" && cells[36]!.shape.x === cells[30]!.shape.x);
+  assert.ok(cells[10]!.shape.kind === "rect" && cells[0]!.shape.kind === "rect" && cells[10]!.shape.y === cells[0]!.shape.y && cells[10]!.shape.x > cells[0]!.shape.x);
+  // A grid that is not square fills its columns the same way: 2 × 3, four cells shaded, is one full column and two cells.
+  const small = planFractionModel({ model: "grid", grid: { rows: 2, columns: 3 }, fractions: [{ as: "a", numerator: 4, denominator: 6 }] }).fractions[0]!.wholes[0]!.parts;
+  const shadedX = small.filter((cell) => cell.shaded).map((cell) => (cell.shape as { x: number }).x);
+  assert.equal(new Set(shadedX).size, 2);
 });
 
 test("two fractions share one whole, and the relation is computed from the values", () => {
