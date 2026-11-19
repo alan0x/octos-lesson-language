@@ -49,6 +49,16 @@ function divide(a: Scalar, b: Scalar): Scalar {
   return { text: `${wrap(a)}/${wrap(b)}` };
 }
 
+/**
+ * A sum of lesson-number terms can cancel to a rounding residue instead of 0 (0.1·n1 − 0.3 at n1 = 3 is
+ * 5.6e-17), so a mark that should hide while it does not exist is drawn far away instead. Such a value is
+ * snapped to a grid of 1e-12 before it divides or goes under a square root; a constant or a single product
+ * cannot cancel and is left as written.
+ */
+const snapped = (text: string) => `round((${text})*1e12)/1e12`;
+const canCancel = (scalar: Scalar) => scalar.value === undefined && /[+-]/u.test(scalar.text.replace(/^-/u, ""));
+const snap = (scalar: Scalar): Scalar => (canCancel(scalar) ? { text: snapped(scalar.text) } : scalar);
+
 const degree = (p: Polynomial) => p.reduce((highest, scalar, power) => (isZero(scalar) ? highest : power), 0);
 const coefficient = (p: Polynomial, power: number) => p[power] ?? constant(0);
 
@@ -152,23 +162,33 @@ export function markParts(tokens: PlotFormula, requested: readonly PlotMark[], l
   const linear = isZero(a);
   const parts: MarkPart[] = [];
   const owners = new Map<MarkPart, PlotMark>();
+  // Each part is written with snapped divisors and discriminant; if that is too long for one binding, it is
+  // written as before (not snapped) rather than left out.
+  const written = (snappedPart: MarkPart, plainPart: MarkPart) =>
+    [snappedPart.x, snappedPart.y, snappedPart.value].every((text) => text === undefined || text.length <= 240) ? snappedPart : plainPart;
   for (const mark of marks) {
     const before = parts.length;
     if (mark === "intercepts") {
       parts.push({ kind: "point", as: "mark-y-intercept", label: labels("y 截距"), x: "0", y: c.text });
       if (linear) {
-        if (!isZero(b)) parts.push({ kind: "point", as: "mark-x-intercept", label: labels("x 截距"), x: negate(divide(c, b)).text, y: "0" });
+        if (!isZero(b)) {
+          const part = (divisor: Scalar): MarkPart => ({ kind: "point", as: "mark-x-intercept", label: labels("x 截距"), x: negate(divide(c, divisor)).text, y: "0" });
+          parts.push(written(part(snap(b)), part(b)));
+        }
       } else {
-        const root = `sqrt(${wrap(b)}^2-4*${wrap(a)}*${wrap(c)})`;
+        const discriminant = `${wrap(b)}^2-4*${wrap(a)}*${wrap(c)}`;
         for (const [index, sign] of (["-", "+"] as const).entries()) {
-          parts.push({ kind: "point", as: `mark-x-intercept-${index + 1}`, label: labels("x 截距"), x: `(${negate(b).text}${sign}${root})/(2*${wrap(a)})`, y: "0" });
+          const part = (root: string, divisor: Scalar): MarkPart => ({ kind: "point", as: `mark-x-intercept-${index + 1}`, label: labels("x 截距"), x: `(${negate(b).text}${sign}${root})/(2*${wrap(divisor)})`, y: "0" });
+          parts.push(written(part(`sqrt(${snapped(discriminant)})`, snap(a)), part(`sqrt(${discriminant})`, a)));
         }
       }
     } else {
       if (linear) refuse(mark, "needs a quadratic");
-      const axis = `${negate(b).text === "0" ? "0" : `(${negate(b).text})`}/(2*${wrap(a)})`;
-      if (mark === "vertex") parts.push({ kind: "point", as: "mark-vertex", label: labels("顶点"), x: axis, y: `${wrap(c)}-${wrap(b)}^2/(4*${wrap(a)})` });
-      else parts.push({ kind: "guide", as: "mark-axis", label: labels("对称轴"), value: axis });
+      const axis = (divisor: Scalar) => `${negate(b).text === "0" ? "0" : `(${negate(b).text})`}/(2*${wrap(divisor)})`;
+      const part = (divisor: Scalar): MarkPart => mark === "vertex"
+        ? { kind: "point", as: "mark-vertex", label: labels("顶点"), x: axis(divisor), y: `${wrap(c)}-${wrap(b)}^2/(4*${wrap(divisor)})` }
+        : { kind: "guide", as: "mark-axis", label: labels("对称轴"), value: axis(divisor) };
+      parts.push(written(part(snap(a)), part(a)));
     }
     for (const part of parts.slice(before)) owners.set(part, mark);
   }

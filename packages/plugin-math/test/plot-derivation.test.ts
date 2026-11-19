@@ -80,3 +80,19 @@ test("the shared API refuses or keeps working where outside callers could break 
   // A power of constants is a constant, so (2^0 − 1)x² + x is a line: no vertex.
   assert.throws(() => markParts(plotFormulaTokens("(2^0-1)*x^2+x"), ["vertex"], labels, { variables: [], samples: [{}] }, "$plot"), /needs a quadratic/u);
 });
+
+test("a coefficient that cancels to a rounding residue hides its marks as at an exact 0", () => {
+  // a = 0.1·n − 0.3 is 5.6e-17 at n = 3 in floating point: the vertex must hide, as it does at a = 0.
+  const parts = markParts(plotFormulaTokens("(0.1*n-0.3)*x^2+x+1", ["n"]), ["vertex", "symmetry_axis", "intercepts"], labels, { variables: ["n"], samples: [{ n: 1 }, { n: 5 }] }, "$plot");
+  const vertex = parts.find((part) => part.as === "mark-vertex")!;
+  assert.ok(!Number.isFinite(at(vertex.x!, { n: 3 })), "the vertex hides at the residue");
+  assert.ok(Math.abs(at(vertex.x!, { n: 5 }) - -2.5) < 1e-9, "and is where it was elsewhere: -1/(2·0.2)");
+  for (const part of parts.filter((item) => item.as.startsWith("mark-x-intercept"))) assert.ok(!Number.isFinite(at(part.x!, { n: 3 })));
+  // A double root whose discriminant cancels to −2.2e-16 is still drawn: 0.45x² + 0.9x + 0.45 has x = −1
+  // twice, but with b = 0.3·m at m = 3, b² − 4ac is −2.2e-16 in floating point and its square root fails.
+  const double = markParts(plotFormulaTokens("0.45*x^2+0.3*m*x+0.45", ["m"]), ["intercepts"], labels, { variables: ["m"], samples: [{ m: 1 }, { m: 4 }] }, "$plot");
+  for (const part of double.filter((item) => item.as.startsWith("mark-x-intercept"))) assert.ok(Math.abs(at(part.x!, { m: 3 }) - -1) < 1e-5, part.x!);
+  // A single product cannot cancel, so it is written as before.
+  const plain = markParts(plotFormulaTokens("a*x^2+1", ["a"]), ["vertex"], labels, { variables: ["a"], samples: [{ a: 1 }] }, "$plot");
+  assert.ok(!plain[0]!.x!.includes("round("));
+});

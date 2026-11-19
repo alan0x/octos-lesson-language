@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- **Function-plot marks hide at a coefficient that cancels to a rounding residue** (math plan 3.6). A sum of lesson-number terms can come out as 5.6e-17 instead of 0 (0.1·n − 0.3 at n = 3), so a vertex, axis or x-intercept that hides at a = 0 was drawn far off the plot instead; and a double root whose discriminant came out as −2.2e-16 was hidden. `markParts` now snaps a divisor that is a sum, and the discriminant, to a 1e-12 grid (`round(v*1e12)/1e12`) before dividing or taking the square root. A constant or a single product cannot cancel and is written as before; a part that the snap would push past 240 characters is written as before, never left out. Tests: the residue vertex, the double root, a product left alone.
+
 ### Added
 
 - **3D solids for AI lessons: two side by side, the measures line, and an L shape (decision 0019 §5 step 1; player 0.13.0):**
