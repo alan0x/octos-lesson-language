@@ -131,6 +131,11 @@ test("splitting each part draws the cuts, and the highlight marks the smallest p
   // Circles cut along radii.
   const pie = planFractionModel({ model: "circle", fractions: [{ as: "a", numerator: 1, denominator: 2, split: 3, highlight: 1 }] });
   assert.equal(pie.fractions[0]!.wholes[0]!.splits.length, 2 * 2);
+  // A whole of one part is a disc: cut into 5, it needs all five radii, or it reads as four unequal sectors.
+  const disc = planFractionModel({ model: "circle", fractions: [{ as: "a", numerator: 4, denominator: 1, split: 5 }] });
+  assert.deepEqual(disc.fractions[0]!.wholes.map((whole) => whole.splits.length), [5, 5, 5, 5]);
+  const bars = planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: 1, denominator: 1, split: 5 }] });
+  assert.equal(bars.fractions[0]!.wholes[0]!.splits.length, 4, "a bar's outline closes both ends");
   const slice = pie.fractions[0]!.wholes[0]!.highlights[0]!;
   assert.ok(slice.kind === "sector" && Math.abs(slice.to - slice.from - 60) < 1e-9);
 });

@@ -286,7 +286,9 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
         for (let piece = 0; piece < marked; piece += 1) highlights.push({ kind: "sector", cx, cy, r, from: piece * 360 / small, to: (piece + 1) * 360 / small });
         for (let part = 0; part < d; part += 1) {
           parts.push({ shape: { kind: "sector", cx, cy, r, from: part * 360 / d, to: (part + 1) * 360 / d }, ...partState(part) });
-          for (let cut = 1; cut < split; cut += 1) {
+          // A whole of one part is a disc with no edge at 12 o'clock, so its first cut is drawn too
+          // (review of #77: 1/1 split 5 drew four radii, four unequal sectors).
+          for (let cut = d === 1 && split > 1 ? 0 : 1; cut < split; cut += 1) {
             const angle = ((part + cut / split) * 360 / d - 90) * Math.PI / 180;
             splits.push([cx, cy, cx + r * Math.cos(angle), cy + r * Math.sin(angle)]);
           }
