@@ -329,6 +329,7 @@ import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from
 
 /** The math plugin's recipe builders, by recipe name. */
 import { buildNumberLine } from "./number-line-builder.js";
+import { buildFractionModel } from "./fraction-model-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
 export * from "./number-line-form.js";
@@ -338,10 +339,15 @@ export { PLOT_MARKS, markParts, polynomialOf, type MarkPart, type PlotMark } fro
 export { formulaBars, pieceBars, type AxisBar, type SignCheck } from "./plot-domain-range.js";
 export { intervalOf, signOf, type Interval } from "./interval.js";
 export { renderNumberLine, NUMBER_LINE_VIEW_WIDTH } from "./number-line-view.js";
+// The fraction model (decision 0021, amended).
+export * from "./fraction-model.js";
+export { buildFractionModel, type BuiltFractionModel, type FractionModelInput } from "./fraction-model-builder.js";
+export { renderFractionModel } from "./fraction-model-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
   number_line: buildNumberLine,
+  fraction_model: buildFractionModel,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

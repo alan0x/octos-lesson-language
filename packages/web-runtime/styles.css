@@ -137,6 +137,19 @@
 .number-line-interval-label { fill: #1d6f66; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
 .number-line-interval.emphasis-focus .number-line-interval-bar { stroke: #e19b35; }
 .number-line-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
+.fraction-model-preview { display: block; width: 100%; height: auto; overflow: visible; }
+.fraction-model-part { stroke: #4f5b57; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
+.fraction-model-part-shaded { fill: rgba(35,135,124,.62); }
+.fraction-model-part-empty { fill: #fffdf7; }
+.fraction-model-highlight { fill: rgba(215,154,41,.72); stroke: #c7832e; stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.fraction-model-split { stroke: #4f5b57; stroke-width: 1.1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.fraction-model-outline { fill: none; stroke: #2f3b38; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
+.fraction-model-label { fill: #374b47; font: 700 17px/1 ui-sans-serif, system-ui, sans-serif; }
+.fraction-model-label-bar { stroke: #374b47; stroke-width: 2; stroke-linecap: round; }
+.fraction-model-relation { fill: #374b47; font: 700 18px/1 ui-sans-serif, system-ui, sans-serif; }
+.fraction-model-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
+.fraction-model-fraction.emphasis-focus .fraction-model-outline { stroke: #e15d45; stroke-width: 4; }
+.fraction-model-fraction.emphasis-supporting .fraction-model-outline { stroke: #d79a29; stroke-width: 3.5; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }

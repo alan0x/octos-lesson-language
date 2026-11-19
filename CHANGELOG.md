@@ -8,6 +8,13 @@
 
 ### Added
 
+- **The fraction model, the math plugin's own card (decision 0021, amended; math plugin 0.4.0, `plugin:math/fraction-model@1`):**
+  - `fraction_model` content states the meaning: a `model` (`bar`, `circle` or `grid` with `rows` and `columns`), one or two `fractions` (`numerator`, `denominator`, optional `wholes`, `split` and `highlight`), and, with two, a `relation` (`compare` or `equivalent`). Limits: denominators up to 12 (a grid's is its cell count, up to 10 × 10), up to 8 wholes (4 grids), a split of 2 to 6 with at most 24 parts after it.
+  - The program plans every part (`planFractionModel`): parts are counted through the wholes in order, a full turn is a disc, an empty fraction shades nothing, two fractions share one whole size, and the relation line (`3/4 > 2/3`, `2/3 = 4/6`) is computed from the values. Fractions shown equivalent must be equal.
+  - A numerator can be bound (`fractions.numerator`); it then needs its `wholes`, so the card keeps one size, and the view shades the nearest whole number of parts while it animates. The core checks bound values at every slider extreme, as for the number line.
+  - `buildFractionModel` builds the card for Coach and Studio; `renderFractionModel` draws it; the layout sizes it from its plan.
+  - Browser check: `npm run check:fraction-model-browser`.
+
 - **3D solids for AI lessons: two side by side, the measures line, and an L shape (decision 0019 §5 step 1; player 0.13.0):**
   - `buildSolid` takes `beside`, a second solid along x. Both stand on one floor, centred together on the origin, so the view turns about the pair and the camera frames both (a frontal camera, `SOLID_PAIR_CAMERA`). Its objects are `beside` (and `beside-top` or `beside-side`). One cutting plane cuts both. With `unfold`, both nets open together, spaced by the player's own net geometry (`solidNetXReach`) so they never run into each other. Box faces stay for a box on its own.
   - `show: { measures, language }` puts a line under the scene with the program's volume, surface area, or face, edge and vertex counts (`solidMeasures`, `solidMeasuresText`). Each value is exact when it can be (`= 24`, `= 12π ≈ 37.70`, `= 4π/3 ≈ 4.19`) and otherwise rounded (`≈ 75.40`). Two solids get one line each, named by shape, or "Left" and "Right" when the names match. Surface area is left out for composites, and counts are given only for boxes, prisms and pyramids. Asking for a quantity a shape has no formula for throws, so the caller decides what to do.

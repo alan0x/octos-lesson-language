@@ -1,5 +1,6 @@
 import { layoutTeachingRegion } from "./teaching-layout.js";
 import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from "../../core/src/index.js";
+import { planFractionModel } from "../../plugin-math/src/fraction-model.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -173,6 +174,15 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   if (kind === "scene3d") return { width: 460, height: 360 + (typeof content.caption === "string" && content.caption.trim() ? 12 + 20 * content.caption.split("\n").length : 0) };
   // A wide, low strip; the board measures its real height after drawing.
   if (kind === "number_line") return { width: 560, height: 120 + (Array.isArray(content.jumps) && content.jumps.length ? 58 : 0) + (content.title ? 32 : 0) };
+  // Sized from its plan, which every value of a bound numerator shares (its wholes are written).
+  if (kind === "fraction_model") {
+    try {
+      const plan = planFractionModel(content);
+      return { width: 540, height: Math.round(plan.height * 540 / plan.width) + (content.title ? 32 : 0) + (content.caption ? 28 : 0) };
+    } catch {
+      return { width: 540, height: 240 };
+    }
+  }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
   if (kind === "ink") return inkDrawnSize(content) ?? { width: 340, height: 230 };

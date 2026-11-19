@@ -413,7 +413,7 @@ test("publishes only the executable node, action, binding, control, and task cap
   assert.deepEqual(OLL_EXECUTION_CAPABILITIES, {
     version: "0.1",
     node_kinds: OLL_NODE_KINDS,
-    plugin_node_kinds: ["number_line"],
+    plugin_node_kinds: ["number_line", "fraction_model"],
     action_names: OLL_ACTION_NAMES,
     value_bindings: OLL_BINDING_CAPABILITIES,
     binding_labels: { precision: { min: 0, max: 6 }, prefix: true, suffix: true },
