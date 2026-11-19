@@ -49,6 +49,24 @@ function divide(a: Scalar, b: Scalar): Scalar {
   return { text: `${wrap(a)}/${wrap(b)}` };
 }
 
+/**
+ * A sum of lesson-number terms can cancel to a rounding residue instead of 0 (0.1·n1 − 0.3 at n1 = 3 is
+ * 5.6e-17), so a mark that should hide while it does not exist is drawn far away instead. Such a value is
+ * set to exactly 0 while it is below 1e-12 before it divides, and is left exact otherwise; a constant or a
+ * single product cannot cancel and is written as before. The discriminant is set to 0 while it is below
+ * 1e-12 of its own size (b² + |4ac|) before its square root.
+ */
+/**
+ * `value` itself, or exactly 0 while |value| < 1e-12·scale: with t = floor(|value|/scale·1e12), a whole
+ * number, 1 − floor(1/(1 + t)) is 0 at t = 0 and 1 for every t ≥ 1.
+ */
+const zeroBelow = (value: string, scale?: string) =>
+  `(${value})*(1-floor(1/(1+floor(abs(${value})${scale ? `/${scale}` : ""}*1e12))))`;
+const snapped = (text: string) => zeroBelow(text);
+// A sign inside a number's exponent (1e-7) is not a sum.
+const canCancel = (scalar: Scalar) => scalar.value === undefined && /[+-]/u.test(scalar.text.replace(/^-/u, "").replace(/(\d)e[+-]/gu, "$1e"));
+const snap = (scalar: Scalar): Scalar => (canCancel(scalar) ? { text: snapped(scalar.text) } : scalar);
+
 const degree = (p: Polynomial) => p.reduce((highest, scalar, power) => (isZero(scalar) ? highest : power), 0);
 const coefficient = (p: Polynomial, power: number) => p[power] ?? constant(0);
 
@@ -152,23 +170,37 @@ export function markParts(tokens: PlotFormula, requested: readonly PlotMark[], l
   const linear = isZero(a);
   const parts: MarkPart[] = [];
   const owners = new Map<MarkPart, PlotMark>();
+  // Each part is written with snapped divisors and discriminant; if that is too long for one binding, it is
+  // written as before (not snapped) rather than left out.
+  const written = (snappedPart: MarkPart, plainPart: MarkPart) =>
+    [snappedPart.x, snappedPart.y, snappedPart.value].every((text) => text === undefined || text.length <= 240) ? snappedPart : plainPart;
   for (const mark of marks) {
     const before = parts.length;
     if (mark === "intercepts") {
       parts.push({ kind: "point", as: "mark-y-intercept", label: labels("y 截距"), x: "0", y: c.text });
       if (linear) {
-        if (!isZero(b)) parts.push({ kind: "point", as: "mark-x-intercept", label: labels("x 截距"), x: negate(divide(c, b)).text, y: "0" });
+        if (!isZero(b)) {
+          const part = (divisor: Scalar): MarkPart => ({ kind: "point", as: "mark-x-intercept", label: labels("x 截距"), x: negate(divide(c, divisor)).text, y: "0" });
+          parts.push(written(part(snap(b)), part(b)));
+        }
       } else {
-        const root = `sqrt(${wrap(b)}^2-4*${wrap(a)}*${wrap(c)})`;
+        const discriminant = `${wrap(b)}^2-4*${wrap(a)}*${wrap(c)}`;
+        // b² − 4ac scales with the coefficients squared, so it is snapped relative to its own size
+        // (b² + |4ac|), never to a fixed step that would move the roots of a quadratic with tiny coefficients.
+        const scale = `(${wrap(b)}^2+abs(4*${wrap(a)}*${wrap(c)})+1e-300)`;
+        const relative = zeroBelow(discriminant, scale);
         for (const [index, sign] of (["-", "+"] as const).entries()) {
-          parts.push({ kind: "point", as: `mark-x-intercept-${index + 1}`, label: labels("x 截距"), x: `(${negate(b).text}${sign}${root})/(2*${wrap(a)})`, y: "0" });
+          const part = (root: string, divisor: Scalar): MarkPart => ({ kind: "point", as: `mark-x-intercept-${index + 1}`, label: labels("x 截距"), x: `(${negate(b).text}${sign}${root})/(2*${wrap(divisor)})`, y: "0" });
+          parts.push(written(part(`sqrt(${relative})`, snap(a)), part(`sqrt(${discriminant})`, a)));
         }
       }
     } else {
       if (linear) refuse(mark, "needs a quadratic");
-      const axis = `${negate(b).text === "0" ? "0" : `(${negate(b).text})`}/(2*${wrap(a)})`;
-      if (mark === "vertex") parts.push({ kind: "point", as: "mark-vertex", label: labels("顶点"), x: axis, y: `${wrap(c)}-${wrap(b)}^2/(4*${wrap(a)})` });
-      else parts.push({ kind: "guide", as: "mark-axis", label: labels("对称轴"), value: axis });
+      const axis = (divisor: Scalar) => `${negate(b).text === "0" ? "0" : `(${negate(b).text})`}/(2*${wrap(divisor)})`;
+      const part = (divisor: Scalar): MarkPart => mark === "vertex"
+        ? { kind: "point", as: "mark-vertex", label: labels("顶点"), x: axis(divisor), y: `${wrap(c)}-${wrap(b)}^2/(4*${wrap(divisor)})` }
+        : { kind: "guide", as: "mark-axis", label: labels("对称轴"), value: axis(divisor) };
+      parts.push(written(part(snap(a)), part(a)));
     }
     for (const part of parts.slice(before)) owners.set(part, mark);
   }
