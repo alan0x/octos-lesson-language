@@ -298,8 +298,10 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
         const x = SIDE + whole * (side + 14), top = y;
         const cellWidth = side / columns, cellHeight = side / rows;
         outline = { kind: "rect", x, y: top, width: side, height: side };
+        // Cells fill column by column, top to bottom (the US hundred-grid convention: 0.43 is four full
+        // columns and three cells), as lesson narration describes it (fraction probes 1 and 2, 2026-11-19).
         for (let part = 0; part < d; part += 1) {
-          const row = Math.floor(part / columns), column = part % columns;
+          const column = Math.floor(part / rows), row = part % rows;
           parts.push({ shape: { kind: "rect", x: x + column * cellWidth, y: top + row * cellHeight, width: cellWidth, height: cellHeight }, ...partState(part) });
           if (part < marked) highlights.push(parts.at(-1)!.shape);
         }

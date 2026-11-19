@@ -139,13 +139,21 @@ try {
   check(pairs.compare?.relation?.text === "3/4 > 2/3", `compare reads 3/4 > 2/3: ${JSON.stringify(pairs.compare?.relation?.text)}`);
   check(pairs.pies?.relation?.text === "5/8 > 3/5", `pies read 5/8 > 3/5: ${JSON.stringify(pairs.pies?.relation?.text)}`);
 
+  const seenStates = {};
   for (const [name, wholes, shaded] of [["many", 8, 90], ["bars", 8, 22], ["grid", 1, 37], ["grids", 2, 125]]) {
-    const state = last(await states(name));
+    const state = seenStates[name] = last(await states(name));
     const fraction = state?.fractions[0];
     check(fraction?.outlines.length === wholes, `${name}: ${wholes} wholes drawn: ${fraction?.outlines.length}`);
     check(fraction?.shaded.length === shaded, `${name}: ${shaded} shaded parts: ${fraction?.shaded.length}`);
     check(fraction && fraction.outlines.every((outline) => inside(outline, state.card)) && allApart(fraction.outlines), `${name}: every whole inside the card, apart: ${JSON.stringify(fraction?.outlines)}`);
   }
+
+  // A grid fills column by column (US hundred grids: 0.37 is three full columns and seven cells).
+  const grid = seenStates.grid?.fractions[0];
+  const columns = new Map();
+  for (const cell of grid?.shaded ?? []) { const left = Math.round(cell.box.left); columns.set(left, (columns.get(left) ?? 0) + 1); }
+  const counts = [...columns.entries()].sort((a, b) => a[0] - b[0]).map(([, count]) => count);
+  check(JSON.stringify(counts) === "[10,10,10,7]", `37/100 shades three full columns and seven cells of the fourth, from the left: ${JSON.stringify(counts)}`);
 
   const slider = await states("slider");
   check(!slider.some((state) => state.stuck), `the slider lesson plays through: ${JSON.stringify(slider.slice(-3).map((state) => state.stuck ?? state.variables))}`);
@@ -175,4 +183,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("fraction model browser checks passed: full, empty and one-part circles; two fractions on one whole with the relation line; eight wholes and hundredths grids inside the card; a bound numerator shading whole parts at one size; splits and a marked share; labels beside their models");
+console.log("fraction model browser checks passed: full, empty and one-part circles; two fractions on one whole with the relation line; eight wholes and hundredths grids inside the card, filled column by column; a bound numerator shading whole parts at one size; splits and a marked share; labels beside their models");

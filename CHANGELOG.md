@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **Fraction grids fill column by column** (math plugin 0.4.1; decision 0021). A grid's shaded cells ran row by row from the top left; they now run down each column, left to right, as US hundred grids show tenths (0.43 is four full columns and three cells). Lesson narration in both fraction probes (Coach `docs/FRACTION_PROBE_2026-11-19.md`) described columns under a picture shaded by rows. Bars and circles are unchanged; lessons still require math 0.4.0.
 - **Function-plot marks hide at a coefficient that cancels to a rounding residue** (math plan 3.6). A sum of lesson-number terms can come out as 5.6e-17 instead of 0 (0.1·n − 0.3 at n = 3), so a vertex, axis or x-intercept that hides at a = 0 was drawn far off the plot instead; and a double root whose discriminant came out as −2.2e-16 was hidden. `markParts` now multiplies a divisor that is a sum by an exact 0-or-1 factor, `1 − floor(1/(1 + floor(|v|·1e12)))`, so it is exactly 0 below 1e-12 and exactly itself otherwise; the discriminant gets the same factor relative to its own size (b² + |4ac|), so quadratics with tiny coefficients keep their roots (review). A constant or a single product (an exponent's sign is not a sum) is written as before. A part the factor would push past 240 characters is written as before, never left out: in practice the vertex and axis always fit, and the x-intercepts fit when the coefficients are short. Tests: the residue vertex, the double root, tiny coefficients, products left alone.
 
 ### Added

@@ -54,8 +54,10 @@ test("a number line requires the math plugin's feature, not a core node feature"
   assert.ok(requirements.requiredCapabilities.includes("plugin:math/number-line@1"));
   assert.ok(!requirements.requiredCapabilities.some((feature) => feature === "node:number_line"));
   assert.deepEqual(requirements.requiredPlugins, { math: "0.2.0" });
-  // The manifest is at the newest feature's version (the fraction model, 0021); jump lanes came before it.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, FRACTION_MODEL_PLUGIN_VERSION);
+  // The manifest is at or past the newest feature's version (the fraction model, 0021; 0.4.1 changed only
+  // how grids are drawn, so lessons still require 0.4.0); jump lanes came before it.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.4.1");
+  assert.ok(MATH_PLUGIN_MANIFEST.version >= FRACTION_MODEL_PLUGIN_VERSION);
   assert.ok(NUMBER_LINE_JUMP_LANES_VERSION < FRACTION_MODEL_PLUGIN_VERSION);
   assert.doesNotThrow(() => assertExecutionSupported(events));
   // A player without the math plugin, or with an older one, refuses the lesson before playback.
