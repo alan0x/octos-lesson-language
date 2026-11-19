@@ -10,6 +10,7 @@ import {
 import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
+import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -626,8 +627,8 @@ function bindableTargets(action: WriteAction): Map<string, Set<string>> {
 
 function validateValueBindings(action: WriteAction, path: string, variables: Map<string, number>): void {
   if (action.content.bindings === undefined) return;
-  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d" && action.kind !== NUMBER_LINE_KIND) {
-    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, scene3d and number_line nodes");
+  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d" && action.kind !== NUMBER_LINE_KIND && action.kind !== FRACTION_MODEL_KIND) {
+    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, scene3d, number_line and fraction_model nodes");
   }
   requireArray(action.content.bindings, `${path}/content/bindings`);
   const targets = bindableTargets(action);
@@ -717,7 +718,7 @@ function validateContentFragments(content: JsonObject, path: string): string[] {
 
 function collectAddressableContent(content: JsonObject, path = "/content"): string[] {
   const result = validateContentFragments(content, path);
-  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals"]) {
+  for (const field of ["curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals", "fractions"]) {
     if (!content?.[field]) continue;
     for (const [index, item] of content[field].entries()) {
       if (item?.as) result.push(item.as);
@@ -763,6 +764,25 @@ function validateStructuredContent(content: JsonObject, path: string, addressabl
  * then stop between ticks; the runtime draws a shorter last hop.
  */
 function checkNumberLineBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  checkPluginBoundValues(content, path, declarations, ["points", "jumps", "intervals"], (evaluated, failAt) => validateNumberLineContent(evaluated, path, failAt, { boundValues: true }));
+}
+
+/**
+ * A fraction model's bound numerators stay drawable for every value their variables can take
+ * (decision 0021): the same check as the number line's, against the fraction model's rules.
+ */
+function checkFractionModelBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  checkPluginBoundValues(content, path, declarations, FRACTION_MODEL_PART_FIELDS, (evaluated, failAt) => validateFractionModelContent(evaluated, path, failAt, { boundValues: true }));
+}
+
+/** Evaluates a plugin card at each referenced variable's minimum, maximum and start, and checks each result. */
+function checkPluginBoundValues(
+  content: JsonObject,
+  path: string,
+  declarations: readonly { as: string; initial: number; min: number; max: number }[],
+  fields: readonly string[],
+  validate: (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => void,
+): void {
   const bindings = Array.isArray(content.bindings) ? content.bindings as JsonObject[] : [];
   if (!bindings.length) return;
   const known = new Map(declarations.map((declaration) => [declaration.as, declaration]));
@@ -774,7 +794,7 @@ function checkNumberLineBoundValues(content: JsonObject, path: string, declarati
   }
   const withIds = (value: JsonObject): JsonObject => {
     const clone = structuredClone(value);
-    for (const field of ["points", "jumps", "intervals"]) {
+    for (const field of fields) {
       if (Array.isArray(clone[field])) clone[field] = clone[field].map((item: JsonObject) => ({ ...item, id: item.as }));
     }
     return clone;
@@ -788,10 +808,10 @@ function checkNumberLineBoundValues(content: JsonObject, path: string, declarati
     } catch (error) {
       fail("OLL_INVALID_BINDING", `${path}/bindings`, `When ${where}: ${(error as Error).message}`);
     }
-    for (const field of ["points", "jumps", "intervals"]) {
+    for (const field of fields) {
       if (Array.isArray(evaluated[field])) evaluated[field] = evaluated[field].map(({ id: _id, ...item }: JsonObject) => item);
     }
-    validateNumberLineContent(evaluated, path, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `When ${where}: ${message}`), { boundValues: true });
+    validate(evaluated, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `When ${where}: ${message}`));
   }
 }
 
@@ -1558,6 +1578,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   const inkNodes = new Map<string, Placement["relation"]>();
   // Number lines of this lesson, so a revision is checked by the same rules (decision 0013).
   const numberLineNodes = new Set<string>();
+  const fractionModelNodes = new Set<string>();
   // Highlighted parts of each 3D scene, which a view can turn to show.
   const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
@@ -1716,6 +1737,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
               availableStudentControls.set(variable, controls);
             }
           }
+          if (action.kind === FRACTION_MODEL_KIND) {
+            fractionModelNodes.add(action.as);
+            validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
+          }
           if (action.kind === "scene3d") {
             scene3dHighlights.set(action.as, new Set(((action.content.highlights ?? []) as JsonObject[]).map((highlight) => highlight.as as string)));
             const camera = action.content.camera as UnknownRecord;
@@ -1736,6 +1761,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
           validateValueBindings(action, actionPath, lessonVariables);
           if (action.kind === NUMBER_LINE_KIND) checkNumberLineBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          if (action.kind === FRACTION_MODEL_KIND) checkFractionModelBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
@@ -1796,6 +1822,9 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             if (((action.content.points ?? []) as JsonObject[]).some((point) => point.interaction !== undefined)) {
               fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/content/points`, "A draggable point is declared when the number line is written");
             }
+          }
+          if (fractionModelNodes.has(resolved.alias)) {
+            validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           // A revision that declares addressable parts (a point added to a
           // grid) makes exactly those parts addressable from then on; one that
@@ -1862,7 +1891,7 @@ function stableId(host: NormalizationHost, type: string, alias: string): string 
 
 function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, content: JsonObject): JsonObject {
   const clone = structuredClone(content);
-  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals"]) {
+  for (const field of ["fragments", "curves", "points", "guides", "regions", "elements", "edges", "polygons", "regular_polygons", "circles", "segments", "arcs", "objects", "sections", "highlights", "selections", "jumps", "intervals", "fractions"]) {
     if (!Array.isArray(clone?.[field])) continue;
     clone[field] = clone[field].map((item) => {
       if (!item.as) return item;

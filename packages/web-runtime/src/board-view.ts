@@ -5,6 +5,7 @@ import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-expl
 import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
+import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
@@ -1754,6 +1755,8 @@ function renderContent(
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   // The math plugin's number line (decision 0013); it marks its own parts for emphasis.
   if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)), ...(variableStates ? { variables: variableStates } : {}) }); return; }
+  // The math plugin's fraction model (decision 0021); it marks its own fractions for emphasis.
+  if (node.kind === "fraction_model") { renderFractionModel(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
