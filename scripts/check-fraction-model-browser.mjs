@@ -180,8 +180,9 @@ try {
   }
   const sizes = new Set(slider.filter((each) => !each.stuck).map((state) => `${Math.round(state.svg.width)}x${Math.round(state.svg.height)}`));
   check(sizes.size === 1, `the card keeps one size as the numerator moves: ${[...sizes].join(" ")}`);
-  const labelSpots = new Set(slider.filter((each) => !each.stuck).map((state) => Math.round(state.fractions[0].labels[0].box.left)));
-  check(labelSpots.size === 1, `the label stays put as the numerator moves (the form column is kept): ${[...labelSpots].join(" ")}`);
+  // Centred text: its left edge moves with the digits' widths, its centre does not.
+  const labelSpots = slider.filter((each) => !each.stuck).map((state) => (state.fractions[0].labels[0].box.left + state.fractions[0].labels[0].box.right) / 2);
+  check(Math.max(...labelSpots) - Math.min(...labelSpots) < 1, `the label stays put as the numerator moves (the form column is kept): ${labelSpots.map((x) => x.toFixed(1)).join(" ")}`);
   check(slider.some((state) => !state.stuck && state.variables.n === 8 && state.fractions[0].shaded.length === 8), "the slider reaches a full circle");
 
   const split = last(await states("split"));
