@@ -234,11 +234,13 @@ test("the program writes the number in another form beside the label (0021 amend
   assert.ok(fraction.form!.x > fraction.label.x && fraction.form!.x + 80 <= mixed.width, `${fraction.form!.x}`);
   const width = (plan: typeof mixed) => plan.fractions[0]!.wholes[0]!.outline.kind === "rect" ? (plan.fractions[0]!.wholes[0]!.outline as { width: number }).width : 0;
   assert.ok(width(mixed) < width(plain));
-  // A bound numerator's card keeps one size at every value: its wholes are written, so the column stays.
-  const at = (numerator: number) => planFractionModel(bar(numerator, 4, { wholes: 1 }) as unknown as Record<string, unknown>);
+  // A bound numerator's card keeps one size at every value, so its column stays even before a whole is full.
+  const at = (numerator: number) => planFractionModel({ ...bar(numerator, 4, { wholes: 1 }), bindings: [{ target: "a.numerator", expression: "n" }] } as unknown as Record<string, unknown>);
   assert.equal(width(at(1)), width(at(4)));
   assert.equal(at(1).fractions[0]!.form, undefined);
   assert.equal(at(4).fractions[0]!.form!.text, "= 1");
+  // A fixed fraction that never fills a whole keeps the full width, whatever wholes it names (review of #81).
+  assert.equal(width(planFractionModel(bar(3, 4, { wholes: 1 }) as unknown as Record<string, unknown>)), width(plain));
 });
 
 test("the layout sizes a fraction model from its plan", () => {

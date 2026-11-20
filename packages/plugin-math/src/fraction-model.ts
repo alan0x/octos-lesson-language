@@ -272,10 +272,14 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
   const rows = content.grid?.rows ?? 1, columns = content.grid?.columns ?? 1;
   // A form column is kept whenever a fraction may show a form, at any value of a bound numerator, so the
   // card keeps one size as it moves: on a grid of tenths or hundredths, and on a bar or circle that is
-  // full or past one whole, or whose wholes are written (a bound numerator's are, and it may fill them).
+  // full or past one whole, or whose numerator is bound (it may fill its wholes). Bindings stay in the
+  // content after their values are applied.
+  const bound = new Set((Array.isArray(content.bindings) ? content.bindings : [])
+    .map((binding) => (binding as { target?: unknown }).target).filter((target): target is string => typeof target === "string"));
   const formColumn = fractions.some((fraction, index) => content.model === "grid"
     ? fraction.denominator === 10 || fraction.denominator === 100
-    : fraction.wholes !== undefined || counts[index]! > 1 || shadedParts(fraction) >= fraction.denominator) ? FORM_COLUMN : 0;
+    : bound.has(`${fraction.as}.numerator`) || bound.has(`${(fraction as { id?: string }).id}.numerator`)
+      || counts[index]! > 1 || shadedParts(fraction) >= fraction.denominator) ? FORM_COLUMN : 0;
   const drawWidth = FRACTION_MODEL_VIEW_WIDTH - 2 * SIDE - LABEL_COLUMN - formColumn;
   // Circles (four to a row) and grids (one row) shrink to keep a row of wholes clear of the labels.
   const mostWholes = Math.max(...counts);

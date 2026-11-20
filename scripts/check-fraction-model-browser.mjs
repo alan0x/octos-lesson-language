@@ -48,6 +48,12 @@ const cases = {
   steps: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 5 }] }, [],
     [{ key: "cut", say: "Cut each fifth in half.", actions: [{ do: "revise", target: "model", reason: "cut each fifth in half",
       content: { title: "Fractions", model: "bar", fractions: [{ as: "a", numerator: 3, denominator: 5, split: 2, highlight: 3 }], caption: "Each share is 3/10" } }] }]),
+  // A card below the fraction card, then the fraction card revised with its cuts and a caption: the card grows
+  // and must not run into the one below (0021 amendment 2: Coach draws the second step as a revision).
+  below: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 5 }] }, [],
+    [{ key: "eq", say: "Write it down.", actions: [{ do: "write", as: "eq", kind: "math", role: "derivation", place: { relation: "below", anchor: "model" }, content: { latex: "\\frac{3}{5} \\div 2" } }] },
+      { key: "cut", say: "Cut each fifth in half.", actions: [{ do: "revise", target: "model", reason: "cut each fifth in half",
+        content: { title: "Fractions", model: "bar", fractions: [{ as: "a", numerator: 3, denominator: 5, split: 2, highlight: 3 }], caption: "Each share is 3/10" } }] }]),
   emphasis: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 4 }, { numerator: 2, denominator: 3 }], relation: "compare" }, [],
     [{ key: "focus", say: "Look at the second one.", actions: [{ do: "emphasize", target: "model#b", emphasis: "focus" }] }]),
 };
@@ -112,9 +118,10 @@ try {
         }));
         const relation = svg.querySelector(".fraction-model-relation");
         const card = svg.closest(".board-node");
+        const others = [...document.querySelectorAll(".board-node")].filter((node) => node !== card).map(rect);
         seen.push({
           variables: Object.fromEntries(Object.entries(session.projection.board.variables ?? {}).map(([k, v]) => [k, v.value])),
-          svg: rect(svg), card: card ? rect(card) : null, fractions,
+          svg: rect(svg), card: card ? rect(card) : null, others, fractions,
           relation: relation ? { text: relation.textContent, box: rect(relation) } : null,
         });
       }
@@ -173,6 +180,8 @@ try {
   }
   const sizes = new Set(slider.filter((each) => !each.stuck).map((state) => `${Math.round(state.svg.width)}x${Math.round(state.svg.height)}`));
   check(sizes.size === 1, `the card keeps one size as the numerator moves: ${[...sizes].join(" ")}`);
+  const labelSpots = new Set(slider.filter((each) => !each.stuck).map((state) => Math.round(state.fractions[0].labels[0].box.left)));
+  check(labelSpots.size === 1, `the label stays put as the numerator moves (the form column is kept): ${[...labelSpots].join(" ")}`);
   check(slider.some((state) => !state.stuck && state.variables.n === 8 && state.fractions[0].shaded.length === 8), "the slider reaches a full circle");
 
   const split = last(await states("split"));
@@ -195,6 +204,10 @@ try {
       check(texts.every((box) => inside(box, state.card) && fraction.outlines.every((outline) => apart(box, outline))), `${name}: labels and forms clear of the drawings, inside the card: ${JSON.stringify({ texts, outlines: fraction.outlines })}`);
     }
   }
+  const below = (await states("below")).filter((state) => !state.stuck);
+  const grown = below.at(-1);
+  check(grown && grown.fractions[0].splits === 5 && grown.others.length === 1, `the revised card with a card below it: ${JSON.stringify(grown && { splits: grown.fractions[0].splits, others: grown.others.length })}`);
+  check(below.every((state) => state.others.every((other) => apart(other, state.card))), `after the revision the fraction card and the card below stay apart: ${JSON.stringify(below.map((state) => ({ card: state.card, others: state.others })).slice(-2))}`);
   const stepped = (await states("steps")).filter((state) => !state.stuck);
   const before = stepped[0]?.fractions[0], after = stepped.at(-1)?.fractions[0];
   check(before && before.splits === 0 && before.highlights.length === 0, `the plain step has no cuts: ${JSON.stringify(before && { splits: before.splits, highlights: before.highlights.length })}`);
