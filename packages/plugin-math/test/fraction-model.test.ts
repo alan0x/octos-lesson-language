@@ -130,9 +130,20 @@ test("splitting each part draws the cuts, and the highlight marks the smallest p
   assert.equal(whole.highlights.length, 1);
   const piece = whole.highlights[0]!, outline = whole.outline;
   assert.ok(piece.kind === "rect" && outline.kind === "rect" && Math.abs(piece.width * 12 - outline.width) < 1e-9);
-  // Two wholes cut into thirds, a share of two thirds: both marked pieces lie in the first whole.
+  // Two wholes shared by three (0021 amendment 2): one third of each whole is marked, not two of the first.
   const share = planFractionModel({ model: "bar", fractions: [{ as: "a", numerator: 2, denominator: 1, split: 3, highlight: 2 }] });
-  assert.deepEqual(share.fractions[0]!.wholes.map((w) => w.highlights.length), [2, 0]);
+  assert.deepEqual(share.fractions[0]!.wholes.map((w) => w.highlights.length), [1, 1]);
+  // Half of 3/5: one half of each shaded fifth, not three halves run together from the left.
+  const half = planFractionModel(bar(3, 5, { split: 2, highlight: 3 }) as unknown as Record<string, unknown>).fractions[0]!.wholes[0]!;
+  const left = half.outline.kind === "rect" ? half.outline.x : 0, tenth = half.outline.kind === "rect" ? half.outline.width / 10 : 0;
+  assert.deepEqual(half.highlights.map((piece) => piece.kind === "rect" ? Math.round((piece.x - left) / tenth) : -1), [0, 2, 4]);
+  // A share bigger than one piece per part takes a second piece of each part only after one of every part.
+  const two = planFractionModel(bar(2, 3, { split: 3, highlight: 3 }) as unknown as Record<string, unknown>).fractions[0]!.wholes[0]!;
+  const ninth = two.outline.kind === "rect" ? two.outline.width / 9 : 0, start = two.outline.kind === "rect" ? two.outline.x : 0;
+  assert.deepEqual(two.highlights.map((piece) => piece.kind === "rect" ? Math.round((piece.x - start) / ninth) : -1), [0, 1, 3]);
+  // Unsplit parts are marked from the first shaded part, as before.
+  const grid = planFractionModel({ model: "grid", grid: { rows: 10, columns: 10 }, fractions: [{ as: "a", numerator: 30, denominator: 100, highlight: 12 }] });
+  assert.equal(grid.fractions[0]!.wholes[0]!.highlights.length, 12);
   // Circles cut along radii.
   const pie = planFractionModel({ model: "circle", fractions: [{ as: "a", numerator: 1, denominator: 2, split: 3, highlight: 1 }] });
   assert.equal(pie.fractions[0]!.wholes[0]!.splits.length, 2 * 2);
@@ -195,6 +206,39 @@ test("a fraction model in a lesson: validated, bound values checked, and the mat
   assert.throws(() => validateAuthoringLesson(lesson(pie, { as: "n", initial: 1, min: 0, max: 9, label: "份数", control: { kind: "slider", step: 1 } })), /When n = 9: .*from 0 to 8/);
   // Only the numerator can be bound.
   assert.throws(() => validateAuthoringLesson(lesson({ ...pie, bindings: [{ target: "a.denominator", expression: "n" }] })), /not a supported numeric field/);
+});
+
+test("the program writes the number in another form beside the label (0021 amendment 2)", () => {
+  const form = (content: Record<string, unknown>) => planFractionModel(content).fractions.map((fraction) => fraction.form?.text);
+  // Bars and circles: a whole or mixed number once the parts fill a whole.
+  assert.deepEqual(form(bar(7, 3) as unknown as Record<string, unknown>), ["= 2 1/3"]);
+  assert.deepEqual(form(bar(12, 3) as unknown as Record<string, unknown>), ["= 4"]);
+  assert.deepEqual(form({ model: "circle", fractions: [{ as: "a", numerator: 3, denominator: 1 }] }), ["= 3"]);
+  assert.deepEqual(form(bar(4, 4) as unknown as Record<string, unknown>), ["= 1"]);
+  // A proper fraction on a bar gets none, tenths included: a fraction lesson gets no decimal.
+  assert.deepEqual(form(bar(7, 10) as unknown as Record<string, unknown>), [undefined]);
+  assert.deepEqual(form({ model: "bar", fractions: [{ as: "a", numerator: 3, denominator: 6 }, { as: "b", numerator: 5, denominator: 10 }], relation: "equivalent" }), [undefined, undefined]);
+  // Grids of tenths and hundredths: a decimal, exact, trailing zeros dropped.
+  const grid = (numerator: number, rows: number, columns: number) => ({ model: "grid", grid: { rows, columns }, fractions: [{ as: "a", numerator, denominator: rows * columns }] });
+  assert.deepEqual(form(grid(25, 10, 10)), ["= 0.25"]);
+  assert.deepEqual(form(grid(50, 10, 10)), ["= 0.5"]);
+  assert.deepEqual(form(grid(160, 10, 10)), ["= 1.6"]);
+  assert.deepEqual(form(grid(100, 10, 10)), ["= 1"]);
+  assert.deepEqual(form(grid(7, 2, 5)), ["= 0.7"]);
+  assert.deepEqual(form(grid(3, 1, 10)), ["= 0.3"]);
+  // Other grids get none (a near miss drew 20 of 80).
+  assert.deepEqual(form(grid(20, 8, 10)), [undefined]);
+  // The form sits right of the stacked label, inside the card; bars narrow to make room.
+  const mixed = planFractionModel(bar(7, 3) as unknown as Record<string, unknown>), plain = planFractionModel(bar(2, 3) as unknown as Record<string, unknown>);
+  const fraction = mixed.fractions[0]!;
+  assert.ok(fraction.form!.x > fraction.label.x && fraction.form!.x + 80 <= mixed.width, `${fraction.form!.x}`);
+  const width = (plan: typeof mixed) => plan.fractions[0]!.wholes[0]!.outline.kind === "rect" ? (plan.fractions[0]!.wholes[0]!.outline as { width: number }).width : 0;
+  assert.ok(width(mixed) < width(plain));
+  // A bound numerator's card keeps one size at every value: its wholes are written, so the column stays.
+  const at = (numerator: number) => planFractionModel(bar(numerator, 4, { wholes: 1 }) as unknown as Record<string, unknown>);
+  assert.equal(width(at(1)), width(at(4)));
+  assert.equal(at(1).fractions[0]!.form, undefined);
+  assert.equal(at(4).fractions[0]!.form!.text, "= 1");
 });
 
 test("the layout sizes a fraction model from its plan", () => {
