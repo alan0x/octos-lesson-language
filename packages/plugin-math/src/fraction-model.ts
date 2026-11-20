@@ -49,7 +49,11 @@ export interface FractionModelFraction {
   wholes?: number;
   /** Each part is split again into this many equal parts (dashed). */
   split?: number;
-  /** The first this many of the smallest parts are marked (one share), counted through the shaded parts. */
+  /**
+   * This many of the smallest parts are marked as one share: one in each shaded part first, then a second
+   * in each, and so on (0021 amendment 2: a third of 3/5 is one piece of each fifth; 2 shared by 5 is one
+   * fifth of each whole).
+   */
   highlight?: number;
 }
 
@@ -176,7 +180,8 @@ export const FRACTION_MODEL_VIEW_WIDTH = 520;
 const SIDE = 20;
 /** The stacked fraction label to the right of each model. */
 const LABEL_COLUMN = 72;
-const DRAW_WIDTH = FRACTION_MODEL_VIEW_WIDTH - 2 * SIDE - LABEL_COLUMN;
+/** Room right of the stacked label for its other form ("= 2 1/3", "= 0.25"), when a fraction has one. */
+const FORM_COLUMN = 84;
 const ROW_GAP = 22;
 /** From the last model's bottom to the relation line's baseline. */
 const RELATION_ROW = 32;
@@ -205,6 +210,8 @@ export interface PlannedFraction {
   id: string;
   numerator: number;
   denominator: number;
+  /** The same number in another form, written by the program beside the label (0021 amendment 2). */
+  form?: { text: string; x: number; y: number };
   wholes: PlannedWhole[];
   /** Where the stacked label is centred. */
   label: { x: number; y: number };
@@ -231,6 +238,25 @@ export function compareFractions(a: { numerator: number; denominator: number }, 
 /** "3/4", as written: 4/4 stays 4/4 and 6/3 stays 6/3 (the lesson is about the parts). */
 export const fractionText = (fraction: { numerator: number; denominator: number }) => `${fraction.numerator}/${fraction.denominator}`;
 
+/**
+ * The number a fraction's shaded parts show, in the form its lesson is likely about (0021 amendment 2):
+ * on a grid of tenths or hundredths a decimal ("= 0.25", "= 1.6"); on a bar or circle, a fraction of one
+ * or more wholes as a whole or mixed number ("= 4", "= 2 1/3"). None otherwise: a bar of tenths in a
+ * fraction lesson gets no decimal. Exact, from whole numbers.
+ */
+export function fractionForm(model: FractionModelKind, numerator: number, denominator: number): string | undefined {
+  if (model === "grid") {
+    if (denominator !== 10 && denominator !== 100) return undefined;
+    const digits = denominator === 10 ? 1 : 2;
+    const whole = Math.floor(numerator / denominator);
+    const rest = String(numerator % denominator).padStart(digits, "0").replace(/0+$/u, "");
+    return `= ${whole}${rest ? `.${rest}` : ""}`;
+  }
+  if (numerator < denominator) return undefined;
+  const whole = Math.floor(numerator / denominator), rest = numerator % denominator;
+  return `= ${whole}${rest ? ` ${rest}/${denominator}` : ""}`;
+}
+
 /** The size one whole is drawn at, the same for both fractions so they share a whole. */
 function wholeSize(model: FractionModelKind, mostWholes: number): number {
   if (model === "bar") return 40;
@@ -243,8 +269,23 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
   const content = raw as unknown as FractionModelContent;
   const fractions = content.fractions;
   const counts = fractions.map((fraction) => fractionWholes(fraction));
-  const size = wholeSize(content.model, Math.max(...counts));
   const rows = content.grid?.rows ?? 1, columns = content.grid?.columns ?? 1;
+  // A form column is kept whenever a fraction may show a form, at any value of a bound numerator, so the
+  // card keeps one size as it moves: on a grid of tenths or hundredths, and on a bar or circle that is
+  // full or past one whole, or whose numerator is bound (it may fill its wholes). Bindings stay in the
+  // content after their values are applied.
+  const bound = new Set((Array.isArray(content.bindings) ? content.bindings : [])
+    .map((binding) => (binding as { target?: unknown }).target).filter((target): target is string => typeof target === "string"));
+  const formColumn = fractions.some((fraction, index) => content.model === "grid"
+    ? fraction.denominator === 10 || fraction.denominator === 100
+    : bound.has(`${fraction.as}.numerator`) || bound.has(`${(fraction as { id?: string }).id}.numerator`)
+      || counts[index]! > 1 || shadedParts(fraction) >= fraction.denominator) ? FORM_COLUMN : 0;
+  const drawWidth = FRACTION_MODEL_VIEW_WIDTH - 2 * SIDE - LABEL_COLUMN - formColumn;
+  // Circles (four to a row) and grids (one row) shrink to keep a row of wholes clear of the labels.
+  const mostWholes = Math.max(...counts);
+  const across = content.model === "circle" ? Math.min(4, mostWholes) : mostWholes;
+  const fits = content.model === "circle" ? (drawWidth - (across - 1) * 14) / (2 * across) : (drawWidth - (across - 1) * 14) / across;
+  const size = content.model === "bar" ? wholeSize("bar", mostWholes) : Math.min(wholeSize(content.model, mostWholes), Math.floor(fits));
   const planned: PlannedFraction[] = [];
   let y = 10;
   for (const [index, fraction] of fractions.entries()) {
@@ -262,14 +303,20 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
       let outline: FractionPartShape;
       // A part is shaded when it is among the first `shaded` parts, counted through the wholes in order.
       const partState = (part: number) => ({ shaded: whole * d + part < shaded });
-      // The smallest parts of this whole that the highlight marks, counted the same way.
+      // The smallest parts the highlight marks: one in each shaded part first, then a second in each
+      // (shaded part g, piece s of its split is the (s · shaded + g)-th marked).
       const small = d * split;
-      const marked = Math.max(0, Math.min(small, highlighted - whole * small));
+      const markedPieces: Array<[number, number]> = [];
+      for (let part = 0; part < d; part += 1) {
+        const g = whole * d + part;
+        if (g >= shaded) break;
+        for (let s = 0; s < split; s += 1) if (s * shaded + g < highlighted) markedPieces.push([part, s]);
+      }
       const highlights: FractionPartShape[] = [];
       if (content.model === "bar") {
-        const x = SIDE, top = y + whole * (size + 8), width = DRAW_WIDTH;
+        const x = SIDE, top = y + whole * (size + 8), width = drawWidth;
         outline = { kind: "rect", x, y: top, width, height: size };
-        for (let piece = 0; piece < marked; piece += 1) highlights.push({ kind: "rect", x: x + piece * width / small, y: top, width: width / small, height: size });
+        for (const [part, s] of markedPieces) highlights.push({ kind: "rect", x: x + (part * split + s) * width / small, y: top, width: width / small, height: size });
         for (let part = 0; part < d; part += 1) {
           parts.push({ shape: { kind: "rect", x: x + part * width / d, y: top, width: width / d, height: size }, ...partState(part) });
           for (let cut = 1; cut < split; cut += 1) {
@@ -283,7 +330,7 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
         const r = size;
         const cx = SIDE + r + column * (2 * r + 14), cy = y + r + row * (2 * r + 14);
         outline = { kind: "sector", cx, cy, r, from: 0, to: 360 };
-        for (let piece = 0; piece < marked; piece += 1) highlights.push({ kind: "sector", cx, cy, r, from: piece * 360 / small, to: (piece + 1) * 360 / small });
+        for (const [part, s] of markedPieces) highlights.push({ kind: "sector", cx, cy, r, from: (part * split + s) * 360 / small, to: (part * split + s + 1) * 360 / small });
         for (let part = 0; part < d; part += 1) {
           parts.push({ shape: { kind: "sector", cx, cy, r, from: part * 360 / d, to: (part + 1) * 360 / d }, ...partState(part) });
           // A whole of one part is a disc with no edge at 12 o'clock, so its first cut is drawn too
@@ -303,7 +350,7 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
         for (let part = 0; part < d; part += 1) {
           const column = Math.floor(part / rows), row = part % rows;
           parts.push({ shape: { kind: "rect", x: x + column * cellWidth, y: top + row * cellHeight, width: cellWidth, height: cellHeight }, ...partState(part) });
-          if (part < marked) highlights.push(parts.at(-1)!.shape);
+          if (markedPieces.some(([marked]) => marked === part)) highlights.push(parts.at(-1)!.shape);
         }
       }
       planWholes.push({ outline, parts, splits, highlights });
@@ -320,12 +367,18 @@ export function planFractionModel(raw: Record<string, unknown>): FractionModelPl
       label: { x: FRACTION_MODEL_VIEW_WIDTH - SIDE - LABEL_COLUMN / 2, y: top + height / 2 },
       top, bottom: top + height,
     });
+    const form = fractionForm(content.model, shaded, d);
+    if (form) planned.at(-1)!.form = { text: form, x: 0, y: top + height / 2 + 6 };
     y = top + height + ROW_GAP;
   }
   // Labels stand just right of the widest drawing, one column for both fractions.
   const right = Math.max(...planned.flatMap((fraction) => fraction.wholes.map((whole) => whole.outline.kind === "rect"
     ? whole.outline.x + whole.outline.width : whole.outline.cx + whole.outline.r)));
-  for (const fraction of planned) fraction.label.x = Math.min(FRACTION_MODEL_VIEW_WIDTH - SIDE - LABEL_COLUMN / 2, right + LABEL_COLUMN / 2);
+  for (const fraction of planned) {
+    fraction.label.x = Math.min(FRACTION_MODEL_VIEW_WIDTH - SIDE - formColumn - LABEL_COLUMN / 2, right + LABEL_COLUMN / 2);
+    // The form starts just right of the stacked label, inside the card.
+    if (fraction.form) fraction.form.x = fraction.label.x + LABEL_COLUMN / 2 - 6;
+  }
   const bottom = planned.at(-1)!.bottom;
   if (planned.length === 2 && content.relation) {
     const [a, b] = planned as [PlannedFraction, PlannedFraction];

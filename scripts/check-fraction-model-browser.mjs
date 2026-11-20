@@ -4,8 +4,11 @@
 // - two fractions share one whole (same drawn size), and the relation line reads the values;
 // - eight wholes of twelve and a 10 × 10 grid stay inside the card, wholes apart;
 // - a bound numerator shades whole parts as it moves, and the card keeps one size;
-// - splitting draws the cuts, and the highlight marks one smallest part;
-// - the stacked labels sit beside their models, inside the card.
+// - splitting draws the cuts, and the highlight marks one smallest part; a share of several wholes marks
+//   one piece of each (0021 amendment 2);
+// - a card written plain and then revised with its cuts redraws with them (the two steps of 0021 amendment 2);
+// - the stacked labels sit beside their models, inside the card, with the program's other form beside
+//   them ("= 2 1/3", "= 1.25").
 // Fractions here are invented for the check. Screenshots go to OLL_FRACTION_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -41,6 +44,16 @@ const cases = {
     [animate("three", "n", 3), animate("all", "n", 8), animate("back", "n", 1)]),
   split: lesson({ model: "bar", fractions: [{ numerator: 1, denominator: 3, split: 4, highlight: 1 }] }),
   share: lesson({ model: "circle", fractions: [{ numerator: 2, denominator: 1, split: 3, highlight: 2 }] }),
+  forms: lesson({ model: "bar", fractions: [{ numerator: 7, denominator: 3 }] }),
+  steps: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 5 }] }, [],
+    [{ key: "cut", say: "Cut each fifth in half.", actions: [{ do: "revise", target: "model", reason: "cut each fifth in half",
+      content: { title: "Fractions", model: "bar", fractions: [{ as: "a", numerator: 3, denominator: 5, split: 2, highlight: 3 }], caption: "Each share is 3/10" } }] }]),
+  // A card below the fraction card, then the fraction card revised with its cuts and a caption: the card grows
+  // and must not run into the one below (0021 amendment 2: Coach draws the second step as a revision).
+  below: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 5 }] }, [],
+    [{ key: "eq", say: "Write it down.", actions: [{ do: "write", as: "eq", kind: "math", role: "derivation", place: { relation: "below", anchor: "model" }, content: { latex: "\\frac{3}{5} \\div 2" } }] },
+      { key: "cut", say: "Cut each fifth in half.", actions: [{ do: "revise", target: "model", reason: "cut each fifth in half",
+        content: { title: "Fractions", model: "bar", fractions: [{ as: "a", numerator: 3, denominator: 5, split: 2, highlight: 3 }], caption: "Each share is 3/10" } }] }]),
   emphasis: lesson({ model: "bar", fractions: [{ numerator: 3, denominator: 4 }, { numerator: 2, denominator: 3 }], relation: "compare" }, [],
     [{ key: "focus", say: "Look at the second one.", actions: [{ do: "emphasize", target: "model#b", emphasis: "focus" }] }]),
 };
@@ -77,7 +90,10 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => window.BrowserLessonSession);
   // Every state of a lesson: the card, the svg, each fraction's parts and labels, in screen pixels.
-  const states = async (name) => {
+  // Played once per case: the playback store remembers a finished lesson by name.
+  const played = {};
+  const states = async (name) => (played[name] ??= await play(name));
+  const play = async (name) => {
     const seen = await page.evaluate(({ events, name }) => {
       document.querySelector("#board").replaceChildren();
       const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), name);
@@ -98,12 +114,14 @@ try {
           splits: group.querySelectorAll(".fraction-model-split").length,
           highlights: [...group.querySelectorAll(".fraction-model-highlight")].map(rect),
           labels: [...group.querySelectorAll(".fraction-model-label")].map((label) => ({ text: label.textContent, box: rect(label) })),
+          forms: [...group.querySelectorAll(".fraction-model-form")].map((form) => ({ text: form.textContent, box: rect(form) })),
         }));
         const relation = svg.querySelector(".fraction-model-relation");
         const card = svg.closest(".board-node");
+        const others = [...document.querySelectorAll(".board-node")].filter((node) => node !== card).map(rect);
         seen.push({
           variables: Object.fromEntries(Object.entries(session.projection.board.variables ?? {}).map(([k, v]) => [k, v.value])),
-          svg: rect(svg), card: card ? rect(card) : null, fractions,
+          svg: rect(svg), card: card ? rect(card) : null, others, fractions,
           relation: relation ? { text: relation.textContent, box: rect(relation) } : null,
         });
       }
@@ -162,6 +180,9 @@ try {
   }
   const sizes = new Set(slider.filter((each) => !each.stuck).map((state) => `${Math.round(state.svg.width)}x${Math.round(state.svg.height)}`));
   check(sizes.size === 1, `the card keeps one size as the numerator moves: ${[...sizes].join(" ")}`);
+  // Centred text: its left edge moves with the digits' widths, its centre does not.
+  const labelSpots = slider.filter((each) => !each.stuck).map((state) => (state.fractions[0].labels[0].box.left + state.fractions[0].labels[0].box.right) / 2);
+  check(Math.max(...labelSpots) - Math.min(...labelSpots) < 1, `the label stays put as the numerator moves (the form column is kept): ${labelSpots.map((x) => x.toFixed(1)).join(" ")}`);
   check(slider.some((state) => !state.stuck && state.variables.n === 8 && state.fractions[0].shaded.length === 8), "the slider reaches a full circle");
 
   const split = last(await states("split"));
@@ -170,7 +191,30 @@ try {
   check(piece && outline && Math.abs(piece.width * 12 - outline.width) < 3, `the marked piece is a twelfth of the whole: ${JSON.stringify([piece, outline])}`);
   const share = last(await states("share"));
   check(share?.fractions[0].splits === 6, `two discs cut into thirds: three radii each: ${share?.fractions[0].splits}`);
-  check(share?.fractions[0].highlights.length === 2 && share.fractions[0].outlines.length === 2 && inside(share.fractions[0].highlights[0], share.fractions[0].outlines[0]) && inside(share.fractions[0].highlights[1], share.fractions[0].outlines[0]), `two wholes in thirds, a share of two thirds marked in the first: ${JSON.stringify(share?.fractions[0].highlights)}`);
+  check(share?.fractions[0].highlights.length === 2 && share.fractions[0].outlines.length === 2 && inside(share.fractions[0].highlights[0], share.fractions[0].outlines[0]) && inside(share.fractions[0].highlights[1], share.fractions[0].outlines[1]), `two wholes shared by three: one third of each whole marked: ${JSON.stringify(share?.fractions[0].highlights)}`);
+  const forms = last(await states("forms"));
+  const formLabel = forms?.fractions[0].forms[0];
+  check(formLabel?.text === "= 2 1/3" && inside(formLabel.box, forms.card) && forms.fractions[0].labels.every((label) => label.box.right <= formLabel.box.left + 1), `7/3 reads "= 2 1/3" right of its label, inside the card: ${JSON.stringify(forms?.fractions[0].forms)}`);
+  const grids = seenStates.grids?.fractions[0].forms[0];
+  check(grids?.text === "= 1.25" && inside(grids.box, seenStates.grids.card), `125/100 on grids reads "= 1.25" inside the card: ${JSON.stringify(grids)}`);
+  // No label or form overlaps a drawing, in any case.
+  for (const name of Object.keys(cases)) {
+    const state = last(await states(name));
+    for (const fraction of state?.fractions ?? []) {
+      const texts = [...fraction.labels, ...fraction.forms].map((label) => label.box);
+      check(texts.every((box) => inside(box, state.card) && fraction.outlines.every((outline) => apart(box, outline))), `${name}: labels and forms clear of the drawings, inside the card: ${JSON.stringify({ texts, outlines: fraction.outlines })}`);
+    }
+  }
+  const below = (await states("below")).filter((state) => !state.stuck);
+  const grown = below.at(-1);
+  check(grown && grown.fractions[0].splits === 5 && grown.others.length === 1, `the revised card with a card below it: ${JSON.stringify(grown && { splits: grown.fractions[0].splits, others: grown.others.length })}`);
+  check(below.every((state) => state.others.every((other) => apart(other, state.card))), `after the revision the fraction card and the card below stay apart: ${JSON.stringify(below.map((state) => ({ card: state.card, others: state.others })).slice(-2))}`);
+  const stepped = (await states("steps")).filter((state) => !state.stuck);
+  const before = stepped[0]?.fractions[0], after = stepped.at(-1)?.fractions[0];
+  check(before && before.splits === 0 && before.highlights.length === 0, `the plain step has no cuts: ${JSON.stringify(before && { splits: before.splits, highlights: before.highlights.length })}`);
+  check(after && after.splits === 5 && after.highlights.length === 3 && after.shaded.length === 3, `after the revision, five cuts and one half of each shaded fifth marked: ${JSON.stringify(after && { splits: after.splits, highlights: after.highlights.length })}`);
+  const fifths = after?.shaded.map((part) => part.box) ?? [];
+  check(after && after.highlights.every((piece, index) => inside(piece, fifths[index])), `each marked half lies in its own fifth: ${JSON.stringify(after?.highlights)}`);
   const emphasis = last(await states("emphasis"));
   check(emphasis && emphasis.fractions.every((fraction) => fraction.id && fraction.id !== "undefined"), `each fraction has its canonical id: ${JSON.stringify(emphasis?.fractions.map((fraction) => fraction.id))}`);
   check(emphasis && !emphasis.fractions[0].focused && emphasis.fractions[1].focused, `emphasizing model#b marks the second fraction only: ${JSON.stringify(emphasis?.fractions.map((fraction) => fraction.focused))}`);
@@ -183,4 +227,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("fraction model browser checks passed: full, empty and one-part circles; two fractions on one whole with the relation line; eight wholes and hundredths grids inside the card, filled column by column; a bound numerator shading whole parts at one size; splits and a marked share; labels beside their models");
+console.log("fraction model browser checks passed: full, empty and one-part circles; two fractions on one whole with the relation line; eight wholes and hundredths grids inside the card, filled column by column; a bound numerator shading whole parts at one size; splits and a marked share, one piece of each whole; a revised card redrawn with its cuts; labels and their other forms beside their models");

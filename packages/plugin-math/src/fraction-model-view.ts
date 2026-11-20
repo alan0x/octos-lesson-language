@@ -63,6 +63,11 @@ export function renderFractionModel(parent: HTMLElement, raw: Record<string, unk
       group.append(partElement(whole.outline, "fraction-model-outline"));
     }
     stackedFraction(group, fraction.numerator, fraction.denominator, fraction.label.x, fraction.label.y);
+    if (fraction.form) {
+      const form = element("text", { x: round(fraction.form.x), y: round(fraction.form.y), "text-anchor": "start" }, "fraction-model-form");
+      form.textContent = fraction.form.text;
+      group.append(form);
+    }
     context.applyEmphasis(group, fraction.id);
     svg.append(group);
   }

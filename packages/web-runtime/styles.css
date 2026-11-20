@@ -146,6 +146,7 @@
 .fraction-model-outline { fill: none; stroke: #2f3b38; stroke-width: 2.4; vector-effect: non-scaling-stroke; }
 .fraction-model-label { fill: #374b47; font: 700 17px/1 ui-sans-serif, system-ui, sans-serif; }
 .fraction-model-label-bar { stroke: #374b47; stroke-width: 2; stroke-linecap: round; }
+.fraction-model-form { fill: #374b47; font: 700 16px/1 ui-sans-serif, system-ui, sans-serif; }
 .fraction-model-relation { fill: #374b47; font: 700 18px/1 ui-sans-serif, system-ui, sans-serif; }
 .fraction-model-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
 .fraction-model-fraction.emphasis-focus .fraction-model-outline { stroke: #e15d45; stroke-width: 4; }
