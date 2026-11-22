@@ -1,4 +1,4 @@
-import { checkNumericAnswer, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
+import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
 import { applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import {
   HeadlessLessonPlayer,
@@ -21,6 +21,7 @@ import {
   type StudentCardSubmitOperation,
   type StudentCardTapOperation,
   type StudentInputMethod,
+  type StudentRowOperation,
   type StudentOperation,
   type StudentOperationLog,
   type StudentScene3dControl,
@@ -1340,6 +1341,55 @@ export class BrowserLessonSession {
     this.persist();
     this.emit();
     return { operation: structuredClone(operation) };
+  }
+
+  /**
+   * Submit a row of blanks to the open row task (decision 0023 amendment 1), each blank's text by its name.
+   * A blank left empty or unreadable makes the row `unreadable` (those blanks are named) and is not an attempt.
+   */
+  submitStudentRow(
+    taskId: string,
+    answers: Readonly<Record<string, string>>,
+    input: StudentInputMethod = "keyboard",
+  ): StudentTaskSnapshot | { unreadable: string[] } {
+    const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
+    const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
+    if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
+    if (definition.completion.kind !== "numeric_row") throw new Error(`Student task '${taskId}' is not a row of blanks`);
+    if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
+      throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    if (progress.status === "succeeded") return this.studentTasks.find((task) => task.task_id === taskId)!;
+    const check = checkNumericRow(definition.completion, answers);
+    if (!check.readable) return { unreadable: check.unreadable };
+    const sequence = this.nextStudentOperationSequence;
+    this.nextStudentOperationSequence += 1;
+    const operation: StudentRowOperation = {
+      profile: "octos.student.operation",
+      version: "0.1",
+      id: `${this.player.snapshot.lesson_id}:row:${sequence}`,
+      sequence,
+      lesson_id: this.player.snapshot.lesson_id,
+      kind: "row_submit",
+      target: { kind: "student_task", task_id: taskId },
+      // Only the row's own blanks are kept, so a saved row always parses again (review of #91).
+      answers: Object.fromEntries(numericRowBlanks(definition.completion).map((blank) => blank.as).map((name) => [name, String(answers[name] ?? "").slice(0, 64)])),
+      input,
+    };
+    const previousProgress = structuredClone(this.studentTaskProgressLog);
+    try {
+      this.evaluateStudentTasks(operation);
+    } catch (error) {
+      this.studentTaskProgressLog = previousProgress;
+      this.reportFailure("input", error);
+      return this.studentTasks.find((task) => task.task_id === taskId)!;
+    }
+    this.studentOperationLog.operations.push(operation);
+    this.persistStudentOperations();
+    this.persistStudentTaskProgress();
+    this.emit();
+    return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
   /** The learner says "done" on the open card task; the card's program judges what the learner made. */

@@ -123,6 +123,7 @@ export {
   type StudentAnswerOperation,
   type StudentCardSubmitOperation,
   type StudentCardTapOperation,
+  type StudentRowOperation,
   type StudentOperation,
   type StudentOperationLog,
   type StudentScene3dControl,

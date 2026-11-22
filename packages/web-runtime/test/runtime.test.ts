@@ -1570,3 +1570,53 @@ test("a card task's retry returns the practice pile, and a break goes into the e
   assert.equal(session.retryStudentTask("trade").status, "not_started");
   assert.deepEqual(values(), { ones: 17, tray_ones: 0, tens: 2 });
 });
+
+test("a row of blanks (decision 0023 amendment 1): judged whole, never says which blank, unreadable is not an attempt, restores", () => {
+  const events = tradingLesson();
+  const tasks = events[0]!.lesson!.tasks!;
+  tasks.splice(1, 1, {
+    as: "counts", anchor: "trade:node:mat", prompt: "How many of each are on the mat?",
+    availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "row_entry" }],
+    completion: { kind: "numeric_row", parts: [{ blank: { as: "tens", answer: "3", label: "tens" } }, { text: "tens" }, { blank: { as: "ones", answer: "7", label: "ones" } }, { text: "ones" }] },
+    hints: ["Count the tens, then the ones."],
+  }, {
+    as: "parts", anchor: "trade:node:mat", prompt: "Write the number by places.",
+    availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "row_entry" }],
+    completion: { kind: "numeric_row", parts: [{ text: "37 =" }, { blank: { as: "tens_part", answer: "30", label: "the tens" } }, { text: "+" }, { blank: { as: "ones_part", answer: "7", label: "the ones" } }] },
+    hints: ["What are 3 tens worth?"],
+    success_message: "37 = 30 + 7",
+  } as never);
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "rows", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  for (let i = 0; i < 10; i += 1) session.tapStudentCard(card, { kind: "gather", place: 0 });
+  session.tapStudentCard(card, { kind: "make", place: 0 });
+  assert.equal(session.submitStudentCard("trade").status, "succeeded");
+  // A blank left empty or unreadable: the row is not an attempt, and those blanks are named for the host.
+  assert.deepEqual(session.submitStudentRow("counts", { tens: "3", ones: "" }), { unreadable: ["ones"] });
+  assert.equal(session.studentTasks[1]!.attempts.length, 0);
+  // One blank wrong: a failed attempt for the whole row.
+  const wrong = session.submitStudentRow("counts", { tens: "3", ones: "17" });
+  assert.ok(!("unreadable" in wrong));
+  assert.deepEqual([wrong.status, wrong.attempts[0]!.succeeded], ["in_progress", false]);
+  // Right, with full-width digits and a leading zero read by the same number reader.
+  const right = session.submitStudentRow("counts", { tens: "０3", ones: "７" });
+  assert.ok(!("unreadable" in right));
+  assert.equal(right.status, "succeeded");
+  assert.equal(session.studentTasks[2]!.available, true);
+  // Extra keys from a host are not kept, so the saved row still parses on restore (review of #91).
+  assert.equal((session.submitStudentRow("parts", { tens_part: "30", ones_part: "7", a: "1", b: "2", c: "3", d: "4", e: "5" }) as StudentTaskSnapshot).status, "succeeded");
+  assert.deepEqual(Object.keys((session.studentOperations.at(-1) as { answers: Record<string, string> }).answers), ["tens_part", "ones_part"]);
+  assert.equal(session.studentOperations.at(-1)!.kind, "row_submit");
+  // Restore repeats each check; a tampered row attempt is discarded.
+  const restored = new BrowserLessonSession(events, store, "rows", { reducedMotion: true });
+  assert.deepEqual(restored.studentTasks, session.studentTasks);
+  store.studentTaskProgress.get("rows")!.tasks[1]!.attempts[0]!.succeeded = true;
+  assert.equal(new BrowserLessonSession(events, store, "rows", { reducedMotion: true }).studentTasks[1]!.attempts.length, 0);
+  // A replay after the card task is done shows the traded pile under the row questions.
+  session.seek(0);
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value])), { ones: 7, tray_ones: 0, tens: 3 });
+  assert.throws(() => session.submitStudentAnswer("counts", "3"), /does not take a typed answer/);
+});

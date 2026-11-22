@@ -1,5 +1,5 @@
 import type { OllNodeKind } from "./capabilities.js";
-import type { NumericAnswerCompletion } from "./numeric-answer.js";
+import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-answer.js";
 
 export type Alias = string;
 export type LocalReference = string;
@@ -260,7 +260,15 @@ export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
   };
 }
 
+/** A row of blanks the learner fills in one go, by the board card it asks about (decision 0023 amendment 1). */
+export interface AuthoringRowStudentTask extends AuthoringStudentTaskBase {
+  anchor: Alias;
+  allowed_operations: Array<{ kind: "row_entry" }>;
+  completion: NumericRowCompletion;
+}
+
 export type AuthoringStudentTask =
+  | AuthoringRowStudentTask
   | AuthoringVariableStudentTask
   | AuthoringScene3dStudentTask
   | AuthoringAnswerStudentTask
