@@ -1547,6 +1547,15 @@ test("replaying the lesson lays a card task's practice pile again (review of #87
   while (session.projection.status !== "completed") session.advance();
   assert.deepEqual(values(), { ones: 17, tray_ones: 0, tens: 2 }, "the practice pile, not the lesson's 3 tens and 14 ones");
   assert.equal(session.studentCardLive(card), true);
+  // Done, then replayed: the typed question opens over the learner's traded pile (3 tens, 7 ones), not the lesson's.
+  for (let i = 0; i < 10; i += 1) session.tapStudentCard(card, { kind: "gather", place: 0 });
+  session.tapStudentCard(card, { kind: "make", place: 0 });
+  assert.equal(session.submitStudentCard("trade").status, "succeeded");
+  session.seek(0);
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(values(), { ones: 7, tray_ones: 0, tens: 3 });
+  assert.equal(session.studentTasks[1]!.available, true);
+  assert.equal(session.studentCardLive(card), false);
 });
 
 test("a card task's retry returns the practice pile, and a break goes into the empty tray", () => {
