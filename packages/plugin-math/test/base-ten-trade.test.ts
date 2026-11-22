@@ -83,12 +83,17 @@ test("tap rules: two columns, a break into the empty tray, room on the mat", () 
   for (let k = 0; k < 5; k += 1) most = tap(most, ...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 });
   assert.deepEqual(most.counts, [9, 34, 5]);
   assert.equal(refused(most, { kind: "break", place: 2 }), "no_room");
+  // Done with fewer than ten left in the tray (first-use test): no place has ten or more, so no trade is left.
+  const leftover = tap(mat(0, 2, 17), ...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 }, ...times(7, { kind: "gather", place: 0 }));
+  assert.deepEqual([leftover.counts, leftover.trays, baseTenFacts(leftover).no_trade_left], [[7, 3], [7], true]);
+  // A full tray still leaves a trade: its place holds ten or more.
+  assert.equal(baseTenFacts(tap(mat(0, 2, 17), ...times(10, { kind: "gather", place: 0 }))).no_trade_left, false);
   // A pile with nothing to trade is allowed: the learner must judge it.
   assert.equal(baseTenFacts(mat(0, 3, 5)).no_trade_left, true);
   // What changed in one tap, for the runtime to write to the bound variables.
   assert.deepEqual(baseTenChanges(mat(0, 3, 14), tap(mat(0, 3, 14), ...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 })),
     [{ place: 0, field: "count", before: 14, after: 4 }, { place: 1, field: "count", before: 3, after: 4 }]);
-  assert.equal(baseTenRefusalText("tray_not_ten", 0), "Fill the tray first: a ten is ten ones.");
+  assert.equal(baseTenRefusalText("tray_not_ten", 0), "This tray does not hold a ten: a ten is ten ones.");
   assert.equal(baseTenRefusalText("tray_full", 0), "The tray holds only ten.");
 });
 
@@ -255,7 +260,7 @@ test("a demonstration taps the card by its own rules: checked before playback in
   const values = reduceCanonicalEvents(events).variables!;
   assert.deepEqual([values.ones!.value, values.tray_ones!.value, values.tens!.value], [7, 0, 3]);
   // A tap the card would refuse at that point is refused before playback, with the card's reason.
-  assert.throws(() => validateAuthoringLesson(demo([...taps(9, "gather", "ones"), ...taps(1, "make", "ones")])), /refuses this tap here: Fill the tray first: a ten is ten ones/);
+  assert.throws(() => validateAuthoringLesson(demo([...taps(9, "gather", "ones"), ...taps(1, "make", "ones")])), /refuses this tap here: This tray does not hold a ten: a ten is ten ones/);
   assert.throws(() => validateAuthoringLesson(demo(taps(11, "gather", "ones"))), /The tray holds only ten/);
   // Playback order: a tap written before an animation in the same beat but played after it meets the animated state.
   assert.throws(() => validateAuthoringLesson(demo([{ ...taps(1, "gather", "ones")[0], when: "after_speech" }, { do: "animate", variable: "ones", value: 0 }])), /no loose one/);

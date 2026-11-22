@@ -219,7 +219,7 @@ try {
   for (let i = 0; i < 8; i += 1) await clickPiece((await mat()).loose[0]);
   await clickButton("make:0");
   now = await mat();
-  check(now.notice === "Fill the tray first: a ten is ten ones." && now.values.tens === 2, `nine in the tray: refused with the card's reason: ${JSON.stringify(now)}`);
+  check(now.notice === "This tray does not hold a ten: a ten is ten ones." && now.values.tens === 2, `nine in the tray: refused with the card's reason: ${JSON.stringify(now)}`);
   // Enter on a focused unit taps it.
   await page.locator(`.base-ten-unit[data-oll-piece="${(await mat()).loose[0]}"]`).focus();
   await page.keyboard.press("Enter");

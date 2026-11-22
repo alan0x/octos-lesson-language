@@ -1540,7 +1540,7 @@ export class BrowserLessonSession {
     } else {
       // A card task already done (decision 0023): its mat shows the learner's traded pile while later tasks
       // ask about it, also after a replay (review of #87). Trading never changes the value, so a finished mat
-      // is the practice pile in its traded form: each place's digit, trays empty.
+      // holds the practice pile's digits; it is laid tidy, trays empty (a learner may finish with a few in a tray).
       const done = this.studentTaskDefinitions.slice(0, activeIndex < 0 ? undefined : activeIndex).reverse()
         .find(task => task.completion.kind === "card_fact") as AuthoringCardStudentTask | undefined;
       const traded = done?.start ? this.tradedPracticePile(done) : undefined;

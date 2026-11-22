@@ -199,7 +199,8 @@ export function baseTenRefusalText(reason: BaseTenRefusal, place: number): strin
   const unit = (["one", "ten", "hundred"] as const)[place] ?? "one";
   switch (reason) {
     case "tray_full": return "The tray holds only ten.";
-    case "tray_not_ten": return `Fill the tray first: a ${up} is ten ${name}.`;
+    // A fact, true whether more can still go in or not (first-use test): never "fill it", which can be impossible.
+    case "tray_not_ten": return `This tray does not hold a ${up}: a ${up} is ten ${name}.`;
     case "tray_empty": return `Tap ${name} to put them in the tray first.`;
     case "tray_not_empty": return "Empty the tray first.";
     case "no_room": return "There is no room on the mat for ten more.";
@@ -220,7 +221,11 @@ export function baseTenChanges(before: BaseTenMat, after: BaseTenMat): Array<{ p
 
 export interface BaseTenFacts {
   value: number;
-  /** Every tray is empty and no place below the highest holds ten or more. */
+  /**
+   * No place below the highest holds ten or more. A tray of fewer than ten does not stop it: a full tray
+   * already makes its place ten or more, so a tray can only matter when the learner has rightly found that
+   * the last ones do not make a ten (first-use test, decision 0023 amendment 2).
+   */
   no_trade_left: boolean;
   digits: number;
   /** Counts highest place first, as many as the number has digits: 706 is [7, 0, 6]. */
@@ -234,7 +239,7 @@ export interface BaseTenFacts {
 /** Facts a task reads. Trading never changes the value; it only makes each place under ten. */
 export function baseTenFacts(mat: BaseTenMat): BaseTenFacts {
   const value = valueOf(mat.counts);
-  const noTradeLeft = mat.trays.every((tray) => tray === 0) && mat.counts.slice(0, mat.columns - 1).every((count) => count < 10);
+  const noTradeLeft = mat.counts.slice(0, mat.columns - 1).every((count) => count < 10);
   let digits = 1;
   while (digits < mat.columns && value >= 10 ** digits) digits += 1;
   const places = Array.from({ length: digits }, (_, i) => digits - 1 - i);
