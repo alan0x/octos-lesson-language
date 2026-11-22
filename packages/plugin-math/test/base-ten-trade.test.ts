@@ -259,6 +259,13 @@ test("a demonstration taps the card by its own rules: checked before playback in
   assert.throws(() => validateAuthoringLesson(demo(taps(11, "gather", "ones"))), /The tray holds only ten/);
   // Playback order: a tap written before an animation in the same beat but played after it meets the animated state.
   assert.throws(() => validateAuthoringLesson(demo([{ ...taps(1, "gather", "ones")[0], when: "after_speech" }, { do: "animate", variable: "ones", value: 0 }])), /no loose one/);
+  // Review of #89: a make that would push a count past its variable's range is refused (2 columns, 9 tens);
+  // a tapped card's counts have no learner control.
+  const nineTens = demo([{ do: "animate", variable: "tens", value: 9 }, ...taps(10, "gather", "ones")], [{ key: "make", say: "Make a ten.", actions: taps(1, "make", "ones") }]);
+  assert.throws(() => validateAuthoringLesson(nineTens), /would make tens 10, outside 0 to 9/);
+  const slider = structuredClone(demo(taps(1, "gather", "ones")));
+  (slider.lesson.variables as unknown as Array<Record<string, unknown>>)[0]!.control = { kind: "slider", step: 1 };
+  assert.throws(() => validateAuthoringLesson(slider), /changed only by tapping the card/);
   // Only a base-ten trade card, as a whole, can be tapped.
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade card/);
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat", tap: "fold", at: "ones" }])), /Unknown tap 'fold'/);

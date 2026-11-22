@@ -402,7 +402,7 @@ export function baseTenTapVariables(
       const alias = bindings.get(target);
       const declaration = declarations.find((variable) => variable.as === alias);
       if (!alias || !declaration) {
-        fail("OLL_INVALID_STUDENT_TASK", path, `A tap task needs '${target}' bound to its own lesson variable`);
+        fail("OLL_INVALID_STUDENT_TASK", path, `Tapping a card needs '${target}' bound to its own lesson variable`);
       }
       if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
       used.add(alias);
@@ -1719,6 +1719,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   const fractionModelNodes = new Set<string>();
   const baseTenTradeNodes = new Set<string>();
   const baseTenTradeContents = new Map<string, JsonObject>();
+  /** Cards the lesson taps; their counts change only by taps (review of #89). */
+  const tappedCards = new Set<string>();
   /** Lesson variables as playback leaves them, so each demonstration tap is checked in the state it meets. */
   const playedValues: Record<string, number> = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
   // Highlighted parts of each 3D scene, which a view can turn to show.
@@ -1920,6 +1922,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (!content || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "A tap acts on a whole base_ten_trade card of this lesson");
           requireVisible(action.target, `${actionPath}/target`);
           baseTenTapVariables(content, document.lesson.variables ?? [], `${actionPath}/target`);
+          tappedCards.add(target.alias);
           return;
         }
 
@@ -2050,13 +2053,28 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions/${actionIndex}`, `The card refuses this tap here: ${baseTenRefusalText(result.reason, place)}`);
           }
           for (const change of baseTenChanges(mat, result.mat)) {
-            playedValues[variables.get(`${BASE_TEN_TRADE_PLACES[change.place] as BaseTenPlaceName}.${change.field}`)!] = change.after;
+            const alias = variables.get(`${BASE_TEN_TRADE_PLACES[change.place] as BaseTenPlaceName}.${change.field}`)!;
+            const declaration = (document.lesson.variables ?? []).find((variable) => variable.as === alias)!;
+            // The reducer writes the change to the variable, so it must lie in the variable's range (review of #89).
+            if (change.after < declaration.min || change.after > declaration.max) {
+              fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions/${actionIndex}`, `This tap would make ${alias} ${change.after}, outside ${declaration.min} to ${declaration.max}`);
+            }
+            playedValues[alias] = change.after;
           }
         });
       }
     });
   });
 
+  // A learner's slider or point on a tapped card's counts could leave a pile a later demonstration tap meets
+  // differently than checked here (review of #89): those counts change only by taps.
+  for (const alias of tappedCards) {
+    for (const variable of baseTenTapVariables(baseTenTradeContents.get(alias)!, document.lesson.variables ?? [], `/content`).values()) {
+      if ((document.lesson.variables ?? []).find((declaration) => declaration.as === variable)?.control || availableStudentControls.get(variable)?.size) {
+        fail("OLL_INVALID_VARIABLE", "/lesson/variables", `Variable '${variable}' is changed only by tapping the card; it cannot have its own control`);
+      }
+    }
+  }
   validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, baseTenTradeContents);
   validateReflections(document, registry);
 
