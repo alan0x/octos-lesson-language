@@ -5,6 +5,7 @@ import {
   type NumberLineContent,
 } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_FEATURE, FRACTION_MODEL_KIND, FRACTION_MODEL_PLUGIN_VERSION } from "../../plugin-math/src/fraction-model.js";
+import { BASE_TEN_TRADE_FEATURE, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PLUGIN_VERSION } from "../../plugin-math/src/base-ten-trade.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
@@ -103,13 +104,14 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION },
     detect(content, kind, use) {
       if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
         use(NUMBER_LINE_FEATURE);
         if (usesJumpLanes(content as unknown as NumberLineContent)) use(NUMBER_LINE_JUMP_LANES_FEATURE);
       }
       if (kind === FRACTION_MODEL_KIND) use(FRACTION_MODEL_FEATURE);
+      if (kind === BASE_TEN_TRADE_KIND) use(BASE_TEN_TRADE_FEATURE);
     },
   },
 ]);
@@ -118,7 +120,7 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
 const FIRST_PARTY_FEATURES: Readonly<Record<string, string>> = Object.freeze(Object.assign({}, ...FIRST_PARTY_EXTENSIONS.map((extension) => extension.features)));
 
 /** First-party plugin node kinds and the feature each requires. */
-const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE });
+const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE, [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_FEATURE });
 
 /** The extensions a check uses: those passed, plus first-party plugins not overridden. */
 export function installedExtensions(options: ExecutionOptions = {}): readonly ExecutionExtension[] {

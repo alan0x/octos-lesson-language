@@ -1,6 +1,7 @@
 import { layoutTeachingRegion } from "./teaching-layout.js";
 import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from "../../core/src/index.js";
 import { planFractionModel } from "../../plugin-math/src/fraction-model.js";
+import { planBaseTenTrade } from "../../plugin-math/src/base-ten-trade.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -182,6 +183,12 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     } catch {
       return { width: 540, height: 240 };
     }
+  }
+  // Sized from its plan: the mat keeps one size whatever the learner does (columns are fixed content).
+  if (kind === "base_ten_trade") {
+    const plan = planBaseTenTrade(content);
+    const width = content.columns === 3 ? 860 : 600;
+    return { width, height: Math.round(plan.height * width / plan.width) + 30 + (content.title ? 32 : 0) + (content.caption ? 28 : 0) };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
