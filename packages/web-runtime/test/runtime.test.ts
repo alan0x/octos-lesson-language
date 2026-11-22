@@ -1471,7 +1471,7 @@ function tradingLesson(): ReturnType<typeof normalizeAuthoringLesson> {
         availability: { kind: "after_lesson" },
         allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
         completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" },
-        hints: ["Fill the tray with ten ones, then make a ten."],
+        hints: ["Put ones in the tray; when ten fill it, make a ten."],
       }, {
         as: "number", anchor: "mat", prompt: "How many marbles does Leo have?",
         availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "answer_entry" }],
@@ -1506,7 +1506,7 @@ test("a card task: taps change the bound counts together, only exactly ten trade
   assert.equal(session.submitStudentCard("trade").status, "in_progress");
   // The tray takes ten and no more; nine do not make a ten.
   for (let i = 0; i < 9; i += 1) assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }, "mouse"));
-  assert.deepEqual(session.tapStudentCard(card, { kind: "make", place: 0 }), { refused: "tray_not_ten", message: "Fill the tray first: a ten is ten ones." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "make", place: 0 }), { refused: "tray_not_ten", message: "This tray does not hold a ten: a ten is ten ones." });
   assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }));
   assert.deepEqual(session.tapStudentCard(card, { kind: "gather", place: 0 }), { refused: "tray_full", message: "The tray holds only ten." });
   const made = session.tapStudentCard(card, { kind: "make", place: 0 }, "touch");
@@ -1556,6 +1556,21 @@ test("replaying the lesson lays a card task's practice pile again (review of #87
   assert.deepEqual(values(), { ones: 7, tray_ones: 0, tens: 3 });
   assert.equal(session.studentTasks[1]!.available, true);
   assert.equal(session.studentCardLive(card), false);
+});
+
+test("done with fewer than ten left in the tray succeeds, and the mat is then laid tidy (first-use test)", () => {
+  const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-leftover", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  const values = () => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+  for (let i = 0; i < 10; i += 1) session.tapStudentCard(card, { kind: "gather", place: 0 });
+  session.tapStudentCard(card, { kind: "make", place: 0 });
+  for (let i = 0; i < 7; i += 1) session.tapStudentCard(card, { kind: "gather", place: 0 });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "make", place: 0 }), { refused: "tray_not_ten", message: "This tray does not hold a ten: a ten is ten ones." });
+  assert.deepEqual(values(), { ones: 7, tray_ones: 7, tens: 3 });
+  assert.equal(session.submitStudentCard("trade").status, "succeeded");
+  // The questions then sit over the traded pile with the tray emptied: the same counts.
+  assert.deepEqual(values(), { ones: 7, tray_ones: 0, tens: 3 });
 });
 
 test("a card task's retry returns the practice pile, and a break goes into the empty tray", () => {
