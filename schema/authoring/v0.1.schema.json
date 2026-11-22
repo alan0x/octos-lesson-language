@@ -214,6 +214,14 @@
                 "properties": {
                   "kind": {"const": "card_submit"}
                 }
+              },
+              {
+                "type": "object",
+                "required": ["kind"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {"const": "row_entry"}
+                }
               }
             ]
           }
@@ -267,6 +275,35 @@
                 "node": {"$ref": "#/$defs/alias"},
                 "fact": {"enum": ["no_trade_left"]}
               }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "parts"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": {"const": "numeric_row"},
+                "parts": {
+                  "type": "array",
+                  "minItems": 1,
+                  "maxItems": 12,
+                  "items": {
+                    "oneOf": [
+                      {"type": "object", "required": ["text"], "additionalProperties": false, "properties": {"text": {"type": "string", "minLength": 1, "maxLength": 80}}},
+                      {"type": "object", "required": ["blank"], "additionalProperties": false, "properties": {"blank": {
+                        "type": "object", "required": ["as", "answer"], "additionalProperties": false,
+                        "properties": {
+                          "as": {"$ref": "#/$defs/alias"},
+                          "answer": {"type": "string", "minLength": 1, "maxLength": 64},
+                          "tolerance": {"type": "number", "minimum": 0},
+                          "unit": {"type": "string", "minLength": 1, "maxLength": 16},
+                          "form": {"enum": ["any", "simplest_fraction"]},
+                          "label": {"type": "string", "minLength": 1, "maxLength": 24}
+                        }
+                      }}}
+                    ]
+                  }
+                }
+              }
             }
           ]
         },
@@ -279,7 +316,7 @@
         "hint_after_attempts": {"type": "integer", "minimum": 1, "maximum": 20},
         "success_message": {"type": "string", "minLength": 1, "maxLength": 480}
       },
-      "if": {"properties": {"completion": {"properties": {"kind": {"const": "numeric_answer"}}, "required": ["kind"]}}, "required": ["completion"]},
+      "if": {"properties": {"completion": {"properties": {"kind": {"enum": ["numeric_answer", "numeric_row"]}}, "required": ["kind"]}}, "required": ["completion"]},
       "then": {"required": ["anchor"]},
       "else": {"not": {"required": ["anchor"]}}
     },

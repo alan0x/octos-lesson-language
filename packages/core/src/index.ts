@@ -7,7 +7,7 @@ import {
   evaluateMathExpression,
   referencedMathVariables,
 } from "./math-expression.js";
-import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
+import { NUMERIC_ROW_LIMITS, isSimplestFraction, numericRowBlankCompletion, parseNumericAnswer } from "./numeric-answer.js";
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
@@ -23,6 +23,7 @@ import type {
   AuthoringLesson,
   AuthoringAnswerStudentTask,
   AuthoringCardStudentTask,
+  AuthoringRowStudentTask,
   AuthoringScene3dStudentTask,
   AuthoringStudentTask,
   AuthoringVariableStudentTask,
@@ -347,7 +348,7 @@ function validateScene3dStudentTask(
   validateTaskFeedback(task, path);
 }
 
-function validateAnswerStudentTask(task: AuthoringAnswerStudentTask, path: string, registry: Registry): void {
+function validateAnswerStudentTask(task: AuthoringAnswerStudentTask, path: string, registry: Registry, feedback = true): void {
   resolveLocal(registry, task.anchor, `${path}/anchor`, ["node"]);
   requireArray(task.allowed_operations, `${path}/allowed_operations`);
   if (task.allowed_operations.length !== 1 || task.allowed_operations[0]?.kind !== "answer_entry") {
@@ -372,7 +373,7 @@ function validateAnswerStudentTask(task: AuthoringAnswerStudentTask, path: strin
     && (typeof completion.unit !== "string" || !completion.unit.trim() || completion.unit.length > 16)) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/unit`, "Answer unit must be 1 to 16 characters");
   }
-  validateTaskFeedback(task, path);
+  if (feedback) validateTaskFeedback(task, path);
 }
 
 /**
@@ -467,6 +468,49 @@ function validateCardStudentTask(
     const missing = [...variables.values()].filter((alias) => !selected.has(alias));
     if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
     validateBaseTenTradeContent(baseTenContentAt(content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
+  }
+  validateTaskFeedback(task, path);
+}
+
+/** A row of blanks (decision 0023 amendment 1): fixed text and one to six blanks, each a numeric answer. */
+function validateRowStudentTask(task: AuthoringRowStudentTask, path: string, registry: Registry): void {
+  resolveLocal(registry, task.anchor, `${path}/anchor`, ["node"]);
+  requireArray(task.allowed_operations, `${path}/allowed_operations`);
+  if (task.allowed_operations.length !== 1 || task.allowed_operations[0]?.kind !== "row_entry") {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A row task allows exactly one row_entry operation");
+  }
+  const parts = task.completion.parts;
+  if (!Array.isArray(parts) || parts.length < 1 || parts.length > NUMERIC_ROW_LIMITS.parts) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/parts`, `A row has 1 to ${NUMERIC_ROW_LIMITS.parts} parts`);
+  }
+  const names = new Set<string>();
+  parts.forEach((part, index) => {
+    const at = `${path}/completion/parts/${index}`;
+    requireObject(part, at);
+    const keys = Object.keys(part);
+    if (keys.length !== 1 || (keys[0] !== "text" && keys[0] !== "blank")) fail("OLL_INVALID_STUDENT_TASK", at, "A row part is either text or a blank");
+    if ("text" in part) {
+      if (typeof part.text !== "string" || !part.text.trim() || part.text.length > NUMERIC_ROW_LIMITS.text) {
+        fail("OLL_INVALID_STUDENT_TASK", `${at}/text`, `Row text is 1 to ${NUMERIC_ROW_LIMITS.text} characters`);
+      }
+      return;
+    }
+    const blank = part.blank;
+    requireObject(blank, `${at}/blank`);
+    for (const key of Object.keys(blank)) {
+      if (!["as", "answer", "tolerance", "unit", "form", "label"].includes(key)) fail("OLL_INVALID_STUDENT_TASK", `${at}/blank/${key}`, `Unknown blank field '${key}'`);
+    }
+    requireAlias(blank.as, `${at}/blank/as`);
+    if (names.has(blank.as)) fail("OLL_DUPLICATE_ALIAS", `${at}/blank/as`, `Blank '${blank.as}' is duplicated`);
+    names.add(blank.as);
+    // Each blank is a numeric answer: the same rules, so it is checked the same way.
+    validateAnswerStudentTask({ ...task, anchor: task.anchor, allowed_operations: [{ kind: "answer_entry" }], completion: numericRowBlankCompletion(blank) } as AuthoringAnswerStudentTask, `${at}/blank`, registry, false);
+    if (blank.label !== undefined && (typeof blank.label !== "string" || !blank.label.trim() || blank.label.length > NUMERIC_ROW_LIMITS.label)) {
+      fail("OLL_INVALID_STUDENT_TASK", `${at}/blank/label`, `A blank's label is 1 to ${NUMERIC_ROW_LIMITS.label} characters`);
+    }
+  });
+  if (names.size < 1 || names.size > NUMERIC_ROW_LIMITS.blanks) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/parts`, `A row has 1 to ${NUMERIC_ROW_LIMITS.blanks} blanks`);
   }
   validateTaskFeedback(task, path);
 }
@@ -581,6 +625,10 @@ function validateStudentTasks(
     }
     if (task.completion.kind === "numeric_answer") {
       validateAnswerStudentTask(task as AuthoringAnswerStudentTask, path, registry);
+      continue;
+    }
+    if ((task.completion.kind as string) === "numeric_row") {
+      validateRowStudentTask(task as AuthoringRowStudentTask, path, registry);
       continue;
     }
     if (task.completion.kind === "card_fact") {
@@ -2367,8 +2415,8 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
   }
   for (const candidate of canonicalLesson.tasks ?? []) {
     if (candidate.start) candidate.start.values = resolvePhaseStart(candidate.start, document.lesson.variables ?? [], `/lesson/tasks/${candidate.as}/start`);
-    if (candidate.completion.kind === "numeric_answer") {
-      const answerTask = candidate as AuthoringAnswerStudentTask;
+    if (candidate.completion.kind === "numeric_answer" || candidate.completion.kind === "numeric_row") {
+      const answerTask = candidate as AuthoringAnswerStudentTask | AuthoringRowStudentTask;
       answerTask.anchor = requireRegistryId(registry, answerTask.anchor);
       continue;
     }

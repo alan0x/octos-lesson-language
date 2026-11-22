@@ -10,6 +10,13 @@
 
 ### Added
 
+- **A row of blanks the learner fills in one go (decision 0023 amendment 1; player 0.14.0, `student-tasks:numeric_row`):**
+  - A new question kind, `numeric_row`: fixed text and one to six blanks ("37 = __ + __", "__ tens __ ones"), with an `anchor` like a typed answer. Each blank is a numeric answer, read by the same reader, and may carry a short `label`.
+  - One `row_submit` is one attempt, right only when every blank is; the row says only whether it is right, never which blank. An empty or unreadable blank is not an attempt (`submitStudentRow` returns `{ unreadable: [names] }`).
+  - Attempts keep the typed blanks so restore repeats the check.
+  - `numeric_answer` and its saved logs are unchanged.
+  - SPEC §5.5.
+
 - **A lesson taps a card the way a learner would (decision 0023, step 1, PR D; player 0.14.0, `action:card.tap`):**
   - The authoring action `{ do: "tap", target, tap, at }` becomes the canonical `card.tap`. The reducer applies the card's tap rules and writes every changed count in one step, so a demonstration's trade never shows half a change.
   - The validator follows the lesson's variables in playback order (a replay start, then the before, during and after phases) and refuses, before playback, any tap the card would refuse at that point, with the card's reason. A tap must name a whole `base_ten_trade` card whose counts are bound for taps.

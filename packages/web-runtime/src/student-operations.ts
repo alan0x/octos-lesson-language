@@ -110,7 +110,21 @@ export interface StudentCardSubmitOperation {
   input: StudentInputMethod;
 }
 
+/** A row of blanks submitted in one go (decision 0023 amendment 1): each blank's typed text by its name. */
+export interface StudentRowOperation {
+  profile: "octos.student.operation";
+  version: "0.1";
+  id: string;
+  sequence: number;
+  lesson_id: string;
+  kind: "row_submit";
+  target: { kind: "student_task"; task_id: string };
+  answers: Record<string, string>;
+  input: StudentInputMethod;
+}
+
 export type StudentOperation =
+  | StudentRowOperation
   | StudentVariableOperation
   | StudentInkSelectionOperation
   | StudentScene3dViewOperation
@@ -224,6 +238,26 @@ export function parseStudentOperationLog(
       ids.add(operation.id);
       lastSequence = operation.sequence as number;
       operations.push(structuredClone(operation as StudentAnswerOperation));
+      continue;
+    }
+    if (candidateOperation.kind === "row_submit") {
+      const operation = raw as Partial<StudentRowOperation>;
+      const answers = operation.answers;
+      if (
+        operation.profile !== "octos.student.operation"
+        || operation.version !== "0.1"
+        || operation.lesson_id !== lessonId
+        || typeof operation.id !== "string" || !operation.id || ids.has(operation.id)
+        || !Number.isInteger(operation.sequence) || (operation.sequence ?? 0) <= lastSequence
+        || operation.target?.kind !== "student_task" || typeof operation.target.task_id !== "string" || !operation.target.task_id
+        || !answers || typeof answers !== "object" || Array.isArray(answers)
+        || Object.keys(answers).length < 1 || Object.keys(answers).length > 6
+        || Object.values(answers).some((text) => typeof text !== "string" || text.length > 64)
+        || !inputMethods.has(operation.input as StudentInputMethod)
+      ) return undefined;
+      ids.add(operation.id);
+      lastSequence = operation.sequence as number;
+      operations.push(structuredClone(operation as StudentRowOperation));
       continue;
     }
     if (candidateOperation.kind === "card_tap" || candidateOperation.kind === "card_submit") {

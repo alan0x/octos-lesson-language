@@ -1,5 +1,6 @@
 import {
   checkNumericAnswer,
+  checkNumericRow,
   evaluateMathExpression,
   parseNumericAnswer,
   scene3dViewTargetScore,
@@ -29,6 +30,8 @@ export interface StudentTaskAttempt {
   succeeded: boolean;
   /** The typed text, kept for numeric answer tasks so the check can be repeated. */
   answer?: string;
+  /** Each blank's typed text, kept for row tasks so the check can be repeated (decision 0023 amendment 1). */
+  answers?: Record<string, string>;
 }
 
 export interface StudentTaskProgress {
@@ -142,14 +145,19 @@ export function parseStudentTaskProgressLog(
 function attemptMatchesDefinition(definition: AuthoringStudentTask, attempt: StudentTaskAttempt): boolean {
   const completion = definition.completion;
   if (completion.kind === "numeric_answer") {
-    if (typeof attempt.answer !== "string") return false;
+    if (typeof attempt.answer !== "string" || attempt.answers !== undefined) return false;
     const check = checkNumericAnswer(completion, attempt.answer);
     return check.readable
       && attempt.actual === check.value
       && attempt.target === parseNumericAnswer(completion.answer)!.value
       && attempt.succeeded === check.succeeded;
   }
-  if (attempt.answer !== undefined) return false;
+  if (completion.kind === "numeric_row") {
+    if (attempt.answer !== undefined || !attempt.answers || typeof attempt.answers !== "object") return false;
+    const check = checkNumericRow(completion, attempt.answers);
+    return check.readable && attempt.actual === check.right && attempt.target === check.total && attempt.succeeded === check.succeeded;
+  }
+  if (attempt.answer !== undefined || attempt.answers !== undefined) return false;
   // A card fact is true (1) or not (0); the card's program judged it when the learner said done.
   if (completion.kind === "card_fact") {
     return attempt.target === 1 && (attempt.actual === 0 || attempt.actual === 1) && attempt.succeeded === (attempt.actual === 1);
@@ -204,6 +212,7 @@ export function evaluateStudentTaskOperation(
   let target: number;
   let succeeded: boolean;
   let answer: string | undefined;
+  let answers: Record<string, string> | undefined;
   if (task.completion.kind === "numeric_answer") {
     if (operation.kind !== "answer_submit" || !answerOperationAllowed(task as AuthoringAnswerStudentTask, operation)) return false;
     const check = checkNumericAnswer(task.completion, operation.answer);
@@ -212,6 +221,15 @@ export function evaluateStudentTaskOperation(
     target = parseNumericAnswer(task.completion.answer)!.value;
     succeeded = check.succeeded;
     answer = operation.answer;
+  } else if (task.completion.kind === "numeric_row") {
+    if (operation.kind !== "row_submit" || operation.target.task_id !== task.as) return false;
+    const check = checkNumericRow(task.completion, operation.answers);
+    if (!check.readable) return false;
+    // Counted blanks right, of all; the learner is told only whether the whole row is right.
+    actual = check.right;
+    target = check.total;
+    succeeded = check.succeeded;
+    answers = structuredClone(operation.answers);
   } else if (task.completion.kind === "card_fact") {
     // Taps are not attempts; only saying "done" on this task is.
     if (operation.kind !== "card_submit" || operation.target.task_id !== task.as) return false;
@@ -241,6 +259,7 @@ export function evaluateStudentTaskOperation(
     target,
     succeeded,
     ...(answer !== undefined ? { answer } : {}),
+    ...(answers !== undefined ? { answers } : {}),
   });
   const hintThreshold = task.hint_after_attempts ?? 2;
   progress.status = succeeded

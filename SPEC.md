@@ -207,6 +207,25 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - `unit` 只显示在输入框后，不参与判定；
 - 无法读成数的输入不算一次尝试。
 
+一行几个空（`numeric_row`，player 0.14.0，决定 0023 修订 1）让学生一次填一行里的几个空，例如「37 = __ + __」：
+
+```json
+"tasks": [{
+  "as": "parts", "anchor": "mat", "prompt": "Write the number by places.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "row_entry"}],
+  "completion": {"kind": "numeric_row", "parts": [
+    {"text": "37 ="}, {"blank": {"as": "tens", "answer": "30", "label": "the tens"}},
+    {"text": "+"}, {"blank": {"as": "ones", "answer": "7", "label": "the ones"}}]},
+  "hints": ["What are 3 tens worth?"]
+}]
+```
+
+- `parts` 有 1 到 12 段，每段是文字（`text`，至多 80 字）或一个空（`blank`）；一行有 1 到 6 个空，空的名字在这一行里唯一；
+- 每个空按填数任务的规则写和判（`answer`、`tolerance`、`unit`、`form`）；`label` 是空下面的一两个词，不能是要学生找的数；
+- 一次提交（`row_submit`）是一次尝试，所有空都对才算对；Runtime 只说整行对不对，不说哪个空错了；有空没填或读不成数，不算尝试；
+- 和填数任务一样带 `anchor`，挂在它问的那张卡片下面。
+
 卡片任务（`card_fact`，player 0.14.0，决定 0023）让学生在一张卡片上点按操作，自己说“做完了”，由卡片自己的程序判定：
 
 ```json

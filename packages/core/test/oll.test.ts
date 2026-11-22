@@ -425,7 +425,7 @@ test("publishes only the executable node, action, binding, control, and task cap
       scene3d: ["orbit", "zoom", "preset", "reset"],
     },
     student_tasks: {
-      completion: ["expression_target", "scene3d_view_target", "numeric_answer", "card_fact"],
+      completion: ["expression_target", "scene3d_view_target", "numeric_answer", "card_fact", "numeric_row"],
       scene3d_view_match: ["view_direction", "camera_pose"],
     },
   });
@@ -1298,4 +1298,31 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
   const revised = base();
   (revised.steps[0]!.beats as unknown[]).push({ key: "caption", say: "Look again.", actions: [{ do: "revise", target: "mat", reason: "add a caption", content: { columns: 2, caption: "Count them.", places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }] } }] });
   assert.throws(() => validateAuthoringLesson(revised), /not revised: its counts change by taps/);
+});
+
+test("row tasks (decision 0023 amendment 1): text and one to six blanks, each a numeric answer, by a board card", () => {
+  const lesson = (completion: unknown, more: Record<string, unknown> = {}) => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "en-US", title: "Rows", goals: ["Write a number by places"],
+      tasks: [{ as: "parts", anchor: "card", prompt: "Write it by places.", availability: { kind: "after_lesson" },
+        allowed_operations: [{ kind: "row_entry" }], completion, hints: ["Each place's worth."], ...more }],
+    },
+    steps: [{ key: "s", purpose: "See", beats: [{ key: "b", say: "37.", actions: [{ do: "write", as: "card", kind: "text", role: "note", content: { text: "37" }, place: { relation: "new_region" } }] }] }],
+    close: { summary: "Done.", focus: ["card"] },
+  }) as unknown as AuthoringLesson;
+  const row = { kind: "numeric_row", parts: [{ text: "37 =" }, { blank: { as: "tens", answer: "30", label: "the tens" } }, { text: "+" }, { blank: { as: "ones", answer: "7" } }] };
+  assertAuthoringSchema(lesson(row));
+  validateAuthoringLesson(lesson(row));
+  const events = normalizeAuthoringLesson(lesson(row), { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+  assert.equal((events[0]!.lesson!.tasks![0] as unknown as { anchor: string }).anchor, "l:node:card");
+  assert.equal(deriveExecutionRequirements(events).minimumPlayerVersion, "0.14.0");
+  // One blank is a row too (a one-digit pile).
+  validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ blank: { as: "ones", answer: "7" } }, { text: "ones" }] }));
+  assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ text: "no blank" }] })), /1 to 6 blanks/);
+  assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ blank: { as: "a", answer: "1" } }, { blank: { as: "a", answer: "2" } }] })), /Blank 'a' is duplicated/);
+  assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ blank: { as: "a", answer: "seven" } }] })), /whole number, decimal, fraction or mixed number/);
+  assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ text: "x", blank: { as: "a", answer: "1" } }] })), /either text or a blank/);
+  assert.throws(() => validateAuthoringLesson(lesson(row, { allowed_operations: [{ kind: "answer_entry" }] })), /exactly one row_entry/);
+  assert.throws(() => validateAuthoringLesson(lesson(row, { anchor: "nowhere" })), /nowhere/);
 });

@@ -116,3 +116,58 @@ export function checkNumericAnswer(completion: NumericAnswerCompletion, text: st
   }
   return { readable: true, value: parsed.value, succeeded: true };
 }
+
+/**
+ * A row of blanks the learner fills in one go (decision 0023 amendment 1): fixed text and blanks, such as
+ * "37 = [30] + [7]" or "[3] tens [7] ones". Each blank is judged like a numeric answer; the row is right
+ * only when every blank is, and the check never says which blank was wrong.
+ */
+export interface NumericRowBlank {
+  /** The blank's name within the row. */
+  as: string;
+  answer: string;
+  tolerance?: number;
+  unit?: string;
+  form?: "any" | "simplest_fraction";
+  /** A word or two under the blank ("the tens"); never a number the learner should find. */
+  label?: string;
+}
+
+export type NumericRowPart = { text: string } | { blank: NumericRowBlank };
+
+export interface NumericRowCompletion {
+  kind: "numeric_row";
+  parts: NumericRowPart[];
+}
+
+export const NUMERIC_ROW_LIMITS = { parts: 12, blanks: 6, text: 80, label: 24 } as const;
+
+export function numericRowBlanks(completion: NumericRowCompletion): NumericRowBlank[] {
+  return completion.parts.flatMap((part) => ("blank" in part ? [part.blank] : []));
+}
+
+const blankCompletion = (blank: NumericRowBlank): NumericAnswerCompletion => ({
+  kind: "numeric_answer", answer: blank.answer,
+  ...(blank.tolerance !== undefined ? { tolerance: blank.tolerance } : {}),
+  ...(blank.unit !== undefined ? { unit: blank.unit } : {}),
+  ...(blank.form !== undefined ? { form: blank.form } : {}),
+});
+
+export type NumericRowCheck =
+  | { readable: false; unreadable: string[] }
+  | { readable: true; right: number; total: number; succeeded: boolean };
+
+/** Checks a whole row. A blank left empty or not readable as a number makes the row unreadable: not an attempt. */
+export function checkNumericRow(completion: NumericRowCompletion, answers: Readonly<Record<string, string>>): NumericRowCheck {
+  const blanks = numericRowBlanks(completion);
+  const checks = blanks.map((blank) => [blank.as, checkNumericAnswer(blankCompletion(blank), answers[blank.as] ?? "")] as const);
+  const unreadable = checks.filter(([, check]) => !check.readable).map(([as]) => as);
+  if (unreadable.length) return { readable: false, unreadable };
+  const right = checks.filter(([, check]) => check.readable && check.succeeded).length;
+  return { readable: true, right, total: blanks.length, succeeded: right === blanks.length };
+}
+
+/** The expected answers, for validation: each blank's answer must be readable and in its form. */
+export function numericRowBlankCompletion(blank: NumericRowBlank): NumericAnswerCompletion {
+  return blankCompletion(blank);
+}
