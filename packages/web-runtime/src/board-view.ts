@@ -1911,6 +1911,8 @@ export class InfiniteBoardView {
   private readonly cardSteps = new Map<string, NonNullable<BaseTenTradeViewContext["step"]>>();
   /** The lesson tap (a demonstration's `card.tap`) each card last animated, so a redraw does not repeat it. */
   private readonly cardLessonTaps = new Map<string, string>();
+  /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
+  private readonly cardFrames = new Map<string, string>();
   private renderedSemanticBoard: SemanticBoardState | null = null;
   private renderedOperation?: PlaybackOperation;
   private scene3dInputHandler?: Scene3dViewInputHandler;
@@ -2762,7 +2764,8 @@ export class InfiniteBoardView {
           live: this.cardTapHandler?.live(node.id) ?? false,
           notice: this.cardNotices.get(node.id) ?? "",
         } : undefined;
-        if (cardContext) {
+        const cardFrame = cardContext ? JSON.stringify([node.role, node.content?.title, node.content?.label, node.content?.caption, node.content?.columns]) : "";
+        if (cardContext && this.cardFrames.get(node.id) === cardFrame) {
           let step = this.cardSteps.get(node.id);
           this.cardSteps.delete(node.id);
           // A demonstration tap animates like a learner's, once per lesson action.
@@ -2785,7 +2788,7 @@ export class InfiniteBoardView {
             board.variables,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
-          if (cardContext) updateBaseTenTrade(element, node.content ?? {}, cardContext);
+          if (cardContext) { updateBaseTenTrade(element, node.content ?? {}, cardContext); this.cardFrames.set(node.id, cardFrame); this.cardSteps.delete(node.id); }
         }
         // A plot redrawn in place keeps its frame while a variable changes
         // its curves and legend. Re-measuring it forces a synchronous browser
