@@ -10,6 +10,15 @@
 
 ### Added
 
+- **Tapping the trading mat on the board (decision 0023, step 1, PR C):**
+  - `BoardView.setCardTapHandler({ live, tap })` connects a card to the session; the playback harness wires it to `studentCardLive` and `tapStudentCard`.
+  - A pointer tap, or Enter or Space on a focused unit or button, taps the card when its task is open; otherwise the board pans as before.
+  - The mat now updates in place, so every unit keeps its identity: the unit tapped is the unit that moves into the tray. A tap animates; resets, seeks and practice piles are placed directly.
+    - "Make a ten" fades the ten in the tray into one ten drawn exactly over them, which then moves to the Tens column.
+    - A break moves the unit onto the empty tray below, where it splits into ten.
+  - A refused tap shows the card's reason under the mat until the next tap. Tap cues (focus, pointer, hover) appear only while the card is live. Reduced motion turns the movement off.
+  - The browser check adds real taps: the unit tapped moves, refusals are explained, a ten is made and the counts settle, Enter taps, and the card is inert after "done".
+
 - **The learner taps a card and says "done" (decision 0023, step 1, PR B; player 0.14.0, `student-tasks:card_fact`):**
   - A new task completion, `card_fact` (`node`, `fact: "no_trade_left"`). It allows exactly `card_tap` on its card and `card_submit`.
   - The card must be a `base_ten_trade`. Each count and tray it changes must be bound to its own lesson variable running from 0 to the most the mat draws, so no tap can leave a range.

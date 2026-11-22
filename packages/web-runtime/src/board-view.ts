@@ -6,7 +6,8 @@ import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
-import { renderBaseTenTrade } from "../../plugin-math/src/base-ten-trade-view.js";
+import { renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
+import type { BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
@@ -1530,6 +1531,14 @@ export interface MountedInfiniteBoard {
 export type BoardInputOwner = "runtime" | "ink" | "course-object";
 export type CameraListener = (camera: CameraState) => void;
 export type VariableInputHandler = StudentVariableInputHandler;
+/**
+ * Taps on a card the learner works on (decision 0023). `live` says whether the open task lets the learner
+ * tap the card now; `tap` applies the card's rules and returns the card's reason when it refuses.
+ */
+export interface CardTapHandler {
+  live(nodeId: string): boolean;
+  tap(nodeId: string, tap: BaseTenTap, input: ReturnType<typeof studentInputMethod>): { operation: unknown } | { refused: string; message: string };
+}
 
 export function angleControlValue(
   rawAngle: number,
@@ -1895,6 +1904,15 @@ export class InfiniteBoardView {
     line?: { x0: number; x1: number; min: number; max: number; grid: Pick<NumberLineContent, "range" | "ticks"> };
   };
   private variableInputHandler?: VariableInputHandler;
+  private cardTapHandler?: CardTapHandler;
+  /** A refused tap's reason, shown under the card until the next tap. */
+  private readonly cardNotices = new Map<string, string>();
+  /** The tap that made a card's next state, so the card animates it; used once. */
+  private readonly cardSteps = new Map<string, NonNullable<BaseTenTradeViewContext["step"]>>();
+  /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
+  private readonly cardFrames = new Map<string, string>();
+  private renderedSemanticBoard: SemanticBoardState | null = null;
+  private renderedOperation?: PlaybackOperation;
   private scene3dInputHandler?: Scene3dViewInputHandler;
   private scene3dViews: Record<string, Scene3dViewState> = {};
   private regionLayouts: Record<string, RegionLayoutConstraint> = {};
@@ -2003,6 +2021,8 @@ export class InfiniteBoardView {
   get layoutRevision(): number { return this.layoutRevisionCounter; }
 
   render(semanticBoard: SemanticBoardState | null, operation?: PlaybackOperation): void {
+    this.renderedSemanticBoard = semanticBoard;
+    this.renderedOperation = operation;
     // Hidden and replaced cards leave the board the learner sees.
     const board = semanticBoard ? visibleBoard(semanticBoard) : semanticBoard;
     const teachingCameraChanged = this.cameraAuthority.observeRender(
@@ -2363,6 +2383,9 @@ export class InfiniteBoardView {
   }
 
   private onKeyDown(event: KeyboardEvent): void {
+    // Enter or Space on a focused card element taps it (decision 0023).
+    const tapTarget = (event.key === "Enter" || event.key === " ") && event.target instanceof Element ? event.target.closest("[data-oll-tap]") : null;
+    if (tapTarget && this.tapCard(tapTarget, "keyboard")) { event.preventDefault(); return; }
     if (event.code !== "Space" || boardKeyboardTargetsTextInput(event.target)) return;
     // Keep space from re-triggering a toolbar control that still has focus.
     event.preventDefault();
@@ -2393,6 +2416,33 @@ export class InfiniteBoardView {
   setVariableInputHandler(handler: VariableInputHandler | undefined): void {
     if (!handler) this.finishVariableDrag();
     this.variableInputHandler = handler;
+  }
+
+  setCardTapHandler(handler: CardTapHandler | undefined): void {
+    this.cardTapHandler = handler;
+    this.cardNotices.clear();
+    this.cardSteps.clear();
+  }
+
+  /** A tap or Enter on a card element marked `data-oll-tap`; true when the card took it. */
+  private tapCard(target: Element, input: ReturnType<typeof studentInputMethod>): boolean {
+    const handler = this.cardTapHandler;
+    const nodeId = target.closest<HTMLElement>(".board-node")?.dataset.id;
+    const spec = (target as HTMLElement | SVGElement).dataset?.ollTap;
+    if (!handler || !nodeId || !spec || !handler.live(nodeId)) return false;
+    const [kind, placeText] = spec.split(":");
+    if (!["gather", "ungather", "make", "break"].includes(kind ?? "")) return false;
+    const tap = { kind, place: Number(placeText) } as BaseTenTap;
+    const piece = (target as HTMLElement | SVGElement).dataset.ollPiece;
+    this.cardNotices.delete(nodeId);
+    this.cardSteps.set(nodeId, { tap, ...(piece ? { piece } : {}) });
+    const result = handler.tap(nodeId, tap, input);
+    if ("refused" in result) {
+      this.cardSteps.delete(nodeId);
+      if (result.message) this.cardNotices.set(nodeId, result.message);
+      this.render(this.renderedSemanticBoard, this.renderedOperation);
+    }
+    return true;
   }
 
   setScene3dInputHandler(handler: Scene3dViewInputHandler | undefined): void {
@@ -2692,7 +2742,8 @@ export class InfiniteBoardView {
       const signature = nodeContentSignature(node)
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
         + (kind === "plot" ? plotVariableSignature(node, variableValues) + JSON.stringify(plotAnimation ?? null) : "")
-        + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
+        + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "")
+        + (kind === "base_ten_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? ""]) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
@@ -2704,6 +2755,18 @@ export class InfiniteBoardView {
             updated = updateScene3d(element, node, this.scene3dViews[node.id],
               variableValues, this.handleScene3dInput);
           } catch { /* Recreate through the existing static fallback on failure. */ }
+        }
+        // The trading mat updates in place, so every unit keeps its identity and a tap animates.
+        const cardContext = kind === "base_ten_trade" ? {
+          applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
+          live: this.cardTapHandler?.live(node.id) ?? false,
+          notice: this.cardNotices.get(node.id) ?? "",
+        } : undefined;
+        const cardFrame = cardContext ? JSON.stringify([node.role, node.content?.title, node.content?.label, node.content?.caption, node.content?.columns]) : "";
+        if (cardContext && this.cardFrames.get(node.id) === cardFrame) {
+          const step = this.cardSteps.get(node.id);
+          this.cardSteps.delete(node.id);
+          try { updated = updateBaseTenTrade(element, node.content ?? {}, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
         }
         if (!updated) {
           disposeScene3d(element);
@@ -2718,6 +2781,7 @@ export class InfiniteBoardView {
             board.variables,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
+          if (cardContext) { updateBaseTenTrade(element, node.content ?? {}, cardContext); this.cardFrames.set(node.id, cardFrame); this.cardSteps.delete(node.id); }
         }
         // A plot redrawn in place keeps its frame while a variable changes
         // its curves and legend. Re-measuring it forces a synchronous browser
@@ -3328,6 +3392,13 @@ export class InfiniteBoardView {
       (this.inputOwner !== "runtime" && !auxiliaryPan && !spacePan && !inkReleasedTouchPan)
       || boardInputTargetsInteractiveUi(event.composedPath())
     ) return;
+    // A tap on a card the learner works on (decision 0023) is the card's, not a pan.
+    const tapTarget = (event.target as Element).closest?.("[data-oll-tap]");
+    if (tapTarget && !auxiliaryPan && !spacePan && event.button === 0 && this.tapCard(tapTarget, studentInputMethod(event.pointerType))) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const control = (event.target as Element).closest<SVGElement>("[data-oll-variable-control]");
     const svg = control?.closest<SVGSVGElement>("svg");
     const alias = control?.dataset.ollVariableControl;

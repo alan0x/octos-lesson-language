@@ -109,6 +109,11 @@ const handleStudentVariableInput = (
   }
 };
 boardView.setVariableInputHandler(handleStudentVariableInput);
+// Taps on a card the learner works on (decision 0023): the session's open task decides whether the card is live.
+boardView.setCardTapHandler({
+  live: (nodeId) => session?.studentCardLive(nodeId) ?? false,
+  tap: (nodeId, tap, input) => session.tapStudentCard(nodeId, tap, input),
+});
 const variableControls = mountVariableControls(
   requireElement("#variable-controls"),
   handleStudentVariableInput,
