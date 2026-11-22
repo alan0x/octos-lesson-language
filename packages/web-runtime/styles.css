@@ -174,6 +174,11 @@
 .base-ten-live:focus-visible .base-ten-block, .base-ten-live:focus-visible rect:first-child { stroke: #2f5bd3; stroke-width: 3; }
 .base-ten-place.emphasis-focus .base-ten-block { stroke: #e15d45; stroke-width: 2.4; }
 .base-ten-place.emphasis-supporting .base-ten-block { stroke: #d79a29; stroke-width: 2.2; }
+.base-ten-unit { transition: transform .38s ease, opacity .45s ease; }
+.base-ten-unit.base-ten-still { transition: none; }
+.base-ten-unit.base-ten-appearing { opacity: 0; }
+.base-ten-unit.base-ten-leaving { opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .base-ten-unit { transition: none; } }
 .base-ten-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
 .base-ten-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
