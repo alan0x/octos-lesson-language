@@ -424,7 +424,7 @@ test("publishes only the executable node, action, binding, control, and task cap
       scene3d: ["orbit", "zoom", "preset", "reset"],
     },
     student_tasks: {
-      completion: ["expression_target", "scene3d_view_target", "numeric_answer"],
+      completion: ["expression_target", "scene3d_view_target", "numeric_answer", "card_fact"],
       scene3d_view_match: ["view_direction", "camera_pose"],
     },
   });
@@ -1254,4 +1254,47 @@ test("log is the common logarithm and ln the natural logarithm", () => {
   assert.ok(Math.abs(compileMathExpression("ln(e)", [])({}) - 1) < 1e-12);
   // Change of base gives the same value whichever base log has.
   assert.ok(Math.abs(compileMathExpression("log(8)/log(2)", [])({}) - 3) < 1e-12);
+});
+
+test("card tasks (decision 0023): a trading card, its taps bound to whole-range variables, a starting pile and a practice pile", () => {
+  const variable = (as: string, initial: number, max: number) => ({ as, initial, min: 0, max, label: as });
+  const base = (overrides: { variables?: unknown[]; task?: Record<string, unknown>; content?: Record<string, unknown> } = {}) => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "en-US", title: "Trading", goals: ["Ten ones make a ten"],
+      variables: overrides.variables ?? [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)],
+      tasks: [{
+        as: "trade", prompt: "Make tens, then tap I'm done.", availability: { kind: "after_lesson" },
+        allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
+        completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+        start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tens: 2 } },
+        ...overrides.task,
+      }],
+    },
+    steps: [{ key: "s", purpose: "See", beats: [{ key: "b", say: "Here is the pile.", actions: [{ do: "write", as: "mat", kind: "base_ten_trade", role: "main_visual", place: { relation: "new_region" },
+      content: overrides.content ?? { columns: 2, places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }],
+        bindings: [{ target: "ones.count", expression: "ones" }, { target: "ones.tray", expression: "tray_ones" }, { target: "tens.count", expression: "tens" }] } }] }] }],
+    close: { summary: "Done.", focus: ["mat"] },
+  }) as unknown as AuthoringLesson;
+  assertAuthoringSchema(base());
+  validateAuthoringLesson(base());
+  const events = normalizeAuthoringLesson(base(), { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+  const task = events[0]!.lesson!.tasks![0]! as unknown as { completion: { node: string }; allowed_operations: Array<{ node?: string }> };
+  assert.equal(task.completion.node, "l:node:mat");
+  assert.equal(task.allowed_operations[0]!.node, "l:node:mat");
+  assert.equal(deriveExecutionRequirements(events).minimumPlayerVersion, "0.14.0");
+  validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tens: 2 } } } }));
+  assert.throws(() => validateAuthoringLesson(base({ task: { completion: { kind: "card_fact", node: "mat", fact: "all_traded" } } })), /Unsupported card fact/);
+  assert.throws(() => validateAuthoringLesson(base({ task: { allowed_operations: [{ kind: "card_submit" }] } })), /card_tap.*card_submit/);
+  assert.throws(() => validateAuthoringLesson(base({ variables: [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 8)] })), /must run from 0 to 9/);
+  assert.throws(() => validateAuthoringLesson(base({ content: { columns: 2, places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }],
+    bindings: [{ target: "ones.count", expression: "ones" }, { target: "tens.count", expression: "tens" }] } })), /'ones.tray' bound to its own lesson variable/);
+  assert.throws(() => validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tens"], values: { ones: 17 } } } })), /missing tray_ones/);
+  assert.throws(() => validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 50, tens: 9 } } } })), /practice pile is not a starting pile.*use 3 columns/);
+  // Review of #87: the task gives its practice pile; tap variables have no control of their own; a bound card is not revised.
+  assert.throws(() => validateAuthoringLesson(base({ task: { start: undefined } })), /gives the learner's practice pile in start/);
+  assert.throws(() => validateAuthoringLesson(base({ variables: [{ ...variable("ones", 14, 59), control: { kind: "slider", step: 1 } }, variable("tray_ones", 0, 10), variable("tens", 3, 9)] })), /changed only by tapping the card/);
+  const revised = base();
+  (revised.steps[0]!.beats as unknown[]).push({ key: "caption", say: "Look again.", actions: [{ do: "revise", target: "mat", reason: "add a caption", content: { columns: 2, caption: "Count them.", places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }] } }] });
+  assert.throws(() => validateAuthoringLesson(revised), /not revised: its counts change by taps/);
 });

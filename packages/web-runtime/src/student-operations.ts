@@ -82,11 +82,41 @@ export interface StudentAnswerOperation {
   input: StudentInputMethod;
 }
 
+/** One tap on a card (decision 0023): the card's own rules decide which lesson variables it changes. */
+export interface StudentCardTapOperation {
+  profile: "octos.student.operation";
+  version: "0.1";
+  id: string;
+  sequence: number;
+  lesson_id: string;
+  kind: "card_tap";
+  target: { kind: "card_node"; node_id: string };
+  /** What was tapped: gather, ungather, make or break, at a place (0 = ones). */
+  tap: { kind: "gather" | "ungather" | "make" | "break"; place: number };
+  /** Every variable the tap changed, in one step. */
+  changes: Array<{ alias: string; before: number; after: number }>;
+  input: StudentInputMethod;
+}
+
+/** The learner says "done" on a card task; the card's program judges what the learner made. */
+export interface StudentCardSubmitOperation {
+  profile: "octos.student.operation";
+  version: "0.1";
+  id: string;
+  sequence: number;
+  lesson_id: string;
+  kind: "card_submit";
+  target: { kind: "student_task"; task_id: string };
+  input: StudentInputMethod;
+}
+
 export type StudentOperation =
   | StudentVariableOperation
   | StudentInkSelectionOperation
   | StudentScene3dViewOperation
-  | StudentAnswerOperation;
+  | StudentAnswerOperation
+  | StudentCardTapOperation
+  | StudentCardSubmitOperation;
 
 export interface StudentOperationLog {
   profile: "octos.student.operation-log";
@@ -194,6 +224,36 @@ export function parseStudentOperationLog(
       ids.add(operation.id);
       lastSequence = operation.sequence as number;
       operations.push(structuredClone(operation as StudentAnswerOperation));
+      continue;
+    }
+    if (candidateOperation.kind === "card_tap" || candidateOperation.kind === "card_submit") {
+      const operation = raw as Partial<StudentCardTapOperation> & Partial<StudentCardSubmitOperation>;
+      const common = operation.profile === "octos.student.operation"
+        && operation.version === "0.1"
+        && operation.lesson_id === lessonId
+        && typeof operation.id === "string" && !!operation.id && !ids.has(operation.id)
+        && Number.isInteger(operation.sequence) && (operation.sequence ?? 0) > lastSequence
+        && inputMethods.has(operation.input as StudentInputMethod);
+      if (!common) return undefined;
+      if (candidateOperation.kind === "card_tap") {
+        const tap = (operation as Partial<StudentCardTapOperation>).tap;
+        const changes = (operation as Partial<StudentCardTapOperation>).changes;
+        const target = (operation as Partial<StudentCardTapOperation>).target;
+        if (
+          target?.kind !== "card_node" || typeof target.node_id !== "string" || !target.node_id
+          || !tap || !["gather", "ungather", "make", "break"].includes(tap.kind) || !Number.isInteger(tap.place) || tap.place < 0 || tap.place > 2
+          || !Array.isArray(changes) || changes.length < 1 || changes.length > 6
+          || changes.some((change) => !change || typeof change.alias !== "string" || !change.alias
+            || !Number.isFinite(change.before) || !Number.isFinite(change.after))
+          || new Set(changes.map((change) => change.alias)).size !== changes.length
+        ) return undefined;
+      } else {
+        const target = (operation as Partial<StudentCardSubmitOperation>).target;
+        if (target?.kind !== "student_task" || typeof target.task_id !== "string" || !target.task_id) return undefined;
+      }
+      ids.add(operation.id as string);
+      lastSequence = operation.sequence as number;
+      operations.push(structuredClone(operation as StudentCardTapOperation | StudentCardSubmitOperation));
       continue;
     }
     if (candidateOperation.kind === "ink_selection") {

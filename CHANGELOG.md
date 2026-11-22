@@ -10,6 +10,18 @@
 
 ### Added
 
+- **The learner taps a card and says "done" (decision 0023, step 1, PR B; player 0.14.0, `student-tasks:card_fact`):**
+  - A new task completion, `card_fact` (`node`, `fact: "no_trade_left"`). It allows exactly `card_tap` on its card and `card_submit`.
+  - The card must be a `base_ten_trade`. Each count and tray it changes must be bound to its own lesson variable running from 0 to the most the mat draws, so no tap can leave a range.
+  - A card task must give the learner's practice pile in `start` (now allowed on card tasks), listing every tap variable; it and the lesson's pile must be starting piles. Tap variables can have no slider or point of their own, and a bound card cannot be revised (a revision cannot carry bindings).
+  - The runtime:
+    - `tapStudentCard(node, tap)` applies the card's tap rules and writes every changed count in one step, logged as one `card_tap` operation. A refused tap is not logged and returns the card's reason ("The tray holds only ten.").
+    - `studentCardLive(node)` gates taps: a card can be tapped only while its task is open. While the lesson plays, during a practice transition and during later tasks, the card is inert, so the picture cannot change under a typed answer.
+    - `submitStudentCard(task)` is the learner's "done". It is judged by the card (`baseTenFacts`); taps are not attempts.
+    - Going back in the lesson lays the practice pile again when the lesson ends again.
+    - Saved card attempts are re-checked on restore.
+  - SPEC §5.5.
+
 - **Trading tens and ones, the math plugin's `base_ten_trade` card (decision 0023, step 1, PR A; math plugin 0.5.0, `plugin:math/base-ten-trade@1`):**
   - Content: `columns` (2 for tens and ones, 3 with hundreds; fixed, so the card keeps one size) and `places`, ones first (`as` `ones`, `tens`, `hundreds`), each a `count` and, below the highest column, a `tray` (0 to 10). A starting pile: ones up to 59, tens up to 19, hundreds up to 9, a tray no fuller than its place, and a value under 100 on two columns or up to 999 on three.
   - `count` and `tray` can be bound. The core checks each bound field's own range at every variable extreme (ones 59, tens 34, hundreds 9, trays 10: the most the tap rules can reach). The joint rules belong to the starting pile and are kept by the tap rules.

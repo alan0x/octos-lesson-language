@@ -230,10 +230,28 @@ export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
   completion: NumericAnswerCompletion;
 }
 
+/**
+ * A task the learner does on a card by tapping it, then says "done" (decision 0023, player 0.14.0). The
+ * card's own program judges a fact of what the learner made, only when the learner submits; taps are
+ * not attempts. Every count the card's taps change is bound to its own lesson variable.
+ */
+export type CardFact = "no_trade_left";
+
+export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
+  allowed_operations: Array<{ kind: "card_tap"; node: Alias } | { kind: "card_submit" }>;
+  completion: {
+    kind: "card_fact";
+    /** The card (node alias; a canonical node ID after normalization). */
+    node: Alias;
+    fact: CardFact;
+  };
+}
+
 export type AuthoringStudentTask =
   | AuthoringVariableStudentTask
   | AuthoringScene3dStudentTask
-  | AuthoringAnswerStudentTask;
+  | AuthoringAnswerStudentTask
+  | AuthoringCardStudentTask;
 
 /**
  * A thinking question the learner answers alone. It appears after the lesson

@@ -11,7 +11,7 @@ import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
-import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PART_FIELDS, validateBaseTenTradeContent } from "../../plugin-math/src/base-ten-trade.js";
+import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, hasTray, validateBaseTenTradeContent } from "../../plugin-math/src/base-ten-trade.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -22,6 +22,7 @@ import type {
   AuthoringAction,
   AuthoringLesson,
   AuthoringAnswerStudentTask,
+  AuthoringCardStudentTask,
   AuthoringScene3dStudentTask,
   AuthoringStudentTask,
   AuthoringVariableStudentTask,
@@ -374,6 +375,102 @@ function validateAnswerStudentTask(task: AuthoringAnswerStudentTask, path: strin
   validateTaskFeedback(task, path);
 }
 
+/**
+ * The fields of a trading card a tap writes, each to its own lesson variable (decision 0023): every
+ * count, and every tray below the highest column, bound to a bare declared variable that runs from 0 to
+ * exactly the most the mat draws, so no tap can leave a variable's range or the mat. Returns the
+ * variable of each field, keyed `ones.count`, `ones.tray`, ….
+ */
+export function baseTenTapVariables(
+  content: JsonObject,
+  declarations: readonly AuthoringVariable[],
+  path: string,
+): Map<string, string> {
+  const columns = content.columns === 3 ? 3 : 2;
+  const bindings = new Map<string, string>();
+  for (const binding of (Array.isArray(content.bindings) ? content.bindings : []) as JsonObject[]) {
+    if (typeof binding.target === "string" && typeof binding.expression === "string") bindings.set(binding.target, binding.expression.trim());
+  }
+  const result = new Map<string, string>();
+  const used = new Set<string>();
+  for (let p = 0; p < columns; p += 1) {
+    const place = BASE_TEN_TRADE_PLACES[p]!;
+    const fields: Array<["count" | "tray", number]> = [["count", columns === 2 && p === 1 ? 9 : BASE_TEN_TRADE_LIMITS.drawn[p]!]];
+    if (hasTray(columns, p)) fields.push(["tray", BASE_TEN_TRADE_LIMITS.tray]);
+    for (const [field, most] of fields) {
+      const target = `${place}.${field}`;
+      const alias = bindings.get(target);
+      const declaration = declarations.find((variable) => variable.as === alias);
+      if (!alias || !declaration) {
+        fail("OLL_INVALID_STUDENT_TASK", path, `A tap task needs '${target}' bound to its own lesson variable`);
+      }
+      if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
+      used.add(alias);
+      if (declaration.min !== 0 || declaration.max !== most || declaration.wrap) {
+        fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from 0 to ${most}, the most a tap can make`);
+      }
+      result.set(target, alias);
+    }
+  }
+  return result;
+}
+
+/** The card's content with its tap variables at the given values, for checking a starting pile. */
+function baseTenContentAt(content: JsonObject, variables: Map<string, string>, values: Record<string, number>): JsonObject {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const place of (Array.isArray(at.places) ? at.places : []) as JsonObject[]) {
+    for (const field of ["count", "tray"]) {
+      const alias = variables.get(`${place.as}.${field}`);
+      if (alias !== undefined && values[alias] !== undefined) place[field] = values[alias];
+    }
+  }
+  return at;
+}
+
+function validateCardStudentTask(
+  task: AuthoringCardStudentTask,
+  path: string,
+  registry: Registry,
+  cards: Map<string, JsonObject>,
+  declarations: readonly AuthoringVariable[],
+  startValues: Record<string, number>,
+  availableControls: Map<string, Set<string>>,
+): void {
+  const completion = task.completion;
+  resolveLocal(registry, completion.node, `${path}/completion/node`, ["node"]);
+  const content = cards.get(completion.node);
+  if (!content) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, "A card_fact task reads a base_ten_trade card");
+  if (completion.fact !== "no_trade_left") fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
+  requireArray(task.allowed_operations, `${path}/allowed_operations`);
+  const kinds = task.allowed_operations.map((operation) => operation?.kind).sort();
+  if (task.allowed_operations.length !== 2 || kinds[0] !== "card_submit" || kinds[1] !== "card_tap"
+    || task.allowed_operations.some((operation) => operation.kind === "card_tap" && operation.node !== completion.node)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), nothing else");
+  }
+  const variables = baseTenTapVariables(content, declarations, `${path}/completion/node`);
+  // Only taps change the card's counts while its task is open (review of #87): no slider or point moves
+  // them, so a tap never meets a pile its rules do not keep, and no count leaves its range.
+  for (const alias of variables.values()) {
+    if (declarations.find((variable) => variable.as === alias)?.control || availableControls.get(alias)?.size) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `Variable '${alias}' is changed only by tapping the card; it cannot have its own control`);
+    }
+  }
+  // The task starts on its own practice pile, so it never opens on whatever the lesson left (review of #87).
+  if (!task.start) fail("OLL_INVALID_PHASE_START", `${path}/start`, "A card task gives the learner's practice pile in start");
+  const initial = Object.fromEntries(declarations.map((variable) => [variable.as, variable.initial]));
+  const failAt = (message: string, where: string) => (failPath: string, detail: string): never =>
+    fail("OLL_INVALID_STUDENT_TASK", where, `${message}: ${detail} (${failPath.replace(/^\$\//, "")})`);
+  validateBaseTenTradeContent(baseTenContentAt(content, variables, initial), "$", failAt("The lesson's pile is not a starting pile", `${path}/completion/node`));
+  if (task.start) {
+    const selected = new Set(task.start.variables ?? []);
+    const missing = [...variables.values()].filter((alias) => !selected.has(alias));
+    if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
+    validateBaseTenTradeContent(baseTenContentAt(content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
+  }
+  validateTaskFeedback(task, path);
+}
+
 function validateTaskFeedback(task: AuthoringStudentTask, path: string): void {
   requireArray(task.hints, `${path}/hints`);
   if (task.hints.some((hint) => typeof hint !== "string" || !hint.trim())) {
@@ -456,6 +553,7 @@ function validateStudentTasks(
   scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
   registry: Registry,
   numberLineGrids: Map<string, NumberLineContent> = new Map(),
+  baseTenTradeContents: Map<string, JsonObject> = new Map(),
 ): void {
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
@@ -472,8 +570,8 @@ function validateStudentTasks(
       fail("OLL_INVALID_STUDENT_TASK", `${path}/availability/kind`, `Unsupported task availability '${String(task.availability.kind)}'`);
     }
     requireObject(task.completion, `${path}/completion`);
-    if (task.start && (task.start.kind !== "practice" || task.completion.kind !== "expression_target")) {
-      fail("OLL_INVALID_PHASE_START", `${path}/start`, "Practice starts currently require an expression task");
+    if (task.start && (task.start.kind !== "practice" || (task.completion.kind !== "expression_target" && task.completion.kind !== "card_fact"))) {
+      fail("OLL_INVALID_PHASE_START", `${path}/start`, "Practice starts currently require an expression or card task");
     }
     const startValues = task.start ? resolvePhaseStart(task.start, document.lesson.variables ?? [], `${path}/start`) : {};
 
@@ -483,6 +581,10 @@ function validateStudentTasks(
     }
     if (task.completion.kind === "numeric_answer") {
       validateAnswerStudentTask(task as AuthoringAnswerStudentTask, path, registry);
+      continue;
+    }
+    if (task.completion.kind === "card_fact") {
+      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues, availableControls);
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -1612,6 +1714,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   const numberLineNodes = new Set<string>();
   const fractionModelNodes = new Set<string>();
   const baseTenTradeNodes = new Set<string>();
+  const baseTenTradeContents = new Map<string, JsonObject>();
   // Highlighted parts of each 3D scene, which a view can turn to show.
   const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
@@ -1776,6 +1879,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
           if (action.kind === BASE_TEN_TRADE_KIND) {
             baseTenTradeNodes.add(action.as);
+            baseTenTradeContents.set(action.as, action.content);
             validateBaseTenTradeContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           if (action.kind === "scene3d") {
@@ -1865,6 +1969,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           if (baseTenTradeNodes.has(resolved.alias)) {
+            // A revision replaces the content and cannot carry bindings, so a bound mat would freeze (review of #87).
+            if (Array.isArray(baseTenTradeContents.get(resolved.alias)?.bindings)) {
+              fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/target`, "A trading card bound to lesson variables is not revised: its counts change by taps");
+            }
             validateBaseTenTradeContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           // A revision that declares addressable parts (a point added to a
@@ -1913,7 +2021,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
     });
   });
 
-  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, baseTenTradeContents);
   validateReflections(document, registry);
 
   if (document.close?.focus) {
@@ -2200,6 +2308,14 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
     if (candidate.completion.kind === "numeric_answer") {
       const answerTask = candidate as AuthoringAnswerStudentTask;
       answerTask.anchor = requireRegistryId(registry, answerTask.anchor);
+      continue;
+    }
+    if (candidate.completion.kind === "card_fact") {
+      const cardTask = candidate as AuthoringCardStudentTask;
+      cardTask.completion.node = requireRegistryId(registry, cardTask.completion.node);
+      for (const operation of cardTask.allowed_operations) {
+        if (operation.kind === "card_tap") operation.node = cardTask.completion.node;
+      }
       continue;
     }
     const task = candidate as AuthoringScene3dStudentTask;

@@ -121,6 +121,8 @@ export {
   type StudentInkSelectionOperation,
   type StudentInkSelectionSource,
   type StudentAnswerOperation,
+  type StudentCardSubmitOperation,
+  type StudentCardTapOperation,
   type StudentOperation,
   type StudentOperationLog,
   type StudentScene3dControl,
