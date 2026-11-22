@@ -658,9 +658,17 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     if (!anchor) continue;
     // Several cards on one anchor (a practice task, then questions in order) stack in that order: a card
     // opens under those already attached to the same anchor, not between them and the anchor.
+    // Only cards that hang directly under the anchor count: in its column and stacked without a gap from
+    // it (review of #92), so a task docked under another card, or far below, never pushes this card away.
     const ownCards = (region.attachments ?? []).filter(other => other.id !== spec.id && attachments[other.id]
-      && (other.anchorNodeId === spec.anchorNodeId || other.ownerNodeId === spec.anchorNodeId)).map(other => attachments[other.id]!);
-    const anchorBottom = Math.max(anchor.y + anchor.height, ...ownCards.filter(rect => rect.y >= anchor.y).map(rect => rect.y + rect.height));
+      && (other.anchorNodeId === spec.anchorNodeId || other.ownerNodeId === spec.anchorNodeId)).map(other => attachments[other.id]!)
+      .filter(rect => rect.x < anchor.x + anchor.width && rect.x + rect.width > anchor.x && rect.y >= anchor.y + anchor.height - 1)
+      .sort((a, b) => a.y - b.y);
+    let anchorBottom = anchor.y + anchor.height;
+    for (const rect of ownCards) {
+      if (rect.y > anchorBottom + 3 * CARD_GAP) break;
+      anchorBottom = Math.max(anchorBottom, rect.y + rect.height);
+    }
     const card = { x: anchor.x, y: anchorBottom + CARD_GAP, width: Math.max(anchor.width, spec.width), height: spec.height };
     // Wider than its anchor, the card can reach a card that starts beside the
     // anchor; it then opens below that card instead of over it.
