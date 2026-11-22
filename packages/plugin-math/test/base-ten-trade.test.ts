@@ -206,6 +206,17 @@ test("a base-ten trade card in a lesson: validated, bound values checked, and th
   }), /requires the 'math' plugin 0.5.0; installed 0.4.2/);
   // A variable that can reach past what the mat draws is refused before playback.
   assert.throws(() => validateAuthoringLesson(lesson(boundMat, [variables[0], { ...variables[1], max: 11 }, variables[2]])), /tray_ones = 11.*tray is a whole number from 0 to 10/);
+  // A three-column mat binds five variables; the fifth is checked too (review of #86).
+  const three = (hundredsMax: number) => lesson({
+    columns: 3, places: [{ as: "ones", count: 16, tray: 0 }, { as: "tens", count: 9, tray: 0 }, { as: "hundreds", count: 6 }],
+    bindings: [{ target: "ones.count", expression: "ones" }, { target: "ones.tray", expression: "tray_ones" }, { target: "tens.count", expression: "tens" },
+      { target: "tens.tray", expression: "tray_tens" }, { target: "hundreds.count", expression: "hundreds" }],
+  }, [{ as: "ones", initial: 16, min: 0, max: 59 }, { as: "tray_ones", initial: 0, min: 0, max: 10 }, { as: "tens", initial: 9, min: 0, max: 34 },
+    { as: "tray_tens", initial: 0, min: 0, max: 10 }, { as: "hundreds", initial: 6, min: 0, max: hundredsMax }]);
+  validateAuthoringLesson(three(9));
+  assert.throws(() => validateAuthoringLesson(three(12)), /hundreds = 12.*count of hundreds is a whole number from 0 to 9/);
+  // Whatever a variable holds, the card never draws more of a place than the mat holds.
+  assert.deepEqual(baseTenMat({ columns: 3, places: [{ as: "ones", count: 80 }, { as: "tens", count: 40 }, { as: "hundreds", count: 12 }] }).counts, [59, 34, 9]);
   // A starting pile that breaks the joint rules is refused.
   assert.throws(() => validateAuthoringLesson(lesson({ ...boundMat, places: [{ as: "ones", count: 3, tray: 4 }, { as: "tens", count: 2 }] })), /holds more than there are ones/);
   // Only counts and trays can be bound.
