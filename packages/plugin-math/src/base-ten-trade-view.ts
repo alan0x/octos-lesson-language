@@ -43,6 +43,8 @@ interface MatView {
   tray: string[][];
   elements: Map<string, SVGGElement>;
   next: number;
+  /** Bumped by every update; a timer from an older update does nothing (review of #88). */
+  generation: number;
 }
 
 const views = new WeakMap<HTMLElement, MatView>();
@@ -150,7 +152,7 @@ function create(parent: HTMLElement, raw: Record<string, unknown>): MatView {
   caption.className = "base-ten-caption";
   parent.append(notice, caption);
   const columns = (raw as { columns?: unknown }).columns === 3 ? 3 : 2;
-  return { plan, columns, svg, units, buttons, notice, caption, loose: [[], [], []], tray: [[], [], []], elements: new Map(), next: 0 };
+  return { plan, columns, svg, units, buttons, notice, caption, loose: [[], [], []], tray: [[], [], []], elements: new Map(), next: 0, generation: 0 };
 }
 
 /** Moves identities as the step says, then makes every place hold exactly what the mat holds. */
@@ -197,6 +199,9 @@ function reconcile(view: MatView, mat: BaseTenMat, step: BaseTenTradeViewContext
 }
 
 function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTradeViewContext): void {
+  // Every unit is placed below for this state, so a move an older update deferred must not run.
+  const generation = ++view.generation;
+  const current = () => view.generation === generation;
   const mat = baseTenMat(raw);
   const live = context.live === true;
   view.svg.classList.toggle("base-ten-mat-live", live);
@@ -238,7 +243,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
           unit.classList.add("base-ten-appearing");
           placeAt(unit, from);
           requestAnimationFrame(() => unit!.classList.remove("base-ten-appearing"));
-          setTimeout(() => place(unit!, at), FUSE_MS);
+          setTimeout(() => { if (current()) place(unit!, at); }, FUSE_MS);
         } else if (context.step?.tap.kind === "break" && inTray) {
           // Ten units from a break appear in the tray where the broken unit lies.
           unit.classList.add("base-ten-appearing");

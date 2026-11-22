@@ -46,6 +46,14 @@ const cases = {
   emphasis: lesson({ columns: 2, places: [{ count: 17 }, { count: 2 }] }, [],
     [{ key: "focus", say: "Look at the tens.", actions: [{ do: "emphasize", target: "mat#tens", emphasis: "focus" }] }]),
 };
+cases.taps3 = lesson({ columns: 3, places: [{ count: drive("ones", 16), tray: drive("tray_ones", 0) }, { count: drive("tens", 12), tray: drive("tray_tens", 0) }, { count: drive("hundreds", 1) }] },
+  [variable("ones", 16, 59), variable("tray_ones", 0, 10), variable("tens", 12, 34), variable("tray_tens", 0, 10), variable("hundreds", 1, 9)]);
+cases.taps3.lesson.tasks = [{
+  as: "trade", start: { kind: "practice", variables: ["ones", "tray_ones", "tens", "tray_tens", "hundreds"], values: { ones: 13, tens: 9, hundreds: 1 } },
+  prompt: "Make tens and hundreds until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
+  allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
+  completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+}];
 cases.taps.lesson.tasks = [{
   as: "trade", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tray_ones: 0, tens: 2 } },
   prompt: "Make tens until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
@@ -134,7 +142,7 @@ try {
   check(JSON.stringify(three?.headings) === JSON.stringify(["Hundreds", "Tens", "Ones"]), `three columns, named in words: ${JSON.stringify(three?.headings)}`);
   check(JSON.stringify(counted(three)) === "[16,9,6]", `6 hundreds, 9 tens, 16 ones drawn: ${JSON.stringify(three && counted(three))}`);
   for (const name of Object.keys(cases)) {
-    if (name === "taps") continue;
+    if (name === "taps" || name === "taps3") continue;
     for (const state of (await states(name)).filter((each) => !each.stuck)) {
       check(state.texts.every((text) => !/\d/.test(text)), `${name}: no number drawn on the mat: ${JSON.stringify(state.texts)}`);
       const boxes = state.places.flatMap((place) => [...place.loose, ...place.tray]);
@@ -222,6 +230,32 @@ try {
   await page.evaluate(() => { window.trade.session.submitStudentCard("trade"); window.trade.mounted.view.render(window.trade.session.projection.board); });
   now = await mat();
   check(now.live === 0, `after "done" the mat is inert: ${now.live} live elements`);
+  // Make a ten, then at once tap the ten just made into the tens tray (review of #88): no stale move.
+  await page.evaluate(({ events }) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "taps3-live", { reducedMotion: true });
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    while (session.projection.status !== "completed") session.advance();
+    mounted.view.setCardTapHandler({
+      live: (id) => session.studentCardLive(id),
+      tap: (id, tap, input) => { const result = session.tapStudentCard(id, tap, input); mounted.view.render(session.projection.board); return result; },
+    });
+    mounted.view.render(session.projection.board);
+    window.trade = { session, mounted };
+  }, { events: events.taps3 });
+  for (let i = 0; i < 10; i += 1) await clickPiece((await mat()).loose[0]);
+  await clickButton("make:0");
+  const madeTen = await page.evaluate(() => [...document.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)')].at(-1).dataset.ollPiece);
+  await clickPiece(madeTen);
+  await page.waitForTimeout(1200);
+  const quick = await page.evaluate(() => {
+    const trays = [...document.querySelectorAll(".base-ten-tray")].map((tray) => tray.getBoundingClientRect());
+    const tensTray = trays[0];
+    const inTray = [...document.querySelectorAll('.base-ten-unit.base-ten-in-tray[data-place="1"] .base-ten-block')].map((block) => block.getBoundingClientRect());
+    return { tray_tens: window.trade.session.projection.board.variables.tray_tens.value, inTray: inTray.length,
+      inside: inTray.every((r) => r.left >= tensTray.left - 2 && r.right <= tensTray.right + 2 && r.top >= tensTray.top - 2 && r.bottom <= tensTray.bottom + 2) };
+  });
+  check(quick.tray_tens === 1 && quick.inTray === 1 && quick.inside, `a ten tapped right after it was made sits in the tens tray: ${JSON.stringify(quick)}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
