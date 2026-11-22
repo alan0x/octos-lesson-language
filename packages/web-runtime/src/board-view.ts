@@ -6,6 +6,7 @@ import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
+import { renderBaseTenTrade } from "../../plugin-math/src/base-ten-trade-view.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
@@ -1757,6 +1758,8 @@ function renderContent(
   if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)), ...(variableStates ? { variables: variableStates } : {}) }); return; }
   // The math plugin's fraction model (decision 0021); it marks its own fractions for emphasis.
   if (node.kind === "fraction_model") { renderFractionModel(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
+  // The math plugin's trading mat (decision 0023); it marks its own places for emphasis. Taps arrive with the tap control.
+  if (node.kind === "base_ten_trade") { renderBaseTenTrade(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {

@@ -330,6 +330,7 @@ import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from
 /** The math plugin's recipe builders, by recipe name. */
 import { buildNumberLine } from "./number-line-builder.js";
 import { buildFractionModel } from "./fraction-model-builder.js";
+import { buildBaseTenTrade } from "./base-ten-trade-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
 export * from "./number-line-form.js";
@@ -343,11 +344,16 @@ export { renderNumberLine, NUMBER_LINE_VIEW_WIDTH } from "./number-line-view.js"
 export * from "./fraction-model.js";
 export { buildFractionModel, type BuiltFractionModel, type FractionModelInput } from "./fraction-model-builder.js";
 export { renderFractionModel } from "./fraction-model-view.js";
+// Trading tens and ones (decision 0023).
+export * from "./base-ten-trade.js";
+export { buildBaseTenTrade, type BuiltBaseTenTrade, type BaseTenTradeInput } from "./base-ten-trade-builder.js";
+export { renderBaseTenTrade, type BaseTenTradeViewContext } from "./base-ten-trade-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
   number_line: buildNumberLine,
   fraction_model: buildFractionModel,
+  base_ten_trade: buildBaseTenTrade,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

@@ -10,6 +10,19 @@
 
 ### Added
 
+- **Trading tens and ones, the math plugin's `base_ten_trade` card (decision 0023, step 1, PR A; math plugin 0.5.0, `plugin:math/base-ten-trade@1`):**
+  - Content: `columns` (2 for tens and ones, 3 with hundreds; fixed, so the card keeps one size) and `places`, ones first (`as` `ones`, `tens`, `hundreds`), each a `count` and, below the highest column, a `tray` (0 to 10). A starting pile: ones up to 59, tens up to 19, hundreds up to 9, a tray no fuller than its place, and a value under 100 on two columns or up to 999 on three.
+  - `count` and `tray` can be bound. The core checks each bound field's own range at every variable extreme (ones 59, tens 34, hundreds 9, trays 10: the most the tap rules can reach). The joint rules belong to the starting pile and are kept by the tap rules.
+  - The program's rules (`applyBaseTenTap`): a tray holds ten and no more, only exactly ten make one of the next place, and a break puts ten of the place below into its empty tray when the mat has room. `baseTenFacts` gives what a task reads (`no_trade_left`, the value, the counts and parts by place). Ported from the accepted sketch v3 and its tests.
+  - The view draws the owner-accepted mat:
+    - columns named in words, never a number;
+    - a tray of ten slots between each place and the next, labelled ("Ten ones make a ten"), with "Make a ten" and "Break a ten" under it;
+    - ones, tens and hundreds to scale, with hundreds three to a row and never overlapping.
+
+    Every tappable element is marked `data-oll-tap`. Taps, the learner's "done" task and the demonstration's tap event come in the next pull requests; until then the card only draws.
+  - `buildBaseTenTrade` builds the card for Coach and Studio; the layout sizes it from its plan (600 wide with two columns, 860 with three).
+  - Browser check: `npm run check:base-ten-trade-browser`.
+
 - **The fraction model, the math plugin's own card (decision 0021, amended; math plugin 0.4.0, `plugin:math/fraction-model@1`):**
   - `fraction_model` content states the meaning: a `model` (`bar`, `circle` or `grid` with `rows` and `columns`), one or two `fractions` (`numerator`, `denominator`, optional `wholes`, `split` and `highlight`), and, with two, a `relation` (`compare` or `equivalent`). Limits: denominators up to 12 (a grid's is its cell count, up to 10 × 10), up to 8 wholes (4 grids), a split of 2 to 6 with at most 24 parts after it.
   - The program plans every part (`planFractionModel`): parts are counted through the wholes in order, a full turn is a disc, an empty fraction shades nothing, two fractions share one whole size, and the relation line (`3/4 > 2/3`, `2/3 = 4/6`) is computed from the values. Fractions shown equivalent must be equal.

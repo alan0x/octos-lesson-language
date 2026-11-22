@@ -1,5 +1,6 @@
 import { NUMBER_LINE_BINDINGS, NUMBER_LINE_KIND } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_BINDINGS, FRACTION_MODEL_KIND } from "../../plugin-math/src/fraction-model.js";
+import { BASE_TEN_TRADE_BINDINGS, BASE_TEN_TRADE_KIND } from "../../plugin-math/src/base-ten-trade.js";
 
 /**
  * Executable capabilities implemented by the current OLL core/runtime.
@@ -28,7 +29,7 @@ export const OLL_NODE_KINDS = [
  * OLL and are always installed; their execution feature is the plugin's, not
  * `node:<kind>`, so an older player refuses them before playback.
  */
-export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND] as const;
+export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND, BASE_TEN_TRADE_KIND] as const;
 
 export type OllNodeKind = typeof OLL_NODE_KINDS[number] | typeof OLL_PLUGIN_NODE_KINDS[number];
 
@@ -67,6 +68,7 @@ export const OLL_BINDING_CAPABILITIES = {
   },
   number_line: NUMBER_LINE_BINDINGS,
   fraction_model: FRACTION_MODEL_BINDINGS,
+  base_ten_trade: BASE_TEN_TRADE_BINDINGS,
 } as const;
 
 /** Formula fields that may read declared lesson variables directly. */

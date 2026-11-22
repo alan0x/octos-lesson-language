@@ -9,6 +9,7 @@ import {
 import { MATH_PLUGIN_MANIFEST } from "../src/index.js";
 import { NUMBER_LINE_JUMP_LANES_VERSION } from "../src/number-line.js";
 import { FRACTION_MODEL_PLUGIN_VERSION } from "../src/fraction-model.js";
+import { BASE_TEN_TRADE_PLUGIN_VERSION } from "../src/base-ten-trade.js";
 
 const host = { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" as const };
 
@@ -54,10 +55,10 @@ test("a number line requires the math plugin's feature, not a core node feature"
   assert.ok(requirements.requiredCapabilities.includes("plugin:math/number-line@1"));
   assert.ok(!requirements.requiredCapabilities.some((feature) => feature === "node:number_line"));
   assert.deepEqual(requirements.requiredPlugins, { math: "0.2.0" });
-  // The manifest is at or past the newest feature's version (the fraction model, 0021; 0.4.1 and 0.4.2
-  // changed only how the card is drawn, so lessons still require 0.4.0); jump lanes came before it.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.4.2");
-  assert.ok(MATH_PLUGIN_MANIFEST.version >= FRACTION_MODEL_PLUGIN_VERSION);
+  // The manifest is at the newest feature's version (the base-ten trade card, 0023); the fraction model
+  // (0021; 0.4.1 and 0.4.2 changed only how it is drawn, so its lessons still require 0.4.0) and jump lanes came before it.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, BASE_TEN_TRADE_PLUGIN_VERSION);
+  assert.ok(FRACTION_MODEL_PLUGIN_VERSION < BASE_TEN_TRADE_PLUGIN_VERSION);
   assert.ok(NUMBER_LINE_JUMP_LANES_VERSION < FRACTION_MODEL_PLUGIN_VERSION);
   assert.doesNotThrow(() => assertExecutionSupported(events));
   // A player without the math plugin, or with an older one, refuses the lesson before playback.

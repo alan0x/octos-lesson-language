@@ -38,7 +38,8 @@
     "check:number-line-browser": "npm run build && node scripts/check-number-line-browser.mjs",
     "check:plot-browser": "npm run build && node scripts/check-plot-browser.mjs",
     "check:solids-browser": "npm run build && node scripts/check-solids-browser.mjs",
-    "check:fraction-model-browser": "npm run build && node scripts/check-fraction-model-browser.mjs"
+    "check:fraction-model-browser": "npm run build && node scripts/check-fraction-model-browser.mjs",
+    "check:base-ten-trade-browser": "npm run build && node scripts/check-base-ten-trade-browser.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
