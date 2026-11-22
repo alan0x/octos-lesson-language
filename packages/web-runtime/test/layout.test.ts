@@ -1226,6 +1226,37 @@ test("a thinking-question card opens under its anchor and moves only the content
 });
 
 
+test("several question cards on one card stack in their order, under its practice task (decision 0023)", () => {
+  const board = emptyBoard({ mat: card("mat", "base_ten_trade"), z: card("z", "math") });
+  const sizes: MeasuredNodeSizes = { mat: { width: 600, height: 300 }, z: { width: 330, height: 80 } };
+  const task = { id: "done", kind: "task" as const, anchorNodeId: "mat", ownerNodeId: "mat", anchorNodeIds: ["mat"], width: 330, height: 120 };
+  const question = (id: string) => ({ id, kind: "reflection" as const, anchorNodeId: "mat", width: 330, height: 90 });
+  const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching", nodeSections: { mat: "1", z: "1" },
+    composition: wideComposition, attachments: [task, question("number"), question("counts"), question("parts")] } } });
+  const order = ["number", "counts", "parts"].map(id => layout.attachments[id]!);
+  assert.ok(order[0]!.y < order[1]!.y && order[1]!.y < order[2]!.y, `questions in order: ${order.map(r => r.y).join(" < ")}`);
+  for (let i = 1; i < order.length; i += 1) assert.ok(order[i]!.y >= order[i - 1]!.y + order[i - 1]!.height, "no overlap");
+  const done = layout.attachments.done!;
+  if (done.y >= layout.nodes.mat!.y + layout.nodes.mat!.height) assert.ok(order[0]!.y >= done.y + done.height, "questions under the practice task below the card");
+});
+
+test("a question card ignores a task listed with its card but docked elsewhere (review of #92)", () => {
+  const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot"), c: card("c", "plot") });
+  const sizes: MeasuredNodeSizes = { a: { width: 440, height: 360 }, b: { width: 440, height: 360 }, c: { width: 440, height: 360 } };
+  const question = { id: "q", kind: "reflection" as const, anchorNodeId: "a", width: 330, height: 90 };
+  for (const task of [
+    { id: "t", kind: "task" as const, anchorNodeId: "b", ownerNodeId: "a", anchorNodeIds: ["b"], width: 330, height: 200 },
+    { id: "t", kind: "task" as const, anchorNodeId: "a", ownerNodeId: "c", anchorNodeIds: ["a", "c"], width: 330, height: 200 },
+  ]) {
+    const layout = computeBoardLayout(board, sizes, { regions: { r: { x: 20, y: 20, flow: "teaching", nodeSections: { a: "1", b: "1", c: "2" },
+      plannedSteps: { "1": { visual: 2 }, "2": { visual: 1 } }, composition: { ...wideComposition, width: 1920 }, attachments: [task, question] } } });
+    const t = layout.attachments.t!, a = layout.nodes.a!;
+    const under = t.x < a.x + a.width && t.x + t.width > a.x && t.y >= a.y + a.height - 1 && t.y <= a.y + a.height + 48;
+    const expected = under ? t.y + t.height + 16 : a.y + a.height + 16;
+    assert.equal(layout.attachments.q!.y, expected, `question on a with task ${JSON.stringify({ anchor: task.anchorNodeId, owner: task.ownerNodeId, at: t })}`);
+  }
+});
+
 test("cross-row dependencies do not reserve a shared task twice", () => {
   const board = emptyBoard({ a: card("a", "geometry"), b: card("b", "plot"), c: card("c", "plot") });
   const measured = { a: { width: 440, height: 380 }, b: { width: 440, height: 360 }, c: { width: 440, height: 360 } };
