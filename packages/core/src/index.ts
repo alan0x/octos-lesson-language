@@ -435,6 +435,7 @@ function validateCardStudentTask(
   cards: Map<string, JsonObject>,
   declarations: readonly AuthoringVariable[],
   startValues: Record<string, number>,
+  availableControls: Map<string, Set<string>>,
 ): void {
   const completion = task.completion;
   resolveLocal(registry, completion.node, `${path}/completion/node`, ["node"]);
@@ -448,6 +449,15 @@ function validateCardStudentTask(
     fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), nothing else");
   }
   const variables = baseTenTapVariables(content, declarations, `${path}/completion/node`);
+  // Only taps change the card's counts while its task is open (review of #87): no slider or point moves
+  // them, so a tap never meets a pile its rules do not keep, and no count leaves its range.
+  for (const alias of variables.values()) {
+    if (declarations.find((variable) => variable.as === alias)?.control || availableControls.get(alias)?.size) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `Variable '${alias}' is changed only by tapping the card; it cannot have its own control`);
+    }
+  }
+  // The task starts on its own practice pile, so it never opens on whatever the lesson left (review of #87).
+  if (!task.start) fail("OLL_INVALID_PHASE_START", `${path}/start`, "A card task gives the learner's practice pile in start");
   const initial = Object.fromEntries(declarations.map((variable) => [variable.as, variable.initial]));
   const failAt = (message: string, where: string) => (failPath: string, detail: string): never =>
     fail("OLL_INVALID_STUDENT_TASK", where, `${message}: ${detail} (${failPath.replace(/^\$\//, "")})`);
@@ -574,7 +584,7 @@ function validateStudentTasks(
       continue;
     }
     if (task.completion.kind === "card_fact") {
-      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues);
+      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues, availableControls);
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -1974,6 +1984,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           if (baseTenTradeNodes.has(resolved.alias)) {
+            // A revision replaces the content and cannot carry bindings, so a bound mat would freeze (review of #87).
+            if (Array.isArray(baseTenTradeContents.get(resolved.alias)?.bindings)) {
+              fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/target`, "A trading card bound to lesson variables is not revised: its counts change by taps");
+            }
             validateBaseTenTradeContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           // A revision that declares addressable parts (a point added to a

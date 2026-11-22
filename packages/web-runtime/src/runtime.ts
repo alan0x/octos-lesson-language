@@ -799,7 +799,10 @@ export class BrowserLessonSession {
       this.phaseState.transition = undefined;
       if (newEpoch) {
         this.phaseState.epoch += 1;
-        this.phaseState.ready = this.phaseState.ready.filter(key => !key.startsWith("playback:"));
+        // A card task's practice pile is laid again when the lesson ends again (review of #87): after a
+        // replay the board holds the lesson's pile, which the narration has already answered.
+        const cardPractice = this.studentTaskDefinitions.filter((task) => task.completion.kind === "card_fact").map((task) => `practice:${task.as}:`);
+        this.phaseState.ready = this.phaseState.ready.filter(key => !key.startsWith("playback:") && !cardPractice.some((prefix) => key.startsWith(prefix)));
       }
       this.freezeScheduledDelay();
       this.discardScheduledDelay();
@@ -1406,15 +1409,6 @@ export class BrowserLessonSession {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
         }
-      } else if (definition.completion.kind === "card_fact") {
-        // Back to the pile the lesson left: each tap variable to its initial value, in one step.
-        const node = this.player.snapshot.board?.nodes?.[(definition as AuthoringCardStudentTask).completion.node];
-        const aliases = ((node?.content.bindings ?? []) as Array<{ expression: string }>).map((binding) => binding.expression.trim());
-        const initials = Object.fromEntries(aliases.flatMap((alias) => {
-          const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
-          return Number.isFinite(initial) ? [[alias, initial as number]] : [];
-        }));
-        try { this.player.setVariables(initials); this.persist(); } catch (error) { this.reportFailure("input", error); }
       } else if (definition.completion.kind === "scene3d_view_target") {
         const nodeId = definition.completion.node;
         const node = this.player.snapshot.board?.nodes?.[nodeId];
