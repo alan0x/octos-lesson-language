@@ -10,7 +10,8 @@ import {
   type StudentTaskScene3dControl,
   type StudentTaskVariableControl,
 } from "../../core/src/index.js";
-import type { SemanticBoardState } from "../../core/src/index.js";
+import type { AuthoringCardStudentTask, SemanticBoardState } from "../../core/src/index.js";
+import { baseTenFacts, baseTenMat } from "../../plugin-math/src/base-ten-trade.js";
 import type {
   StudentAnswerOperation,
   StudentOperation,
@@ -149,6 +150,10 @@ function attemptMatchesDefinition(definition: AuthoringStudentTask, attempt: Stu
       && attempt.succeeded === check.succeeded;
   }
   if (attempt.answer !== undefined) return false;
+  // A card fact is true (1) or not (0); the card's program judged it when the learner said done.
+  if (completion.kind === "card_fact") {
+    return attempt.target === 1 && (attempt.actual === 0 || attempt.actual === 1) && attempt.succeeded === (attempt.actual === 1);
+  }
   const target = completion.kind === "expression_target" ? completion.value : 0;
   const tolerance = completion.kind === "expression_target" ? completion.tolerance : 1;
   return attempt.target === target
@@ -207,6 +212,14 @@ export function evaluateStudentTaskOperation(
     target = parseNumericAnswer(task.completion.answer)!.value;
     succeeded = check.succeeded;
     answer = operation.answer;
+  } else if (task.completion.kind === "card_fact") {
+    // Taps are not attempts; only saying "done" on this task is.
+    if (operation.kind !== "card_submit" || operation.target.task_id !== task.as) return false;
+    const node = board.nodes[(task as AuthoringCardStudentTask).completion.node];
+    if (!node || node.kind !== "base_ten_trade") throw new Error(`Card '${(task as AuthoringCardStudentTask).completion.node}' is not on the board`);
+    actual = baseTenFacts(baseTenMat(node.content)).no_trade_left ? 1 : 0;
+    target = 1;
+    succeeded = actual === 1;
   } else if (task.completion.kind === "expression_target") {
     const variableTask = task as AuthoringVariableStudentTask;
     if (operation.kind !== "variable_change" || !variableOperationAllowed(variableTask, operation)) return false;

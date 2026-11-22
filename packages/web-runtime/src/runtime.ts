@@ -1,4 +1,5 @@
-import { checkNumericAnswer, scene3dViewForIntent, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
+import { checkNumericAnswer, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
+import { applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -17,6 +18,8 @@ import {
   type StudentInkSelectionOperation,
   type StudentInkSelectionSource,
   type StudentAnswerOperation,
+  type StudentCardSubmitOperation,
+  type StudentCardTapOperation,
   type StudentInputMethod,
   type StudentOperation,
   type StudentOperationLog,
@@ -1272,6 +1275,109 @@ export class BrowserLessonSession {
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
 
+  /**
+   * Whether the open task lets the learner tap this card now (decision 0023). Outside such a task (the
+   * lesson playing, another task open, a practice pile still arriving) the card is inert, so taps never
+   * fight the lesson and the picture never changes under a typed answer.
+   */
+  studentCardLive(nodeId: string): boolean {
+    if (this.failureState || !this.studentTaskWindowOpen) return false;
+    const active = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find((task) => task.as === active?.task_id);
+    return definition?.completion.kind === "card_fact"
+      && (definition as AuthoringCardStudentTask).allowed_operations.some((operation) => operation.kind === "card_tap" && operation.node === nodeId);
+  }
+
+  /**
+   * One tap on a card. The card's rules decide what it changes; every changed count is written to its
+   * bound lesson variable in one step and logged as one operation. A tap the rules refuse changes
+   * nothing, is not logged, and returns the card's reason for the learner.
+   */
+  tapStudentCard(
+    nodeId: string,
+    tap: BaseTenTap,
+    input: StudentInputMethod = "unknown",
+  ): { operation: StudentCardTapOperation } | { refused: BaseTenRefusal | "inert"; message: string } {
+    if (!this.studentCardLive(nodeId)) return { refused: "inert", message: "" };
+    const node = this.player.snapshot.board?.nodes?.[nodeId];
+    if (!node || node.kind !== "base_ten_trade") throw new Error(`Card '${nodeId}' is not a base-ten trade card`);
+    const before = baseTenMat(node.content);
+    const result = applyBaseTenTap(before, tap);
+    if (!result.ok) return { refused: result.reason, message: baseTenRefusalText(result.reason, tap.place) };
+    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
+    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
+      .map((binding) => [binding.target, binding.expression.trim()]));
+    const changes = baseTenChanges(before, result.mat).map((change) => {
+      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
+      if (!alias || !this.player.snapshot.board?.variables?.[alias]) throw new Error(`Card '${nodeId}' has no variable for ${change.field} of place ${change.place}`);
+      return { alias, before: change.before, after: change.after };
+    });
+    try {
+      this.player.setVariables(Object.fromEntries(changes.map((change) => [change.alias, change.after])));
+    } catch (error) {
+      this.reportFailure("input", error);
+      return { refused: "inert", message: "" };
+    }
+    const sequence = this.nextStudentOperationSequence;
+    this.nextStudentOperationSequence += 1;
+    const operation: StudentCardTapOperation = {
+      profile: "octos.student.operation",
+      version: "0.1",
+      id: `${this.player.snapshot.lesson_id}:card-tap:${sequence}`,
+      sequence,
+      lesson_id: this.player.snapshot.lesson_id,
+      kind: "card_tap",
+      target: { kind: "card_node", node_id: nodeId },
+      tap: { kind: tap.kind, place: tap.place },
+      changes,
+      input,
+    };
+    this.studentOperationLog.operations.push(operation);
+    this.persistStudentOperations();
+    this.persist();
+    this.emit();
+    return { operation: structuredClone(operation) };
+  }
+
+  /** The learner says "done" on the open card task; the card's program judges what the learner made. */
+  submitStudentCard(taskId: string, input: StudentInputMethod = "unknown"): StudentTaskSnapshot {
+    const definition = this.studentTaskDefinitions.find((task) => task.as === taskId);
+    const progress = this.studentTaskProgressLog.tasks.find((task) => task.task_id === taskId);
+    if (!definition || !progress) throw new Error(`Unknown student task '${taskId}'`);
+    if (definition.completion.kind !== "card_fact") throw new Error(`Student task '${taskId}' is not a card task`);
+    if (!this.studentTaskWindowOpen) throw new Error(`Student task '${taskId}' is not available before the lesson completes`);
+    if (!this.studentTasks.find((task) => task.task_id === taskId)?.available) {
+      throw new Error(`Student task '${taskId}' is not currently available`);
+    }
+    if (progress.status === "succeeded") return this.studentTasks.find((task) => task.task_id === taskId)!;
+    const sequence = this.nextStudentOperationSequence;
+    this.nextStudentOperationSequence += 1;
+    const operation: StudentCardSubmitOperation = {
+      profile: "octos.student.operation",
+      version: "0.1",
+      id: `${this.player.snapshot.lesson_id}:card-submit:${sequence}`,
+      sequence,
+      lesson_id: this.player.snapshot.lesson_id,
+      kind: "card_submit",
+      target: { kind: "student_task", task_id: taskId },
+      input,
+    };
+    const previousProgress = structuredClone(this.studentTaskProgressLog);
+    try {
+      this.evaluateStudentTasks(operation);
+    } catch (error) {
+      this.studentTaskProgressLog = previousProgress;
+      this.reportFailure("input", error);
+      return this.studentTasks.find((task) => task.task_id === taskId)!;
+    }
+    this.studentOperationLog.operations.push(operation);
+    this.persistStudentOperations();
+    this.persistStudentTaskProgress();
+    this.activatePractice();
+    this.emit();
+    return this.studentTasks.find((task) => task.task_id === taskId)!;
+  }
+
   retryStudentTask(
     taskId: string,
     input: StudentVariableOperationContext["input"] = "unknown",
@@ -1300,6 +1406,15 @@ export class BrowserLessonSession {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
         }
+      } else if (definition.completion.kind === "card_fact") {
+        // Back to the pile the lesson left: each tap variable to its initial value, in one step.
+        const node = this.player.snapshot.board?.nodes?.[(definition as AuthoringCardStudentTask).completion.node];
+        const aliases = ((node?.content.bindings ?? []) as Array<{ expression: string }>).map((binding) => binding.expression.trim());
+        const initials = Object.fromEntries(aliases.flatMap((alias) => {
+          const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
+          return Number.isFinite(initial) ? [[alias, initial as number]] : [];
+        }));
+        try { this.player.setVariables(initials); this.persist(); } catch (error) { this.reportFailure("input", error); }
       } else if (definition.completion.kind === "scene3d_view_target") {
         const nodeId = definition.completion.node;
         const node = this.player.snapshot.board?.nodes?.[nodeId];

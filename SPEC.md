@@ -207,6 +207,26 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - `unit` 只显示在输入框后，不参与判定；
 - 无法读成数的输入不算一次尝试。
 
+卡片任务（`card_fact`，player 0.14.0，决定 0023）让学生在一张卡片上点按操作，自己说“做完了”，由卡片自己的程序判定：
+
+```json
+"tasks": [{
+  "as": "trade",
+  "start": {"kind": "practice", "variables": ["ones", "tray_ones", "tens"], "values": {"ones": 17, "tray_ones": 0, "tens": 2}},
+  "prompt": "Make tens until you can't. Then tap I'm done.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "card_tap", "node": "mat"}, {"kind": "card_submit"}],
+  "completion": {"kind": "card_fact", "node": "mat", "fact": "no_trade_left"},
+  "hints": ["Fill the tray with ten ones, then make a ten."]
+}]
+```
+
+- `node` 必须是本课写出的 `base_ten_trade` 卡片；`allowed_operations` 恰好是点这张卡片（`card_tap`）和说做完了（`card_submit`）；
+- 点按改变哪些数由卡片的规则决定（托盘只装十个，正好十个才换成一个高一位的，拆开放进空托盘）；一次点按可以同时改几个变量，作为一次 `card_tap` 操作记录。卡片上点按会改的每个数（每一位的个数、每个托盘）都必须绑定到它自己的课内变量，变量从 0 到卡片能画的最大值；
+- 只在这个任务开放时卡片才能点；讲解播放时、其他任务开放时都不能点，被拒绝的点按不记录；
+- 点按不算尝试；`card_submit` 才算一次尝试，卡片的事实成立就完成；
+- 课开始的那堆和 `start` 给的练习堆都必须是合法的起始堆；`start.variables` 必须包含所有点按会改的变量。
+
 ### 5.6 学生笔迹资源不属于 OLL
 
 学生原稿不放进 `lesson.open`、Canonical Event 或 Semantic BoardState。浏览器宿主把它作为独立资源保存，最低记录如下：

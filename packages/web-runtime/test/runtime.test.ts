@@ -1455,3 +1455,96 @@ test("a learner drags a number-line point through the session, and the task judg
   assert.equal(dot.value, 0.75, "the point follows the dragged variable");
   assert.throws(() => session.beginStudentVariableOperation("p", { control: "lasso" as never, input: "mouse" }), /Unsupported student variable control 'lasso'/);
 });
+
+// Trading tens and ones (decision 0023): a card the learner taps, then says "done".
+function tradingLesson(): ReturnType<typeof normalizeAuthoringLesson> {
+  const variable = (as: string, initial: number, max: number) => ({ as, initial, min: 0, max, label: as });
+  const lesson = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "en-US", title: "Trading tens and ones", goals: ["Ten ones make a ten"],
+      variables: [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)],
+      tasks: [{
+        as: "trade",
+        start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tray_ones: 0, tens: 2 } },
+        prompt: "Make tens until you can't. Then tap I'm done.",
+        availability: { kind: "after_lesson" },
+        allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
+        completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" },
+        hints: ["Fill the tray with ten ones, then make a ten."],
+      }, {
+        as: "number", anchor: "mat", prompt: "How many marbles does Leo have?",
+        availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "answer_entry" }],
+        completion: { kind: "numeric_answer", answer: "37" }, hints: ["Count the tens, then the ones."],
+      }],
+    },
+    steps: [{ key: "show", purpose: "See the pile", beats: [
+      { key: "draw", say: "Here are 3 tens and 14 ones.", actions: [{ do: "write", as: "mat", kind: "base_ten_trade", role: "main_visual", place: { relation: "new_region" },
+        content: { columns: 2, places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }],
+          bindings: [{ target: "ones.count", expression: "ones" }, { target: "ones.tray", expression: "tray_ones" }, { target: "tens.count", expression: "tens" }] } }] },
+    ] }],
+    close: { summary: "Ten ones make a ten.", focus: ["mat"] },
+  } as unknown as AuthoringLesson;
+  return normalizeAuthoringLesson(lesson, { lessonId: "trade", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+}
+
+test("a card task: taps change the bound counts together, only exactly ten trade, and done is judged by the card", () => {
+  const events = tradingLesson();
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "trade", { reducedMotion: true });
+  const card = "trade:node:mat";
+  const values = () => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+  // Inert while the lesson plays: a tap is refused and changes nothing.
+  assert.equal(session.studentCardLive(card), false);
+  assert.deepEqual(session.tapStudentCard(card, { kind: "gather", place: 0 }), { refused: "inert", message: "" });
+  assert.throws(() => session.submitStudentCard("trade"), /not available before the lesson completes/);
+  while (session.projection.status !== "completed") session.advance();
+  // The practice pile replaces the lesson's (3 tens, 14 ones): 2 tens and 17 ones.
+  assert.deepEqual(values(), { ones: 17, tray_ones: 0, tens: 2 });
+  assert.equal(session.studentCardLive(card), true);
+  // Saying done with a trade left is a failed attempt, not a refusal.
+  assert.equal(session.submitStudentCard("trade").status, "in_progress");
+  // The tray takes ten and no more; nine do not make a ten.
+  for (let i = 0; i < 9; i += 1) assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }, "mouse"));
+  assert.deepEqual(session.tapStudentCard(card, { kind: "make", place: 0 }), { refused: "tray_not_ten", message: "Fill the tray first: a ten is ten ones." });
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }));
+  assert.deepEqual(session.tapStudentCard(card, { kind: "gather", place: 0 }), { refused: "tray_full", message: "The tray holds only ten." });
+  const made = session.tapStudentCard(card, { kind: "make", place: 0 }, "touch");
+  assert.ok("operation" in made);
+  assert.deepEqual(made.operation.changes, [
+    { alias: "ones", before: 17, after: 7 }, { alias: "tray_ones", before: 10, after: 0 }, { alias: "tens", before: 2, after: 3 },
+  ]);
+  assert.deepEqual(values(), { ones: 7, tray_ones: 0, tens: 3 });
+  // Taps are not attempts; done is judged by the card.
+  assert.equal(session.studentTasks[0]!.attempts.length, 1);
+  const done = session.submitStudentCard("trade", "touch");
+  assert.equal(done.status, "succeeded");
+  assert.deepEqual(done.attempts.map((attempt) => [attempt.actual, attempt.succeeded]), [[0, false], [1, true]]);
+  // The mat is inert during the typed question, so the picture cannot change under the answer.
+  assert.equal(session.studentCardLive(card), false);
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: 1 }), { refused: "inert", message: "" });
+  assert.equal(session.studentTasks[1]!.available, true);
+  assert.equal((session.submitStudentAnswer("number", "37") as StudentTaskSnapshot).status, "succeeded");
+  // Restored from the store: the same operations, progress and pile.
+  const restored = new BrowserLessonSession(events, store, "trade", { reducedMotion: true });
+  assert.deepEqual(restored.studentOperations, session.studentOperations);
+  assert.deepEqual(restored.studentTasks, session.studentTasks);
+  assert.deepEqual(Object.fromEntries(Object.entries(restored.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value])), values());
+  assert.deepEqual(session.studentOperations.filter((operation) => operation.kind === "card_tap").length, 11);
+  // A tampered card attempt is discarded on restore.
+  store.studentTaskProgress.get("trade")!.tasks[0]!.attempts[0]!.succeeded = true;
+  assert.equal(new BrowserLessonSession(events, store, "trade", { reducedMotion: true }).studentTasks[0]!.attempts.length, 0);
+});
+
+test("a card task's retry returns the practice pile, and a break goes into the empty tray", () => {
+  const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-retry", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  const values = () => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "break", place: 1 }));
+  assert.deepEqual(values(), { ones: 27, tray_ones: 10, tens: 1 });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: 1 }), { refused: "tray_not_empty", message: "Empty the tray first." });
+  session.submitStudentCard("trade");
+  assert.equal(session.retryStudentTask("trade").status, "not_started");
+  assert.deepEqual(values(), { ones: 17, tray_ones: 0, tens: 2 });
+});

@@ -9,7 +9,7 @@ import { BASE_TEN_TRADE_FEATURE, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PLUGIN_VERS
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.13.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.14.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -27,6 +27,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:expression_target": "0.1.0",
   "student-tasks:scene3d_view_target": "0.1.0",
   "student-tasks:numeric_answer": "0.5.0",
+  // Decision 0023: the learner taps a card and says "done"; an older player has no taps or card facts.
+  "student-tasks:card_fact": "0.14.0",
   "reflections": "0.3.0",
   "binding-hide-undefined": "0.3.0",
   "lesson-mode:learner_taught": "0.6.0",

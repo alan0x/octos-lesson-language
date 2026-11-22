@@ -197,6 +197,23 @@
                 "properties": {
                   "kind": {"const": "answer_entry"}
                 }
+              },
+              {
+                "type": "object",
+                "required": ["kind", "node"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {"const": "card_tap"},
+                  "node": {"$ref": "#/$defs/alias"}
+                }
+              },
+              {
+                "type": "object",
+                "required": ["kind"],
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {"const": "card_submit"}
+                }
               }
             ]
           }
@@ -239,6 +256,16 @@
                 "tolerance": {"type": "number", "minimum": 0},
                 "unit": {"type": "string", "minLength": 1, "maxLength": 16},
                 "form": {"enum": ["any", "simplest_fraction"]}
+              }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "node", "fact"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": {"const": "card_fact"},
+                "node": {"$ref": "#/$defs/alias"},
+                "fact": {"enum": ["no_trade_left"]}
               }
             }
           ]
