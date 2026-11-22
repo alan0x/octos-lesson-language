@@ -1427,6 +1427,8 @@ export class BrowserLessonSession {
     this.persistStudentOperations();
     this.persistStudentTaskProgress();
     this.activatePractice();
+    // The tidy pile laid after "done" is saved now, not only on the next change (review of #93).
+    this.persist();
     this.emit();
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }

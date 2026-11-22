@@ -236,7 +236,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
   "availability": {"kind": "after_lesson"},
   "allowed_operations": [{"kind": "card_tap", "node": "mat"}, {"kind": "card_submit"}],
   "completion": {"kind": "card_fact", "node": "mat", "fact": "no_trade_left"},
-  "hints": ["Fill the tray with ten ones, then make a ten."]
+  "hints": ["Put ones in the tray; when ten fill it, make a ten."]
 }]
 ```
 

@@ -1471,7 +1471,7 @@ function tradingLesson(): ReturnType<typeof normalizeAuthoringLesson> {
         availability: { kind: "after_lesson" },
         allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
         completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" },
-        hints: ["Fill the tray with ten ones, then make a ten."],
+        hints: ["Put ones in the tray; when ten fill it, make a ten."],
       }, {
         as: "number", anchor: "mat", prompt: "How many marbles does Leo have?",
         availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "answer_entry" }],

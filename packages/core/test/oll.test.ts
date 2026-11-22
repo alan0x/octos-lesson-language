@@ -1267,7 +1267,7 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
       tasks: [{
         as: "trade", prompt: "Make tens, then tap I'm done.", availability: { kind: "after_lesson" },
         allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
-        completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+        completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
         start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tens: 2 } },
         ...overrides.task,
       }],

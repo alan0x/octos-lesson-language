@@ -56,13 +56,13 @@ cases.taps3.lesson.tasks = [{
   as: "trade", start: { kind: "practice", variables: ["ones", "tray_ones", "tens", "tray_tens", "hundreds"], values: { ones: 13, tens: 9, hundreds: 1 } },
   prompt: "Make tens and hundreds until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
   allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
-  completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+  completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
 }];
 cases.taps.lesson.tasks = [{
   as: "trade", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tray_ones: 0, tens: 2 } },
   prompt: "Make tens until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
   allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
-  completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+  completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
 }];
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
