@@ -10,6 +10,12 @@
 
 ### Added
 
+- **A lesson taps a card the way a learner would (decision 0023, step 1, PR D; player 0.14.0, `action:card.tap`):**
+  - The authoring action `{ do: "tap", target, tap, at }` becomes the canonical `card.tap`. The reducer applies the card's tap rules and writes every changed count in one step, so a demonstration's trade never shows half a change.
+  - The validator follows the lesson's variables in playback order (a replay start, then the before, during and after phases) and refuses, before playback, any tap the card would refuse at that point, with the card's reason. A tap must name a whole `base_ten_trade` card whose counts are bound for taps.
+  - The board animates a demonstration tap like a learner's, once per action.
+  - SPEC §9.9a. The browser check adds a demonstration that fills the tray and makes a ten.
+
 - **Tapping the trading mat on the board (decision 0023, step 1, PR C):**
   - `BoardView.setCardTapHandler({ live, tap })` connects a card to the session; the playback harness wires it to `studentCardLive` and `tapStudentCard`.
   - A pointer tap, or Enter or Space on a focused unit or button, taps the card when its task is open; otherwise the board pans as before.

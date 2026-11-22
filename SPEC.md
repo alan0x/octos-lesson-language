@@ -652,6 +652,14 @@ v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表�
 
 暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
 
+### 9.9a `card.tap`（0.14，决定 0023）
+
+```json
+{"action_id": "…", "op": "card.tap", "target": {"node_id": "…"}, "tap": {"kind": "make", "place": 0}}
+```
+
+课程像学生一样点一张 `base_ten_trade` 卡片（演示）。`kind` 为 `gather`、`ungather`、`make` 或 `break`，`place` 是位（0 = 一）。Reducer 用卡片自己的规则算出这一下改变的所有数，一次性写入它们绑定的变量（不会出现只改了一半的中间状态）。著作稿写成 `{"do": "tap", "target": "mat", "tap": "make", "at": "ones"}`；校验器按播放顺序（重放起点，再按 before、during、after 三段）推算变量的值，卡片在那时会拒绝的点按在播放前就被拒绝，并说明卡片的理由。Web Runtime 把演示的点按画成和学生点按一样的动画。
+
 ### 9.10 `board.hide`（0.6，仅学生讲课课程）
 
 ```json

@@ -29,6 +29,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:numeric_answer": "0.5.0",
   // Decision 0023: the learner taps a card and says "done"; an older player has no taps or card facts.
   "student-tasks:card_fact": "0.14.0",
+  // The lesson taps a card by the card's rules (a demonstration); an older player does not know the action.
+  "action:card.tap": "0.14.0",
   "reflections": "0.3.0",
   "binding-hide-undefined": "0.3.0",
   "lesson-mode:learner_taught": "0.6.0",

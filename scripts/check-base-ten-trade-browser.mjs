@@ -41,6 +41,10 @@ const cases = {
     threeVars, [animate("fill", { tray_ones: 10 }), animate("tens", { tray_tens: 10 }), animate("most", { tray_ones: 0, tray_tens: 0, ones: 59, tens: 34, hundreds: 9 })]),
   filled: lesson({ columns: 2, places: [{ count: drive("ones", 17), tray: drive("tray_ones", 0) }, { count: drive("tens", 2) }] },
     twoVars, [animate("fill", { tray_ones: 10 })]),
+  demo: lesson({ columns: 2, places: [{ count: drive("ones", 17), tray: drive("tray_ones", 0) }, { count: drive("tens", 2) }] },
+    [variable("ones", 17, 59), variable("tray_ones", 0, 10), variable("tens", 2, 9)],
+    [{ key: "fill", say: "Put ones in the tray.", actions: Array.from({ length: 10 }, () => ({ do: "tap", target: "mat", tap: "gather", at: "ones" })) },
+      { key: "make", say: "Ten ones make a ten.", actions: [{ do: "tap", target: "mat", tap: "make", at: "ones" }] }]),
   taps: { ...lesson({ columns: 2, places: [{ count: drive("ones", 14), tray: drive("tray_ones", 0) }, { count: drive("tens", 3) }] },
     [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)]) },
   emphasis: lesson({ columns: 2, places: [{ count: 17 }, { count: 2 }] }, [],
@@ -161,6 +165,12 @@ try {
   const emphasis = last(await states("emphasis"));
   check(emphasis && emphasis.places.every((place) => place.id && place.id.includes(":fragment:")), `each place has its canonical id: ${JSON.stringify(emphasis?.places.map((place) => place.id))}`);
   check(emphasis && emphasis.places.find((place) => place.id.endsWith(":tens"))?.focused && !emphasis.places.find((place) => place.id.endsWith(":ones"))?.focused, "emphasizing mat#tens marks the tens only");
+  // A demonstration of taps plays through: the tray fills, then ten ones become a ten.
+  const demo = (await states("demo")).filter((state) => !state.stuck);
+  check(!(await states("demo")).some((state) => state.stuck), "the demonstration plays through");
+  const filledDemo = demo.find((state) => state.variables.tray_ones === 10);
+  check(filledDemo && filledDemo.places.find((place) => place.place === 0)?.tray.length === 10, "the demonstration fills the tray with ten");
+  check(demo.at(-1) && JSON.stringify(counted(demo.at(-1))) === "[7,3]" && demo.at(-1).variables.tens === 3, `after the demonstration: 3 tens and 7 ones: ${JSON.stringify(demo.at(-1) && counted(demo.at(-1)))}`);
   // Real taps on a card task's mat.
   await page.evaluate(({ events }) => {
     document.querySelector("#board").replaceChildren();
@@ -231,4 +241,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; real taps on a card task (the unit tapped moves, refusals explained, a ten made, Enter taps, inert after done)");
+console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, refusals explained, a ten made, Enter taps, inert after done)");

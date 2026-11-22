@@ -11,7 +11,7 @@ import { isSimplestFraction, parseNumericAnswer } from "./numeric-answer.js";
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
-import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, hasTray, validateBaseTenTradeContent } from "../../plugin-math/src/base-ten-trade.js";
+import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -91,7 +91,7 @@ const ACTION_FIELDS = new Set([
   "do", "when", "as", "kind", "role", "content", "place", "target",
   "from", "to", "relation", "label", "emphasis", "members", "targets",
   "intent", "expression", "reason",
-  "variable", "value", "easing", "duration_intent", "source", "show", "preset",
+  "variable", "value", "easing", "duration_intent", "source", "show", "preset", "tap", "at",
 ]);
 
 export class OllError extends Error {
@@ -1603,6 +1603,10 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
     }
   } else if (action.do === "expression") {
     requireString(action.expression, `${path}/expression`);
+  } else if (action.do === "tap") {
+    requireString(action.target, `${path}/target`);
+    if (!["gather", "ungather", "make", "break"].includes(action.tap)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/tap`, `Unknown tap '${String(action.tap)}'`);
+    if (!(BASE_TEN_TRADE_PLACES as readonly string[]).includes(action.at)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/at`, `Unknown place '${String(action.at)}'`);
   } else if (action.do === "animate") {
     requireVariableAlias(action.variable, `${path}/variable`);
     requireFiniteNumber(action.value, `${path}/value`);
@@ -1705,6 +1709,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   const fractionModelNodes = new Set<string>();
   const baseTenTradeNodes = new Set<string>();
   const baseTenTradeContents = new Map<string, JsonObject>();
+  /** Lesson variables as playback leaves them, so each demonstration tap is checked in the state it meets. */
+  const playedValues: Record<string, number> = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
   // Highlighted parts of each 3D scene, which a view can turn to show.
   const scene3dHighlights = new Map<string, Set<string>>();
   // A card made from ink names a selection the lesson's ink or Session Context provides.
@@ -1898,6 +1904,15 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           return;
         }
 
+        if (action.do === "tap") {
+          const target = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
+          const content = baseTenTradeContents.get(target.alias);
+          if (!content || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "A tap acts on a whole base_ten_trade card of this lesson");
+          requireVisible(action.target, `${actionPath}/target`);
+          baseTenTapVariables(content, document.lesson.variables ?? [], `${actionPath}/target`);
+          return;
+        }
+
         if (action.do === "animate") {
           const variable = document.lesson.variables?.find((candidate) => candidate.as === action.variable);
           if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/variable`, `Variable '${action.variable}' is not declared`);
@@ -2004,6 +2019,27 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           }
         }
       });
+      // Play the beat's variable changes in playback order (a replay start, then each phase), so every
+      // demonstration tap is checked by the card's rules in the state it will meet (decision 0023).
+      if (beat.start?.kind === "replay") Object.assign(playedValues, resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`));
+      for (const phase of ["before_speech", "during_speech", "after_speech"] as const) {
+        beat.actions.forEach((action, actionIndex) => {
+          if ((action.when ?? "during_speech") !== phase) return;
+          if (action.do === "animate") playedValues[action.variable] = action.value;
+          if (action.do !== "tap") return;
+          const content = baseTenTradeContents.get(splitTarget(action.target, `${beatPath}/actions/${actionIndex}/target`).alias)!;
+          const variables = baseTenTapVariables(content, document.lesson.variables ?? [], `${beatPath}/actions/${actionIndex}/target`);
+          const place = (BASE_TEN_TRADE_PLACES as readonly string[]).indexOf(action.at);
+          const mat = baseTenMat(baseTenContentAt(content, variables, playedValues));
+          const result = applyBaseTenTap(mat, { kind: action.tap, place });
+          if (!result.ok) {
+            fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions/${actionIndex}`, `The card refuses this tap here: ${baseTenRefusalText(result.reason, place)}`);
+          }
+          for (const change of baseTenChanges(mat, result.mat)) {
+            playedValues[variables.get(`${BASE_TEN_TRADE_PLACES[change.place] as BaseTenPlaceName}.${change.field}`)!] = change.after;
+          }
+        });
+      }
     });
   });
 
@@ -2246,6 +2282,14 @@ function normalizeAction(
   }
   if (action.do === "hide") {
     return { action_id: actionId, op: "board.hide", target: canonicalTarget(registry, action.target) };
+  }
+  if (action.do === "tap") {
+    return {
+      action_id: actionId,
+      op: "card.tap",
+      target: canonicalTarget(registry, action.target),
+      tap: { kind: action.tap, place: (BASE_TEN_TRADE_PLACES as readonly string[]).indexOf(action.at) },
+    };
   }
   if (action.do === "view") {
     return {
@@ -2558,6 +2602,20 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
   } else if (action.op === "lesson.phase.start") {
     if (!action.transition) fail("OLL_INVALID_EVENT", "action.transition", "Phase start requires transition targets");
     Object.assign(state, setLessonVariables(state, action.transition.values));
+  } else if (action.op === "card.tap") {
+    const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
+    if (!node || node.kind !== BASE_TEN_TRADE_KIND || !action.tap) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "A tap acts on a base-ten trade card");
+    const before = baseTenMat(node.content);
+    const result = applyBaseTenTap(before, action.tap);
+    if (!result.ok) fail("OLL_INVALID_EVENT", "action.tap", `The card refuses this tap: ${baseTenRefusalText(result.reason, action.tap.place)}`);
+    const places = (Array.isArray(node.content.places) ? node.content.places : []) as JsonObject[];
+    const bound = new Map(((node.content.bindings ?? []) as JsonObject[]).map((binding) => [binding.target, String(binding.expression).trim()]));
+    const values = Object.fromEntries(baseTenChanges(before, result.mat).map((change) => {
+      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
+      if (!alias) fail("OLL_INVALID_EVENT", "action.target", `The card has no variable for ${change.field} of place ${change.place}`);
+      return [alias, change.after];
+    }));
+    Object.assign(state, setLessonVariables(state, values));
   } else if (action.op === "lesson.variable.animate") {
     if (!action.animation) fail("OLL_INVALID_EVENT", "action.animation", "lesson.variable.animate requires animation");
     const updated = setLessonVariable(state, action.animation.variable, action.animation.to);
