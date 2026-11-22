@@ -656,7 +656,11 @@ function computeTeachingRegion(state: SemanticBoardState, ids: string[], sizes: 
     if (spec.kind !== 'reflection') continue;
     const anchor = nodes[spec.anchorNodeId];
     if (!anchor) continue;
-    const anchorBottom = anchor.y + anchor.height;
+    // Several cards on one anchor (a practice task, then questions in order) stack in that order: a card
+    // opens under those already attached to the same anchor, not between them and the anchor.
+    const ownCards = (region.attachments ?? []).filter(other => other.id !== spec.id && attachments[other.id]
+      && (other.anchorNodeId === spec.anchorNodeId || other.ownerNodeId === spec.anchorNodeId)).map(other => attachments[other.id]!);
+    const anchorBottom = Math.max(anchor.y + anchor.height, ...ownCards.filter(rect => rect.y >= anchor.y).map(rect => rect.y + rect.height));
     const card = { x: anchor.x, y: anchorBottom + CARD_GAP, width: Math.max(anchor.width, spec.width), height: spec.height };
     // Wider than its anchor, the card can reach a card that starts beside the
     // anchor; it then opens below that card instead of over it.
