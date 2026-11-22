@@ -1477,18 +1477,54 @@ export class BrowserLessonSession {
 
   private activatePractice(): void {
     if (!this.baseStudentTaskWindowOpen || this.phaseState.transition) return;
-    const active = this.studentTaskProgressLog.tasks.find(task => task.status !== "succeeded");
+    const activeIndex = this.studentTaskProgressLog.tasks.findIndex(task => task.status !== "succeeded");
+    const active = this.studentTaskProgressLog.tasks[activeIndex];
     const definition = this.studentTaskDefinitions.find(task => task.as === active?.task_id);
-    if (!definition?.start) return;
-    const values = Object.fromEntries((definition.start.variables ?? []).map(alias => [
-      alias, definition.start!.values?.[alias] ?? this.player.snapshot.board?.variables?.[alias]?.initial as number,
-    ]));
+    let key: string;
+    let values: Record<string, number>;
+    if (definition?.start) {
+      key = this.practiceKey(definition.as);
+      values = Object.fromEntries((definition.start.variables ?? []).map(alias => [
+        alias, definition.start!.values?.[alias] ?? this.player.snapshot.board?.variables?.[alias]?.initial as number,
+      ]));
+    } else {
+      // A card task already done (decision 0023): its mat shows the learner's traded pile while later tasks
+      // ask about it, also after a replay (review of #87). Trading never changes the value, so a finished mat
+      // is the practice pile in its traded form: each place's digit, trays empty.
+      const done = this.studentTaskDefinitions.slice(0, activeIndex < 0 ? undefined : activeIndex).reverse()
+        .find(task => task.completion.kind === "card_fact") as AuthoringCardStudentTask | undefined;
+      const traded = done?.start ? this.tradedPracticePile(done) : undefined;
+      if (!done || !traded) return;
+      key = `${this.practiceKey(done.as)}:done`;
+      values = traded;
+    }
     try {
-      this.beginPhaseTransition(this.practiceKey(definition.as), "practice", values);
+      this.beginPhaseTransition(key, "practice", values);
       if (this.phaseState.transition) this.schedulePhaseTransition();
     } catch (error) {
       this.reportFailure("animation", error);
     }
+  }
+
+  /** A card task's practice pile once every trade is made: the tap variables at each place's digit, trays empty. */
+  private tradedPracticePile(task: AuthoringCardStudentTask): Record<string, number> | undefined {
+    const node = this.player.snapshot.board?.nodes?.[task.completion.node];
+    const variables = this.player.snapshot.board?.variables;
+    if (!node || node.kind !== "base_ten_trade" || !variables || !task.start) return undefined;
+    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
+    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
+      .map((binding) => [binding.target, binding.expression.trim()]));
+    const at = (alias: string | undefined) => alias === undefined ? 0 : task.start!.values?.[alias] ?? variables[alias]?.initial ?? 0;
+    const columns = places.length;
+    const value = places.reduce((sum, place, p) => sum + at(bound.get(`${place.id}.count`)) * 10 ** p, 0);
+    const result: Record<string, number> = {};
+    places.forEach((place, p) => {
+      const count = bound.get(`${place.id}.count`);
+      if (count) result[count] = p === columns - 1 ? Math.floor(value / 10 ** p) : Math.floor(value / 10 ** p) % 10;
+      const tray = bound.get(`${place.id}.tray`);
+      if (tray) result[tray] = 0;
+    });
+    return result;
   }
 
   private beginPhaseTransition(key: string, kind: PhaseTransition["kind"], to: Record<string, number>, from?: Record<string, number>): void {
