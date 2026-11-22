@@ -262,7 +262,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
       // Ten in a tray fade where they lie; a broken unit first moves onto the tray below.
       if (to) place(unit, to);
       unit.classList.add("base-ten-leaving");
-      unit.removeAttribute("tabindex");
+      setTappable(unit, undefined, "", false);
       setTimeout(() => unit.remove(), FUSE_MS + (to ? FUSE_MS : 0));
     } else {
       unit.remove();
