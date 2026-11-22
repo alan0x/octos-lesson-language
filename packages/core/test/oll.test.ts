@@ -1325,4 +1325,5 @@ test("row tasks (decision 0023 amendment 1): text and one to six blanks, each a 
   assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ text: "x", blank: { as: "a", answer: "1" } }] })), /either text or a blank/);
   assert.throws(() => validateAuthoringLesson(lesson(row, { allowed_operations: [{ kind: "answer_entry" }] })), /exactly one row_entry/);
   assert.throws(() => validateAuthoringLesson(lesson(row, { anchor: "nowhere" })), /nowhere/);
+  assert.throws(() => validateAuthoringLesson(lesson({ kind: "numeric_row", parts: [{ blank: { as: "a", answer: "30", label: "30" } }] })), /words only, never a number/);
 });

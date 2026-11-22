@@ -508,6 +508,10 @@ function validateRowStudentTask(task: AuthoringRowStudentTask, path: string, reg
     if (blank.label !== undefined && (typeof blank.label !== "string" || !blank.label.trim() || blank.label.length > NUMERIC_ROW_LIMITS.label)) {
       fail("OLL_INVALID_STUDENT_TASK", `${at}/blank/label`, `A blank's label is 1 to ${NUMERIC_ROW_LIMITS.label} characters`);
     }
+    // A label names the blank in words; a digit in it could be the number the learner should find (review of #91).
+    if (typeof blank.label === "string" && /[0-9０-９]/u.test(blank.label)) {
+      fail("OLL_INVALID_STUDENT_TASK", `${at}/blank/label`, "A blank's label is words only, never a number");
+    }
   });
   if (names.size < 1 || names.size > NUMERIC_ROW_LIMITS.blanks) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/parts`, `A row has 1 to ${NUMERIC_ROW_LIMITS.blanks} blanks`);

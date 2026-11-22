@@ -1,4 +1,4 @@
-import { checkNumericAnswer, checkNumericRow, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
+import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
 import { applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import {
   HeadlessLessonPlayer,
@@ -1373,7 +1373,8 @@ export class BrowserLessonSession {
       lesson_id: this.player.snapshot.lesson_id,
       kind: "row_submit",
       target: { kind: "student_task", task_id: taskId },
-      answers: Object.fromEntries(Object.entries(answers).map(([name, text]) => [name, String(text).slice(0, 64)])),
+      // Only the row's own blanks are kept, so a saved row always parses again (review of #91).
+      answers: Object.fromEntries(numericRowBlanks(definition.completion).map((blank) => blank.as).map((name) => [name, String(answers[name] ?? "").slice(0, 64)])),
       input,
     };
     const previousProgress = structuredClone(this.studentTaskProgressLog);

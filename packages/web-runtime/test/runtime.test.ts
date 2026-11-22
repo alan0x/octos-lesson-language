@@ -1605,7 +1605,9 @@ test("a row of blanks (decision 0023 amendment 1): judged whole, never says whic
   assert.ok(!("unreadable" in right));
   assert.equal(right.status, "succeeded");
   assert.equal(session.studentTasks[2]!.available, true);
-  assert.equal((session.submitStudentRow("parts", { tens_part: "30", ones_part: "7" }) as StudentTaskSnapshot).status, "succeeded");
+  // Extra keys from a host are not kept, so the saved row still parses on restore (review of #91).
+  assert.equal((session.submitStudentRow("parts", { tens_part: "30", ones_part: "7", a: "1", b: "2", c: "3", d: "4", e: "5" }) as StudentTaskSnapshot).status, "succeeded");
+  assert.deepEqual(Object.keys((session.studentOperations.at(-1) as { answers: Record<string, string> }).answers), ["tens_part", "ones_part"]);
   assert.equal(session.studentOperations.at(-1)!.kind, "row_submit");
   // Restore repeats each check; a tampered row attempt is discarded.
   const restored = new BrowserLessonSession(events, store, "rows", { reducedMotion: true });
