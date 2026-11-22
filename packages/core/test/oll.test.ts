@@ -1267,6 +1267,7 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
         as: "trade", prompt: "Make tens, then tap I'm done.", availability: { kind: "after_lesson" },
         allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
         completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Fill the tray."],
+        start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tens: 2 } },
         ...overrides.task,
       }],
     },
@@ -1290,4 +1291,10 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
     bindings: [{ target: "ones.count", expression: "ones" }, { target: "tens.count", expression: "tens" }] } })), /'ones.tray' bound to its own lesson variable/);
   assert.throws(() => validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tens"], values: { ones: 17 } } } })), /missing tray_ones/);
   assert.throws(() => validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 50, tens: 9 } } } })), /practice pile is not a starting pile.*use 3 columns/);
+  // Review of #87: the task gives its practice pile; tap variables have no control of their own; a bound card is not revised.
+  assert.throws(() => validateAuthoringLesson(base({ task: { start: undefined } })), /gives the learner's practice pile in start/);
+  assert.throws(() => validateAuthoringLesson(base({ variables: [{ ...variable("ones", 14, 59), control: { kind: "slider", step: 1 } }, variable("tray_ones", 0, 10), variable("tens", 3, 9)] })), /changed only by tapping the card/);
+  const revised = base();
+  (revised.steps[0]!.beats as unknown[]).push({ key: "caption", say: "Look again.", actions: [{ do: "revise", target: "mat", reason: "add a caption", content: { columns: 2, caption: "Count them.", places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }] } }] });
+  assert.throws(() => validateAuthoringLesson(revised), /not revised: its counts change by taps/);
 });

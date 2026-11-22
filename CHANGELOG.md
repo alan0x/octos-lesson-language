@@ -13,12 +13,12 @@
 - **The learner taps a card and says "done" (decision 0023, step 1, PR B; player 0.14.0, `student-tasks:card_fact`):**
   - A new task completion, `card_fact` (`node`, `fact: "no_trade_left"`). It allows exactly `card_tap` on its card and `card_submit`.
   - The card must be a `base_ten_trade`. Each count and tray it changes must be bound to its own lesson variable running from 0 to the most the mat draws, so no tap can leave a range.
-  - The lesson's pile and any practice pile (`start`, now allowed on card tasks, listing every tap variable) must be starting piles.
+  - A card task must give the learner's practice pile in `start` (now allowed on card tasks), listing every tap variable; it and the lesson's pile must be starting piles. Tap variables can have no slider or point of their own, and a bound card cannot be revised (a revision cannot carry bindings).
   - The runtime:
     - `tapStudentCard(node, tap)` applies the card's tap rules and writes every changed count in one step, logged as one `card_tap` operation. A refused tap is not logged and returns the card's reason ("The tray holds only ten.").
     - `studentCardLive(node)` gates taps: a card can be tapped only while its task is open. While the lesson plays, during a practice transition and during later tasks, the card is inert, so the picture cannot change under a typed answer.
     - `submitStudentCard(task)` is the learner's "done". It is judged by the card (`baseTenFacts`); taps are not attempts.
-    - A retry without a practice start returns the lesson's pile.
+    - Going back in the lesson lays the practice pile again when the lesson ends again.
     - Saved card attempts are re-checked on restore.
   - SPEC §5.5.
 
