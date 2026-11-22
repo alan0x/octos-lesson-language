@@ -138,7 +138,8 @@ export function baseTenMat(raw: unknown): BaseTenMat {
   const columns = content.columns === 3 ? 3 : 2;
   const whole = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.round(value)) : 0);
   const places = Array.isArray(content.places) ? content.places : [];
-  const counts = Array.from({ length: columns }, (_, p) => whole(places[p]?.count));
+  // Never more of a place than the mat draws, whatever a variable holds (the validator refuses such ranges).
+  const counts = Array.from({ length: columns }, (_, p) => Math.min(whole(places[p]?.count), columns === 2 && p === 1 ? 9 : BASE_TEN_TRADE_LIMITS.drawn[p]!));
   const trays = Array.from({ length: columns - 1 }, (_, p) => Math.min(whole(places[p]?.tray), counts[p]!, BASE_TEN_TRADE_LIMITS.tray));
   return { columns, counts, trays };
 }

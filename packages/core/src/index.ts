@@ -874,7 +874,29 @@ function checkFractionModelBoundValues(content: JsonObject, path: string, declar
  * pile's value) belong to a starting pile and are kept by the card's tap rules.
  */
 function checkBaseTenTradeBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
-  checkPluginBoundValues(content, path, declarations, BASE_TEN_TRADE_PART_FIELDS, (evaluated, failAt) => validateBaseTenTradeContent(evaluated, path, failAt, { boundValues: true }));
+  const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validateBaseTenTradeContent(evaluated, path, failAt, { boundValues: true });
+  checkPluginBoundValues(content, path, declarations, BASE_TEN_TRADE_PART_FIELDS, validate);
+  // A three-column mat binds five variables and the corner check varies only four, so each variable is
+  // also checked on its own at its minimum and maximum (review of #86): no count can leave the mat.
+  const bindings = Array.isArray(content.bindings) ? content.bindings as JsonObject[] : [];
+  const known = new Set(declarations.map((declaration) => declaration.as));
+  const referenced = new Set(bindings.flatMap((binding) => referencedMathVariables(String(binding.expression), known)));
+  const withIds = structuredClone(content);
+  if (Array.isArray(withIds.places)) withIds.places = withIds.places.map((item: JsonObject) => ({ ...item, id: item.as }));
+  const initials = Object.fromEntries(declarations.map((declaration) => [declaration.as, declaration.initial]));
+  for (const declaration of declarations.filter((each) => referenced.has(each.as))) {
+    for (const value of new Set([declaration.min, declaration.max])) {
+      const where = `When ${declaration.as} = ${value}`;
+      let evaluated: JsonObject;
+      try {
+        evaluated = evaluateContentBindings(withIds, { ...initials, [declaration.as]: value });
+      } catch (error) {
+        fail("OLL_INVALID_BINDING", `${path}/bindings`, `${where}: ${(error as Error).message}`);
+      }
+      if (Array.isArray(evaluated.places)) evaluated.places = evaluated.places.map(({ id: _id, ...item }: JsonObject) => item);
+      validate(evaluated, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `${where}: ${message}`));
+    }
+  }
 }
 
 /** Evaluates a plugin card at each referenced variable's minimum, maximum and start, and checks each result. */
