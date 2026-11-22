@@ -329,7 +329,7 @@
       "required": ["do"],
       "additionalProperties": false,
       "properties": {
-        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate", "hide", "view"]},
+        "do": {"enum": ["write", "revise", "emphasize", "connect", "group", "focus", "point", "expression", "animate", "hide", "view", "tap"]},
         "when": {"enum": ["before_speech", "during_speech", "after_speech"]},
         "as": {"$ref": "#/$defs/alias"},
         "kind": {"enum": ["text", "math", "shape", "diagram", "geometry", "plot", "scene3d", "image", "table", "note", "ink", "number_line", "fraction_model", "base_ten_trade"]},
@@ -353,6 +353,8 @@
         "reason": {"type": "string"},
         "show": {"type": "string"},
         "preset": {"enum": ["front", "top", "side", "isometric"]},
+        "tap": {"enum": ["gather", "ungather", "make", "break"]},
+        "at": {"enum": ["ones", "tens", "hundreds"]},
         "source": {
           "type": "object",
           "required": ["selection", "confirmed_by"],
@@ -463,6 +465,10 @@
         {
           "if": {"properties": {"do": {"const": "animate"}}},
           "then": {"required": ["variable", "value"]}
+        },
+        {
+          "if": {"properties": {"do": {"const": "tap"}}},
+          "then": {"required": ["target", "tap", "at"]}
         }
       ]
     },

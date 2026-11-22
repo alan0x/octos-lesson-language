@@ -45,6 +45,7 @@ export const OLL_ACTION_NAMES = [
   "animate",
   "hide",
   "view",
+  "tap",
 ] as const;
 
 export type OllActionName = typeof OLL_ACTION_NAMES[number];

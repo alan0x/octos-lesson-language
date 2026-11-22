@@ -1909,6 +1909,8 @@ export class InfiniteBoardView {
   private readonly cardNotices = new Map<string, string>();
   /** The tap that made a card's next state, so the card animates it; used once. */
   private readonly cardSteps = new Map<string, NonNullable<BaseTenTradeViewContext["step"]>>();
+  /** The lesson tap (a demonstration's `card.tap`) each card last animated, so a redraw does not repeat it. */
+  private readonly cardLessonTaps = new Map<string, string>();
   /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
   private readonly cardFrames = new Map<string, string>();
   private renderedSemanticBoard: SemanticBoardState | null = null;
@@ -2764,8 +2766,13 @@ export class InfiniteBoardView {
         } : undefined;
         const cardFrame = cardContext ? JSON.stringify([node.role, node.content?.title, node.content?.label, node.content?.caption, node.content?.columns]) : "";
         if (cardContext && this.cardFrames.get(node.id) === cardFrame) {
-          const step = this.cardSteps.get(node.id);
+          let step = this.cardSteps.get(node.id);
           this.cardSteps.delete(node.id);
+          // A demonstration tap animates like a learner's, once per lesson action.
+          if (!step && action?.op === "card.tap" && action.tap && action.target?.node_id === node.id && this.cardLessonTaps.get(node.id) !== action.action_id) {
+            step = { tap: action.tap };
+            this.cardLessonTaps.set(node.id, action.action_id);
+          }
           try { updated = updateBaseTenTrade(element, node.content ?? {}, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
         }
         if (!updated) {

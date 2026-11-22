@@ -115,7 +115,20 @@ export interface ViewAction extends BaseAction {
   preset?: "front" | "top" | "side" | "isometric";
 }
 
+/**
+ * The lesson taps a card the way a learner would (decision 0023): a demonstration made of the same taps,
+ * judged by the card's own rules. `at` is the place tapped: gather ones, make a ten from the ones' tray
+ * (`make` at `ones`), break a ten (`break` at `tens`).
+ */
+export interface TapCardAction extends BaseAction {
+  do: "tap";
+  target: Alias;
+  tap: "gather" | "ungather" | "make" | "break";
+  at: "ones" | "tens" | "hundreds";
+}
+
 export type AuthoringAction =
+  | TapCardAction
   | ViewAction
   | HideAction
   | WriteAction
@@ -392,6 +405,8 @@ export interface CanonicalAction {
     duration_intent: "brief" | "normal" | "extended";
   };
   revision?: { content: JsonObject; reason: string };
+  /** card.tap: what the lesson taps on a card, place 0 = ones (decision 0023). */
+  tap?: { kind: "gather" | "ungather" | "make" | "break"; place: number };
   /** scene3d.view: a highlighted part to show, or a named view. */
   view?: { show?: CanonicalTarget; preset?: "front" | "top" | "side" | "isometric" };
 }

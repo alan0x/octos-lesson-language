@@ -230,3 +230,43 @@ test("the layout sizes the mat from its plan; three columns are wider", () => {
   assert.equal(three.width, 860);
   assert.ok(two.height > 200 && three.height > 200);
 });
+
+test("a demonstration taps the card by its own rules: checked before playback in the state it meets, replayed atomically", () => {
+  const taps = (n: number, tap: string, at: string) => Array.from({ length: n }, () => ({ do: "tap", target: "mat", tap, at }));
+  const demo = (actions: unknown[], more: unknown[] = []) => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode: "explain", language: "en-US", title: "Trading tens and ones", goals: ["Ten ones make a ten"], variables },
+    steps: [{ key: "show", purpose: "Watch a trade", beats: [
+      { key: "draw", say: "Here are 2 tens and 17 ones.", actions: [{ do: "write", as: "mat", kind: "base_ten_trade", role: "main_visual", content: boundMat, place: { relation: "new_region" } }] },
+      { key: "fill", say: "Put ones in the tray, one at a time.", actions },
+      ...more,
+    ] }],
+    close: { summary: "Ten ones make a ten.", focus: ["mat"] },
+  }) as unknown as AuthoringLesson;
+  const lessonWithTrade = demo(taps(10, "gather", "ones"), [{ key: "make", say: "Ten ones make a ten.", actions: taps(1, "make", "ones") }]);
+  assertAuthoringSchema(lessonWithTrade);
+  validateAuthoringLesson(lessonWithTrade);
+  const events = normalizeAuthoringLesson(lessonWithTrade, host);
+  const tapActions = events.flatMap((event) => event.step?.beats.flatMap((beat) => beat.stage.during_speech) ?? []).filter((action) => action.op === "card.tap");
+  assert.equal(tapActions.length, 11);
+  assert.deepEqual(tapActions.at(-1)!.tap, { kind: "make", place: 0 });
+  assert.equal(deriveExecutionRequirements(events).minimumPlayerVersion, "0.14.0");
+  // The trade's three changes apply in one step: 2 tens and 17 ones become 3 tens and 7 ones.
+  const values = reduceCanonicalEvents(events).variables!;
+  assert.deepEqual([values.ones!.value, values.tray_ones!.value, values.tens!.value], [7, 0, 3]);
+  // A tap the card would refuse at that point is refused before playback, with the card's reason.
+  assert.throws(() => validateAuthoringLesson(demo([...taps(9, "gather", "ones"), ...taps(1, "make", "ones")])), /refuses this tap here: Fill the tray first: a ten is ten ones/);
+  assert.throws(() => validateAuthoringLesson(demo(taps(11, "gather", "ones"))), /The tray holds only ten/);
+  // Playback order: a tap written before an animation in the same beat but played after it meets the animated state.
+  assert.throws(() => validateAuthoringLesson(demo([{ ...taps(1, "gather", "ones")[0], when: "after_speech" }, { do: "animate", variable: "ones", value: 0 }])), /no loose one/);
+  // Review of #89: a make that would push a count past its variable's range is refused (2 columns, 9 tens);
+  // a tapped card's counts have no learner control.
+  const nineTens = demo([{ do: "animate", variable: "tens", value: 9 }, ...taps(10, "gather", "ones")], [{ key: "make", say: "Make a ten.", actions: taps(1, "make", "ones") }]);
+  assert.throws(() => validateAuthoringLesson(nineTens), /would make tens 10, outside 0 to 9/);
+  const slider = structuredClone(demo(taps(1, "gather", "ones")));
+  (slider.lesson.variables as unknown as Array<Record<string, unknown>>)[0]!.control = { kind: "slider", step: 1 };
+  assert.throws(() => validateAuthoringLesson(slider), /changed only by tapping the card/);
+  // Only a base-ten trade card, as a whole, can be tapped.
+  assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade card/);
+  assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat", tap: "fold", at: "ones" }])), /Unknown tap 'fold'/);
+});
