@@ -1536,6 +1536,19 @@ test("a card task: taps change the bound counts together, only exactly ten trade
   assert.equal(new BrowserLessonSession(events, store, "trade", { reducedMotion: true }).studentTasks[0]!.attempts.length, 0);
 });
 
+test("replaying the lesson lays a card task's practice pile again (review of #87)", () => {
+  const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-replay", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  const values = () => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }));
+  session.seek(0);
+  assert.equal(session.studentCardLive(card), false);
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(values(), { ones: 17, tray_ones: 0, tens: 2 }, "the practice pile, not the lesson's 3 tens and 14 ones");
+  assert.equal(session.studentCardLive(card), true);
+});
+
 test("a card task's retry returns the practice pile, and a break goes into the empty tray", () => {
   const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-retry", { reducedMotion: true });
   const card = "trade:node:mat";
