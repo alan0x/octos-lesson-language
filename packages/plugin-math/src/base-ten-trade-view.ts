@@ -60,6 +60,16 @@ function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Reco
 }
 
 const round = (value: number) => Math.round(value * 100) / 100;
+/** How long a move takes; matches the stylesheet's transform transition (.38s), with a little to spare. */
+const MOVE_MS = 420;
+let moves = 0;
+/** Marks a unit as moving (no pointer events) until its move ends; a later move of the same unit restarts it. */
+function moving(unit: SVGGElement): void {
+  const token = String(++moves);
+  unit.dataset.move = token;
+  unit.classList.add("base-ten-moving");
+  setTimeout(() => { if (unit.dataset.move === token) unit.classList.remove("base-ten-moving"); }, MOVE_MS);
+}
 /** How long a fuse or a split takes; matches the stylesheet's opacity transition. */
 const FUSE_MS = 450;
 
@@ -236,6 +246,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
         view.elements.set(id, unit);
         group.append(unit);
       }
+      const wasInTray = unit.classList.contains("base-ten-in-tray");
       unit.classList.toggle("base-ten-in-tray", inTray);
       const tap = inTray ? `ungather:${p}` : hasTray(view.columns, p) ? `gather:${p}` : undefined;
       setTappable(unit, tap, (inTray ? view.words.take : view.words.put)[p]!, live);
@@ -257,6 +268,9 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
         }
       } else if (context.step) {
         place(unit, at);
+        // A unit moving into or out of a tray takes no tap until it arrives: a quick second tap where the next
+        // unit now lies hit the one still on its way and took it back (Learn on CI, 2026-11-22).
+        if (wasInTray !== inTray) moving(unit);
       } else {
         placeAt(unit, at);
       }

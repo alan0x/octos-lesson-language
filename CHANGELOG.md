@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- **A unit on its way into or out of a tray takes no tap** (decision 0023). Right after a tap, the unit just put in the tray was still moving over the spot where the next loose unit now lay, so a quick second tap there took it back out of the tray (seen in Learn's browser test on CI, where two of ten quick taps were undone). A unit whose tray changes is marked moving, with no pointer events, until its move ends (420 ms); a tap there reaches the unit underneath. The browser check taps at the same spot at once and checks which unit is hit.
+
 ### Added
 
 - **The trading mat speaks Chinese** (math plugin 0.6.0; decision 0023 amendment 3). A `base_ten_trade` card takes an optional `language`, `en-US` or `zh-CN`; without it the mat speaks US English as before, so existing lessons are unchanged byte for byte and still require math 0.5.0. A Chinese mat's headings, tray labels, buttons, units' spoken labels and refused-tap messages are whole Chinese sentences (`BASE_TEN_WORDS`), with numbers written in characters, so the card still draws no digit; the layout is the same in both languages. A lesson with a mat that names its language requires `plugin:math/base-ten-trade-language@1` (math 0.6.0). `baseTenRefusalText` takes the language; the runtime passes the mat's. The browser check adds a Chinese mat and a Chinese card task.
