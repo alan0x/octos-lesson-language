@@ -214,6 +214,8 @@ export function baseTenLanguage(raw: unknown): BaseTenLanguage {
  */
 export const BASE_TEN_WORDS = {
   "en-US": {
+    /** The mat's own name, for a screen reader (review of #95). */
+    matLabel: "A place-value mat",
     headings: ["Ones", "Tens", "Hundreds"],
     trayLabel: ["Ten ones make a ten", "Ten tens make a hundred"],
     make: ["← Make a ten", "← Make a hundred"],
@@ -232,6 +234,7 @@ export const BASE_TEN_WORDS = {
     other: "That can't be done here.",
   },
   "zh-CN": {
+    matLabel: "数位摆面",
     headings: ["个位", "十位", "百位"],
     trayLabel: ["十个一是一个十", "十个十是一个百"],
     make: ["← 换成一个十", "← 换成一个百"],

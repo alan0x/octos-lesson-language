@@ -212,6 +212,7 @@
 
 | 位置 | 英文 | 中文 |
 |---|---|---|
+| 摆面的名字（读屏） | A place-value mat | 数位摆面 |
 | 列名 | Hundreds / Tens / Ones | 百位 / 十位 / 个位 |
 | 托盘上方 | Ten ones make a ten · Ten tens make a hundred | 十个一是一个十 · 十个十是一个百 |
 | 按钮 | ← Make a ten · Break a ten → | ← 换成一个十 · 拆开一个十 →（百同理） |

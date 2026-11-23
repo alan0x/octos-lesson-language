@@ -121,7 +121,7 @@ function button(plan: BaseTenTradePlan, box: { x: number; y: number; width: numb
 function create(parent: HTMLElement, raw: Record<string, unknown>): MatView {
   const plan = planBaseTenTrade(raw);
   const U = plan.unit;
-  const svg = element("svg", { viewBox: `0 0 ${round(plan.width)} ${round(plan.height)}`, role: "group", "aria-label": "A place-value mat" }, "base-ten-mat");
+  const svg = element("svg", { viewBox: `0 0 ${round(plan.width)} ${round(plan.height)}`, role: "group", "aria-label": BASE_TEN_WORDS[baseTenLanguage(raw)].matLabel }, "base-ten-mat");
   svg.append(element("rect", { x: 0, y: 0, width: round(plan.width), height: round(plan.height), rx: 12 }, "base-ten-background"));
   for (const column of plan.columns) {
     svg.append(element("rect", { x: round(column.x - 0.5 * U), y: round(plan.top - 2.4 * U), width: round(column.width + U), height: round(plan.height - plan.top + 1.9 * U), rx: 10 }, "base-ten-column"));
