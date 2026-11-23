@@ -1802,11 +1802,12 @@ test("a three-column chain: two ones trades make 11 tens, then the tens slider g
     as: "slide", prompt: "Make the ones and tens as few as you can.", availability: { kind: "after_lesson" },
     allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }, { kind: "variable_change", variable: "tens", controls: ["slider"] }],
     completion: { kind: "expression_target", expression: "ones + tens", value: 7, tolerance: 0.5 }, hints: ["Each stop is a trade."],
+    start: { kind: "practice", variables: ["ones", "tray_ones", "tens", "tray_tens", "hundreds"], values: { ones: 16, tray_ones: 0, tens: 10, tray_tens: 0, hundreds: 1 } },
   };
   const session = new BrowserLessonSession(sliderLesson([task], { columns: 3 }), new MemoryStore(), "chain", { reducedMotion: true });
   while (session.projection.status !== "completed") session.advance();
   const live = { live: (alias: string) => session.studentVariableLive(alias) };
-  // The lesson's own taps made 16 ones and 10 tens from 26 ones and 9 tens.
+  // The practice pile: 16 ones and 10 tens, as the lesson's own taps made from 26 ones and 9 tens.
   assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 10, tray_tens: 0, hundreds: 1 });
   session.changeStudentVariable("ones", 6, { control: "slider", input: "mouse" });
   assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 11, tray_tens: 0, hundreds: 1 });
@@ -1817,17 +1818,33 @@ test("a three-column chain: two ones trades make 11 tens, then the tens slider g
   assert.equal(session.studentTasks[0]!.status, "succeeded");
 });
 
-test("retrying a card slider task without a practice pile restores the whole pile, not only the count", () => {
-  const session = new BrowserLessonSession(sliderLesson([slideTask(24)]), new MemoryStore(), "slide-retry", { reducedMotion: true });
+test("retrying a card slider task lays its whole practice pile again, not only the count", () => {
+  const session = new BrowserLessonSession(sliderLesson([slideTask(24, { ones: 14, tray_ones: 0, tens: 3 })]), new MemoryStore(), "slide-retry", { reducedMotion: true });
   while (session.projection.status !== "completed") session.advance();
-  const pile = sessionValues(session);
-  assert.deepEqual(pile, { ones: 4, tray_ones: 0, tens: 4 });
-  session.changeStudentVariable("ones", 14, { control: "slider", input: "mouse" });
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
+  session.changeStudentVariable("ones", 4, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 4, tray_ones: 0, tens: 4 });
   assert.equal(session.studentTasks[0]!.status, "in_progress");
   session.retryStudentTask("slide");
-  // The lesson's initial pile: 14 ones and 3 tens, all of it.
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
+});
+
+test("a page closed mid-drag restores the pile its saved taps replay to (review of #99)", async () => {
+  const events = sliderLesson([slideTask(6, { ones: 26, tray_ones: 0, tens: 3 })]);
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "slide-reload", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  // A real pause first, so the first drag frame would have been saved at once and the second deferred.
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  const id = session.beginStudentVariableOperation("ones", { control: "slider", input: "mouse" });
+  session.updateStudentVariableOperation(id, 16);
+  session.updateStudentVariableOperation(id, 6);
+  assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 5 });
+  // The page closes now, without a commit; a new page restores straight from storage.
+  const restored = new BrowserLessonSession(events, store, "slide-reload", { reducedMotion: true });
+  assert.equal(restored.studentOperations.filter((operation) => operation.kind === "card_tap").length, 22);
+  assert.deepEqual(sessionValues(restored), replayCardTaps({ ones: 26, tray_ones: 0, tens: 3 }, restored.studentOperations));
+  assert.deepEqual(sessionValues(restored), { ones: 6, tray_ones: 0, tens: 5 });
 });
 
 test("replaying the lesson lays a card slider task's practice pile again, and the slider shows whole counts", () => {

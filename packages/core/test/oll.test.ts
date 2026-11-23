@@ -1353,18 +1353,34 @@ test("a slider on a card's count (decision 0023 amendment 4): ones, and tens on 
   assert.throws(() => validateAuthoringLesson(lesson(twoVars(null), twoMat, [cardTask([{ kind: "variable_change", variable: "ones", controls: ["slider"] }])])), /card_tap.*card_submit.*slider/);
   assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [cardTask([{ kind: "variable_change", variable: "tens", controls: ["slider"] }])])), /card_tap.*card_submit/);
   // A slider task: the target is reached by trades from the task's starting pile (26 ones and 3 tens: 6, 16, …, 56).
-  for (const value of [6, 16, 36, 56]) validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", value)]));
+  const twoPile = { ones: 26, tray_ones: 0, tens: 3 };
+  const threePile = { ones: 26, tray_ones: 0, tens: 9, tray_tens: 0, hundreds: 1 };
+  for (const value of [6, 16, 36, 56]) validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", value, ["ones"], twoPile)]));
   validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 16, ["ones"], { ones: 6, tray_ones: 0, tens: 4 })]));
-  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 10)])), /No pile the card's sliders can make by trades from the task's starting pile/);
-  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 0)])), /No pile the card's sliders can make/);
+  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 10, ["ones"], twoPile)])), /No pile the card's sliders can make by trades from the task's starting pile/);
+  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 0, ["ones"], twoPile)])), /No pile the card's sliders can make/);
   // From its own practice pile (5 ones, no tens) no trade is possible.
   assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 15, ["ones"], { ones: 5, tray_ones: 0, tens: 0 })])), /No pile the card's sliders can make/);
   assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 16, ["ones"], { ones: 6, tens: 4 })])), /practice pile sets every count and tray; missing tray_ones/);
-  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 26)])), /already satisfied/);
+  // Already satisfied is judged on the practice pile too.
+  assert.throws(() => validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 26, ["ones"], twoPile)])), /already satisfied/);
+  validateAuthoringLesson(lesson(twoVars(), twoMat, [target("ones", 26, ["ones"], { ones: 6, tray_ones: 0, tens: 5 })]));
   // Three columns: 6 ones, 1 ten and 2 hundreds are reached only by two ones trades and then a tens trade.
-  validateAuthoringLesson(lesson(threeVars(), threeMat, [target("ones + tens", 7, ["ones", "tens"])]));
-  assert.throws(() => validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 1, ["tens"])])), /No pile the card's sliders can make/);
-  validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 19, ["tens"])]));
+  validateAuthoringLesson(lesson(threeVars(), threeMat, [target("ones + tens", 7, ["ones", "tens"], threePile)]));
+  assert.throws(() => validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 1, ["tens"], threePile)])), /No pile the card's sliders can make/);
+  validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 19, ["tens"], threePile)]));
+  // A slider task gives its practice pile (review of #99): the lesson's own taps may leave any pile, so a target is
+  // checked only from a pile the task lays. Six ones and ten tens, a lesson that makes the hundred, then "ones to 16":
+  // the lesson leaves 6 ones and no ten to break.
+  const demoVars = [variable("ones", 6, 59, slider), variable("tray_ones", 0, 10), variable("tens", 10, 34), variable("tray_tens", 0, 10), variable("hundreds", 0, 9)];
+  const demoMat = { ...threeMat, places: [{ as: "ones", count: 6, tray: 0 }, { as: "tens", count: 10, tray: 0 }, { as: "hundreds", count: 0 }] };
+  const makeHundred = [...Array.from({ length: 10 }, () => ({ do: "tap", target: "mat", tap: "gather", at: "tens" })), { do: "tap", target: "mat", tap: "make", at: "tens" }];
+  assert.throws(() => validateAuthoringLesson(lesson(demoVars, demoMat, [target("ones", 16)], makeHundred)), /A task on a card's count sliders gives the learner's practice pile in start/);
+  validateAuthoringLesson(lesson(demoVars, demoMat, [target("ones", 16, ["ones"], { ones: 6, tray_ones: 0, tens: 10, tray_tens: 0, hundreds: 0 })], makeHundred));
+  // The mirror: 26 ones and 9 tens traded by the lesson, then "tens to 1": refused without a start, accepted from one it plays from.
+  const tradeOnes = [...Array.from({ length: 10 }, () => ({ do: "tap", target: "mat", tap: "gather", at: "ones" })), { do: "tap", target: "mat", tap: "make", at: "ones" }];
+  assert.throws(() => validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 1, ["tens"])], tradeOnes)), /gives the learner's practice pile in start/);
+  validateAuthoringLesson(lesson(threeVars(), threeMat, [target("tens", 1, ["tens"], { ones: 16, tray_ones: 0, tens: 11, tray_tens: 0, hundreds: 1 })], tradeOnes));
 });
 
 test("row tasks (decision 0023 amendment 1): text and one to six blanks, each a numeric answer, by a board card", () => {

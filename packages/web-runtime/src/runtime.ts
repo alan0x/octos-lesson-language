@@ -1464,12 +1464,13 @@ export class BrowserLessonSession {
       return false;
     }
     this.studentOperationLog.operations.push(...operations);
+    // The taps and the pile they make are saved together, as a tap's are, also mid-drag (review of #99): a page
+    // closed at any moment restores the pile its saved taps replay to.
     this.persistStudentOperations();
+    this.persist();
     const steps = [...(this.cardSliderSteps.get(card.nodeId) ?? []), ...move.steps];
     // A host that never draws them keeps only the latest few trades.
     this.cardSliderSteps.set(card.nodeId, steps.slice(-240));
-    if (duringDrag) this.persistDuringDrag();
-    else this.persist();
     this.emit();
     return true;
   }
