@@ -251,7 +251,8 @@ export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
 export type CardFact = "no_trade_left";
 
 export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
-  allowed_operations: Array<{ kind: "card_tap"; node: Alias } | { kind: "card_submit" }>;
+  /** Tapping the card and saying done; and, besides, its count sliders, which trade (decision 0023 amendment 4). */
+  allowed_operations: Array<{ kind: "card_tap"; node: Alias } | { kind: "card_submit" } | { kind: "variable_change"; variable: string; controls: ["slider"] }>;
   completion: {
     kind: "card_fact";
     /** The card (node alias; a canonical node ID after normalization). */

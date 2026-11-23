@@ -5,8 +5,8 @@ export const MATH_PLUGIN_MANIFEST = {
   // 0.4.0: the fraction model (decision 0021). 0.4.1: grids fill column by column. 0.4.2: a share marks one
   // piece of each part; the program writes a fraction's other form beside its label (0021 amendment 2).
   // 0.5.0: trading tens and ones, the `base_ten_trade` card (decision 0023). 0.6.0: the mat speaks Chinese
-  // (0023 amendment 3).
-  version: "0.6.0",
+  // (0023 amendment 3). 0.7.0: a slider on a place's count, each stop one trade (0023 amendment 4).
+  version: "0.7.0",
   // Every subject plugin depends on the shared tools (decision 0012).
   depends: { shared: "0.1.0" },
   ollCore: ">=0.10.0",

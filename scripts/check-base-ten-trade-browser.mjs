@@ -8,7 +8,10 @@
 // - emphasizing a place marks that place only;
 // - with a card task open (decision 0023, PR C), real taps: the unit tapped is the unit that moves into the
 //   tray, a refused tap shows the card's reason, ten make a ten (the counts settle after the animation),
-//   Enter on a focused unit taps it, and the card is inert again once the learner says done.
+//   Enter on a focused unit taps it, and the card is inert again once the learner says done;
+// - a slider on the ones' count (decision 0023 amendment 4): disabled while the lesson plays, its track on the
+//   stops trades reach, and two stops by keyboard animate two trades one after another (the tray fills to ten,
+//   ten fuse into a ten), not a jump, the last drawn to its end before the next task's pile arrives.
 // Piles here are invented for the check. Screenshots go to OLL_BASE_TEN_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -69,6 +72,20 @@ cases.taps.lesson.tasks = [{
   completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
 }];
 cases.tapsZh.lesson.tasks = cases.taps.lesson.tasks;
+cases.slider = lesson({ columns: 2, places: [{ count: drive("ones", 14), tray: drive("tray_ones", 0) }, { count: drive("tens", 3) }] },
+  [{ ...variable("ones", 14, 59), control: { kind: "slider", step: 10 } }, variable("tray_ones", 0, 10), variable("tens", 3, 9)]);
+cases.slider.lesson.tasks = [{
+  as: "slide", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 26, tray_ones: 0, tens: 3 } },
+  prompt: "Slide the ones until there are 6.", availability: { kind: "after_lesson" },
+  allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
+  completion: { kind: "expression_target", expression: "ones", value: 6, tolerance: 0.5 }, hints: ["Each stop trades ten ones for a ten."],
+}, {
+  // A next task with its own pile: it arrives at once, while the last trade is still being drawn.
+  as: "again", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 35, tray_ones: 0, tens: 1 } },
+  prompt: "Slide the ones until there are 15.", availability: { kind: "after_lesson" },
+  allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
+  completion: { kind: "expression_target", expression: "ones", value: 15, tolerance: 0.5 }, hints: ["Each stop trades ten ones for a ten."],
+}];
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
 const bundle = await build({
@@ -76,7 +93,8 @@ const bundle = await build({
     import "./packages/web-runtime/styles.css";
     import { mountInfiniteBoard } from "./packages/web-runtime/src/board-view.ts";
     import { BrowserLessonSession, LocalPlaybackStore } from "./packages/web-runtime/src/runtime.ts";
-    Object.assign(window, { mountInfiniteBoard, BrowserLessonSession, LocalPlaybackStore });
+    import { mountVariableControls } from "./packages/web-runtime/src/variable-controls.ts";
+    Object.assign(window, { mountInfiniteBoard, BrowserLessonSession, LocalPlaybackStore, mountVariableControls });
   `, resolveDir: process.cwd(), loader: "ts" },
   bundle: true, format: "esm", platform: "browser", write: false, outdir: "/out",
   loader: { ".woff2": "empty", ".woff": "empty", ".ttf": "empty", ".svg": "text" },
@@ -155,7 +173,7 @@ try {
   check(JSON.stringify(zh?.buttons.map((button) => button.text)) === JSON.stringify(["← 换成一个百", "拆开一个百 →", "← 换成一个十", "拆开一个十 →"]), `a Chinese mat's buttons: ${JSON.stringify(zh?.buttons)}`);
   check(zh && JSON.stringify(counted(zh)) === "[16,9,6]" && JSON.stringify(zh.svg) === JSON.stringify(three.svg), `a Chinese mat is drawn as the English one: ${JSON.stringify(zh && [counted(zh), zh.svg, three.svg])}`);
   for (const name of Object.keys(cases)) {
-    if (name === "taps" || name === "taps3" || name === "tapsZh") continue;
+    if (name === "taps" || name === "taps3" || name === "tapsZh" || name === "slider") continue;
     for (const state of (await states(name)).filter((each) => !each.stuck)) {
       check(state.texts.every((text) => !/\d/.test(text)), `${name}: no number drawn on the mat: ${JSON.stringify(state.texts)}`);
       const boxes = state.places.flatMap((place) => [...place.loose, ...place.tray]);
@@ -306,6 +324,85 @@ try {
   }, { events: events.tapsZh });
   check(zhTask.mat === "数位方块" && zhTask.label === "把这个一放进托盘" && zhTask.message === "先点个位里的一，把它们放进托盘。", `a Chinese mat's task speaks Chinese: ${JSON.stringify(zhTask)}`);
   check(zhTask.texts.every((text) => !/\d/.test(text)), `a Chinese mat draws no number: ${JSON.stringify(zhTask.texts)}`);
+  // A slider on the ones' count (amendment 4): each stop is a trade, drawn as the taps are.
+  const slider = () => page.evaluate(() => {
+    const input = document.querySelector('.oll-variable-control[data-variable="ones"] input');
+    const svg = document.querySelector(".base-ten-mat");
+    return {
+      input: input && { min: input.min, max: input.max, step: input.step, value: input.value, disabled: input.disabled },
+      values: Object.fromEntries(Object.entries(window.slide.session.projection.board.variables).map(([k, v]) => [k, v.value])),
+      loose: svg ? svg.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length : -1,
+      tray: svg ? svg.querySelectorAll(".base-ten-unit.base-ten-in-tray:not(.base-ten-leaving)").length : -1,
+      tens: svg ? svg.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length : -1,
+      status: window.slide.session.studentTasks[0].status,
+    };
+  });
+  await page.evaluate(({ events }) => {
+    document.querySelector("#board").replaceChildren();
+    const controls = document.createElement("div");
+    controls.style.cssText = "position:absolute;left:10px;bottom:10px;width:320px";
+    document.body.append(controls);
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "slider-live", { reducedMotion: true });
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    // Wired as a host wires it (the playback harness): the session decides, the board animates each trade.
+    const onChange = (alias, value, event) => {
+      if (event.phase === "start") return session.beginStudentVariableOperation(alias, { control: event.control, input: event.input });
+      if (!event.operation_id) return;
+      if (event.phase === "update") session.updateStudentVariableOperation(event.operation_id, value);
+      else session.commitStudentVariableOperation(event.operation_id, value);
+    };
+    const view = window.mountVariableControls(controls, onChange);
+    mounted.view.setCardTapHandler({ live: (id) => session.studentCardLive(id), tap: (id, tap, input) => session.tapStudentCard(id, tap, input), takeSteps: (id) => session.takeStudentCardSteps(id) });
+    const render = () => { mounted.view.render(session.projection.board); view.render(session.projection.board, undefined, { live: (alias) => session.studentVariableLive(alias) }); };
+    session.subscribe(render);
+    window.slide = { session, render };
+    while (!session.projection.board?.nodes || !Object.keys(session.projection.board.nodes).length) session.advance();
+    render();
+  }, { events: events.slider });
+  let slid = await slider();
+  check(slid.input?.disabled === true, `while the lesson plays the slider on a count is disabled: ${JSON.stringify(slid)}`);
+  await page.evaluate(() => { while (window.slide.session.projection.status !== "completed") window.slide.session.advance(); window.slide.render(); });
+  slid = await slider();
+  check(slid.input && !slid.input.disabled && slid.input.min === "6" && slid.input.max === "56" && slid.input.step === "10" && slid.input.value === "26"
+    && slid.loose === 26 && slid.tens === 3, `the slider is live on the practice pile, its stops where trades reach (6 to 56): ${JSON.stringify(slid)}`);
+  // Watch the mat while two stops are pressed: the tray must fill to ten before each ten is made.
+  await page.evaluate(() => {
+    window.slideSeen = { maxTray: 0, frames: 0, ended: false };
+    const watch = () => {
+      const tray = document.querySelectorAll(".base-ten-unit.base-ten-in-tray:not(.base-ten-leaving)").length;
+      window.slideSeen.maxTray = Math.max(window.slideSeen.maxTray, tray);
+      const loose = document.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length;
+      const tens = document.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length;
+      // The second trade drawn to its end (6 ones, 5 tens) before the next task's pile.
+      if (loose === 6 && tens === 5 && tray === 0) window.slideSeen.ended = true;
+      window.slideSeen.frames += 1;
+      if (window.slideSeen.frames < 600) requestAnimationFrame(watch);
+    };
+    requestAnimationFrame(watch);
+  });
+  const started = Date.now();
+  await page.locator('.oll-variable-control[data-variable="ones"] input').focus();
+  await page.keyboard.press("ArrowLeft");
+  await page.keyboard.press("ArrowLeft");
+  slid = await slider();
+  check(slid.status === "succeeded" && JSON.stringify(slid.values) === JSON.stringify({ ones: 35, tray_ones: 0, tens: 1 }),
+    `two stops are two trades in the session (ones 6, tens 5: done), then the next task's pile: ${JSON.stringify(slid)}`);
+  check(slid.tens < 5 || slid.loose > 6, `the mat does not jump to the end: ${JSON.stringify(slid)}`);
+  await page.waitForFunction(() => {
+    const svg = document.querySelector(".base-ten-mat");
+    return svg.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length === 35
+      && svg.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length === 1
+      && svg.querySelectorAll(".base-ten-unit.base-ten-in-tray").length === 0;
+  }, undefined, { timeout: 8000 });
+  const took = Date.now() - started;
+  const seen = await page.evaluate(() => window.slideSeen);
+  slid = await slider();
+  check(seen.maxTray === 10, `each trade fills the tray to ten before ten make a ten: ${JSON.stringify(seen)}`);
+  check(seen.ended, `the last trade is drawn to its end before the next task's pile: ${JSON.stringify(seen)}`);
+  check(took > 1500, `two trades are drawn one after another, not at once (${took} ms)`);
+  check(slid.tray === 0 && !slid.input.disabled && slid.input.value === "35" && slid.input.min === "5" && slid.input.max === "45",
+    `then the next task's pile, its slider live on its own stops: ${JSON.stringify(slid)}`);
+  if (shots) await page.screenshot({ path: `${shots}/slider.png` });
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -315,4 +412,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, a quick second tap never undoes the first, refusals explained, a ten made, Enter taps, inert after done); a mat in Chinese, drawn the same, its words and refusals in Chinese");
+console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, a quick second tap never undoes the first, refusals explained, a ten made, Enter taps, inert after done); a mat in Chinese, drawn the same, its words and refusals in Chinese; a slider on the ones' count, disabled while the lesson plays, stopping where trades reach, drawing each trade as the taps do");
