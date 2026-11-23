@@ -178,7 +178,6 @@
 .base-ten-unit.base-ten-still { transition: none; }
 .base-ten-unit.base-ten-appearing { opacity: 0; }
 .base-ten-unit.base-ten-leaving { opacity: 0; pointer-events: none; }
-.base-ten-unit.base-ten-moving { pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .base-ten-unit { transition: none; } }
 .base-ten-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
 .base-ten-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }

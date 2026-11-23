@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- **A unit on its way into or out of a tray takes no tap** (decision 0023). Right after a tap, the unit just put in the tray was still moving over the spot where the next loose unit now lay, so a quick second tap there took it back out of the tray (seen in Learn's browser test on CI, where two of ten quick taps were undone). A unit whose tray changes is marked moving, with no pointer events, until its move ends (420 ms); a tap there reaches the unit underneath. The browser check taps at the same spot at once and checks which unit is hit.
+- **A quick second tap never undoes the first** (decision 0023). Right after a tap, the unit just put in the tray was still moving over the spot where the next loose unit now lay, so a quick second tap there took it back out of the tray (seen in Learn's browser test on CI, where two of ten quick taps were undone). A unit whose tray changes is marked moving until its move ends (420 ms; never with reduced motion). The board sends a pointer tap on a moving unit to a settled unit of the same place under it, or takes it and does nothing, so it never falls through to a button the unit crosses or pans the board (review). Keyboard taps act on the focused unit as before. The browser check taps the same spot twice at once.
 
 ### Added
 

@@ -63,8 +63,13 @@ const round = (value: number) => Math.round(value * 100) / 100;
 /** How long a move takes; matches the stylesheet's transform transition (.38s), with a little to spare. */
 const MOVE_MS = 420;
 let moves = 0;
-/** Marks a unit as moving (no pointer events) until its move ends; a later move of the same unit restarts it. */
+/**
+ * Marks a unit as moving until its move ends; a later move of the same unit restarts it. The board sends a tap
+ * on a moving unit to the settled unit of the same place under it, or nowhere. With reduced motion a unit
+ * arrives at once, so it is never marked.
+ */
 function moving(unit: SVGGElement): void {
+  if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const token = String(++moves);
   unit.dataset.move = token;
   unit.classList.add("base-ten-moving");
@@ -268,7 +273,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
         }
       } else if (context.step) {
         place(unit, at);
-        // A unit moving into or out of a tray takes no tap until it arrives: a quick second tap where the next
+        // A unit moving into or out of a tray is not tapped until it arrives: a quick second tap where the next
         // unit now lies hit the one still on its way and took it back (Learn on CI, 2026-11-22).
         if (wasInTray !== inTray) moving(unit);
       } else {

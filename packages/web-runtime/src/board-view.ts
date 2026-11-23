@@ -3400,8 +3400,8 @@ export class InfiniteBoardView {
       || boardInputTargetsInteractiveUi(event.composedPath())
     ) return;
     // A tap on a card the learner works on (decision 0023) is the card's, not a pan.
-    const tapTarget = (event.target as Element).closest?.("[data-oll-tap]");
-    if (tapTarget && !auxiliaryPan && !spacePan && event.button === 0 && this.tapCard(tapTarget, studentInputMethod(event.pointerType))) {
+    const tapTarget = settledTapTarget((event.target as Element).closest?.("[data-oll-tap]") ?? null, event.clientX, event.clientY);
+    if (tapTarget && !auxiliaryPan && !spacePan && event.button === 0 && (tapTarget === SWALLOWED_TAP || this.tapCard(tapTarget, studentInputMethod(event.pointerType)))) {
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -3576,4 +3576,26 @@ export function mountInfiniteBoard(
       if (addedViewportClass) viewport.classList.remove("viewport");
     },
   };
+}
+
+/** A tap the card takes without acting on it (see `settledTapTarget`). */
+const SWALLOWED_TAP = Symbol("swallowed tap") as unknown as Element;
+
+/**
+ * The element a pointer tap acts on. A trading-mat unit still moving into or out of a tray (decision 0023)
+ * is not tapped: a quick second tap where the next unit now lay hit it and took it back out (Learn on CI).
+ * The tap goes to a settled unit of the same place under the pointer, else it is taken and does nothing: it
+ * never falls through to a button the moving unit crosses, or to the board as a pan (review of #96).
+ */
+function settledTapTarget(target: Element | null, x: number, y: number): Element | null {
+  if (!target?.classList.contains("base-ten-moving")) return target;
+  const place = (target as SVGElement).dataset.place;
+  const card = target.closest(".board-node");
+  for (const hit of document.elementsFromPoint(x, y)) {
+    if (target.contains(hit)) continue;
+    const unit = hit.closest(".base-ten-unit");
+    if (unit && !unit.classList.contains("base-ten-moving") && (unit as SVGElement).dataset.place === place && unit.closest(".board-node") === card && unit.hasAttribute("data-oll-tap")) return unit;
+    break;
+  }
+  return SWALLOWED_TAP;
 }
