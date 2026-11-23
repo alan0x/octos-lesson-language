@@ -1020,9 +1020,10 @@ export class BrowserLessonSession {
     if (!["mouse", "touch", "pen", "keyboard", "unknown"].includes(context.input)) {
       throw new Error(`Unsupported student input method '${String(context.input)}'`);
     }
-    // A card's count moves only by its slider while a task allows it; a reset restores the pile directly.
-    const card = context.control === "reset" || !this.isCardSlider(alias) ? undefined : cardSliderTarget(this.player.snapshot.board, alias);
-    if (context.control !== "reset" && this.isCardSlider(alias) && (!card || context.control !== "slider" || !this.cardSliderLive(alias))) {
+    // A card's count moves only by its slider while a task allows it. A host's reset of one count is refused
+    // (review of Learn #233: it drew a pile the card's rules never made); a task's retry lays its whole pile.
+    const card = !this.isCardSlider(alias) ? undefined : cardSliderTarget(this.player.snapshot.board, alias);
+    if (this.isCardSlider(alias) && (!card || context.control !== "slider" || !this.cardSliderLive(alias))) {
       this.emit();
       return "";
     }
@@ -1588,8 +1589,8 @@ export class BrowserLessonSession {
     try {
       if (definition.completion.kind === "expression_target") {
         const allowed = definition.allowed_operations.flatMap((operation) => operation.kind === "variable_change" ? [operation.variable] : []);
-        // A card's count is reset with its whole pile: every count and tray of the card (amendment 4).
-        const variables = [...new Set(allowed.flatMap((alias) => [alias, ...(cardSliderTarget(this.player.snapshot.board, alias)?.variables.values() ?? [])]))];
+        // A task with a card's count slider always has a start (amendment 4), so it is retried above.
+        const variables = allowed;
         for (const alias of variables) {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
