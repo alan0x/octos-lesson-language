@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **A Chinese mat names the blocks, not the mat** (decision 0023 amendment 3; owner, 2026-11-22). "摆面" was a word we made up, and a child would not know it. The refused break now says "没有地方再放十个了。", and screen readers name the mat "数位方块". English is unchanged.
 - **A quick second tap never undoes the first** (decision 0023). Right after a tap, the unit just put in the tray was still moving over the spot where the next loose unit now lay, so a quick second tap there took it back out of the tray (seen in Learn's browser test on CI, where two of ten quick taps were undone). A unit whose tray changes is marked moving until its move ends (420 ms; never with reduced motion). The board sends a pointer tap on a moving unit to a settled unit of the same place under it, or takes it and does nothing, so it never falls through to a button the unit crosses or pans the board (review). Keyboard taps act on the focused unit as before. The browser check taps the same spot twice at once.
 
 ### Added

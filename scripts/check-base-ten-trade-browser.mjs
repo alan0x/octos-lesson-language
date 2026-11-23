@@ -304,7 +304,7 @@ try {
     const refused = session.tapStudentCard(id, { kind: "make", place: 0 });
     return { mat: document.querySelector(".base-ten-mat").getAttribute("aria-label"), label: document.querySelector(".base-ten-unit.base-ten-live")?.getAttribute("aria-label"), message: refused.message, texts: [...document.querySelectorAll(".base-ten-mat text")].map((text) => text.textContent) };
   }, { events: events.tapsZh });
-  check(zhTask.mat === "数位摆面" && zhTask.label === "把这个一放进托盘" && zhTask.message === "先点个位里的一，把它们放进托盘。", `a Chinese mat's task speaks Chinese: ${JSON.stringify(zhTask)}`);
+  check(zhTask.mat === "数位方块" && zhTask.label === "把这个一放进托盘" && zhTask.message === "先点个位里的一，把它们放进托盘。", `a Chinese mat's task speaks Chinese: ${JSON.stringify(zhTask)}`);
   check(zhTask.texts.every((text) => !/\d/.test(text)), `a Chinese mat draws no number: ${JSON.stringify(zhTask.texts)}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
