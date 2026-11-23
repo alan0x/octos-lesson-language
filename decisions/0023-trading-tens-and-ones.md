@@ -212,7 +212,7 @@
 
 | 位置 | 英文 | 中文 |
 |---|---|---|
-| 摆面的名字（读屏） | A place-value mat | 数位摆面 |
+| 摆面的名字（读屏） | A place-value mat | 数位方块 |
 | 列名 | Hundreds / Tens / Ones | 百位 / 十位 / 个位 |
 | 托盘上方 | Ten ones make a ten · Ten tens make a hundred | 十个一是一个十 · 十个十是一个百 |
 | 按钮 | ← Make a ten · Break a ten → | ← 换成一个十 · 拆开一个十 →（百同理） |
@@ -221,9 +221,9 @@
 | 托盘不满十就按换 | This tray does not hold a ten: a ten is ten ones. | 托盘里还不是一个十：一个十是十个一。 |
 | 托盘空着就按换 | Tap ones to put them in the tray first. | 先点个位里的一，把它们放进托盘。 |
 | 托盘不空就按拆 | Empty the tray first. | 先把托盘清空。 |
-| 没地方了 | There is no room on the mat for ten more. | 摆面上没有地方再放十个了。 |
+| 没地方了 | There is no room on the mat for ten more. | 没有地方再放十个了。 |
 | 没有散的可用 | There is no loose one to use. | 没有散的一可以用了。 |
 | 其他 | That can't be done here. | 这里不能这样做。 |
 
-- 「摆面」和 Learn 已有的「还没有。再看看摆面。」一致。
+- 孩子看到的中文里不用「摆面」（我们自造的词）也不用「学具板」，只说看得见的方块（产品负责人 2026-11-22 确认）：读屏名「数位方块」，没地方了说「没有地方再放十个了。」；Learn 的「还没有。再看看这些方块。」、Coach 的题目「一共有多少个方块？」「各有几个十、几个一？」同样改。本文里「摆面」仍是设计用语。
 - **不在这一修订里**：Coach 配方的中文旁白、题目和提示（配方里一张表），Learn 自己的按钮（跟着界面语言，不跟着课的语言；这是现有的做法）。

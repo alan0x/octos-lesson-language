@@ -234,7 +234,7 @@ export const BASE_TEN_WORDS = {
     other: "That can't be done here.",
   },
   "zh-CN": {
-    matLabel: "数位摆面",
+    matLabel: "数位方块",
     headings: ["个位", "十位", "百位"],
     trayLabel: ["十个一是一个十", "十个十是一个百"],
     make: ["← 换成一个十", "← 换成一个百"],
@@ -246,7 +246,7 @@ export const BASE_TEN_WORDS = {
       tray_not_ten: ["托盘里还不是一个十：一个十是十个一。", "托盘里还不是一个百：一个百是十个十。"],
       tray_empty: ["先点个位里的一，把它们放进托盘。", "先点十位里的十，把它们放进托盘。"],
       tray_not_empty: ["先把托盘清空。", "先把托盘清空。"],
-      no_room: ["摆面上没有地方再放十个了。", "摆面上没有地方再放十个了。"],
+      no_room: ["没有地方再放十个了。", "没有地方再放十个了。"],
       none_loose: ["没有散的一可以用了。", "没有散的十可以用了。", "没有散的百可以用了。"],
     },
     other: "这里不能这样做。",
