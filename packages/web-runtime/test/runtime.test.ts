@@ -18,6 +18,9 @@ import type {
   StudentVariableOperation,
 } from "../src/student-operations.js";
 import type { StudentTaskProgressLog, StudentTaskSnapshot } from "../src/student-tasks.js";
+import { applyBaseTenTap, baseTenMat } from "../../plugin-math/src/base-ten-trade.js";
+import { parseStudentOperationLog, type StudentOperation } from "../src/student-operations.js";
+import { variableControlModels } from "../src/variable-controls.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -1634,4 +1637,195 @@ test("a row of blanks (decision 0023 amendment 1): judged whole, never says whic
   while (session.projection.status !== "completed") session.advance();
   assert.deepEqual(Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value])), { ones: 7, tray_ones: 0, tens: 3 });
   assert.throws(() => session.submitStudentAnswer("counts", "3"), /does not take a typed answer/);
+});
+
+// Decision 0023 amendment 4: a slider on a place's count, each stop one trade by the card's tap rules.
+function sliderLesson(tasks: unknown[], options: { columns?: 2 | 3 } = {}): ReturnType<typeof normalizeAuthoringLesson> {
+  const variable = (as: string, initial: number, max: number, control?: unknown) => ({ as, initial, min: 0, max, label: as, ...(control ? { control } : {}) });
+  const slider = { kind: "slider", step: 10 };
+  const three = options.columns === 3;
+  const lesson = {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: "en-US", title: "Trading tens and ones", goals: ["Ten ones make a ten"],
+      variables: three
+        ? [variable("ones", 26, 59, slider), variable("tray_ones", 0, 10), variable("tens", 9, 34, slider), variable("tray_tens", 0, 10), variable("hundreds", 1, 9)]
+        : [variable("ones", 14, 59, slider), variable("tray_ones", 0, 10), variable("tens", 3, 9)],
+      tasks,
+    },
+    steps: [{ key: "show", purpose: "See the pile", beats: [
+      { key: "draw", say: "Here is the pile.", actions: [{ do: "write", as: "mat", kind: "base_ten_trade", role: "main_visual", place: { relation: "new_region" },
+        content: three
+          ? { columns: 3, places: [{ as: "ones", count: 26, tray: 0 }, { as: "tens", count: 9, tray: 0 }, { as: "hundreds", count: 1 }],
+            bindings: [{ target: "ones.count", expression: "ones" }, { target: "ones.tray", expression: "tray_ones" }, { target: "tens.count", expression: "tens" },
+              { target: "tens.tray", expression: "tray_tens" }, { target: "hundreds.count", expression: "hundreds" }] }
+          : { columns: 2, places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }],
+            bindings: [{ target: "ones.count", expression: "ones" }, { target: "ones.tray", expression: "tray_ones" }, { target: "tens.count", expression: "tens" }] } }] },
+      // The lesson's own demonstration taps still play by the card's rules.
+      { key: "fill", say: "Ten ones go in the tray.", actions: Array.from({ length: 10 }, () => ({ do: "tap", target: "mat", tap: "gather", at: "ones" })) },
+      { key: "make", say: "Ten ones make a ten.", actions: [{ do: "tap", target: "mat", tap: "make", at: "ones" }] },
+    ] }],
+    close: { summary: "Ten ones make a ten.", focus: ["mat"] },
+  } as unknown as AuthoringLesson;
+  return normalizeAuthoringLesson(lesson, { lessonId: "slide", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+}
+const slideTask = (value: number, start?: Record<string, number>) => ({
+  as: "slide", prompt: "Slide the ones to the number.", availability: { kind: "after_lesson" },
+  allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
+  completion: { kind: "expression_target", expression: "ones", value, tolerance: 0.5 }, hints: ["Each stop is a trade."],
+  ...(start ? { start: { kind: "practice", variables: Object.keys(start), values: start } } : {}),
+});
+const sessionValues = (session: BrowserLessonSession) => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+
+/** Replays a student log's card taps through the card's tap rules from a pile; each must be taken and change what it says. */
+function replayCardTaps(start: Record<string, number>, operations: readonly StudentOperation[]): Record<string, number> {
+  const values = { ...start };
+  for (const operation of operations) {
+    if (operation.kind === "variable_change") {
+      // A slider's gesture follows its trades: its value is already the pile's.
+      if (operation.control === "slider") assert.equal(values[operation.target.alias], operation.after.value);
+      else values[operation.target.alias] = operation.after.value;
+      continue;
+    }
+    if (operation.kind !== "card_tap") continue;
+    const before = baseTenMat({ columns: values.hundreds === undefined ? 2 : 3, places: [
+      { count: values.ones, tray: values.tray_ones }, { count: values.tens, tray: values.tray_tens }, { count: values.hundreds },
+    ] });
+    const result = applyBaseTenTap(before, operation.tap);
+    assert.ok(result.ok, `the logged tap ${JSON.stringify(operation.tap)} is taken`);
+    for (const change of operation.changes) {
+      assert.equal(values[change.alias], change.before);
+      values[change.alias] = change.after;
+    }
+    assert.deepEqual([values.ones, values.tray_ones, values.tens], [result.mat.counts[0], result.mat.trays[0], result.mat.counts[1]]);
+  }
+  return values;
+}
+
+test("a slider on a card's count trades by the tap rules, is live only while its task is open, and its log replays the pile", () => {
+  const events = sliderLesson([slideTask(6, { ones: 26, tray_ones: 0, tens: 3 })]);
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "slide", { reducedMotion: true });
+  const card = "slide:node:mat";
+  // Not live while the lesson plays, even before its card is drawn: the slider is drawn disabled and a gesture
+  // is refused, changing nothing.
+  const models = () => variableControlModels(session.projection.board, { live: (alias) => session.studentVariableLive(alias) });
+  session.advance();
+  assert.ok(session.projection.board?.variables?.ones && !session.projection.board.nodes[card]);
+  assert.equal(session.studentVariableLive("ones"), false);
+  assert.equal(models()[0]!.disabled, true);
+  assert.equal(session.changeStudentVariable("ones", 4, { control: "slider", input: "mouse" }), undefined);
+  session.setVariable("ones", 4);
+  assert.equal(sessionValues(session).ones, 14);
+  while (!session.projection.board?.nodes[card]) session.advance();
+  assert.equal(session.studentVariableLive("ones"), false);
+  assert.equal(session.beginStudentVariableOperation("ones", { control: "slider", input: "mouse" }), "");
+  assert.equal(session.changeStudentVariable("ones", 4, { control: "slider", input: "mouse" }), undefined);
+  assert.equal(models()[0]!.disabled, true);
+  while (session.projection.status !== "completed") session.advance();
+  // The lesson's own taps played (14 ones, 3 tens became 4 ones, 4 tens); the task then lays its pile.
+  assert.deepEqual(sessionValues(session), { ones: 26, tray_ones: 0, tens: 3 });
+  assert.equal(session.studentVariableLive("ones"), true);
+  // Taps are not live in a slider task.
+  assert.equal(session.studentCardLive(card), false);
+  // The track stops where trades reach: 6, 16, …, 56, not 0, 10, 20.
+  assert.deepEqual(models(), [{ alias: "ones", label: "ones", value: 26, min: 6, max: 56, step: 10, disabled: false }]);
+  // One drag, two stops down: two trades, each the taps a learner would make.
+  const id = session.beginStudentVariableOperation("ones", { control: "slider", input: "touch" });
+  session.updateStudentVariableOperation(id, 16);
+  assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 4 });
+  const first = session.takeStudentCardSteps(card);
+  assert.deepEqual(first.map((step) => step.tap.kind), [...Array(10).fill("gather"), "make"]);
+  session.updateStudentVariableOperation(id, 6);
+  const logged = session.commitStudentVariableOperation(id, 6);
+  assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 5 });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  // The board is given a step per tap of the second trade, then nothing more.
+  assert.deepEqual(session.takeStudentCardSteps(card).map((step) => step.tap.kind), [...Array(10).fill("gather"), "make"]);
+  assert.deepEqual(session.takeStudentCardSteps(card), []);
+  // Logged: each tap as a card_tap made by the slider, then the gesture, after its taps.
+  const operations = session.studentOperations;
+  assert.equal(operations.filter((operation) => operation.kind === "card_tap").length, 22);
+  assert.ok(operations.filter((operation) => operation.kind === "card_tap").every((operation) => operation.kind === "card_tap" && operation.control === "slider" && operation.input === "touch"));
+  assert.equal(operations.at(-1)!.kind, "variable_change");
+  assert.deepEqual([logged?.before.value, logged?.after.value, logged?.control], [26, 6, "slider"]);
+  assert.ok(operations.every((operation, index) => index === 0 || operation.sequence > operations[index - 1]!.sequence));
+  // Replaying the log through the tap rules from the practice pile makes the same pile.
+  assert.deepEqual(replayCardTaps({ ones: 26, tray_ones: 0, tens: 3 }, operations), sessionValues(session));
+  // The saved log parses as it was, and a restored session holds the same pile and log.
+  assert.deepEqual(parseStudentOperationLog(store.studentOperations.get("slide"), "slide")!.operations, operations);
+  const restored = new BrowserLessonSession(events, store, "slide", { reducedMotion: true });
+  assert.deepEqual(restored.studentOperations, operations);
+  assert.deepEqual(sessionValues(restored), sessionValues(session));
+  // Not live once the task is done.
+  assert.equal(session.studentVariableLive("ones"), false);
+});
+
+test("a card slider's stop up breaks one and takes the ten out, as the taps do; a refused stop settles on the nearest it can reach", () => {
+  const cardTask = {
+    as: "trade", prompt: "Make tens until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }, { kind: "variable_change", variable: "ones", controls: ["slider"] }],
+    completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Make a ten."],
+    start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 6, tray_ones: 0, tens: 5 } },
+  };
+  const slid = new BrowserLessonSession(sliderLesson([cardTask]), new MemoryStore(), "slide-up", { reducedMotion: true });
+  const tapped = new BrowserLessonSession(sliderLesson([cardTask]), new MemoryStore(), "tap-up", { reducedMotion: true });
+  const card = "slide:node:mat";
+  for (const session of [slid, tapped]) while (session.projection.status !== "completed") session.advance();
+  assert.equal(slid.studentVariableLive("ones"), true);
+  assert.equal(slid.studentCardLive(card), true, "taps stay live beside the slider");
+  slid.changeStudentVariable("ones", 16, { control: "slider", input: "mouse" });
+  assert.ok("operation" in tapped.tapStudentCard(card, { kind: "break", place: 1 }));
+  for (let i = 0; i < 10; i += 1) assert.ok("operation" in tapped.tapStudentCard(card, { kind: "ungather", place: 0 }));
+  assert.deepEqual(sessionValues(slid), sessionValues(tapped));
+  assert.deepEqual(sessionValues(slid), { ones: 16, tray_ones: 0, tens: 4 });
+  assert.deepEqual(slid.takeStudentCardSteps(card).map((step) => step.tap.kind), ["break", ...Array(10).fill("ungather")]);
+  // A slider's moves are not attempts on a card task; "done" is.
+  assert.equal(slid.studentTasks[0]!.attempts.length, 0);
+  // Past the last ten there is to break: the slider settles on 56, the last stop it can reach.
+  slid.changeStudentVariable("ones", 70, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(slid), { ones: 56, tray_ones: 0, tens: 0 });
+  // Below the lowest stop: it settles on 6.
+  slid.changeStudentVariable("ones", 0, { control: "slider", input: "keyboard" });
+  assert.deepEqual(sessionValues(slid), { ones: 6, tray_ones: 0, tens: 5 });
+  // A move that reaches no new stop changes and logs nothing.
+  const before = slid.studentOperations.length;
+  assert.equal(slid.changeStudentVariable("ones", 2, { control: "slider", input: "keyboard" }), undefined);
+  assert.equal(slid.studentOperations.length, before);
+  // Only a slider moves a card's count: another control is refused.
+  assert.equal(slid.beginStudentVariableOperation("ones", { control: "number_line_point", input: "mouse" }), "");
+  assert.equal(slid.submitStudentCard("trade").status, "succeeded");
+});
+
+test("a three-column chain: two ones trades make 11 tens, then the tens slider goes down to 1 and the hundreds up by one", () => {
+  const task = {
+    as: "slide", prompt: "Make the ones and tens as few as you can.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }, { kind: "variable_change", variable: "tens", controls: ["slider"] }],
+    completion: { kind: "expression_target", expression: "ones + tens", value: 7, tolerance: 0.5 }, hints: ["Each stop is a trade."],
+  };
+  const session = new BrowserLessonSession(sliderLesson([task], { columns: 3 }), new MemoryStore(), "chain", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  const live = { live: (alias: string) => session.studentVariableLive(alias) };
+  // The lesson's own taps made 16 ones and 10 tens from 26 ones and 9 tens.
+  assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 10, tray_tens: 0, hundreds: 1 });
+  session.changeStudentVariable("ones", 6, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 11, tray_tens: 0, hundreds: 1 });
+  const tens = variableControlModels(session.projection.board, live).find((model) => model.alias === "tens")!;
+  assert.deepEqual([tens.min, tens.max, tens.value], [1, 21, 11]);
+  session.changeStudentVariable("tens", 1, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 1, tray_tens: 0, hundreds: 2 });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+});
+
+test("retrying a card slider task without a practice pile restores the whole pile, not only the count", () => {
+  const session = new BrowserLessonSession(sliderLesson([slideTask(24)]), new MemoryStore(), "slide-retry", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  const pile = sessionValues(session);
+  assert.deepEqual(pile, { ones: 4, tray_ones: 0, tens: 4 });
+  session.changeStudentVariable("ones", 14, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
+  assert.equal(session.studentTasks[0]!.status, "in_progress");
+  session.retryStudentTask("slide");
+  // The lesson's initial pile: 14 ones and 3 tens, all of it.
+  assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
 });

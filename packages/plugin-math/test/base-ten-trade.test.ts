@@ -3,14 +3,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson,
+  assertAuthoringSchema, assertDeclarationPlayable, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson,
   reduceCanonicalEvents, validateAuthoringLesson, type AuthoringLesson,
 } from "../../core/src/index.js";
 import { measureSemanticNode } from "../../web-runtime/src/layout.js";
 import {
   BASE_TEN_TRADE_FEATURE, applyBaseTenTap, baseTenChanges, baseTenFacts, baseTenLooseAt, baseTenMat, baseTenRefusalText,
-  BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_WORDS, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
+  BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_SLIDER_FEATURE, BASE_TEN_WORDS, baseTenSliderMove, baseTenSliderReachable, baseTenSliderStop,
+  baseTenSliderTrack, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
 } from "../src/base-ten-trade.js";
+import { baseTenStepDelay, baseTenStepFrames } from "../src/base-ten-trade-view.js";
 import { buildBaseTenTrade } from "../src/base-ten-trade-builder.js";
 
 const fail = (path: string, message: string): never => { throw new Error(`${path}: ${message}`); };
@@ -265,12 +267,14 @@ test("a demonstration taps the card by its own rules: checked before playback in
   // Playback order: a tap written before an animation in the same beat but played after it meets the animated state.
   assert.throws(() => validateAuthoringLesson(demo([{ ...taps(1, "gather", "ones")[0], when: "after_speech" }, { do: "animate", variable: "ones", value: 0 }])), /no loose one/);
   // Review of #89: a make that would push a count past its variable's range is refused (2 columns, 9 tens);
-  // a tapped card's counts have no learner control.
+  // a tapped card's counts have no learner control but a slider that trades (amendment 4), live only in a task.
   const nineTens = demo([{ do: "animate", variable: "tens", value: 9 }, ...taps(10, "gather", "ones")], [{ key: "make", say: "Make a ten.", actions: taps(1, "make", "ones") }]);
   assert.throws(() => validateAuthoringLesson(nineTens), /would make tens 10, outside 0 to 9/);
   const slider = structuredClone(demo(taps(1, "gather", "ones")));
   (slider.lesson.variables as unknown as Array<Record<string, unknown>>)[0]!.control = { kind: "slider", step: 1 };
-  assert.throws(() => validateAuthoringLesson(slider), /changed only by tapping the card/);
+  assert.throws(() => validateAuthoringLesson(slider), /takes only a slider of step 10: each stop is one trade/);
+  (slider.lesson.variables as unknown as Array<Record<string, unknown>>)[0]!.control = { kind: "slider", step: 10 };
+  validateAuthoringLesson(slider);
   // Only a base-ten trade card, as a whole, can be tapped.
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade card/);
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat", tap: "fold", at: "ones" }])), /Unknown tap 'fold'/);
@@ -315,4 +319,110 @@ test("a mat speaks Chinese when its content says so (amendment 3); English stays
   assert.deepEqual(requirements.requiredPlugins, { math: "0.6.0" });
   assert.doesNotThrow(() => assertExecutionSupported(events));
   assert.deepEqual(deriveExecutionRequirements(normalizeAuthoringLesson(lesson(boundMat), host)).requiredPlugins, { math: "0.5.0" });
+});
+
+// Decision 0023 amendment 4: a slider on a place's count, each stop one trade by the card's own tap rules.
+test("a slider stop is the taps a learner would make: down gathers ten and makes one, up breaks one and takes the ten out", () => {
+  const start = mat(0, 3, 26);
+  const value = (m: BaseTenMat) => baseTenFacts(m).value;
+  // One stop down: the same pile as ten gathers and a make.
+  const down = baseTenSliderStop(start, 0, -1);
+  assert.ok(down.ok);
+  assert.deepEqual(down.steps.map((step) => step.tap), [...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 }]);
+  assert.deepEqual(down.mat, tap(start, ...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 }));
+  assert.deepEqual([down.mat.counts, down.mat.trays, value(down.mat)], [[16, 4], [0], 56]);
+  // Each step carries the mat it leaves: the last is the stop's.
+  assert.deepEqual(down.steps.map((step) => step.mat.trays[0]), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0]);
+  // Two stops down in one move: two trades, in order.
+  const two = baseTenSliderMove(start, 0, 6);
+  assert.equal(two.steps.length, 22);
+  assert.deepEqual([two.mat.counts, two.mat.trays, value(two.mat)], [[6, 5], [0], 56]);
+  // One stop up: a break, then the ten taken out of the tray, loose.
+  const up = baseTenSliderMove(two.mat, 0, 16);
+  assert.deepEqual(up.steps.map((step) => step.tap), [{ kind: "break", place: 1 }, ...times(10, { kind: "ungather", place: 0 })]);
+  assert.deepEqual(up.mat, tap(two.mat, { kind: "break", place: 1 }, ...times(10, { kind: "ungather", place: 0 })));
+  assert.deepEqual([up.mat.counts, up.mat.trays, value(up.mat)], [[16, 4], [0], 56]);
+  // A tray part filled by taps is topped up going down, and emptied before a break going up: empty after either.
+  const three = tap(start, ...times(3, { kind: "gather", place: 0 }));
+  const topped = baseTenSliderStop(three, 0, -1);
+  assert.ok(topped.ok);
+  assert.equal(topped.steps.filter((step) => step.tap.kind === "gather").length, 7);
+  assert.deepEqual([topped.mat.counts, topped.mat.trays], [[16, 4], [0]]);
+  const emptied = baseTenSliderStop(three, 0, 1);
+  assert.ok(emptied.ok);
+  assert.deepEqual(emptied.steps.slice(0, 4).map((step) => step.tap.kind), ["ungather", "ungather", "ungather", "break"]);
+  assert.deepEqual([emptied.mat.counts, emptied.mat.trays], [[36, 2], [0]]);
+});
+
+test("a stop the rules refuse is not reachable: the slider settles on the nearest stop it can reach", () => {
+  // No room past 59 ones: from 26 ones and 3 tens the stops up are 36, 46 and 56; 66 is refused.
+  const start = mat(0, 3, 26);
+  assert.deepEqual(baseTenSliderStop(mat(0, 0, 56), 0, 1), { ok: false, reason: "none_loose" });
+  assert.deepEqual(baseTenSliderStop(mat(0, 1, 56), 0, 1), { ok: false, reason: "no_room" });
+  assert.deepEqual(baseTenSliderMove(start, 0, 66).mat.counts, [56, 0]);
+  assert.deepEqual(baseTenSliderMove(start, 0, 0).mat.counts, [6, 5]);
+  assert.deepEqual(baseTenSliderMove(start, 0, 40).mat.counts, [36, 2], "the nearest stop to 40 is 36");
+  // Fewer than ten: no stop down; no ten above: no stop up. The slider stays.
+  assert.deepEqual(baseTenSliderMove(mat(0, 0, 5), 0, 15), { steps: [], mat: mat(0, 0, 5) });
+  assert.deepEqual(baseTenSliderMove(mat(0, 4, 5), 0, -5).steps, []);
+  // A make never leaves a place above what the mat draws: two columns stop at nine tens.
+  assert.deepEqual(baseTenSliderStop({ columns: 2, counts: [15, 9], trays: [0] }, 0, -1), { ok: false, reason: "no_room" });
+  // The highest place has no slider.
+  assert.deepEqual(baseTenSliderStop(start, 1, -1), { ok: false, reason: "no_tray" });
+  assert.deepEqual(baseTenSliderMove(start, 1, 0).steps, []);
+});
+
+test("a slider's track stops only where trades reach: 6, 16, 26 and up to the room; a three-column chain", () => {
+  assert.deepEqual(baseTenSliderTrack(mat(0, 3, 26), 0), { min: 6, max: 56 });
+  assert.deepEqual(baseTenSliderTrack(mat(0, 0, 26), 0), { min: 6, max: 26 });
+  assert.deepEqual(baseTenSliderTrack(mat(0, 4, 5), 0), { min: 5, max: 45 });
+  // Three columns: 1 hundred, 9 tens, 26 ones. Nine tens make no hundred, so the tens slider cannot go down;
+  // up, a hundred breaks into ten tens.
+  const chain = mat(1, 9, 26, 3);
+  assert.deepEqual(baseTenSliderTrack(chain, 1), { min: 9, max: 19 });
+  // Two ones trades make 11 tens; now the tens slider goes down to 1 and the hundreds go up by one.
+  const traded = baseTenSliderMove(chain, 0, 6).mat;
+  assert.deepEqual(traded.counts, [6, 11, 1]);
+  assert.deepEqual(baseTenSliderTrack(traded, 1), { min: 1, max: 21 });
+  const tens = baseTenSliderMove(traded, 1, 1);
+  assert.deepEqual([tens.mat.counts, tens.mat.trays, baseTenFacts(tens.mat).value], [[6, 1, 2], [0, 0], 216]);
+  // Every pile both sliders reach, by an exact search: 216 laid out every way the room allows.
+  const piles = baseTenSliderReachable(chain, [0, 1]).map((m) => m.counts.join(","));
+  assert.ok(piles.includes("6,1,2") && piles.includes("26,9,1") && piles.includes("56,6,1"));
+  assert.ok(piles.every((counts) => { const [o, t, h] = counts.split(",").map(Number); return o! + 10 * t! + 100 * h! === 216; }));
+  // A break needs room below: never more than 59 ones or, from a hundred, 29 tens.
+  assert.ok(piles.includes("6,21,0") && piles.every((counts) => { const [o, t] = counts.split(",").map(Number); return o! <= 59 && t! <= 34; }));
+  assert.deepEqual(baseTenSliderTrack(mat(0, 21, 6, 3), 1), { min: 1, max: 21 });
+});
+
+test("the view is given a step per tap of a slider's trades, each frame the mat that tap leaves", () => {
+  const content = { columns: 2, places: [{ as: "ones", id: "l:node:mat:fragment:ones", count: 26, tray: 0 }, { as: "tens", id: "l:node:mat:fragment:tens", count: 3 }], bindings: [] };
+  const move = baseTenSliderMove(baseTenMat(content), 0, 6);
+  const frames = baseTenStepFrames(content, move.steps);
+  assert.equal(frames.length, 22);
+  assert.deepEqual(frames.map((frame) => frame.step.tap), move.steps.map((step) => step.tap));
+  // Each frame is the card at that tap: the tray fills to ten, then ten ones become a ten, twice.
+  assert.deepEqual(frames.map((frame) => baseTenMat(frame.content)), move.steps.map((step) => step.mat));
+  assert.deepEqual(frames[10]!.content.places, [{ as: "ones", id: "l:node:mat:fragment:ones", count: 16, tray: 0 }, { as: "tens", id: "l:node:mat:fragment:tens", count: 4 }]);
+  assert.equal(content.places[0]!.count, 26, "the content itself is not changed");
+  // Gathers stream; the last lands before the make; a make fuses and moves before the next trade.
+  assert.ok(baseTenStepDelay({ kind: "gather", place: 0 }, { kind: "gather", place: 0 }) < baseTenStepDelay({ kind: "gather", place: 0 }, { kind: "make", place: 0 }));
+  assert.ok(baseTenStepDelay({ kind: "make", place: 0 }) > baseTenStepDelay({ kind: "gather", place: 0 }));
+});
+
+test("a lesson with a slider on a card's count needs math 0.7.0 (amendment 4); without one, still 0.5.0", () => {
+  const slid = lesson(boundMat, [{ ...variables[0], control: { kind: "slider", step: 10 } }, variables[1], variables[2]]);
+  assertAuthoringSchema(slid);
+  validateAuthoringLesson(slid);
+  const events = normalizeAuthoringLesson(slid, host);
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes(BASE_TEN_TRADE_SLIDER_FEATURE));
+  assert.deepEqual(requirements.requiredPlugins, { math: "0.7.0" });
+  // A player whose math plugin is 0.6.0 refuses it: that plugin would write the count directly.
+  const declaration = { minimumPlayerVersion: requirements.minimumPlayerVersion, requiredCapabilities: requirements.requiredCapabilities };
+  assert.throws(() => assertDeclarationPlayable(declaration, undefined, {
+    extensions: [{ plugin: { id: "math", version: "0.6.0" }, features: { [BASE_TEN_TRADE_FEATURE]: "0.5.0", [BASE_TEN_TRADE_LANGUAGE_FEATURE]: "0.6.0" } }],
+  }), /uses 'plugin:math\/base-ten-trade-slider@1', which the installed 'math' plugin 0.6.0 does not have/);
+  assert.doesNotThrow(() => assertDeclarationPlayable(declaration));
+  assert.ok(!deriveExecutionRequirements(normalizeAuthoringLesson(lesson(boundMat), host)).requiredCapabilities.includes(BASE_TEN_TRADE_SLIDER_FEATURE));
 });

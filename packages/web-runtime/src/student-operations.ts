@@ -96,6 +96,11 @@ export interface StudentCardTapOperation {
   /** Every variable the tap changed, in one step. */
   changes: Array<{ alias: string; before: number; after: number }>;
   input: StudentInputMethod;
+  /**
+   * Present when a slider on the card's count made the tap, as one of a trade's taps (decision 0023
+   * amendment 4). The gesture's own `variable_change` follows its taps in the log.
+   */
+  control?: "slider";
 }
 
 /** The learner says "done" on a card task; the card's program judges what the learner made. */
@@ -280,6 +285,7 @@ export function parseStudentOperationLog(
           || changes.some((change) => !change || typeof change.alias !== "string" || !change.alias
             || !Number.isFinite(change.before) || !Number.isFinite(change.after))
           || new Set(changes.map((change) => change.alias)).size !== changes.length
+          || ((operation as Partial<StudentCardTapOperation>).control !== undefined && (operation as Partial<StudentCardTapOperation>).control !== "slider")
         ) return undefined;
       } else {
         const target = (operation as Partial<StudentCardSubmitOperation>).target;

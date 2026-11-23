@@ -19,6 +19,14 @@ export const BASE_TEN_TRADE_PLUGIN_VERSION = "0.5.0";
 /** A mat that speaks Chinese (decision 0023 amendment 3): a player without it refuses the `language` field. */
 export const BASE_TEN_TRADE_LANGUAGE_FEATURE = "plugin:math/base-ten-trade-language@1";
 export const BASE_TEN_TRADE_LANGUAGE_VERSION = "0.6.0";
+/**
+ * A slider on a place's count (decision 0023 amendment 4): each stop is one trade made by the card's tap
+ * rules. A player without it would write the count directly, changing the total, so it refuses such a lesson.
+ */
+export const BASE_TEN_TRADE_SLIDER_FEATURE = "plugin:math/base-ten-trade-slider@1";
+export const BASE_TEN_TRADE_SLIDER_VERSION = "0.7.0";
+/** A slider on a count moves ten of that place per stop: one trade. */
+export const BASE_TEN_SLIDER_STEP = 10;
 /** The languages a mat speaks. A mat without `language` speaks US English, as before amendment 3. */
 export const BASE_TEN_TRADE_LANGUAGES = ["en-US", "zh-CN"] as const;
 export type BaseTenLanguage = typeof BASE_TEN_TRADE_LANGUAGES[number];
@@ -201,6 +209,149 @@ export function applyBaseTenTap(mat: BaseTenMat, tap: BaseTenTap): BaseTenTapRes
   if (mat.counts[p - 1]! + 10 > BASE_TEN_TRADE_LIMITS.room[p - 1]!) return { ok: false, reason: "no_room" };
   const counts = set(set(mat.counts, p, mat.counts[p]! - 1), p - 1, mat.counts[p - 1]! + 10);
   return { ok: true, mat: { ...mat, counts, trays: set(mat.trays, p - 1, 10) } };
+}
+
+/** The most of a place the mat draws: tens on a mat of two columns stop at nine. */
+const drawnMost = (columns: number, p: number): number => (columns === 2 && p === 1 ? 9 : BASE_TEN_TRADE_LIMITS.drawn[p]!);
+
+/** One tap of a slider-made trade and the mat it leaves. */
+export interface BaseTenStep { tap: BaseTenTap; mat: BaseTenMat }
+
+/**
+ * The field of a card a variable drives through a bare binding (`ones.count` = `ones`), or undefined. A
+ * place is named by its canonical `id` on the board and by `as` in authoring content.
+ */
+export function baseTenBoundField(raw: unknown, alias: string): { place: number; field: "count" | "tray" } | undefined {
+  const content = raw as { places?: unknown; bindings?: unknown } | null;
+  const places = (Array.isArray(content?.places) ? content!.places : []) as Array<{ id?: unknown; as?: unknown }>;
+  for (const binding of (Array.isArray(content?.bindings) ? content!.bindings : []) as Array<{ target?: unknown; expression?: unknown }>) {
+    if (typeof binding?.target !== "string" || typeof binding.expression !== "string" || binding.expression.trim() !== alias) continue;
+    const separator = binding.target.lastIndexOf(".");
+    const name = binding.target.slice(0, separator);
+    const field = binding.target.slice(separator + 1);
+    const place = places.findIndex((item) => (item?.id ?? item?.as) === name);
+    if (place >= 0 && (field === "count" || field === "tray")) return { place, field };
+  }
+  return undefined;
+}
+
+/**
+ * The place whose count a slider on this variable moves by trades (amendment 4), or undefined. Only the
+ * count of a place with a tray takes one: ones, and tens on a mat of three columns. A tray or the highest
+ * place never does.
+ */
+export function baseTenSliderPlace(raw: unknown, alias: string): number | undefined {
+  const bound = baseTenBoundField(raw, alias);
+  const columns = (raw as { columns?: unknown } | null)?.columns === 3 ? 3 : 2;
+  return bound && bound.field === "count" && hasTray(columns, bound.place) ? bound.place : undefined;
+}
+
+/**
+ * One stop of a slider on a place's count, made only by the card's tap rules (amendment 4). Down (count
+ * −10): loose units of the place go into its tray until it holds ten, then the ten make one of the next
+ * place. Up (+10): the tray is emptied, one unit of the next place is broken into it, and the ten are taken
+ * out loose. Either way the place's tray is empty after the stop and the total is unchanged. A stop any tap
+ * of which the rules refuse, or that would leave a place above what the mat draws, is refused whole.
+ */
+export function baseTenSliderStop(mat: BaseTenMat, place: number, direction: -1 | 1): { ok: true; steps: BaseTenStep[]; mat: BaseTenMat } | { ok: false; reason: BaseTenRefusal } {
+  if (!hasTray(mat.columns, place)) return { ok: false, reason: "no_tray" };
+  const steps: BaseTenStep[] = [];
+  let current = mat;
+  const tap = (kind: BaseTenTap["kind"], at: number): BaseTenRefusal | undefined => {
+    const result = applyBaseTenTap(current, { kind, place: at });
+    if (!result.ok) return result.reason;
+    current = result.mat;
+    steps.push({ tap: { kind, place: at }, mat: current });
+    return undefined;
+  };
+  let refused: BaseTenRefusal | undefined;
+  if (direction < 0) {
+    while (!refused && current.trays[place]! < BASE_TEN_TRADE_LIMITS.tray) refused = tap("gather", place);
+    refused ??= tap("make", place);
+    if (!refused && current.counts[place + 1]! > drawnMost(mat.columns, place + 1)) refused = "no_room";
+  } else {
+    while (!refused && current.trays[place]! > 0) refused = tap("ungather", place);
+    refused ??= tap("break", place + 1);
+    while (!refused && current.trays[place]! > 0) refused = tap("ungather", place);
+  }
+  return refused ? { ok: false, reason: refused } : { ok: true, steps, mat: current };
+}
+
+/** Every stop a slider on a place's count can reach, in one direction, nearest first. */
+function sliderStops(mat: BaseTenMat, place: number, direction: -1 | 1): Array<{ steps: BaseTenStep[]; mat: BaseTenMat }> {
+  const stops: Array<{ steps: BaseTenStep[]; mat: BaseTenMat }> = [];
+  let current = mat;
+  let steps: BaseTenStep[] = [];
+  // A place never holds more than 59, so at most six stops each way.
+  for (let i = 0; i < 6; i += 1) {
+    const stop = baseTenSliderStop(current, place, direction);
+    if (!stop.ok) break;
+    steps = [...steps, ...stop.steps];
+    current = stop.mat;
+    stops.push({ steps, mat: current });
+  }
+  return stops;
+}
+
+/**
+ * Moves a slider on a place's count toward a value, one trade per stop (amendment 4). A stop the rules
+ * refuse cannot be reached, so the slider settles on the reachable stop nearest the value (the nearer to
+ * where it was on a tie). Returns each tap made, in order, with the mat it leaves; no taps when it stays.
+ */
+export function baseTenSliderMove(mat: BaseTenMat, place: number, value: number): { steps: BaseTenStep[]; mat: BaseTenMat } {
+  const count = mat.counts[place];
+  if (count === undefined || !Number.isFinite(value) || !hasTray(mat.columns, place)) return { steps: [], mat };
+  let best = { steps: [] as BaseTenStep[], mat, distance: Math.abs(value - count) };
+  for (const direction of [-1, 1] as const) {
+    if (Math.sign(value - count) !== direction) continue;
+    for (const stop of sliderStops(mat, place, direction)) {
+      const distance = Math.abs(value - stop.mat.counts[place]!);
+      if (distance < best.distance) best = { ...stop, distance };
+    }
+  }
+  return { steps: best.steps, mat: best.mat };
+}
+
+/** The lowest and highest count a slider on a place's count can reach from this mat: its track, ten apart. */
+export function baseTenSliderTrack(mat: BaseTenMat, place: number): { min: number; max: number } {
+  const count = mat.counts[place] ?? 0;
+  if (!hasTray(mat.columns, place)) return { min: count, max: count };
+  return {
+    min: sliderStops(mat, place, -1).at(-1)?.mat.counts[place] ?? count,
+    max: sliderStops(mat, place, 1).at(-1)?.mat.counts[place] ?? count,
+  };
+}
+
+/**
+ * Every mat the sliders on these places can reach from a mat, the mat itself first: an exact search over
+ * trades, so a task's target is checked against the piles a learner can make.
+ */
+export function baseTenSliderReachable(mat: BaseTenMat, places: readonly number[]): BaseTenMat[] {
+  const key = (state: BaseTenMat) => `${state.counts.join(",")}/${state.trays.join(",")}`;
+  const seen = new Set([key(mat)]);
+  const found = [mat];
+  for (let i = 0; i < found.length; i += 1) {
+    for (const place of places) {
+      for (const direction of [-1, 1] as const) {
+        const stop = baseTenSliderStop(found[i]!, place, direction);
+        if (!stop.ok || seen.has(key(stop.mat))) continue;
+        seen.add(key(stop.mat));
+        found.push(stop.mat);
+      }
+    }
+  }
+  return found;
+}
+
+/** A card's content showing this mat: each place's count and tray replaced (a frame of a slider's trades). */
+export function baseTenContentWith<T>(raw: T, mat: BaseTenMat): T {
+  const content = structuredClone(raw) as { places?: Array<{ count?: number; tray?: number }> };
+  for (const [p, item] of (Array.isArray(content.places) ? content.places : []).entries()) {
+    if (!item || p >= mat.columns) continue;
+    item.count = mat.counts[p]!;
+    if (p < mat.trays.length) item.tray = mat.trays[p]!;
+  }
+  return content as T;
 }
 
 /** The mat's language from its content: Chinese when it says so, else US English. */

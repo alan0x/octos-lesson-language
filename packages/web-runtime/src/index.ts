@@ -153,4 +153,6 @@ export {
   mountVariableControls,
   variableControlModels,
   type VariableControlModel,
+  type VariableControlOptions,
 } from "./variable-controls.js";
+export { cardSliderTarget, type CardSliderTarget } from "./card-slider.js";

@@ -5,7 +5,10 @@ import {
   type NumberLineContent,
 } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_FEATURE, FRACTION_MODEL_KIND, FRACTION_MODEL_PLUGIN_VERSION } from "../../plugin-math/src/fraction-model.js";
-import { BASE_TEN_TRADE_FEATURE, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_LANGUAGE_VERSION, BASE_TEN_TRADE_PLUGIN_VERSION } from "../../plugin-math/src/base-ten-trade.js";
+import {
+  BASE_TEN_TRADE_FEATURE, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_LANGUAGE_VERSION, BASE_TEN_TRADE_PLUGIN_VERSION,
+  BASE_TEN_TRADE_SLIDER_FEATURE, BASE_TEN_TRADE_SLIDER_VERSION, baseTenSliderPlace,
+} from "../../plugin-math/src/base-ten-trade.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
@@ -88,7 +91,12 @@ export interface ExecutionExtension {
    * outside these events (already on the board), so a detector must then
    * judge from the content alone.
    */
-  detect?(content: Readonly<Record<string, unknown>>, kind: string | undefined, use: (feature: string) => void): void;
+  detect?(content: Readonly<Record<string, unknown>>, kind: string | undefined, use: (feature: string) => void, lesson?: ExecutionLessonContext): void;
+}
+
+/** What a detector may read of the lesson besides the content: its variables, with any control. */
+export interface ExecutionLessonContext {
+  variables: ReadonlyArray<{ as: string; control?: { kind: string; step?: number } }>;
 }
 
 export interface ExecutionOptions {
@@ -110,8 +118,8 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION },
-    detect(content, kind, use) {
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION },
+    detect(content, kind, use, lesson) {
       if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
         use(NUMBER_LINE_FEATURE);
         if (usesJumpLanes(content as unknown as NumberLineContent)) use(NUMBER_LINE_JUMP_LANES_FEATURE);
@@ -121,6 +129,8 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
         use(BASE_TEN_TRADE_FEATURE);
         // Only a mat that names its language needs a player that reads it (amendment 3).
         if (content.language !== undefined) use(BASE_TEN_TRADE_LANGUAGE_FEATURE);
+        // A slider on a place's count moves by trades (amendment 4); an older player would write the count directly.
+        if (lesson?.variables.some((variable) => variable.control?.kind === "slider" && baseTenSliderPlace(content, variable.as) !== undefined)) use(BASE_TEN_TRADE_SLIDER_FEATURE);
       }
     },
   },
@@ -200,6 +210,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
   const required = new Set<string>();
   // Node kinds created in these events, so revisions reach detectors with their kind.
   const kinds = new Map<string, string>();
+  // The lesson's variables, from its opening event, for detectors that read a card's bound controls.
+  const lesson: ExecutionLessonContext = { variables: events.flatMap((event) => event.lesson?.variables ?? []) };
   const add = (feature: string, path: string) => {
     // A first-party plugin feature is known even when that plugin is left out,
     // so the player's check can say which plugin is missing.
@@ -210,7 +222,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
   };
   const content = (value: Record<string, unknown> | undefined, path: string, kind?: string) => {
     if (!value) return;
-    for (const extension of extensions) extension.detect?.(value, kind, (feature) => add(feature, path));
+    for (const extension of extensions) extension.detect?.(value, kind, (feature) => add(feature, path), lesson);
     if (Array.isArray(value.regular_polygons) && value.regular_polygons.length) add("geometry:regular-polygons", path);
     if (Array.isArray(value.highlights) && value.highlights.some((highlight) => (highlight as { shown?: unknown }).shown === "when_emphasized")) add("scene3d:latent-highlights", path);
     if (Array.isArray(value.objects) && value.objects.some((object) => object.face_targets === true)) add("scene3d:face-targets", path);

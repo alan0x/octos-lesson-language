@@ -1,5 +1,9 @@
 import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
-import { applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
+import {
+  applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, baseTenSliderMove,
+  type BaseTenMat, type BaseTenRefusal, type BaseTenStep, type BaseTenTap,
+} from "../../plugin-math/src/base-ten-trade.js";
+import { cardSliderAliases, cardSliderTarget, type CardSliderTarget } from "./card-slider.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -392,7 +396,13 @@ export class BrowserLessonSession {
     control: StudentVariableOperationContext["control"];
     input: StudentVariableOperationContext["input"];
     accepted: boolean;
+    /** A slider on a card's count (decision 0023 amendment 4): its moves are trades, each tap logged. */
+    card?: CardSliderTarget;
   }>();
+  /** The variables whose slider trades on a card (amendment 4), by the number of events they were read from. */
+  private cardSliderCache?: { events: number; aliases: Set<string> };
+  /** Taps a card's slider made since the board last drew them, per card, so it animates each trade. */
+  private readonly cardSliderSteps = new Map<string, BaseTenStep[]>();
   private readonly pendingStudentScene3dOperations = new Map<string, {
     sequence: number;
     nodeId: string;
@@ -802,12 +812,13 @@ export class BrowserLessonSession {
         this.phaseState.epoch += 1;
         // A card task's practice pile is laid again when the lesson ends again (review of #87): after a
         // replay the board holds the lesson's pile, which the narration has already answered.
-        const cardPractice = this.studentTaskDefinitions.filter((task) => task.completion.kind === "card_fact").map((task) => `practice:${task.as}:`);
+        const cardPractice = this.studentTaskDefinitions.filter((task) => task.completion.kind === "card_fact" || this.tradesOnCard(task)).map((task) => `practice:${task.as}:`);
         this.phaseState.ready = this.phaseState.ready.filter(key => !key.startsWith("playback:") && !cardPractice.some((prefix) => key.startsWith(prefix)));
       }
       this.freezeScheduledDelay();
       this.discardScheduledDelay();
       this.playing = false;
+      this.cardSliderSteps.clear();
       this.followAppends = false;
       this.narrationRemainingBaseMs = undefined;
       this.startedExternalNarrationBeatId = undefined;
@@ -899,6 +910,7 @@ export class BrowserLessonSession {
     this.seekAttentionTargets = [];
     this.discardVariableAnimation();
     this.pendingStudentVariableOperations.clear();
+    this.cardSliderSteps.clear();
     this.store.remove(this.storageKey);
     this.player = new HeadlessLessonPlayer(this.events, { allowIncomplete: this.options.incremental });
     this.currentFrame = undefined;
@@ -954,7 +966,39 @@ export class BrowserLessonSession {
   }
 
   setVariable(alias: string, value: number): void {
+    // A slider on a card's count trades, and only while a task allows it (decision 0023 amendment 4).
+    if (this.isCardSlider(alias)) {
+      const card = cardSliderTarget(this.player.snapshot.board, alias);
+      if (card && this.cardSliderLive(alias)) this.moveCardSlider(card, value, "unknown");
+      else this.emit();
+      return;
+    }
     this.applyManualVariable(alias, value);
+  }
+
+  /** Whether this variable's slider trades on a card the lesson writes (amendment 4), drawn yet or not. */
+  private isCardSlider(alias: string): boolean {
+    if (this.cardSliderCache?.events !== this.events.length) this.cardSliderCache = { events: this.events.length, aliases: cardSliderAliases(this.events) };
+    return this.cardSliderCache.aliases.has(alias);
+  }
+
+  /**
+   * Whether the learner may move this variable's slider now. A slider on a card's count (decision 0023
+   * amendment 4) is live only while the open task allows it, so it never changes the pile a lesson's own
+   * tap meets; any other slider is live as before.
+   */
+  studentVariableLive(alias: string): boolean {
+    return !this.isCardSlider(alias) || this.cardSliderLive(alias);
+  }
+
+  /**
+   * The taps a card's slider made since this was last asked, each with the mat it leaves, and forgets them:
+   * the board animates each trade from them, one after another (decision 0023 amendment 4).
+   */
+  takeStudentCardSteps(nodeId: string): BaseTenStep[] {
+    const steps = this.cardSliderSteps.get(nodeId) ?? [];
+    this.cardSliderSteps.delete(nodeId);
+    return structuredClone(steps);
   }
 
   /**
@@ -975,6 +1019,12 @@ export class BrowserLessonSession {
     }
     if (!["mouse", "touch", "pen", "keyboard", "unknown"].includes(context.input)) {
       throw new Error(`Unsupported student input method '${String(context.input)}'`);
+    }
+    // A card's count moves only by its slider while a task allows it; a reset restores the pile directly.
+    const card = context.control === "reset" || !this.isCardSlider(alias) ? undefined : cardSliderTarget(this.player.snapshot.board, alias);
+    if (context.control !== "reset" && this.isCardSlider(alias) && (!card || context.control !== "slider" || !this.cardSliderLive(alias))) {
+      this.emit();
+      return "";
     }
     const requestedId = context.operationId?.trim();
     if (context.operationId !== undefined && (!requestedId || requestedId.length > 256)) {
@@ -1017,23 +1067,26 @@ export class BrowserLessonSession {
       control: context.control,
       input: context.input,
       accepted: false,
+      ...(card ? { card } : {}),
     });
     return id;
   }
 
   updateStudentVariableOperation(operationId: string, value: number): void {
-    if (this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return;
+    if (!operationId || this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return;
     if (this.studentOperationLog.operations.some((operation) => operation.id === operationId)) return;
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
-    pending.accepted = this.applyManualVariable(pending.alias, value, true) || pending.accepted;
+    pending.accepted = (pending.card
+      ? this.moveCardSlider(pending.card, value, pending.input, true)
+      : this.applyManualVariable(pending.alias, value, true)) || pending.accepted;
   }
 
   commitStudentVariableOperation(
     operationId: string,
     value?: number,
   ): StudentVariableOperation | undefined {
-    if (this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return undefined;
+    if (!operationId || this.failureState || this.phaseState.transition || this.invalidatedStudentOperations.has(operationId)) return undefined;
     const completed = this.studentOperationLog.operations.find((operation) => operation.id === operationId);
     if (completed) {
       if (completed.kind !== "variable_change") {
@@ -1043,7 +1096,11 @@ export class BrowserLessonSession {
     }
     const pending = this.pendingStudentVariableOperations.get(operationId);
     if (!pending) throw new Error(`Student operation '${operationId}' has not started`);
-    if (value !== undefined) pending.accepted = this.applyManualVariable(pending.alias, value) || pending.accepted;
+    if (value !== undefined) {
+      pending.accepted = (pending.card
+        ? this.moveCardSlider(pending.card, value, pending.input)
+        : this.applyManualVariable(pending.alias, value)) || pending.accepted;
+    }
     if (this.failureState) return undefined;
     const after = this.player.snapshot.board?.variables?.[pending.alias]?.value;
     this.pendingStudentVariableOperations.delete(operationId);
@@ -1054,7 +1111,8 @@ export class BrowserLessonSession {
       profile: "octos.student.operation",
       version: "0.1",
       id: operationId,
-      sequence: pending.sequence,
+      // A card slider's gesture follows the trades it logged, so the log replays in order (amendment 4).
+      sequence: pending.card ? this.nextStudentOperationSequence++ : pending.sequence,
       lesson_id: this.player.snapshot.lesson_id,
       kind: "variable_change",
       target: { kind: "lesson_variable", alias: pending.alias },
@@ -1308,14 +1366,7 @@ export class BrowserLessonSession {
     const before = baseTenMat(node.content);
     const result = applyBaseTenTap(before, tap);
     if (!result.ok) return { refused: result.reason, message: baseTenRefusalText(result.reason, tap.place, baseTenLanguage(node.content)) };
-    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
-    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
-      .map((binding) => [binding.target, binding.expression.trim()]));
-    const changes = baseTenChanges(before, result.mat).map((change) => {
-      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
-      if (!alias || !this.player.snapshot.board?.variables?.[alias]) throw new Error(`Card '${nodeId}' has no variable for ${change.field} of place ${change.place}`);
-      return { alias, before: change.before, after: change.after };
-    });
+    const changes = this.cardChanges(nodeId, before, result.mat);
     try {
       this.player.setVariables(Object.fromEntries(changes.map((change) => [change.alias, change.after])));
     } catch (error) {
@@ -1341,6 +1392,86 @@ export class BrowserLessonSession {
     this.persist();
     this.emit();
     return { operation: structuredClone(operation) };
+  }
+
+  /** Whether the open task lets the learner move this card count's slider (decision 0023 amendment 4). */
+  private cardSliderLive(alias: string): boolean {
+    if (this.failureState || !this.studentTaskWindowOpen || !cardSliderTarget(this.player.snapshot.board, alias)) return false;
+    const active = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find((task) => task.as === active?.task_id);
+    return (definition?.allowed_operations as Array<{ kind: string; variable?: string; controls?: string[] }> | undefined)
+      ?.some((operation) => operation.kind === "variable_change" && operation.variable === alias && operation.controls?.includes("slider")) ?? false;
+  }
+
+  /** Whether a task lets the learner trade with a slider on a card's count. */
+  private tradesOnCard(task: AuthoringStudentTask): boolean {
+    return (task.allowed_operations as Array<{ kind: string; variable?: string }>).some((operation) => operation.kind === "variable_change"
+      && operation.variable !== undefined && cardSliderTarget(this.player.snapshot.board, operation.variable) !== undefined);
+  }
+
+  /** The lesson variables a change of the card's mat writes, each with its value before and after. */
+  private cardChanges(nodeId: string, before: BaseTenMat, after: BaseTenMat): Array<{ alias: string; before: number; after: number }> {
+    const node = this.player.snapshot.board?.nodes?.[nodeId];
+    const places = (Array.isArray(node?.content?.places) ? node.content.places : []) as Array<{ id?: string }>;
+    const bound = new Map(((node?.content?.bindings ?? []) as Array<{ target: string; expression: string }>)
+      .map((binding) => [binding.target, binding.expression.trim()]));
+    return baseTenChanges(before, after).map((change) => {
+      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
+      if (!alias || !this.player.snapshot.board?.variables?.[alias]) throw new Error(`Card '${nodeId}' has no variable for ${change.field} of place ${change.place}`);
+      return { alias, before: change.before, after: change.after };
+    });
+  }
+
+  /**
+   * Moves a slider on a card's count toward a value (decision 0023 amendment 4). Each stop is one trade made
+   * by the card's own tap rules, never a direct write: down, ten of the place gather into its tray and make
+   * one of the next place; up, one of the next place breaks into the tray and the ten are taken out. A stop
+   * the rules refuse cannot be reached, so the slider settles on the nearest stop it can. Every tap is
+   * logged as a `card_tap` (`control: "slider"`), so replaying the log through the tap rules makes the same
+   * pile; the board is given each tap to animate. Returns whether the pile changed.
+   */
+  private moveCardSlider(card: CardSliderTarget, value: number, input: StudentInputMethod, duringDrag = false): boolean {
+    if (this.failureState || this.phaseState.transition) return false;
+    const node = this.player.snapshot.board?.nodes?.[card.nodeId];
+    if (!node || node.kind !== "base_ten_trade") return false;
+    const before = baseTenMat(node.content);
+    const move = baseTenSliderMove(before, card.place, value);
+    if (!move.steps.length) {
+      // The thumb settles back on the stop the pile is at; a gesture's end saves the pile its drag left.
+      if (!duringDrag) this.persist();
+      this.emit();
+      return false;
+    }
+    let operations: StudentCardTapOperation[];
+    try {
+      let mat = before;
+      let sequence = this.nextStudentOperationSequence;
+      operations = move.steps.map((step) => {
+        const changes = this.cardChanges(card.nodeId, mat, step.mat);
+        mat = step.mat;
+        return {
+          profile: "octos.student.operation", version: "0.1",
+          id: `${this.player.snapshot.lesson_id}:card-tap:${sequence}`, sequence: sequence++,
+          lesson_id: this.player.snapshot.lesson_id, kind: "card_tap",
+          target: { kind: "card_node", node_id: card.nodeId },
+          tap: { kind: step.tap.kind, place: step.tap.place }, changes, input, control: "slider",
+        };
+      });
+      this.player.setVariables(Object.fromEntries(this.cardChanges(card.nodeId, before, move.mat).map((change) => [change.alias, change.after])));
+      this.nextStudentOperationSequence = sequence;
+    } catch (error) {
+      this.reportFailure("input", error);
+      return false;
+    }
+    this.studentOperationLog.operations.push(...operations);
+    this.persistStudentOperations();
+    const steps = [...(this.cardSliderSteps.get(card.nodeId) ?? []), ...move.steps];
+    // A host that never draws them keeps only the latest few trades.
+    this.cardSliderSteps.set(card.nodeId, steps.slice(-240));
+    if (duringDrag) this.persistDuringDrag();
+    else this.persist();
+    this.emit();
+    return true;
   }
 
   /**
@@ -1455,8 +1586,9 @@ export class BrowserLessonSession {
     this.suppressStudentTaskEvaluation = true;
     try {
       if (definition.completion.kind === "expression_target") {
-        const variables = [...new Set(definition.allowed_operations.flatMap((operation) =>
-          operation.kind === "variable_change" ? [operation.variable] : []))];
+        const allowed = definition.allowed_operations.flatMap((operation) => operation.kind === "variable_change" ? [operation.variable] : []);
+        // A card's count is reset with its whole pile: every count and tray of the card (amendment 4).
+        const variables = [...new Set(allowed.flatMap((alias) => [alias, ...(cardSliderTarget(this.player.snapshot.board, alias)?.variables.values() ?? [])]))];
         for (const alias of variables) {
           const initial = this.player.snapshot.board?.variables?.[alias]?.initial;
           if (Number.isFinite(initial)) this.changeStudentVariable(alias, initial as number, { control: "reset", input });
@@ -1589,6 +1721,7 @@ export class BrowserLessonSession {
       return;
     }
     this.player.setVariables(initial);
+    this.cardSliderSteps.clear();
     for (const id of this.pendingStudentVariableOperations.keys()) this.invalidatedStudentOperations.add(id);
     this.pendingStudentVariableOperations.clear();
     this.pendingStudentScene3dOperations.clear();

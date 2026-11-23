@@ -14,8 +14,8 @@
  * lesson is playing, or no open task lets the learner tap it) the same picture is drawn without tap cues.
  */
 import {
-  BASE_TEN_TRADE_PLACES, BASE_TEN_WORDS, baseTenLanguage, baseTenLooseAt, baseTenMat, baseTenTrayAt, hasTray, planBaseTenTrade,
-  type BaseTenLanguage, type BaseTenMat, type BaseTenTap, type BaseTenTradePlan,
+  BASE_TEN_TRADE_PLACES, BASE_TEN_WORDS, baseTenContentWith, baseTenLanguage, baseTenLooseAt, baseTenMat, baseTenTrayAt, hasTray, planBaseTenTrade,
+  type BaseTenLanguage, type BaseTenMat, type BaseTenStep, type BaseTenTap, type BaseTenTradePlan,
 } from "./base-ten-trade.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -77,6 +77,27 @@ function moving(unit: SVGGElement): void {
 }
 /** How long a fuse or a split takes; matches the stylesheet's opacity transition. */
 const FUSE_MS = 450;
+/** Between two units a slider's trade puts into (or takes out of) a tray: they stream, as quick taps do. */
+const STREAM_MS = 70;
+
+/**
+ * The frames of a slider's trades (decision 0023 amendment 4): the card's content at each tap's mat, with
+ * that tap as the step that animates it. Drawn one after another, each trade looks as the taps do.
+ */
+export function baseTenStepFrames(raw: Record<string, unknown>, steps: readonly BaseTenStep[]): Array<{ content: Record<string, unknown>; step: { tap: BaseTenTap } }> {
+  return steps.map((step) => ({ content: baseTenContentWith(raw, step.mat), step: { tap: step.tap } }));
+}
+
+/**
+ * How long to wait after drawing a slider's tap before the next: units stream into or out of a tray, land
+ * before ten are made into one or a unit is broken, and a made or broken unit fuses or splits and moves
+ * before the next trade begins.
+ */
+export function baseTenStepDelay(tap: BaseTenTap, next?: BaseTenTap): number {
+  if (tap.kind === "make") return FUSE_MS + MOVE_MS;
+  if (tap.kind === "break") return FUSE_MS + MOVE_MS / 2;
+  return next && next.kind === tap.kind && next.place === tap.place ? STREAM_MS : MOVE_MS;
+}
 
 function setTappable(target: SVGElement, tap: string | undefined, label: string, live: boolean): void {
   if (tap) target.dataset.ollTap = tap; else delete target.dataset.ollTap;

@@ -1,5 +1,7 @@
 import type { SemanticBoardState } from "../../core/src/index.js";
 import type { PlaybackVariableAnimation } from "../../player-core/src/index.js";
+import { baseTenMat, baseTenSliderTrack } from "../../plugin-math/src/base-ten-trade.js";
+import { cardSliderTarget } from "./card-slider.js";
 import {
   studentInputMethod,
   type StudentInputMethod,
@@ -14,12 +16,38 @@ export interface VariableControlModel {
   max: number;
   step: number;
   unit?: string;
+  /** A slider on a card's count that no open task lets the learner move now (decision 0023 amendment 4). */
+  disabled?: boolean;
 }
 
-export function variableControlModels(board: SemanticBoardState | null): VariableControlModel[] {
+export interface VariableControlOptions {
+  /**
+   * Whether the learner may move this slider now (the session's `studentVariableLive`). A slider on a card's
+   * count is drawn disabled when it may not; without this it is drawn enabled and the session still refuses.
+   */
+  live?(alias: string): boolean;
+}
+
+export function variableControlModels(board: SemanticBoardState | null, options: VariableControlOptions = {}): VariableControlModel[] {
   if (!board?.variables) return [];
-  return Object.entries(board.variables).flatMap(([alias, variable]) => {
+  return Object.entries(board.variables).flatMap(([alias, variable]): VariableControlModel[] => {
     if (variable.control?.kind !== "slider") return [];
+    // A slider on a card's count stops only where trades can take it (amendment 4): its track runs from the
+    // lowest to the highest count the card's rules reach from this pile, ten apart (6, 16, 26, not 0, 10, 20).
+    const card = cardSliderTarget(board, alias);
+    if (card) {
+      const track = baseTenSliderTrack(baseTenMat(board.nodes[card.nodeId]?.content ?? {}), card.place);
+      return [{
+        alias,
+        label: variable.label ?? alias,
+        value: variable.value,
+        min: Math.min(track.min, variable.value),
+        max: Math.max(track.max, variable.value),
+        step: variable.control.step!,
+        ...(variable.unit ? { unit: variable.unit } : {}),
+        disabled: !(options.live?.(alias) ?? true),
+      }];
+    }
     return [{
       alias,
       label: variable.label ?? alias,
@@ -28,6 +56,8 @@ export function variableControlModels(board: SemanticBoardState | null): Variabl
       max: variable.max,
       step: variable.control.step ?? (variable.max - variable.min) / 100,
       ...(variable.unit ? { unit: variable.unit } : {}),
+      // A slider on a card's count before its card is drawn, for one.
+      ...(options.live && !options.live(alias) ? { disabled: true } : {}),
     }];
   });
 }
@@ -71,8 +101,9 @@ export class VariableControlsView {
   render(
     board: SemanticBoardState | null,
     animation?: PlaybackVariableAnimation,
+    options: VariableControlOptions = {},
   ): void {
-    const models = variableControlModels(board);
+    const models = variableControlModels(board, options);
     const aliases = models.map((model) => model.alias).join("|");
     if (aliases !== this.aliases) {
       this.aliases = aliases;
@@ -88,6 +119,7 @@ export class VariableControlsView {
       input.max = String(model.max);
       input.step = String(model.step);
       input.value = String(model.value);
+      input.disabled = model.disabled === true;
       output.textContent = formatVariableValue(model.value, model.unit);
       control.classList.toggle("animating", animation?.variable === model.alias);
     }

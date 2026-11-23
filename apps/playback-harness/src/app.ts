@@ -113,6 +113,8 @@ boardView.setVariableInputHandler(handleStudentVariableInput);
 boardView.setCardTapHandler({
   live: (nodeId) => session?.studentCardLive(nodeId) ?? false,
   tap: (nodeId, tap, input) => session.tapStudentCard(nodeId, tap, input),
+  // A slider on the card's count trades (decision 0023 amendment 4); the card animates each trade.
+  takeSteps: (nodeId) => session.takeStudentCardSteps(nodeId),
 });
 const variableControls = mountVariableControls(
   requireElement("#variable-controls"),
@@ -249,7 +251,7 @@ function render(): void {
   const operation = session.currentOperation;
   boardView.setScene3dViews(session.scene3dViews);
   boardView.render(projection.board, operation);
-  variableControls.render(projection.board, session.activeVariableAnimation);
+  variableControls.render(projection.board, session.activeVariableAnimation, { live: (alias) => session.studentVariableLive(alias) });
   const title = events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL Lesson";
   requireElement("#lesson-title").textContent = title;
   const status = session.status;

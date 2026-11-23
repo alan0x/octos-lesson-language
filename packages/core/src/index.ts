@@ -11,7 +11,10 @@ import { NUMERIC_ROW_LIMITS, isSimplestFraction, numericRowBlankCompletion, pars
 import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
-import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
+import {
+  BASE_TEN_SLIDER_STEP, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenBoundField, baseTenChanges,
+  baseTenMat, baseTenRefusalText, baseTenSliderPlace, baseTenSliderReachable, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName,
+} from "../../plugin-math/src/base-ten-trade.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -386,6 +389,8 @@ export function baseTenTapVariables(
   content: JsonObject,
   declarations: readonly AuthoringVariable[],
   path: string,
+  /** Who writes the fields, for the messages: a tap, or a slider on a count (decision 0023 amendment 4). */
+  writer = "Tapping a card",
 ): Map<string, string> {
   const columns = content.columns === 3 ? 3 : 2;
   const bindings = new Map<string, string>();
@@ -403,12 +408,12 @@ export function baseTenTapVariables(
       const alias = bindings.get(target);
       const declaration = declarations.find((variable) => variable.as === alias);
       if (!alias || !declaration) {
-        fail("OLL_INVALID_STUDENT_TASK", path, `Tapping a card needs '${target}' bound to its own lesson variable`);
+        fail("OLL_INVALID_STUDENT_TASK", path, `${writer} needs '${target}' bound to its own lesson variable`);
       }
       if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
       used.add(alias);
       if (declaration.min !== 0 || declaration.max !== most || declaration.wrap) {
-        fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from 0 to ${most}, the most a tap can make`);
+        fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from 0 to ${most}, the most a trade can make`);
       }
       result.set(target, alias);
     }
@@ -437,6 +442,7 @@ function validateCardStudentTask(
   declarations: readonly AuthoringVariable[],
   startValues: Record<string, number>,
   availableControls: Map<string, Set<string>>,
+  cardSliders: ReadonlyMap<string, CardSlider>,
 ): void {
   const completion = task.completion;
   resolveLocal(registry, completion.node, `${path}/completion/node`, ["node"]);
@@ -444,16 +450,22 @@ function validateCardStudentTask(
   if (!content) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, "A card_fact task reads a base_ten_trade card");
   if (completion.fact !== "no_trade_left") fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
   requireArray(task.allowed_operations, `${path}/allowed_operations`);
-  const kinds = task.allowed_operations.map((operation) => operation?.kind).sort();
-  if (task.allowed_operations.length !== 2 || kinds[0] !== "card_submit" || kinds[1] !== "card_tap"
-    || task.allowed_operations.some((operation) => operation.kind === "card_tap" && operation.node !== completion.node)) {
-    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), nothing else");
+  // Besides its taps and "done", a card task may let the learner trade with its counts' sliders (amendment 4).
+  const operations = task.allowed_operations as Array<{ kind?: unknown; node?: unknown; variable?: unknown; controls?: unknown }>;
+  const count = (kind: string) => operations.filter((operation) => operation?.kind === kind).length;
+  const sliders = operations.filter((operation) => operation?.kind === "variable_change");
+  if (count("card_tap") !== 1 || count("card_submit") !== 1 || count("card_tap") + count("card_submit") + sliders.length !== operations.length
+    || operations.some((operation) => operation.kind === "card_tap" && operation.node !== completion.node)
+    || sliders.some((operation) => cardSliders.get(String(operation.variable))?.card !== completion.node
+      || !Array.isArray(operation.controls) || operation.controls.length !== 1 || operation.controls[0] !== "slider")
+    || new Set(sliders.map((operation) => operation.variable)).size !== sliders.length) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), and may allow a slider on its counts (variable_change with controls [\"slider\"]), nothing else");
   }
   const variables = baseTenTapVariables(content, declarations, `${path}/completion/node`);
-  // Only taps change the card's counts while its task is open (review of #87): no slider or point moves
-  // them, so a tap never meets a pile its rules do not keep, and no count leaves its range.
+  // Only taps and the card's own trade sliders change its counts while its task is open (review of #87;
+  // amendment 4), so a tap never meets a pile its rules do not keep, and no count leaves its range.
   for (const alias of variables.values()) {
-    if (declarations.find((variable) => variable.as === alias)?.control || availableControls.get(alias)?.size) {
+    if ((declarations.find((variable) => variable.as === alias)?.control || availableControls.get(alias)?.size) && cardSliders.get(alias)?.card !== completion.node) {
       fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `Variable '${alias}' is changed only by tapping the card; it cannot have its own control`);
     }
   }
@@ -594,6 +606,84 @@ function validateReflections(document: AuthoringLesson, registry: Registry): voi
   });
 }
 
+/** A lesson variable whose slider moves a card's count by trades (decision 0023 amendment 4). */
+interface CardSlider { card: string; place: number }
+
+/**
+ * The lesson variables that take a slider on a card's count (amendment 4). A variable bound bare to a
+ * trading card's field may have a control only as such a slider: on the count of a place with a tray, of
+ * step ten, and no other control; the card then has every count and tray bound, since each stop is a trade.
+ */
+function cardSliderVariables(
+  document: AuthoringLesson,
+  contents: ReadonlyMap<string, JsonObject>,
+  availableControls: ReadonlyMap<string, ReadonlySet<string>>,
+): Map<string, CardSlider> {
+  const sliders = new Map<string, CardSlider>();
+  const declarations = document.lesson.variables ?? [];
+  for (const [card, content] of contents) {
+    for (const [index, declaration] of declarations.entries()) {
+      const bound = baseTenBoundField(content, declaration.as);
+      const controls = [...(availableControls.get(declaration.as) ?? [])];
+      if (!bound || (!declaration.control && !controls.length)) continue;
+      const path = `/lesson/variables/${index}`;
+      const target = `${BASE_TEN_TRADE_PLACES[bound.place]}.${bound.field}`;
+      const place = baseTenSliderPlace(content, declaration.as);
+      if (place === undefined) {
+        fail("OLL_INVALID_VARIABLE", path, `Variable '${declaration.as}' (${target}) cannot have a control: only the count of a place with a tray takes a slider, and it moves by trades`);
+      }
+      if (declaration.control?.kind !== "slider" || declaration.control.step !== BASE_TEN_SLIDER_STEP || controls.some((control) => control !== "slider")) {
+        fail("OLL_INVALID_VARIABLE", path, `Variable '${declaration.as}' (${target}) takes only a slider of step ${BASE_TEN_SLIDER_STEP}: each stop is one trade`);
+      }
+      if (sliders.has(declaration.as)) fail("OLL_INVALID_VARIABLE", path, `Variable '${declaration.as}' is a count of two cards; a slider trades on one card`);
+      baseTenTapVariables(content, declarations, path, "A slider on a card's count");
+      sliders.set(declaration.as, { card, place });
+    }
+  }
+  return sliders;
+}
+
+/**
+ * Checks an expression task on a card's count sliders and returns every pile they can make by trades from
+ * the task's starting pile (its start values, else the lesson's initial values), as tap-variable values.
+ */
+function cardSliderTask(
+  task: AuthoringVariableStudentTask,
+  path: string,
+  allowedVariables: ReadonlySet<string>,
+  cardSliders: ReadonlyMap<string, CardSlider>,
+  contents: ReadonlyMap<string, JsonObject>,
+  declarations: readonly AuthoringVariable[],
+  startValues: Record<string, number>,
+): { piles: Array<Record<string, number>> } {
+  const cards = new Set([...allowedVariables].map((alias) => cardSliders.get(alias)?.card));
+  if (cards.size !== 1 || cards.has(undefined)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A task on a card's count sliders allows only sliders on that card's counts");
+  }
+  for (const operation of task.allowed_operations) {
+    if (operation.controls.length !== 1 || operation.controls[0] !== "slider") {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card's count is moved only by its slider");
+    }
+  }
+  const content = contents.get([...cards][0]!)!;
+  const variables = baseTenTapVariables(content, declarations, `${path}/allowed_operations`, "A slider on a card's count");
+  if (task.start) {
+    const missing = [...variables.values()].filter((alias) => !Object.hasOwn(startValues, alias));
+    if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
+  }
+  const values = { ...Object.fromEntries(declarations.map((variable) => [variable.as, variable.initial])), ...startValues };
+  const pile = baseTenContentAt(content, variables, values);
+  validateBaseTenTradeContent(pile, "$", (failPath, detail) => fail("OLL_INVALID_STUDENT_TASK", task.start ? `${path}/start/values` : `${path}/allowed_operations`,
+    `The task's starting pile is not a starting pile: ${detail} (${failPath.replace(/^\$\//, "")})`));
+  const places = [...allowedVariables].map((alias) => cardSliders.get(alias)!.place);
+  const piles = baseTenSliderReachable(baseTenMat(pile), places).map((mat) => Object.fromEntries([...variables].map(([target, alias]) => {
+    const [name, field] = target.split(".") as [BaseTenPlaceName, "count" | "tray"];
+    const p = BASE_TEN_TRADE_PLACES.indexOf(name);
+    return [alias, field === "count" ? mat.counts[p]! : mat.trays[p]!];
+  })));
+  return { piles };
+}
+
 function validateStudentTasks(
   document: AuthoringLesson,
   variables: Map<string, number>,
@@ -602,6 +692,7 @@ function validateStudentTasks(
   registry: Registry,
   numberLineGrids: Map<string, NumberLineContent> = new Map(),
   baseTenTradeContents: Map<string, JsonObject> = new Map(),
+  cardSliders: ReadonlyMap<string, CardSlider> = new Map(),
 ): void {
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
@@ -636,7 +727,7 @@ function validateStudentTasks(
       continue;
     }
     if (task.completion.kind === "card_fact") {
-      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues, availableControls);
+      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues, availableControls, cardSliders);
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -675,6 +766,10 @@ function validateStudentTasks(
         controls.add(control);
       });
     });
+    // A slider on a card's count (amendment 4): the task trades on one card, from a whole starting pile.
+    const card = [...allowedVariables].some((alias) => cardSliders.has(alias))
+      ? cardSliderTask(expressionTask, path, allowedVariables, cardSliders, baseTenTradeContents, document.lesson.variables ?? [], startValues)
+      : undefined;
     const target = requireFiniteNumber(expressionTask.completion.value, `${path}/completion/value`);
     const tolerance = requireFiniteNumber(expressionTask.completion.tolerance, `${path}/completion/tolerance`);
     if (tolerance <= 0) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/tolerance`, "Task tolerance must be greater than zero");
@@ -700,7 +795,13 @@ function validateStudentTasks(
       if (Math.abs(initial - target) <= tolerance) {
         throw new Error("Task completion condition is already satisfied by the lesson's initial values");
       }
-      if (allowedVariables.size === 1) {
+      if (card) {
+        // An exact search over the piles the card's sliders can make by trades, never a sampled range.
+        if (!card.piles.some((values) => {
+          const actual = evaluate({ ...Object.fromEntries(variables), ...startValues, ...values });
+          return Number.isFinite(actual) && Math.abs(actual - target) <= tolerance;
+        })) throw new Error("No pile the card's sliders can make by trades from the task's starting pile satisfies the task completion condition");
+      } else if (allowedVariables.size === 1) {
         const [variableAlias] = allowedVariables;
         const declaration = document.lesson.variables?.find((variable) => variable.as === variableAlias);
         if (declaration) {
@@ -2120,14 +2221,18 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
 
   // A learner's slider or point on a tapped card's counts could leave a pile a later demonstration tap meets
   // differently than checked here (review of #89): those counts change only by taps.
+  // A slider on a card's count moves by trades and is live only while a task that allows it is open
+  // (amendment 4), so no learner changes the pile a demonstration tap meets.
+  const cardSliders = cardSliderVariables(document, baseTenTradeContents, availableStudentControls);
   for (const alias of tappedCards) {
     for (const variable of baseTenTapVariables(baseTenTradeContents.get(alias)!, document.lesson.variables ?? [], `/content`).values()) {
+      if (cardSliders.get(variable)?.card === alias) continue;
       if ((document.lesson.variables ?? []).find((declaration) => declaration.as === variable)?.control || availableStudentControls.get(variable)?.size) {
         fail("OLL_INVALID_VARIABLE", "/lesson/variables", `Variable '${variable}' is changed only by tapping the card; it cannot have its own control`);
       }
     }
   }
-  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, baseTenTradeContents);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, baseTenTradeContents, cardSliders);
   validateReflections(document, registry);
 
   if (document.close?.focus) {

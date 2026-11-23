@@ -6,8 +6,8 @@ import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
 import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
-import { renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
-import type { BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
+import { baseTenStepDelay, baseTenStepFrames, renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
+import { baseTenMat, type BaseTenMat, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
@@ -1538,7 +1538,15 @@ export type VariableInputHandler = StudentVariableInputHandler;
 export interface CardTapHandler {
   live(nodeId: string): boolean;
   tap(nodeId: string, tap: BaseTenTap, input: ReturnType<typeof studentInputMethod>): { operation: unknown } | { refused: string; message: string };
+  /**
+   * The taps a slider on the card's count made since last asked, each with the mat it leaves, forgotten once
+   * returned (the session's `takeStudentCardSteps`; decision 0023 amendment 4). The card animates each trade
+   * from them, one after another. Without it a slider's trades place the units directly.
+   */
+  takeSteps?(nodeId: string): BaseTenStep[];
 }
+
+const matKey = (mat: BaseTenMat): string => `${mat.columns}:${mat.counts.join(",")}/${mat.trays.join(",")}`;
 
 export function angleControlValue(
   rawAngle: number,
@@ -1909,6 +1917,19 @@ export class InfiniteBoardView {
   private readonly cardNotices = new Map<string, string>();
   /** The tap that made a card's next state, so the card animates it; used once. */
   private readonly cardSteps = new Map<string, NonNullable<BaseTenTradeViewContext["step"]>>();
+  /**
+   * A slider's trades a card is still drawing, a tap at a time (decision 0023 amendment 4): the frames left,
+   * the pile they end on, and the card's state of play for the next frame.
+   */
+  private readonly cardQueues = new Map<string, {
+    element: HTMLElement;
+    frames: ReturnType<typeof baseTenStepFrames>;
+    final: string;
+    last?: Record<string, unknown>;
+    context: BaseTenTradeViewContext;
+    settle: boolean;
+    timer?: ReturnType<typeof setTimeout>;
+  }>();
   /** The lesson tap (a demonstration's `card.tap`) each card last animated, so a redraw does not repeat it. */
   private readonly cardLessonTaps = new Map<string, string>();
   /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
@@ -2424,6 +2445,54 @@ export class InfiniteBoardView {
     this.cardTapHandler = handler;
     this.cardNotices.clear();
     this.cardSteps.clear();
+    for (const nodeId of [...this.cardQueues.keys()]) this.stopCardSteps(nodeId);
+  }
+
+  /** Draws a slider's trades on a card one tap after another, after any it is still drawing. */
+  private playCardSteps(nodeId: string, element: HTMLElement, content: Record<string, unknown>, steps: readonly BaseTenStep[], context: BaseTenTradeViewContext): boolean {
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // With reduced motion the units are placed at once, as a tap's are.
+      this.stopCardSteps(nodeId);
+      return updateBaseTenTrade(element, content, context);
+    }
+    let queue = this.cardQueues.get(nodeId);
+    if (!queue || queue.element !== element) {
+      this.stopCardSteps(nodeId);
+      queue = { element, frames: [], final: "", context, settle: false };
+      this.cardQueues.set(nodeId, queue);
+    }
+    queue.frames.push(...baseTenStepFrames(content, steps));
+    queue.final = matKey(steps.at(-1)!.mat);
+    queue.context = context;
+    queue.settle = false;
+    if (queue.timer === undefined) this.nextCardStep(nodeId);
+    return true;
+  }
+
+  private nextCardStep(nodeId: string): void {
+    const queue = this.cardQueues.get(nodeId);
+    if (!queue) return;
+    const frame = queue.frames.shift();
+    if (!frame) {
+      this.cardQueues.delete(nodeId);
+      // The card's state of play changed while the last trade was drawn (a task ended): draw it settled.
+      if (queue.settle && queue.last) try { updateBaseTenTrade(queue.element, queue.last, queue.context); } catch { /* the next render redraws it */ }
+      return;
+    }
+    let drawn = false;
+    try { drawn = updateBaseTenTrade(queue.element, frame.content, { ...queue.context, step: frame.step }); } catch { drawn = false; }
+    if (!drawn) { this.cardQueues.delete(nodeId); return; }
+    queue.last = frame.content;
+    queue.timer = setTimeout(() => {
+      queue.timer = undefined;
+      this.nextCardStep(nodeId);
+    }, baseTenStepDelay(frame.step.tap, queue.frames[0]?.step.tap));
+  }
+
+  private stopCardSteps(nodeId: string): void {
+    const queue = this.cardQueues.get(nodeId);
+    if (queue?.timer !== undefined) clearTimeout(queue.timer);
+    this.cardQueues.delete(nodeId);
   }
 
   /** A tap or Enter on a card element marked `data-oll-tap`; true when the card took it. */
@@ -2773,9 +2842,24 @@ export class InfiniteBoardView {
             step = { tap: action.tap };
             this.cardLessonTaps.set(node.id, action.action_id);
           }
-          try { updated = updateBaseTenTrade(element, node.content ?? {}, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
+          // A slider's trades (amendment 4) animate one tap after another, as the taps do.
+          const slid = this.cardTapHandler?.takeSteps?.(node.id) ?? [];
+          const content = node.content ?? {};
+          const queue = this.cardQueues.get(node.id);
+          if (!step && slid.length && matKey(slid.at(-1)!.mat) === matKey(baseTenMat(content))) {
+            try { updated = this.playCardSteps(node.id, element, content, slid, cardContext); } catch { updated = false; }
+          } else if (!step && queue && queue.element === element && matKey(baseTenMat(content)) === queue.final) {
+            // Still drawing the trades that led to this pile: only the card's state of play changed.
+            queue.context = cardContext;
+            queue.settle = true;
+            updated = true;
+          } else {
+            this.stopCardSteps(node.id);
+            try { updated = updateBaseTenTrade(element, content, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
+          }
         }
         if (!updated) {
+          if (cardContext) this.stopCardSteps(node.id);
           disposeScene3d(element);
           element.replaceChildren();
           const shownBefore = this.inkShownStrokes.get(node.id);
