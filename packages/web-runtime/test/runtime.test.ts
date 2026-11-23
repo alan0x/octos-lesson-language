@@ -1829,6 +1829,20 @@ test("retrying a card slider task lays its whole practice pile again, not only t
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
 });
 
+test("a host's reset of one count on a card's slider is refused: the pile stays one the card made (review of Learn #233)", () => {
+  const session = new BrowserLessonSession(sliderLesson([slideTask(6, { ones: 26, tray_ones: 0, tens: 3 })]), new MemoryStore(), "slide-reset", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  session.changeStudentVariable("ones", 16, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 4 });
+  // During the task and after it, a reset of the ones alone would draw 14 ones beside 4 tens: refused.
+  assert.equal(session.changeStudentVariable("ones", 14, { control: "reset", input: "mouse" }), undefined);
+  assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 4 });
+  session.changeStudentVariable("ones", 6, { control: "slider", input: "mouse" });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  assert.equal(session.changeStudentVariable("ones", 14, { control: "reset", input: "mouse" }), undefined);
+  assert.deepEqual(sessionValues(session), { ones: 6, tray_ones: 0, tens: 5 });
+});
+
 test("a page closed mid-drag restores the pile its saved taps replay to (review of #99)", async () => {
   const events = sliderLesson([slideTask(6, { ones: 26, tray_ones: 0, tens: 3 })]);
   const store = new MemoryStore();
