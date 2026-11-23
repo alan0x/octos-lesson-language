@@ -9,7 +9,7 @@ import {
 import { measureSemanticNode } from "../../web-runtime/src/layout.js";
 import {
   BASE_TEN_TRADE_FEATURE, applyBaseTenTap, baseTenChanges, baseTenFacts, baseTenLooseAt, baseTenMat, baseTenRefusalText,
-  baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
+  BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_WORDS, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
 } from "../src/base-ten-trade.js";
 import { buildBaseTenTrade } from "../src/base-ten-trade-builder.js";
 
@@ -274,4 +274,45 @@ test("a demonstration taps the card by its own rules: checked before playback in
   // Only a base-ten trade card, as a whole, can be tapped.
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade card/);
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat", tap: "fold", at: "ones" }])), /Unknown tap 'fold'/);
+});
+
+test("a mat speaks Chinese when its content says so (amendment 3); English stays the default, byte for byte", () => {
+  // Whole sentences per language, for every refusal and place.
+  assert.equal(baseTenRefusalText("tray_not_ten", 0, "zh-CN"), "托盘里还不是一个十：一个十是十个一。");
+  assert.equal(baseTenRefusalText("tray_not_ten", 1, "zh-CN"), "托盘里还不是一个百：一个百是十个十。");
+  assert.equal(baseTenRefusalText("tray_not_ten", 1), "This tray does not hold a hundred: a hundred is ten tens.");
+  assert.equal(baseTenRefusalText("none_loose", 2, "zh-CN"), "没有散的百可以用了。");
+  assert.equal(baseTenRefusalText("no_tray", 0, "zh-CN"), "这里不能这样做。");
+  for (const language of ["en-US", "zh-CN"] as const) {
+    const words = BASE_TEN_WORDS[language];
+    assert.deepEqual([words.headings.length, words.put.length, words.take.length, words.refusal.none_loose.length], [3, 3, 3, 3]);
+    // The card never draws a number (0023): no digit in any of its words, in either language.
+    assert.ok(!/[0-9０-９]/u.test(JSON.stringify(words)));
+    for (const sentences of Object.values(words.refusal) as Array<readonly string[]>) assert.ok(sentences.length >= 2 && sentences.every((each) => each.trim().length > 0));
+  }
+  const zh = planBaseTenTrade({ columns: 3, language: "zh-CN" });
+  assert.deepEqual(zh.columns.map((column) => column.heading), ["百位", "十位", "个位"]);
+  assert.deepEqual(zh.trays.map((tray) => [tray.label, tray.make.text, tray.break.text]), [["十个十是一个百", "← 换成一个百", "拆开一个百 →"], ["十个一是一个十", "← 换成一个十", "拆开一个十 →"]]);
+  // The layout is the same in both languages: only the words change.
+  const en = planBaseTenTrade({ columns: 3 });
+  assert.deepEqual([zh.width, zh.height, zh.trays.map((tray) => tray.make.width)], [en.width, en.height, en.trays.map((tray) => tray.make.width)]);
+  assert.deepEqual(en.columns.map((column) => column.heading), ["Hundreds", "Tens", "Ones"]);
+  // The field is checked: only the two languages.
+  const fail = (path: string, message: string): never => { throw new Error(`${path}: ${message}`); };
+  assert.doesNotThrow(() => validateBaseTenTradeContent({ ...boundMat, language: "zh-CN" }, "$", fail));
+  assert.throws(() => validateBaseTenTradeContent({ ...boundMat, language: "fr-FR" }, "$", fail), /language: A mat speaks en-US or zh-CN/);
+  // The builder writes it only when asked, so an English lesson's bytes are unchanged.
+  const input = { as: "mat", role: "main_visual", place: { relation: "new_region" as const }, columns: 2 as const, places: [{ count: 17 }, { count: 2 }] };
+  assert.ok(!("language" in (buildBaseTenTrade(input).actions[0] as unknown as { content: object }).content));
+  assert.equal((buildBaseTenTrade({ ...input, language: "zh-CN" }).actions[0] as unknown as { content: { language: string } }).content.language, "zh-CN");
+  // A Chinese mat needs math 0.6.0; an English one still needs 0.5.0.
+  const zhLesson = lesson({ ...boundMat, language: "zh-CN" });
+  assertAuthoringSchema(zhLesson);
+  validateAuthoringLesson(zhLesson);
+  const events = normalizeAuthoringLesson(zhLesson, host);
+  const requirements = deriveExecutionRequirements(events);
+  assert.ok(requirements.requiredCapabilities.includes(BASE_TEN_TRADE_LANGUAGE_FEATURE));
+  assert.deepEqual(requirements.requiredPlugins, { math: "0.6.0" });
+  assert.doesNotThrow(() => assertExecutionSupported(events));
+  assert.deepEqual(deriveExecutionRequirements(normalizeAuthoringLesson(lesson(boundMat), host)).requiredPlugins, { math: "0.5.0" });
 });

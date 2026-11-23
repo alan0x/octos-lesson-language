@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- **The trading mat speaks Chinese** (math plugin 0.6.0; decision 0023 amendment 3). A `base_ten_trade` card takes an optional `language`, `en-US` or `zh-CN`; without it the mat speaks US English as before, so existing lessons are unchanged byte for byte and still require math 0.5.0. A Chinese mat's headings, tray labels, buttons, units' spoken labels and refused-tap messages are whole Chinese sentences (`BASE_TEN_WORDS`), with numbers written in characters, so the card still draws no digit; the layout is the same in both languages. A lesson with a mat that names its language requires `plugin:math/base-ten-trade-language@1` (math 0.6.0). `baseTenRefusalText` takes the language; the runtime passes the mat's. The browser check adds a Chinese mat and a Chinese card task.
+
 ### Fixed
 
 - **"I'm done" with a few ones left in the tray succeeds** (decision 0023 amendment 2; found by a first-use test in Learn). `no_trade_left` no longer requires empty trays, only that no place below the highest holds ten or more; a full tray already makes its place ten or more, so no trade can be skipped. The refused-trade message states a fact ("This tray does not hold a ten: a ten is ten ones.") instead of "Fill the tray first", which was impossible with fewer than ten left. After "done" the mat is laid tidy, trays empty, with the same counts.

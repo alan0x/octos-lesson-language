@@ -1,5 +1,5 @@
 import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
-import { applyBaseTenTap, baseTenChanges, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
+import { applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, type BaseTenRefusal, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -1307,7 +1307,7 @@ export class BrowserLessonSession {
     if (!node || node.kind !== "base_ten_trade") throw new Error(`Card '${nodeId}' is not a base-ten trade card`);
     const before = baseTenMat(node.content);
     const result = applyBaseTenTap(before, tap);
-    if (!result.ok) return { refused: result.reason, message: baseTenRefusalText(result.reason, tap.place) };
+    if (!result.ok) return { refused: result.reason, message: baseTenRefusalText(result.reason, tap.place, baseTenLanguage(node.content)) };
     const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
     const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
       .map((binding) => [binding.target, binding.expression.trim()]));

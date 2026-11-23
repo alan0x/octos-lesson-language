@@ -6,7 +6,7 @@
  */
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
 import type { DrivenValue } from "./number-line-builder.js";
-import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PLACES, type BaseTenTradeContent, type BaseTenTradePlace } from "./base-ten-trade.js";
+import { BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PLACES, type BaseTenLanguage, type BaseTenTradeContent, type BaseTenTradePlace } from "./base-ten-trade.js";
 
 export interface BaseTenTradeInput {
   as: string;
@@ -16,6 +16,8 @@ export interface BaseTenTradeInput {
   caption?: string;
   /** 2 (tens and ones) or 3 (hundreds, tens and ones); fixed, so the card never resizes. */
   columns: 2 | 3;
+  /** The mat's own words: `zh-CN` for Chinese; leave it out for US English (amendment 3). */
+  language?: BaseTenLanguage;
   /** Lowest place first: ones, tens, then hundreds when there are 3 columns. */
   places: Array<{ count: number | DrivenValue; tray?: number | DrivenValue }>;
 }
@@ -51,6 +53,7 @@ export function buildBaseTenTrade(input: BaseTenTradeInput): BuiltBaseTenTrade {
     columns: input.columns,
     places,
     ...(bindings.length ? { bindings } : {}),
+    ...(input.language !== undefined ? { language: input.language } : {}),
   };
   const parts: Record<string, string> = { whole: input.as };
   for (const place of places) parts[place.as] = `${input.as}#${place.as}`;
