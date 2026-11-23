@@ -1829,3 +1829,22 @@ test("retrying a card slider task without a practice pile restores the whole pil
   // The lesson's initial pile: 14 ones and 3 tens, all of it.
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
 });
+
+test("replaying the lesson lays a card slider task's practice pile again, and the slider shows whole counts", () => {
+  const session = new BrowserLessonSession(sliderLesson([slideTask(6, { ones: 26, tray_ones: 0, tens: 3 })]), new MemoryStore(), "slide-replay", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  session.changeStudentVariable("ones", 16, { control: "slider", input: "mouse" });
+  assert.deepEqual(sessionValues(session), { ones: 16, tray_ones: 0, tens: 4 });
+  // Replayed: the lesson's pile (4 ones, 4 tens) could not reach 6 ones, so the practice pile is laid again.
+  session.seek(0);
+  assert.equal(session.studentVariableLive("ones"), false);
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(sessionValues(session), { ones: 26, tray_ones: 0, tens: 3 });
+  assert.equal(session.studentVariableLive("ones"), true);
+  // Between whole numbers (a pile arriving, a lesson animation) the slider reads the count the card draws.
+  const board = structuredClone(session.projection.board)!;
+  board.variables!.ones!.value = 25.6;
+  const node = board.nodes["slide:node:mat"]!;
+  (node.content.places as Array<{ count: number }>)[0]!.count = 25.6;
+  assert.deepEqual(variableControlModels(board).map((model) => [model.value, model.min, model.max]), [[26, 6, 56]]);
+});

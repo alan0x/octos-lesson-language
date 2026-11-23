@@ -36,13 +36,16 @@ export function variableControlModels(board: SemanticBoardState | null, options:
     // lowest to the highest count the card's rules reach from this pile, ten apart (6, 16, 26, not 0, 10, 20).
     const card = cardSliderTarget(board, alias);
     if (card) {
-      const track = baseTenSliderTrack(baseTenMat(board.nodes[card.nodeId]?.content ?? {}), card.place);
+      // The count as the card draws it: whole, also while a practice pile arrives or the lesson animates it.
+      const mat = baseTenMat(board.nodes[card.nodeId]?.content ?? {});
+      const value = mat.counts[card.place] ?? Math.round(variable.value);
+      const track = baseTenSliderTrack(mat, card.place);
       return [{
         alias,
         label: variable.label ?? alias,
-        value: variable.value,
-        min: Math.min(track.min, variable.value),
-        max: Math.max(track.max, variable.value),
+        value,
+        min: Math.min(track.min, value),
+        max: Math.max(track.max, value),
         step: variable.control.step!,
         ...(variable.unit ? { unit: variable.unit } : {}),
         disabled: !(options.live?.(alias) ?? true),

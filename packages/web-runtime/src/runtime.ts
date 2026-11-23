@@ -1403,10 +1403,10 @@ export class BrowserLessonSession {
       ?.some((operation) => operation.kind === "variable_change" && operation.variable === alias && operation.controls?.includes("slider")) ?? false;
   }
 
-  /** Whether a task lets the learner trade with a slider on a card's count. */
+  /** Whether a task lets the learner trade with a slider on a card's count, whether or not the card is drawn yet. */
   private tradesOnCard(task: AuthoringStudentTask): boolean {
     return (task.allowed_operations as Array<{ kind: string; variable?: string }>).some((operation) => operation.kind === "variable_change"
-      && operation.variable !== undefined && cardSliderTarget(this.player.snapshot.board, operation.variable) !== undefined);
+      && operation.variable !== undefined && this.isCardSlider(operation.variable));
   }
 
   /** The lesson variables a change of the card's mat writes, each with its value before and after. */

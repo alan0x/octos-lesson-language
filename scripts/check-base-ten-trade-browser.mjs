@@ -11,7 +11,7 @@
 //   Enter on a focused unit taps it, and the card is inert again once the learner says done;
 // - a slider on the ones' count (decision 0023 amendment 4): disabled while the lesson plays, its track on the
 //   stops trades reach, and two stops by keyboard animate two trades one after another (the tray fills to ten,
-//   ten fuse into a ten), not a jump; the total never changes; disabled again once its task is done.
+//   ten fuse into a ten), not a jump, the last drawn to its end before the next task's pile arrives.
 // Piles here are invented for the check. Screenshots go to OLL_BASE_TEN_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -79,6 +79,12 @@ cases.slider.lesson.tasks = [{
   prompt: "Slide the ones until there are 6.", availability: { kind: "after_lesson" },
   allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
   completion: { kind: "expression_target", expression: "ones", value: 6, tolerance: 0.5 }, hints: ["Each stop trades ten ones for a ten."],
+}, {
+  // A next task with its own pile: it arrives at once, while the last trade is still being drawn.
+  as: "again", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 35, tray_ones: 0, tens: 1 } },
+  prompt: "Slide the ones until there are 15.", availability: { kind: "after_lesson" },
+  allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
+  completion: { kind: "expression_target", expression: "ones", value: 15, tolerance: 0.5 }, hints: ["Each stop trades ten ones for a ten."],
 }];
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
@@ -361,10 +367,14 @@ try {
     && slid.loose === 26 && slid.tens === 3, `the slider is live on the practice pile, its stops where trades reach (6 to 56): ${JSON.stringify(slid)}`);
   // Watch the mat while two stops are pressed: the tray must fill to ten before each ten is made.
   await page.evaluate(() => {
-    window.slideSeen = { maxTray: 0, frames: 0 };
+    window.slideSeen = { maxTray: 0, frames: 0, ended: false };
     const watch = () => {
       const tray = document.querySelectorAll(".base-ten-unit.base-ten-in-tray:not(.base-ten-leaving)").length;
       window.slideSeen.maxTray = Math.max(window.slideSeen.maxTray, tray);
+      const loose = document.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length;
+      const tens = document.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length;
+      // The second trade drawn to its end (6 ones, 5 tens) before the next task's pile.
+      if (loose === 6 && tens === 5 && tray === 0) window.slideSeen.ended = true;
       window.slideSeen.frames += 1;
       if (window.slideSeen.frames < 600) requestAnimationFrame(watch);
     };
@@ -375,20 +385,23 @@ try {
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowLeft");
   slid = await slider();
-  check(slid.values.ones === 6 && slid.values.tens === 5 && slid.values.tray_ones === 0 && slid.status === "succeeded", `two stops are two trades in the session, the total unchanged: ${JSON.stringify(slid)}`);
+  check(slid.status === "succeeded" && JSON.stringify(slid.values) === JSON.stringify({ ones: 35, tray_ones: 0, tens: 1 }),
+    `two stops are two trades in the session (ones 6, tens 5: done), then the next task's pile: ${JSON.stringify(slid)}`);
   check(slid.tens < 5 || slid.loose > 6, `the mat does not jump to the end: ${JSON.stringify(slid)}`);
   await page.waitForFunction(() => {
     const svg = document.querySelector(".base-ten-mat");
-    return svg.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length === 6
-      && svg.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length === 5
+    return svg.querySelectorAll('.base-ten-unit[data-place="0"]:not(.base-ten-in-tray):not(.base-ten-leaving)').length === 35
+      && svg.querySelectorAll('.base-ten-unit[data-place="1"]:not(.base-ten-leaving)').length === 1
       && svg.querySelectorAll(".base-ten-unit.base-ten-in-tray").length === 0;
   }, undefined, { timeout: 8000 });
   const took = Date.now() - started;
   const seen = await page.evaluate(() => window.slideSeen);
   slid = await slider();
   check(seen.maxTray === 10, `each trade fills the tray to ten before ten make a ten: ${JSON.stringify(seen)}`);
+  check(seen.ended, `the last trade is drawn to its end before the next task's pile: ${JSON.stringify(seen)}`);
   check(took > 1500, `two trades are drawn one after another, not at once (${took} ms)`);
-  check(slid.tray === 0 && slid.input.disabled === true && slid.input.value === "6", `after the trades the tray is empty and, the task done, the slider is disabled: ${JSON.stringify(slid)}`);
+  check(slid.tray === 0 && !slid.input.disabled && slid.input.value === "35" && slid.input.min === "5" && slid.input.max === "45",
+    `then the next task's pile, its slider live on its own stops: ${JSON.stringify(slid)}`);
   if (shots) await page.screenshot({ path: `${shots}/slider.png` });
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {

@@ -1918,16 +1918,15 @@ export class InfiniteBoardView {
   /** The tap that made a card's next state, so the card animates it; used once. */
   private readonly cardSteps = new Map<string, NonNullable<BaseTenTradeViewContext["step"]>>();
   /**
-   * A slider's trades a card is still drawing, a tap at a time (decision 0023 amendment 4): the frames left,
-   * the pile they end on, and the card's state of play for the next frame.
+   * A slider's trades a card is still drawing, a tap at a time (decision 0023 amendment 4): the frames left
+   * and the card's state of play for the next frame.
    */
   private readonly cardQueues = new Map<string, {
     element: HTMLElement;
     frames: ReturnType<typeof baseTenStepFrames>;
-    final: string;
-    last?: Record<string, unknown>;
+    /** What came after the trades (the task ended, the next practice pile): drawn, without a step, once they are. */
+    then?: Record<string, unknown>;
     context: BaseTenTradeViewContext;
-    settle: boolean;
     timer?: ReturnType<typeof setTimeout>;
   }>();
   /** The lesson tap (a demonstration's `card.tap`) each card last animated, so a redraw does not repeat it. */
@@ -2458,13 +2457,12 @@ export class InfiniteBoardView {
     let queue = this.cardQueues.get(nodeId);
     if (!queue || queue.element !== element) {
       this.stopCardSteps(nodeId);
-      queue = { element, frames: [], final: "", context, settle: false };
+      queue = { element, frames: [], context };
       this.cardQueues.set(nodeId, queue);
     }
     queue.frames.push(...baseTenStepFrames(content, steps));
-    queue.final = matKey(steps.at(-1)!.mat);
     queue.context = context;
-    queue.settle = false;
+    queue.then = undefined;
     if (queue.timer === undefined) this.nextCardStep(nodeId);
     return true;
   }
@@ -2475,14 +2473,12 @@ export class InfiniteBoardView {
     const frame = queue.frames.shift();
     if (!frame) {
       this.cardQueues.delete(nodeId);
-      // The card's state of play changed while the last trade was drawn (a task ended): draw it settled.
-      if (queue.settle && queue.last) try { updateBaseTenTrade(queue.element, queue.last, queue.context); } catch { /* the next render redraws it */ }
+      if (queue.then) try { updateBaseTenTrade(queue.element, queue.then, queue.context); } catch { /* the next render redraws it */ }
       return;
     }
     let drawn = false;
     try { drawn = updateBaseTenTrade(queue.element, frame.content, { ...queue.context, step: frame.step }); } catch { drawn = false; }
     if (!drawn) { this.cardQueues.delete(nodeId); return; }
-    queue.last = frame.content;
     queue.timer = setTimeout(() => {
       queue.timer = undefined;
       this.nextCardStep(nodeId);
@@ -2848,10 +2844,11 @@ export class InfiniteBoardView {
           const queue = this.cardQueues.get(node.id);
           if (!step && slid.length && matKey(slid.at(-1)!.mat) === matKey(baseTenMat(content))) {
             try { updated = this.playCardSteps(node.id, element, content, slid, cardContext); } catch { updated = false; }
-          } else if (!step && queue && queue.element === element && matKey(baseTenMat(content)) === queue.final) {
-            // Still drawing the trades that led to this pile: only the card's state of play changed.
+          } else if (!step && queue && queue.element === element) {
+            // Still drawing a slider's trades: what came after them (the task ended, the next practice pile
+            // arrived) is drawn once they are, so the last trade is never cut short.
             queue.context = cardContext;
-            queue.settle = true;
+            queue.then = content;
             updated = true;
           } else {
             this.stopCardSteps(node.id);
