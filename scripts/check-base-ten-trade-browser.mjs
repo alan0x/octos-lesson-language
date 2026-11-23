@@ -232,11 +232,12 @@ try {
   const spot = await page.locator(`.base-ten-unit[data-oll-piece="${first}"] .base-ten-block`).boundingBox();
   const [sx, sy] = [spot.x + spot.width / 2, spot.y + spot.height / 2];
   await page.mouse.click(sx, sy);
+  // Logged, not required: on a slow machine the move may already have ended (review of #96).
   const inFlight = await page.evaluate((piece) => document.querySelector(`.base-ten-unit[data-oll-piece="${piece}"]`).classList.contains("base-ten-moving"), first);
   await page.mouse.click(sx, sy);
   now = await mat();
   const afterQuick = now.tray.includes(second) ? 3 : 2;
-  check(inFlight && now.tray.includes(first) && now.values.tray_ones === afterQuick && now.notice === "" && now.tens === 2,
+  check(now.tray.includes(first) && now.values.tray_ones === afterQuick && now.notice === "" && now.tens === 2,
     `a quick second tap never undoes the first: ${JSON.stringify({ inFlight, first, second, tray: now.tray, notice: now.notice })}`);
   await page.waitForTimeout(600);
   check(await page.evaluate((piece) => !document.querySelector(`.base-ten-unit[data-oll-piece="${piece}"]`).classList.contains("base-ten-moving"), first), "a unit is settled once it is in the tray");
