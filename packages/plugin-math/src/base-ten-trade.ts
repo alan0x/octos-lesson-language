@@ -16,6 +16,12 @@ export const BASE_TEN_TRADE_KIND = "base_ten_trade";
 export const BASE_TEN_TRADE_FEATURE = "plugin:math/base-ten-trade@1";
 /** The math plugin version that introduced the card. */
 export const BASE_TEN_TRADE_PLUGIN_VERSION = "0.5.0";
+/** A mat that speaks Chinese (decision 0023 amendment 3): a player without it refuses the `language` field. */
+export const BASE_TEN_TRADE_LANGUAGE_FEATURE = "plugin:math/base-ten-trade-language@1";
+export const BASE_TEN_TRADE_LANGUAGE_VERSION = "0.6.0";
+/** The languages a mat speaks. A mat without `language` speaks US English, as before amendment 3. */
+export const BASE_TEN_TRADE_LANGUAGES = ["en-US", "zh-CN"] as const;
+export type BaseTenLanguage = typeof BASE_TEN_TRADE_LANGUAGES[number];
 
 /** Numeric fields of a place that lesson variables may drive. */
 export const BASE_TEN_TRADE_BINDINGS = {
@@ -55,6 +61,8 @@ export interface BaseTenTradeContent {
   /** One entry per column, lowest place first. */
   places: BaseTenTradePlace[];
   bindings?: unknown[];
+  /** The language of the mat's own words; absent means US English (amendment 3). */
+  language?: BaseTenLanguage;
 }
 
 /** A mat as whole numbers, lowest place first. Hundreds have no tray. */
@@ -97,7 +105,10 @@ const valueOf = (counts: readonly number[]): number => counts.reduce((sum, count
  */
 export function validateBaseTenTradeContent(raw: unknown, path: string, fail: Fail, options: { boundValues?: boolean } = {}): void {
   const content = record(raw, path, fail);
-  only(content, ["title", "caption", "columns", "places", "bindings"], path, fail);
+  only(content, ["title", "caption", "columns", "places", "bindings", "language"], path, fail);
+  if (content.language !== undefined && !BASE_TEN_TRADE_LANGUAGES.includes(content.language as BaseTenLanguage)) {
+    fail(`${path}/language`, `A mat speaks ${BASE_TEN_TRADE_LANGUAGES.join(" or ")}`);
+  }
   text(content.title, `${path}/title`, fail);
   text(content.caption, `${path}/caption`, fail, 480);
   const columns = content.columns;
@@ -192,21 +203,62 @@ export function applyBaseTenTap(mat: BaseTenMat, tap: BaseTenTap): BaseTenTapRes
   return { ok: true, mat: { ...mat, counts, trays: set(mat.trays, p - 1, 10) } };
 }
 
-/** What the card tells a learner when a tap is refused (US English; the card's own words). */
-export function baseTenRefusalText(reason: BaseTenRefusal, place: number): string {
-  const name = BASE_TEN_TRADE_PLACES[place] ?? "ones";
-  const up = (["ten", "hundred", "thousand"] as const)[place] ?? "ten";
-  const unit = (["one", "ten", "hundred"] as const)[place] ?? "one";
-  switch (reason) {
-    case "tray_full": return "The tray holds only ten.";
-    // A fact, true whether more can still go in or not (first-use test): never "fill it", which can be impossible.
-    case "tray_not_ten": return `This tray does not hold a ${up}: a ${up} is ten ${name}.`;
-    case "tray_empty": return `Tap ${name} to put them in the tray first.`;
-    case "tray_not_empty": return "Empty the tray first.";
-    case "no_room": return "There is no room on the mat for ten more.";
-    case "none_loose": return `There is no loose ${unit} to use.`;
-    default: return "That can't be done here.";
-  }
+/** The mat's language from its content: Chinese when it says so, else US English. */
+export function baseTenLanguage(raw: unknown): BaseTenLanguage {
+  return (raw as { language?: unknown } | null)?.language === "zh-CN" ? "zh-CN" : "en-US";
+}
+
+/**
+ * The mat's own words, whole sentences per language (amendment 3): never a word put into another
+ * language's sentence. `place` is the lower place of a tray, or the unit's own place.
+ */
+export const BASE_TEN_WORDS = {
+  "en-US": {
+    /** The mat's own name, for a screen reader (review of #95). */
+    matLabel: "A place-value mat",
+    headings: ["Ones", "Tens", "Hundreds"],
+    trayLabel: ["Ten ones make a ten", "Ten tens make a hundred"],
+    make: ["← Make a ten", "← Make a hundred"],
+    break: ["Break a ten →", "Break a hundred →"],
+    put: ["Put this one in the tray", "Put this ten in the tray", "Put this hundred in the tray"],
+    take: ["Take this one out of the tray", "Take this ten out of the tray", "Take this hundred out of the tray"],
+    refusal: {
+      tray_full: ["The tray holds only ten.", "The tray holds only ten."],
+      // A fact, true whether more can still go in or not (first-use test): never "fill it", which can be impossible.
+      tray_not_ten: ["This tray does not hold a ten: a ten is ten ones.", "This tray does not hold a hundred: a hundred is ten tens."],
+      tray_empty: ["Tap ones to put them in the tray first.", "Tap tens to put them in the tray first."],
+      tray_not_empty: ["Empty the tray first.", "Empty the tray first."],
+      no_room: ["There is no room on the mat for ten more.", "There is no room on the mat for ten more."],
+      none_loose: ["There is no loose one to use.", "There is no loose ten to use.", "There is no loose hundred to use."],
+    },
+    other: "That can't be done here.",
+  },
+  "zh-CN": {
+    matLabel: "数位摆面",
+    headings: ["个位", "十位", "百位"],
+    trayLabel: ["十个一是一个十", "十个十是一个百"],
+    make: ["← 换成一个十", "← 换成一个百"],
+    break: ["拆开一个十 →", "拆开一个百 →"],
+    put: ["把这个一放进托盘", "把这个十放进托盘", "把这个百放进托盘"],
+    take: ["把这个一从托盘里拿出来", "把这个十从托盘里拿出来", "把这个百从托盘里拿出来"],
+    refusal: {
+      tray_full: ["托盘里只能放十个。", "托盘里只能放十个。"],
+      tray_not_ten: ["托盘里还不是一个十：一个十是十个一。", "托盘里还不是一个百：一个百是十个十。"],
+      tray_empty: ["先点个位里的一，把它们放进托盘。", "先点十位里的十，把它们放进托盘。"],
+      tray_not_empty: ["先把托盘清空。", "先把托盘清空。"],
+      no_room: ["摆面上没有地方再放十个了。", "摆面上没有地方再放十个了。"],
+      none_loose: ["没有散的一可以用了。", "没有散的十可以用了。", "没有散的百可以用了。"],
+    },
+    other: "这里不能这样做。",
+  },
+} as const;
+
+/** What the card tells a learner when a tap is refused, in the mat's language (US English by default). */
+export function baseTenRefusalText(reason: BaseTenRefusal, place: number, language: BaseTenLanguage = "en-US"): string {
+  const words = BASE_TEN_WORDS[language] ?? BASE_TEN_WORDS["en-US"];
+  const sentences = (words.refusal as Record<string, readonly string[]>)[reason];
+  if (!sentences) return words.other;
+  return sentences[Math.min(Math.max(0, Number.isInteger(place) ? place : 0), sentences.length - 1)]!;
 }
 
 /** The fields one tap changes, as content values: place index to its new count and tray. */
@@ -273,8 +325,6 @@ export interface BaseTenTradePlan {
   trays: BaseTenTrayPlan[];
 }
 
-const HEADINGS = ["Ones", "Tens", "Hundreds"] as const;
-
 /**
  * The mat's layout, from sketch v3 (owner, 2026-11-22): columns side by side, highest on the left,
  * each tray between its place and the next, its buttons under it. Sized for the most each place can
@@ -282,6 +332,7 @@ const HEADINGS = ["Ones", "Tens", "Hundreds"] as const;
  */
 export function planBaseTenTrade(raw: unknown): BaseTenTradePlan {
   const columns = (raw as BaseTenTradeContent).columns === 3 ? 3 : 2;
+  const words = BASE_TEN_WORDS[baseTenLanguage(raw)];
   const U = columns === 2 ? 22 : 12;
   const fontSize = columns === 2 ? 17 : 14;
   const top = 3.2 * U;
@@ -289,18 +340,17 @@ export function planBaseTenTrade(raw: unknown): BaseTenTradePlan {
   const columnPlans: BaseTenColumnPlan[] = [];
   const trays: BaseTenTrayPlan[] = [];
   let x = gap;
-  const column = (place: number, width: number) => { columnPlans.push({ place, x, width, heading: HEADINGS[place]! }); x += width + gap; };
+  const column = (place: number, width: number) => { columnPlans.push({ place, x, width, heading: words.headings[place]! }); x += width + gap; };
   const tray = (place: number, outline: number, zone: number) => {
     const buttonWidth = columns === 3 ? zone : Math.min(zone, fontSize * 9.2);
     const buttonX = x + (zone - buttonWidth) / 2;
     const height = fontSize * 2.1;
     const y = top + 10 * U + U;
-    const up = place === 0 ? "ten" : "hundred";
     trays.push({
       place, x: x + (zone - outline) / 2, width: outline, zoneX: x, zoneWidth: zone,
-      label: `Ten ${BASE_TEN_TRADE_PLACES[place]} make a ${up}`,
-      make: { x: buttonX, y, width: buttonWidth, height, text: `← Make a ${up}` },
-      break: { x: buttonX, y: y + fontSize * 2.5, width: buttonWidth, height, text: `Break a ${up} →` },
+      label: words.trayLabel[place]!,
+      make: { x: buttonX, y, width: buttonWidth, height, text: words.make[place]! },
+      break: { x: buttonX, y: y + fontSize * 2.5, width: buttonWidth, height, text: words.break[place]! },
     });
     x += zone + gap;
   };

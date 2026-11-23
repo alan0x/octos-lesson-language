@@ -14,8 +14,8 @@
  * lesson is playing, or no open task lets the learner tap it) the same picture is drawn without tap cues.
  */
 import {
-  BASE_TEN_TRADE_PLACES, baseTenLooseAt, baseTenMat, baseTenTrayAt, hasTray, planBaseTenTrade,
-  type BaseTenMat, type BaseTenTap, type BaseTenTradePlan,
+  BASE_TEN_TRADE_PLACES, BASE_TEN_WORDS, baseTenLanguage, baseTenLooseAt, baseTenMat, baseTenTrayAt, hasTray, planBaseTenTrade,
+  type BaseTenLanguage, type BaseTenMat, type BaseTenTap, type BaseTenTradePlan,
 } from "./base-ten-trade.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -34,6 +34,9 @@ export interface BaseTenTradeViewContext {
 interface MatView {
   plan: BaseTenTradePlan;
   columns: 2 | 3;
+  /** The mat's language; a mat whose language changes is drawn again (amendment 3). */
+  language: BaseTenLanguage;
+  words: typeof BASE_TEN_WORDS[BaseTenLanguage];
   svg: SVGSVGElement;
   units: SVGGElement;
   buttons: SVGGElement[];
@@ -57,7 +60,6 @@ function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Reco
 }
 
 const round = (value: number) => Math.round(value * 100) / 100;
-const UNIT_NAMES = ["one", "ten", "hundred"] as const;
 /** How long a fuse or a split takes; matches the stylesheet's opacity transition. */
 const FUSE_MS = 450;
 
@@ -119,7 +121,7 @@ function button(plan: BaseTenTradePlan, box: { x: number; y: number; width: numb
 function create(parent: HTMLElement, raw: Record<string, unknown>): MatView {
   const plan = planBaseTenTrade(raw);
   const U = plan.unit;
-  const svg = element("svg", { viewBox: `0 0 ${round(plan.width)} ${round(plan.height)}`, role: "group", "aria-label": "A place-value mat" }, "base-ten-mat");
+  const svg = element("svg", { viewBox: `0 0 ${round(plan.width)} ${round(plan.height)}`, role: "group", "aria-label": BASE_TEN_WORDS[baseTenLanguage(raw)].matLabel }, "base-ten-mat");
   svg.append(element("rect", { x: 0, y: 0, width: round(plan.width), height: round(plan.height), rx: 12 }, "base-ten-background"));
   for (const column of plan.columns) {
     svg.append(element("rect", { x: round(column.x - 0.5 * U), y: round(plan.top - 2.4 * U), width: round(column.width + U), height: round(plan.height - plan.top + 1.9 * U), rx: 10 }, "base-ten-column"));
@@ -152,7 +154,8 @@ function create(parent: HTMLElement, raw: Record<string, unknown>): MatView {
   caption.className = "base-ten-caption";
   parent.append(notice, caption);
   const columns = (raw as { columns?: unknown }).columns === 3 ? 3 : 2;
-  return { plan, columns, svg, units, buttons, notice, caption, loose: [[], [], []], tray: [[], [], []], elements: new Map(), next: 0, generation: 0 };
+  const language = baseTenLanguage(raw);
+  return { plan, columns, language, words: BASE_TEN_WORDS[language], svg, units, buttons, notice, caption, loose: [[], [], []], tray: [[], [], []], elements: new Map(), next: 0, generation: 0 };
 }
 
 /** Moves identities as the step says, then makes every place hold exactly what the mat holds. */
@@ -235,7 +238,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
       }
       unit.classList.toggle("base-ten-in-tray", inTray);
       const tap = inTray ? `ungather:${p}` : hasTray(view.columns, p) ? `gather:${p}` : undefined;
-      setTappable(unit, tap, inTray ? `Take this ${UNIT_NAMES[p]} out of the tray` : `Put this ${UNIT_NAMES[p]} in the tray`, live);
+      setTappable(unit, tap, (inTray ? view.words.take : view.words.put)[p]!, live);
       if (isNew) {
         const from = spawn.get(id);
         if (from) {
@@ -292,7 +295,7 @@ export function renderBaseTenTrade(parent: HTMLElement, raw: Record<string, unkn
  */
 export function updateBaseTenTrade(parent: HTMLElement, raw: Record<string, unknown>, context: BaseTenTradeViewContext): boolean {
   const view = views.get(parent);
-  if (!view || !view.svg.isConnected || view.columns !== ((raw as { columns?: unknown }).columns === 3 ? 3 : 2)) return false;
+  if (!view || !view.svg.isConnected || view.columns !== ((raw as { columns?: unknown }).columns === 3 ? 3 : 2) || view.language !== baseTenLanguage(raw)) return false;
   update(view, raw, context);
   return true;
 }

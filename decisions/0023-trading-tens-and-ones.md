@@ -202,3 +202,28 @@
 - 确认「卡片跟着当前任务」（代替「先不显示」），和「托盘里剩几个也可以说做完了」（修订 2）。
 - 练习时镜头缩小、摆面太小的问题：先不处理。
 
+
+## 修订 3（2026-11-22）：摆面也说中文
+
+- **产品负责人的决定**：配方从一开始就支持英文和中文两种课（不是先只做英文）。
+- **卡片内容**新增可选的 `language`：`zh-CN` 时摆面上的字用中文；不写就是美式英文，和以前一样，所以已有的课一个字节都不变。只能是 `en-US` 或 `zh-CN`。写了 `language` 的课需要数学插件 0.6.0（特性 `plugin:math/base-ten-trade-language@1`）；英文课仍只需要 0.5.0。
+- **每种语言整句写好**，不把一种语言的词塞进另一种语言的句子。中文的数也用汉字写，卡片上仍然不画任何数字。
+- **中文用词（产品负责人 2026-11-22 确认）**：
+
+| 位置 | 英文 | 中文 |
+|---|---|---|
+| 摆面的名字（读屏） | A place-value mat | 数位摆面 |
+| 列名 | Hundreds / Tens / Ones | 百位 / 十位 / 个位 |
+| 托盘上方 | Ten ones make a ten · Ten tens make a hundred | 十个一是一个十 · 十个十是一个百 |
+| 按钮 | ← Make a ten · Break a ten → | ← 换成一个十 · 拆开一个十 →（百同理） |
+| 点单个方块（读屏） | Put this one in the tray · Take this one out of the tray | 把这个一放进托盘 · 把这个一从托盘里拿出来 |
+| 托盘已满 | The tray holds only ten. | 托盘里只能放十个。 |
+| 托盘不满十就按换 | This tray does not hold a ten: a ten is ten ones. | 托盘里还不是一个十：一个十是十个一。 |
+| 托盘空着就按换 | Tap ones to put them in the tray first. | 先点个位里的一，把它们放进托盘。 |
+| 托盘不空就按拆 | Empty the tray first. | 先把托盘清空。 |
+| 没地方了 | There is no room on the mat for ten more. | 摆面上没有地方再放十个了。 |
+| 没有散的可用 | There is no loose one to use. | 没有散的一可以用了。 |
+| 其他 | That can't be done here. | 这里不能这样做。 |
+
+- 「摆面」和 Learn 已有的「还没有。再看看摆面。」一致。
+- **不在这一修订里**：Coach 配方的中文旁白、题目和提示（配方里一张表），Learn 自己的按钮（跟着界面语言，不跟着课的语言；这是现有的做法）。

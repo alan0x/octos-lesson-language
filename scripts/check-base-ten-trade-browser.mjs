@@ -47,6 +47,8 @@ const cases = {
       { key: "make", say: "Ten ones make a ten.", actions: [{ do: "tap", target: "mat", tap: "make", at: "ones" }] }]),
   taps: { ...lesson({ columns: 2, places: [{ count: drive("ones", 14), tray: drive("tray_ones", 0) }, { count: drive("tens", 3) }] },
     [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)]) },
+  // A mat that speaks Chinese (amendment 3): the same layout, its own words.
+  zh: lesson({ columns: 3, language: "zh-CN", places: [{ count: 16 }, { count: 9 }, { count: 6 }] }),
   emphasis: lesson({ columns: 2, places: [{ count: 17 }, { count: 2 }] }, [],
     [{ key: "focus", say: "Look at the tens.", actions: [{ do: "emphasize", target: "mat#tens", emphasis: "focus" }] }]),
 };
@@ -58,12 +60,15 @@ cases.taps3.lesson.tasks = [{
   allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
   completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
 }];
+cases.tapsZh = lesson({ columns: 2, language: "zh-CN", places: [{ count: drive("ones", 14), tray: drive("tray_ones", 0) }, { count: drive("tens", 3) }] },
+  [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)]);
 cases.taps.lesson.tasks = [{
   as: "trade", start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tray_ones: 0, tens: 2 } },
   prompt: "Make tens until you can't. Then tap I'm done.", availability: { kind: "after_lesson" },
   allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
   completion: { kind: "card_fact", node: "mat", fact: "no_trade_left" }, hints: ["Put ones in the tray; when ten fill it, make a ten."],
 }];
+cases.tapsZh.lesson.tasks = cases.taps.lesson.tasks;
 const events = Object.fromEntries(Object.entries(cases).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, host(name))]));
 
 const bundle = await build({
@@ -145,8 +150,12 @@ try {
   const three = last(await states("three"));
   check(JSON.stringify(three?.headings) === JSON.stringify(["Hundreds", "Tens", "Ones"]), `three columns, named in words: ${JSON.stringify(three?.headings)}`);
   check(JSON.stringify(counted(three)) === "[16,9,6]", `6 hundreds, 9 tens, 16 ones drawn: ${JSON.stringify(three && counted(three))}`);
+  const zh = last(await states("zh"));
+  check(JSON.stringify(zh?.headings) === JSON.stringify(["百位", "十位", "个位"]), `a Chinese mat names its columns in Chinese: ${JSON.stringify(zh?.headings)}`);
+  check(JSON.stringify(zh?.buttons.map((button) => button.text)) === JSON.stringify(["← 换成一个百", "拆开一个百 →", "← 换成一个十", "拆开一个十 →"]), `a Chinese mat's buttons: ${JSON.stringify(zh?.buttons)}`);
+  check(zh && JSON.stringify(counted(zh)) === "[16,9,6]" && JSON.stringify(zh.svg) === JSON.stringify(three.svg), `a Chinese mat is drawn as the English one: ${JSON.stringify(zh && [counted(zh), zh.svg, three.svg])}`);
   for (const name of Object.keys(cases)) {
-    if (name === "taps" || name === "taps3") continue;
+    if (name === "taps" || name === "taps3" || name === "tapsZh") continue;
     for (const state of (await states(name)).filter((each) => !each.stuck)) {
       check(state.texts.every((text) => !/\d/.test(text)), `${name}: no number drawn on the mat: ${JSON.stringify(state.texts)}`);
       const boxes = state.places.flatMap((place) => [...place.loose, ...place.tray]);
@@ -266,6 +275,21 @@ try {
       inside: inTray.every((r) => r.left >= tensTray.left - 2 && r.right <= tensTray.right + 2 && r.top >= tensTray.top - 2 && r.bottom <= tensTray.bottom + 2) };
   });
   check(quick.tray_tens === 1 && quick.inTray === 1 && quick.inside, `a ten tapped right after it was made sits in the tens tray: ${JSON.stringify(quick)}`);
+  // A Chinese mat's task: its units are named, and a refused tap explained, in Chinese.
+  const zhTask = await page.evaluate(({ events }) => {
+    document.querySelector("#board").replaceChildren();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "taps-zh", { reducedMotion: true });
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    while (session.projection.status !== "completed") session.advance();
+    mounted.view.setCardTapHandler({ live: (id) => session.studentCardLive(id), tap: (id, tap, input) => session.tapStudentCard(id, tap, input) });
+    mounted.view.render(session.projection.board);
+    const id = document.querySelector(".base-ten-mat").closest(".board-node").dataset.nodeId
+      ?? Object.keys(session.projection.board.nodes).find((key) => key.endsWith(":node:mat"));
+    const refused = session.tapStudentCard(id, { kind: "make", place: 0 });
+    return { mat: document.querySelector(".base-ten-mat").getAttribute("aria-label"), label: document.querySelector(".base-ten-unit.base-ten-live")?.getAttribute("aria-label"), message: refused.message, texts: [...document.querySelectorAll(".base-ten-mat text")].map((text) => text.textContent) };
+  }, { events: events.tapsZh });
+  check(zhTask.mat === "数位摆面" && zhTask.label === "把这个一放进托盘" && zhTask.message === "先点个位里的一，把它们放进托盘。", `a Chinese mat's task speaks Chinese: ${JSON.stringify(zhTask)}`);
+  check(zhTask.texts.every((text) => !/\d/.test(text)), `a Chinese mat draws no number: ${JSON.stringify(zhTask.texts)}`);
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -275,4 +299,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, refusals explained, a ten made, Enter taps, inert after done)");
+console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, refusals explained, a ten made, Enter taps, inert after done); a mat in Chinese, drawn the same, its words and refusals in Chinese");
