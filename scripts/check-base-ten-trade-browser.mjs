@@ -225,7 +225,23 @@ try {
   await clickPiece(chosen);
   now = await mat();
   check(now.tray.length === 1 && now.tray[0] === chosen && now.values.tray_ones === 1, `the unit tapped is the unit in the tray: ${JSON.stringify({ chosen, tray: now.tray })}`);
-  for (let i = 0; i < 8; i += 1) await clickPiece((await mat()).loose[0]);
+  // A unit on its way to the tray is not tapped: a quick second tap at the same spot never takes it back out.
+  // It reaches the next loose unit if that has slid there, else it does nothing; it never falls through to a
+  // button or the board (Learn on CI: the moving unit was taken back out; review of #96).
+  const [first, second] = (await mat()).loose;
+  const spot = await page.locator(`.base-ten-unit[data-oll-piece="${first}"] .base-ten-block`).boundingBox();
+  const [sx, sy] = [spot.x + spot.width / 2, spot.y + spot.height / 2];
+  await page.mouse.click(sx, sy);
+  // Logged, not required: on a slow machine the move may already have ended (review of #96).
+  const inFlight = await page.evaluate((piece) => document.querySelector(`.base-ten-unit[data-oll-piece="${piece}"]`).classList.contains("base-ten-moving"), first);
+  await page.mouse.click(sx, sy);
+  now = await mat();
+  const afterQuick = now.tray.includes(second) ? 3 : 2;
+  check(now.tray.includes(first) && now.values.tray_ones === afterQuick && now.notice === "" && now.tens === 2,
+    `a quick second tap never undoes the first: ${JSON.stringify({ inFlight, first, second, tray: now.tray, notice: now.notice })}`);
+  await page.waitForTimeout(600);
+  check(await page.evaluate((piece) => !document.querySelector(`.base-ten-unit[data-oll-piece="${piece}"]`).classList.contains("base-ten-moving"), first), "a unit is settled once it is in the tray");
+  while ((await mat()).tray.length < 9) await clickPiece((await mat()).loose[0]);
   await clickButton("make:0");
   now = await mat();
   check(now.notice === "This tray does not hold a ten: a ten is ten ones." && now.values.tens === 2, `nine in the tray: refused with the card's reason: ${JSON.stringify(now)}`);
@@ -299,4 +315,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, refusals explained, a ten made, Enter taps, inert after done); a mat in Chinese, drawn the same, its words and refusals in Chinese");
+console.log("trading mat browser checks passed: two and three columns named in words, no number drawn; each place drawn to its count, trays filled inside their outlines; the most each place reaches inside the card, loose units apart, nine hundreds whole and apart; one size as counts move; buttons inert while the lesson plays; emphasis on one place; a demonstration of taps; real taps on a card task (the unit tapped moves, a quick second tap never undoes the first, refusals explained, a ten made, Enter taps, inert after done); a mat in Chinese, drawn the same, its words and refusals in Chinese");
