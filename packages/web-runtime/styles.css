@@ -337,6 +337,7 @@
 
 .oll-variable-controls[hidden] { display: none; }
 .oll-variable-control { display: grid; grid-template-columns: minmax(90px, auto) minmax(180px, 1fr) 78px; align-items: center; gap: 12px; }
+.oll-variable-control[hidden] { display: none; }
 .oll-variable-label { overflow: hidden; color: #4e4941; font-size: 13px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .oll-variable-control input { width: 100%; accent-color: #17877b; cursor: ew-resize; }
 .oll-variable-control output { color: #176b62; font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; }
