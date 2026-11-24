@@ -16,7 +16,10 @@ export interface VariableControlModel {
   max: number;
   step: number;
   unit?: string;
-  /** A slider on a card's count that no open task lets the learner move now (decision 0023 amendment 4). */
+  /**
+   * A slider on a card's count that no open task lets the learner move now (decision 0023 amendment 4). A
+   * card's slider with a single stop is left out of the models altogether.
+   */
   disabled?: boolean;
 }
 
@@ -40,12 +43,18 @@ export function variableControlModels(board: SemanticBoardState | null, options:
       const mat = baseTenMat(board.nodes[card.nodeId]?.content ?? {});
       const value = mat.counts[card.place] ?? Math.round(variable.value);
       const track = baseTenSliderTrack(mat, card.place);
+      const min = Math.min(track.min, value);
+      const max = Math.max(track.max, value);
+      // A slider with one stop has nowhere to go from this pile (9 tens and no hundred to break): it is not
+      // drawn, rather than drawn as a track that looks broken (owner, 2026-11-24). It appears once a trade
+      // gives it a second stop.
+      if (min === max) return [];
       return [{
         alias,
         label: variable.label ?? alias,
         value,
-        min: Math.min(track.min, value),
-        max: Math.max(track.max, value),
+        min,
+        max,
         step: variable.control.step!,
         ...(variable.unit ? { unit: variable.unit } : {}),
         disabled: !(options.live?.(alias) ?? true),
