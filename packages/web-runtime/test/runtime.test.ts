@@ -1818,6 +1818,25 @@ test("a three-column chain: two ones trades make 11 tens, then the tens slider g
   assert.equal(session.studentTasks[0]!.status, "succeeded");
 });
 
+test("a card slider with one stop is hidden, and shown once a trade gives it a second", () => {
+  // 26 ones and 9 tens on three columns: the tens cannot make a hundred (9) or break one (none), so their
+  // slider would run from 9 to 9 (owner, 2026-11-24: it looked broken).
+  const task = {
+    as: "slide", prompt: "Trade the ones.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "variable_change", variable: "ones", controls: ["slider"] }],
+    completion: { kind: "expression_target", expression: "ones", value: 6, tolerance: 0.5 }, hints: ["Each stop is a trade."],
+    start: { kind: "practice", variables: ["ones", "tray_ones", "tens", "tray_tens", "hundreds"], values: { ones: 26, tray_ones: 0, tens: 9, tray_tens: 0, hundreds: 0 } },
+  };
+  const session = new BrowserLessonSession(sliderLesson([task], { columns: 3 }), new MemoryStore(), "one-stop", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  // Both models stay in the list (a host keeps its controls while another slider is dragged); the tens are hidden.
+  const shown = () => variableControlModels(session.projection.board).map((model) => [model.alias, model.hidden === true]);
+  assert.deepEqual(sessionValues(session), { ones: 26, tray_ones: 0, tens: 9, tray_tens: 0, hundreds: 0 });
+  assert.deepEqual(shown(), [["ones", false], ["tens", true]]);
+  session.changeStudentVariable("ones", 16, { control: "slider", input: "mouse" });
+  assert.deepEqual(shown(), [["ones", false], ["tens", false]]);
+});
+
 test("retrying a card slider task lays its whole practice pile again, not only the count", () => {
   const session = new BrowserLessonSession(sliderLesson([slideTask(24, { ones: 14, tray_ones: 0, tens: 3 })]), new MemoryStore(), "slide-retry", { reducedMotion: true });
   while (session.projection.status !== "completed") session.advance();

@@ -54,3 +54,8 @@ test("a card's layout box includes its padding and border", () => {
   // out), so cards crossed group frames and narrowed the gaps between them.
   assert.match(styles, /\.board-node\s*\{[^}]*box-sizing:\s*border-box/);
 });
+
+test("a hidden variable control is not drawn, though its row is a grid (review of #101)", () => {
+  const styles = readFileSync(resolve("packages/web-runtime/styles.css"), "utf8");
+  assert.match(styles, /\.oll-variable-control\[hidden\]\s*\{[^}]*display:\s*none/);
+});
