@@ -16,11 +16,10 @@ export interface VariableControlModel {
   max: number;
   step: number;
   unit?: string;
-  /**
-   * A slider on a card's count that no open task lets the learner move now (decision 0023 amendment 4). A
-   * card's slider with a single stop is left out of the models altogether.
-   */
+  /** A slider on a card's count that no open task lets the learner move now (decision 0023 amendment 4). */
   disabled?: boolean;
+  /** A slider on a card's count whose track has a single stop: kept in the list, not shown. */
+  hidden?: boolean;
 }
 
 export interface VariableControlOptions {
@@ -45,10 +44,6 @@ export function variableControlModels(board: SemanticBoardState | null, options:
       const track = baseTenSliderTrack(mat, card.place);
       const min = Math.min(track.min, value);
       const max = Math.max(track.max, value);
-      // A slider with one stop has nowhere to go from this pile (9 tens and no hundred to break): it is not
-      // drawn, rather than drawn as a track that looks broken (owner, 2026-11-24). It appears once a trade
-      // gives it a second stop.
-      if (min === max) return [];
       return [{
         alias,
         label: variable.label ?? alias,
@@ -58,6 +53,11 @@ export function variableControlModels(board: SemanticBoardState | null, options:
         step: variable.control.step!,
         ...(variable.unit ? { unit: variable.unit } : {}),
         disabled: !(options.live?.(alias) ?? true),
+        // A slider with one stop has nowhere to go from this pile (9 tens and no hundred to break): it is
+        // hidden rather than drawn as a track that looks broken (owner, 2026-11-24), and shown again once a
+        // trade gives it a second stop. The model stays in the list, so a host keeps the same controls while
+        // another slider is dragged (review of #101).
+        ...(min === max ? { hidden: true } : {}),
       }];
     }
     return [{
@@ -121,7 +121,7 @@ export class VariableControlsView {
       this.aliases = aliases;
       this.container.replaceChildren(...models.map((model) => this.createControl(model)));
     }
-    this.container.hidden = models.length === 0;
+    this.container.hidden = models.every((model) => model.hidden === true);
     for (const model of models) {
       const control = this.container.querySelector<HTMLElement>(`[data-variable="${model.alias}"]`);
       const input = control?.querySelector<HTMLInputElement>("input");
@@ -132,6 +132,7 @@ export class VariableControlsView {
       input.step = String(model.step);
       input.value = String(model.value);
       input.disabled = model.disabled === true;
+      control.hidden = model.hidden === true;
       output.textContent = formatVariableValue(model.value, model.unit);
       control.classList.toggle("animating", animation?.variable === model.alias);
     }
