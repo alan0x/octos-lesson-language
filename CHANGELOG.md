@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- **The mat says how it is used** (math plugin; owner, 2026-11-24: how to work a component is the component's own fixed text, not the lesson's). `baseTenHowTo(content)` gives one sentence group in the mat's language, for two or three columns: tap a block into the tray and again to take it out, Make when a tray holds ten, Break to turn one into ten of the place below, then "I'm done". A host shows it with a task on the card.
+
 ### Fixed
 
 - **A count task keeps the learner's own pile** (decision 0023 amendment 5; owner, 2026-11-24). After "done", a later task without its own pile opened on a computed pile with the asked count, nearest the practice pile; on three columns that could differ from the learner's (a hundred they broke came back). `card_submit` now records `pile`, the card's bound counts and trays when the learner said done, and the mat lays that pile tidy (tray units loose in their place), after a restore and a replay too. A log without `pile` falls back as before.

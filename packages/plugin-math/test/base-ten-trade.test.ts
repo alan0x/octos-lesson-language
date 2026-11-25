@@ -10,7 +10,7 @@ import { measureSemanticNode } from "../../web-runtime/src/layout.js";
 import {
   BASE_TEN_TRADE_FEATURE, applyBaseTenTap, baseTenChanges, baseTenFacts, baseTenLooseAt, baseTenMat, baseTenRefusalText,
   BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_SLIDER_FEATURE, BASE_TEN_WORDS, baseTenSliderMove, baseTenSliderReachable, baseTenSliderStop,
-  baseTenSliderTrack, baseTenTapReachable, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
+  baseTenHowTo, baseTenSliderTrack, baseTenTapReachable, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
 } from "../src/base-ten-trade.js";
 import { baseTenStepDelay, baseTenStepFrames } from "../src/base-ten-trade-view.js";
 import { buildBaseTenTrade } from "../src/base-ten-trade-builder.js";
@@ -104,6 +104,11 @@ test("tap rules: two columns, a break into the empty tray, room on the mat", () 
     const places = Array.from({ length: start.columns - 1 }, (_, p) => p);
     for (let p = 0; p < start.columns; p += 1) assert.deepEqual(counts(baseTenTapReachable(start), p), counts(baseTenSliderReachable(start, places), p));
   }
+  // The mat says how it is used, in its language, for two or three columns (owner, 2026-11-24).
+  assert.match(baseTenHowTo(pile(0, 3, 14)), /^Tap a block to put it in the tray.*Make a ten.*Break a ten.*I'm done\.$/);
+  assert.match(baseTenHowTo(pile(1, 3, 14)), /Make a hundred.*Break a hundred/);
+  assert.match(baseTenHowTo({ ...pile(0, 3, 14), language: "zh-CN" }), /^点一个方块.*「换成一个十」.*「拆开一个十」.*「我做完了」。$/);
+  assert.match(baseTenHowTo({ ...pile(1, 3, 14), language: "zh-CN" }), /「换成一个百」/);
   assert.equal(baseTenRefusalText("tray_not_ten", 0), "This tray does not hold a ten: a ten is ten ones.");
   assert.equal(baseTenRefusalText("tray_full", 0), "The tray holds only ten.");
 });
