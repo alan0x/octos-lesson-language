@@ -1538,6 +1538,7 @@ export class BrowserLessonSession {
     if (progress.status === "succeeded") return this.studentTasks.find((task) => task.task_id === taskId)!;
     const sequence = this.nextStudentOperationSequence;
     this.nextStudentOperationSequence += 1;
+    const pile = this.cardPile(definition.completion.node);
     const operation: StudentCardSubmitOperation = {
       profile: "octos.student.operation",
       version: "0.1",
@@ -1547,7 +1548,7 @@ export class BrowserLessonSession {
       kind: "card_submit",
       target: { kind: "student_task", task_id: taskId },
       input,
-      ...(this.cardPile(definition.completion.node) ? { pile: this.cardPile(definition.completion.node)! } : {}),
+      ...(pile ? { pile } : {}),
     };
     const previousProgress = structuredClone(this.studentTaskProgressLog);
     try {
@@ -1714,10 +1715,6 @@ export class BrowserLessonSession {
     return result;
   }
 
-  /**
-   * A count task's practice pile once its count is made (amendment 5): of the piles taps can make with that
-   * count and every tray empty, the one nearest the practice pile (on two columns the only one).
-   */
   /** A card's bound counts and trays as they stand, by variable (whole numbers), or undefined. */
   private cardPile(nodeId: string): Record<string, number> | undefined {
     const node = this.player.snapshot.board?.nodes?.[nodeId];
@@ -1745,11 +1742,15 @@ export class BrowserLessonSession {
       .map((binding) => [binding.target, binding.expression.trim()]));
     const logged = [...this.studentOperationLog.operations].reverse()
       .find((operation) => operation.kind === "card_submit" && operation.target.task_id === task.as && operation.pile) as StudentCardSubmitOperation | undefined;
-    if (logged?.pile) {
+    // Only a pile that holds the count asked for, every count and tray of the card, is the learner's done pile.
+    const countAlias = bound.get(`${places[BASE_TEN_TRADE_PLACES.indexOf(task.completion.at!)]?.id}.count`);
+    const usable = logged?.pile && countAlias && logged.pile[countAlias] === task.completion.value
+      && [...bound.values()].every((alias) => logged.pile![alias] !== undefined);
+    if (usable && logged?.pile) {
       const own: Record<string, number> = {};
       for (const place of places) {
         const count = bound.get(`${place.id}.count`);
-        if (count) own[count] = logged.pile[count] ?? variables[count]?.value ?? 0;
+        if (count) own[count] = logged.pile[count]!;
         const tray = bound.get(`${place.id}.tray`);
         if (tray) own[tray] = 0;
       }
