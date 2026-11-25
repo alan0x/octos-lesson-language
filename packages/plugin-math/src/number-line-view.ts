@@ -238,7 +238,7 @@ export function planNumberLineCard(raw: Record<string, unknown>, variables?: Num
   // then thin among the drawn ticks, so every label has its tick.
   const layout = (view: NumberLineWindow) => {
     const mapX = mapperFor(view), inView = inViewFor(view);
-    const thinned = thinNumberLineTicks(content, allTicks, view, x1 - x0, marked);
+    const thinned = thinNumberLineTicks(content, allTicks, view, x1 - x0, marked, latent.filter((value): value is number => value !== undefined));
     const labelled = thinned.ticks.filter((tick) => tick.label);
     const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
     const labelRow = new Map([...labelPlan.shown].map((index) => [labelled[index]!.value, labelPlan.rows.get(index) ?? 0]));

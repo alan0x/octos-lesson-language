@@ -63,17 +63,18 @@ test("every label drawn has its tick, and labels thin among the drawn ticks", ()
 });
 
 test("with subdivisions, thinning keeps the major ticks (never thirds of a stride of two)", () => {
-  // Quarters over 0..60 (240 smallest ticks, 1.9 units each): every quarter, half and whole number is too
-  // close (7.7 units), so ticks fall on every second whole number.
+  // Quarters over 0..60 (240 smallest ticks, 1.9 units each): quarters and halves are too close, so ticks
+  // fall on the whole numbers (7.7 units: a line with parts counts its wholes with the parts).
   const quarters = { range: { min: 0, max: 60 }, ticks: { step: 1, subdivisions: 4 } };
   const plan = planNumberLineCard(quarters);
   assert.ok(plan.ticks.every((tick) => Number.isInteger(tick.value)), "only whole numbers");
-  assert.equal(plan.tickStride, 8);
+  assert.equal(plan.tickStride, 4);
   // A stride inside a step divides its subdivisions (halves of tenths, never fifths of thirds) and keeps
   // them 6 units apart; past the step it is whole steps, 14 apart.
   assert.equal(NUMBER_LINE_ZOOM.minSubdivisionSpacing, 6);
   assert.equal(planTickStride(1.5, 10), 5);
-  assert.equal(planTickStride(2.5, 3), 6);
+  assert.equal(planTickStride(2.5, 3), 3);
+  assert.equal(planTickStride(1.5, 3), 15);
   assert.equal(planTickStride(3.5, 4), 2);
   assert.equal(planTickStride(7.5, 4), 1);
   // −5 to 5 in quarters (11.5 units a quarter) keeps every quarter.
@@ -182,4 +183,23 @@ test("a point dragged on a zoomed line lands on the same stops as on the whole l
   // On the whole line it stops at the range's ends, as before.
   assert.equal(numberLineDragValue(line(whole), 600), 2);
   assert.equal(numberLineDragValue(line(whole), -100), 0);
+});
+
+test("an answer kept back until emphasized sits on a tick like its neighbours, never one of its own (review of #107)", () => {
+  const hiddenAt = (value: number) => planNumberLineCard({
+    range: { min: 0, max: 70 }, ticks: { step: 1 },
+    points: [{ as: "start", value: 47, label: "Start" }, { as: "end", value, shown: "when_emphasized" }],
+    jumps: [{ as: "more", from: "start", by: value - 47 }],
+  });
+  // 52 is even: the line draws every second number, so 52 has a tick and so do its neighbours 50 and 54.
+  const even = hiddenAt(52);
+  assert.equal(even.tickStride, 2);
+  for (const value of [50, 52, 54]) assert.ok(values(even).includes(value), `${value} has a tick`);
+  assert.ok(!labelled(even).includes(52), "the answer's number is not written");
+  // 57 is on no thinned stride: every tick stays, as before zoom existed.
+  const odd = hiddenAt(57);
+  assert.equal(odd.tickStride, 1);
+  assert.ok(values(odd).includes(57) && values(odd).includes(56) && values(odd).includes(58));
+  // 55 is on the stride of five the line would use anyway.
+  assert.equal(hiddenAt(55).tickStride, 5);
 });

@@ -592,6 +592,9 @@ export function planTickStride(spacing: number, subdivisions = 1): number {
     if (stride >= subdivisions) break;
     if (subdivisions % stride === 0 && partsEnough(stride)) return stride;
   }
+  // On a line with parts, its whole steps are counted with the parts: they too need only the parts' spacing
+  // (quarters on 0 to 60 fall back to every whole number, not every second; review of #107).
+  if (subdivisions > 1 && partsEnough(subdivisions)) return subdivisions;
   for (let scale = 1; scale <= 1e9; scale *= 10) {
     for (const factor of [1, 2, 5]) if (enough(subdivisions * factor * scale)) return subdivisions * factor * scale;
   }
@@ -604,10 +607,23 @@ export function planTickStride(spacing: number, subdivisions = 1): number {
  */
 export function thinNumberLineTicks(
   content: Pick<NumberLineContent, "range" | "ticks">, ticks: readonly PlannedTick[], window: NumberLineWindow, width: number, marked: readonly number[],
+  hidden: readonly number[] = [],
 ): { ticks: PlannedTick[]; stride: number } {
   const unit = tickUnit(content);
   const spacing = unit * width / (window.max - window.min);
-  const stride = planTickStride(spacing, content.ticks?.subdivisions ?? 1);
+  const subdivisions = content.ticks?.subdivisions ?? 1;
+  // An answer kept back until emphasized sits on a tick like its neighbours: a tick of its own would give it
+  // away, and none would leave the revealed dot between ticks. The stride shrinks until every hidden value
+  // on the grid is on it (review of #107; 57 on 0 to 70 keeps every tick, 52 keeps every second).
+  const onStride = (value: number, stride: number) => Math.round(value / unit) % stride === 0;
+  const onGrid = (value: number) => Math.abs(value / unit - Math.round(value / unit)) <= 1e-9 * Math.max(1, Math.abs(value / unit));
+  const kept = hidden.filter(onGrid);
+  let stride = planTickStride(spacing, subdivisions);
+  if (kept.some((value) => !onStride(value, stride))) {
+    const strides: number[] = [1, 2, 5, 10, 20, 50].filter((each) => each < subdivisions && subdivisions % each === 0);
+    for (let scale = 1; subdivisions * scale < stride * 10; scale *= 10) strides.push(...[1, 2, 5].map((factor) => subdivisions * factor * scale));
+    stride = strides.filter((each) => each <= stride).sort((a, b) => b - a).find((each) => kept.every((value) => onStride(value, each))) ?? 1;
+  }
   const isMarked = (value: number) => marked.some((mark) => Math.abs(mark - value) <= 1e-9 * Math.max(1, Math.abs(value)));
   const tolerance = 1e-9 * Math.max(1, Math.abs(window.min), Math.abs(window.max));
   return {
