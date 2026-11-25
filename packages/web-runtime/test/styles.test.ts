@@ -59,3 +59,10 @@ test("a hidden variable control is not drawn, though its row is a grid (review o
   const styles = readFileSync(resolve("packages/web-runtime/styles.css"), "utf8");
   assert.match(styles, /\.oll-variable-control\[hidden\]\s*\{[^}]*display:\s*none/);
 });
+
+test("the board sets its own dark text colour, since its background is always light", () => {
+  const styles = readFileSync(resolve("packages/web-runtime/styles.css"), "utf8");
+  // Without it, cards inherited the host page's text colour, which is pale in a
+  // dark app theme, so note and card titles were barely readable on the board.
+  assert.match(styles, /\.oll-board-runtime\s*\{[^}]*[;{ ]color:\s*#2c2520[^}]*background-color:\s*#f8f5ed/);
+});
