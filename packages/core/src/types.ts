@@ -1,5 +1,6 @@
 import type { OllNodeKind } from "./capabilities.js";
 import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-answer.js";
+import type { BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
 
 export type Alias = string;
 export type LocalReference = string;
@@ -248,7 +249,7 @@ export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
  * card's own program judges a fact of what the learner made, only when the learner submits; taps are
  * not attempts. Every count the card's taps change is bound to its own lesson variable.
  */
-export type CardFact = "no_trade_left";
+export type CardFact = "no_trade_left" | "count";
 
 export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
   /** Tapping the card and saying done; and, besides, its count sliders, which trade (decision 0023 amendment 4). */
@@ -257,7 +258,15 @@ export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
     kind: "card_fact";
     /** The card (node alias; a canonical node ID after normalization). */
     node: Alias;
+    /**
+     * `no_trade_left`: every place below the highest is under ten. `count` (amendment 5, player 0.15.0):
+     * the place `at` holds exactly `value` (its tray included), a target the learner reaches by tapping.
+     */
     fact: CardFact;
+    /** With `count`: the place counted. */
+    at?: BaseTenPlaceName;
+    /** With `count`: the count asked for, a whole number. */
+    value?: number;
   };
 }
 

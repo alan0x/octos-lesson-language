@@ -1539,6 +1539,47 @@ test("a card task: taps change the bound counts together, only exactly ten trade
   assert.equal(new BrowserLessonSession(events, store, "trade", { reducedMotion: true }).studentTasks[0]!.attempts.length, 0);
 });
 
+test("a count task (decision 0023 amendment 5): taps only, judged on done by the place's count; a replay lays the counted pile", () => {
+  const events = tradingLesson();
+  const task = events[0]!.lesson!.tasks![0]! as unknown as { prompt: string; completion: Record<string, unknown> };
+  task.prompt = "Make the ones 7. Then tap I'm done.";
+  task.completion = { ...task.completion, fact: "count", at: "ones", value: 7 };
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "count", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(sessionValues(session), { ones: 17, tray_ones: 0, tens: 2 });
+  assert.equal(session.studentCardLive(card), true);
+  // No slider: the mat's counts have no control of their own.
+  assert.deepEqual(variableControlModels(session.projection.board), []);
+  // Done before the count is made: a failed attempt recording the count against the target.
+  assert.equal(session.submitStudentCard("trade").status, "in_progress");
+  // Nine in the tray and done: the count is still 17 (the tray counts), not 8.
+  for (let i = 0; i < 9; i += 1) session.tapStudentCard(card, { kind: "gather", place: 0 });
+  assert.equal(session.submitStudentCard("trade").status, "needs_hint");
+  session.tapStudentCard(card, { kind: "gather", place: 0 });
+  session.tapStudentCard(card, { kind: "make", place: 0 });
+  assert.deepEqual(sessionValues(session), { ones: 7, tray_ones: 0, tens: 3 });
+  const done = session.submitStudentCard("trade");
+  assert.equal(done.status, "succeeded");
+  assert.deepEqual(done.attempts.map((attempt) => [attempt.actual, attempt.target, attempt.succeeded]), [[17, 7, false], [17, 7, false], [7, 7, true]]);
+  // Restored attempts are checked against the count; a tampered one is discarded.
+  assert.deepEqual(new BrowserLessonSession(events, store, "count", { reducedMotion: true }).studentTasks, session.studentTasks);
+  store.studentTaskProgress.get("count")!.tasks[0]!.attempts[0]!.succeeded = true;
+  assert.equal(new BrowserLessonSession(events, store, "count", { reducedMotion: true }).studentTasks[0]!.attempts.length, 0);
+  // Replayed: the typed question opens over the counted pile (7 ones, 3 tens), not the lesson's.
+  const replayed = new BrowserLessonSession(events, new MemoryStore(), "count-replay", { reducedMotion: true });
+  while (replayed.projection.status !== "completed") replayed.advance();
+  for (let i = 0; i < 10; i += 1) replayed.tapStudentCard(card, { kind: "gather", place: 0 });
+  replayed.tapStudentCard(card, { kind: "make", place: 0 });
+  for (let i = 0; i < 4; i += 1) replayed.tapStudentCard(card, { kind: "gather", place: 0 });
+  assert.equal(replayed.submitStudentCard("trade").status, "succeeded");
+  replayed.seek(0);
+  while (replayed.projection.status !== "completed") replayed.advance();
+  assert.deepEqual(sessionValues(replayed), { ones: 7, tray_ones: 0, tens: 3 });
+  assert.equal(replayed.studentTasks[1]!.available, true);
+});
+
 test("replaying the lesson lays a card task's practice pile again (review of #87)", () => {
   const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-replay", { reducedMotion: true });
   const card = "trade:node:mat";

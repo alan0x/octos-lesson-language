@@ -1299,6 +1299,22 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
   const revised = base();
   (revised.steps[0]!.beats as unknown[]).push({ key: "caption", say: "Look again.", actions: [{ do: "revise", target: "mat", reason: "add a caption", content: { columns: 2, caption: "Count them.", places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }] } }] });
   assert.throws(() => validateAuthoringLesson(revised), /not revised: its counts change by taps/);
+  // Amendment 5: a count the learner taps to, from the practice pile (17 ones, 2 tens): 7, 17, 27 or 37 ones; 0 to 3 tens.
+  const count = (at: unknown, value: unknown, more: Record<string, unknown> = {}) => base({ task: { completion: { kind: "card_fact", node: "mat", fact: "count", at, value, ...more } } });
+  for (const [at, value] of [["ones", 7], ["ones", 27], ["ones", 37], ["tens", 3], ["tens", 0]] as const) {
+    assertAuthoringSchema(count(at, value));
+    validateAuthoringLesson(count(at, value));
+  }
+  const counted = normalizeAuthoringLesson(count("ones", 7), { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
+  assert.equal(deriveExecutionRequirements(counted).minimumPlayerVersion, "0.15.0");
+  assert.ok(deriveExecutionRequirements(counted).requiredCapabilities.includes("student-tasks:card_fact:count"));
+  assert.throws(() => validateAuthoringLesson(count("ones", 17)), /already has 17 ones/);
+  assert.throws(() => validateAuthoringLesson(count("ones", 10)), /makes 7 or 17 or 27 or 37 ones, never 10/);
+  assert.throws(() => validateAuthoringLesson(count("hundreds", 0)), /a place the card has: ones, tens/);
+  assert.throws(() => validateAuthoringLesson(count("ones", 6.5)), /whole number/);
+  assert.throws(() => validateAuthoringLesson(count("ones", undefined)), /whole number/);
+  // Only a count names a place and a value.
+  assert.throws(() => validateAuthoringLesson(base({ task: { completion: { kind: "card_fact", node: "mat", fact: "no_trade_left", at: "ones" } } })), /Unknown field 'at' of a no_trade_left card fact/);
 });
 
 test("a slider on a card's count (decision 0023 amendment 4): ones, and tens on three columns, of step ten; tasks reach their target by trades", () => {

@@ -10,7 +10,7 @@ import { measureSemanticNode } from "../../web-runtime/src/layout.js";
 import {
   BASE_TEN_TRADE_FEATURE, applyBaseTenTap, baseTenChanges, baseTenFacts, baseTenLooseAt, baseTenMat, baseTenRefusalText,
   BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_SLIDER_FEATURE, BASE_TEN_WORDS, baseTenSliderMove, baseTenSliderReachable, baseTenSliderStop,
-  baseTenSliderTrack, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
+  baseTenSliderTrack, baseTenTapReachable, baseTenTrayAt, planBaseTenTrade, validateBaseTenTradeContent, type BaseTenMat, type BaseTenTap,
 } from "../src/base-ten-trade.js";
 import { baseTenStepDelay, baseTenStepFrames } from "../src/base-ten-trade-view.js";
 import { buildBaseTenTrade } from "../src/base-ten-trade-builder.js";
@@ -95,6 +95,15 @@ test("tap rules: two columns, a break into the empty tray, room on the mat", () 
   // What changed in one tap, for the runtime to write to the bound variables.
   assert.deepEqual(baseTenChanges(mat(0, 3, 14), tap(mat(0, 3, 14), ...times(10, { kind: "gather", place: 0 }), { kind: "make", place: 0 })),
     [{ place: 0, field: "count", before: 14, after: 4 }, { place: 1, field: "count", before: 3, after: 4 }]);
+  // Amendment 5: every pile taps can make, by an exact search. Its counts are those the sliders reach; trays vary too.
+  const counts = (mats: BaseTenMat[], p: number) => [...new Set(mats.map((each) => each.counts[p]!))].sort((a, b) => a - b);
+  assert.deepEqual(counts(baseTenTapReachable(mat(0, 3, 26)), 0), [6, 16, 26, 36, 46, 56]);
+  assert.deepEqual(baseTenTapReachable(mat(0, 3, 26))[0], mat(0, 3, 26));
+  assert.ok(baseTenTapReachable(mat(0, 3, 26)).every((each) => baseTenFacts(each).value === 56));
+  for (const start of [mat(0, 3, 26), mat(1, 9, 26, 3), mat(0, 10, 6, 3), mat(6, 19, 59), mat(0, 0, 5)]) {
+    const places = Array.from({ length: start.columns - 1 }, (_, p) => p);
+    for (let p = 0; p < start.columns; p += 1) assert.deepEqual(counts(baseTenTapReachable(start), p), counts(baseTenSliderReachable(start, places), p));
+  }
   assert.equal(baseTenRefusalText("tray_not_ten", 0), "This tray does not hold a ten: a ten is ten ones.");
   assert.equal(baseTenRefusalText("tray_full", 0), "The tray holds only ten.");
 });

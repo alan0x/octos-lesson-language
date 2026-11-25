@@ -211,6 +211,29 @@ export function applyBaseTenTap(mat: BaseTenMat, tap: BaseTenTap): BaseTenTapRes
   return { ok: true, mat: { ...mat, counts, trays: set(mat.trays, p - 1, 10) } };
 }
 
+/**
+ * Every mat a learner can make from this one by tapping, the mat itself first (amendment 5): an exact
+ * search over the tap rules. The total never changes, so there are few: at most a few dozen piles, each
+ * with its trays.
+ */
+export function baseTenTapReachable(mat: BaseTenMat): BaseTenMat[] {
+  const key = (state: BaseTenMat) => `${state.counts.join(",")}/${state.trays.join(",")}`;
+  const seen = new Set([key(mat)]);
+  const found = [mat];
+  const kinds: BaseTenTap["kind"][] = ["gather", "ungather", "make", "break"];
+  for (let i = 0; i < found.length; i += 1) {
+    for (let place = 0; place < mat.columns; place += 1) {
+      for (const kind of kinds) {
+        const result = applyBaseTenTap(found[i]!, { kind, place });
+        if (!result.ok || seen.has(key(result.mat))) continue;
+        seen.add(key(result.mat));
+        found.push(result.mat);
+      }
+    }
+  }
+  return found;
+}
+
 /** The most of a place the mat draws: tens on a mat of two columns stop at nine. */
 const drawnMost = (columns: number, p: number): number => (columns === 2 && p === 1 ? 9 : BASE_TEN_TRADE_LIMITS.drawn[p]!);
 
