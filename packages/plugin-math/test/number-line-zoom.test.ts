@@ -26,26 +26,28 @@ const bt20 = {
   jumps: [{ as: "up", from: "n", by: 3 }],
 };
 
-test("ticks closer than six board units thin on a 1-2-5 stride, also at rest; the rule's numbers are named", () => {
-  assert.equal(NUMBER_LINE_ZOOM.minTickSpacing, 6);
+test("ticks closer than 14 board units thin on a 1-2-5 stride, also at rest; the rule's numbers are named", () => {
+  assert.equal(NUMBER_LINE_ZOOM.minTickSpacing, 14);
   assert.equal(NUMBER_LINE_ZOOM.maxTickSpacing, 48);
-  // 0 to 70 is 460/70 = 6.57 units a tick: every tick stays.
+  // 0 to 70 is 460/70 = 6.57 units a tick: BT-19's comb draws every fifth number (decision 0024).
   const comb = planNumberLineCard(bt19);
-  assert.equal(comb.tickStride, 1);
-  assert.equal(comb.ticks.length, 71);
-  // 300 to 410 is 4.18 units a tick: every second number, counted from 0 (so 300, 302 …).
+  assert.equal(comb.tickStride, 5);
+  assert.equal(comb.ticks.length, 15 + 2, "0, 5 … 70, plus the marked 47 and 57");
+  // 300 to 410 is 4.18 units a tick: every fifth number, counted from 0 (so 300, 305 …).
   const rounding = planNumberLineCard(bt20);
-  assert.equal(rounding.tickStride, 2);
-  assert.ok(values(rounding).includes(300) && values(rounding).includes(302) && !values(rounding).includes(301));
-  // 0 to 80 (5.75 a tick) thins too; 0 to 1,000 by ones (0.46) thins to every 20.
-  assert.equal(planNumberLineCard({ range: { min: 0, max: 80 }, ticks: { step: 1 } }).tickStride, 2);
-  assert.equal(planNumberLineCard({ range: { min: 0, max: 200 }, ticks: { step: 1 } }).tickStride, 5);
-  assert.equal(planTickStride(0.46), 20);
+  assert.equal(rounding.tickStride, 5);
+  assert.ok(values(rounding).includes(300) && values(rounding).includes(305) && !values(rounding).includes(302));
+  // 0 to 80 (5.75 a tick) draws every fifth; 0 to 200 (2.3) every tenth; 0.46 a tick thins to every 50.
+  assert.equal(planNumberLineCard({ range: { min: 0, max: 80 }, ticks: { step: 1 } }).tickStride, 5);
+  assert.equal(planNumberLineCard({ range: { min: 0, max: 200 }, ticks: { step: 1 } }).tickStride, 10);
+  assert.equal(planTickStride(0.46), 50);
+  // A line that is not crowded keeps every tick: 0 to 20 by ones is 23 units a tick.
+  assert.equal(planNumberLineCard({ range: { min: 0, max: 20 }, ticks: { step: 1 } }).tickStride, 1);
 });
 
 test("the values a card marks keep their tick and label on a thinned line", () => {
   const plan = planNumberLineCard(bt20);
-  // 345 and 347 are odd, off the stride, and kept; 340 and 350 are on it.
+  // 347 is off the stride and kept; 340, 345 and 350 are on it.
   for (const value of [340, 345, 347, 350]) {
     assert.ok(values(plan).includes(value), `${value} keeps its tick`);
     assert.ok(labelled(plan).includes(value), `${value} keeps its label`);
@@ -61,17 +63,21 @@ test("every label drawn has its tick, and labels thin among the drawn ticks", ()
 });
 
 test("with subdivisions, thinning keeps the major ticks (never thirds of a stride of two)", () => {
-  // Quarters over 0..60 (240 smallest ticks, 1.9 units each): every quarter and every half are too close,
-  // so ticks fall on the whole numbers.
+  // Quarters over 0..60 (240 smallest ticks, 1.9 units each): every quarter, half and whole number is too
+  // close (7.7 units), so ticks fall on every second whole number.
   const quarters = { range: { min: 0, max: 60 }, ticks: { step: 1, subdivisions: 4 } };
   const plan = planNumberLineCard(quarters);
   assert.ok(plan.ticks.every((tick) => Number.isInteger(tick.value)), "only whole numbers");
-  assert.equal(plan.tickStride, 4);
-  // A stride inside a step divides its subdivisions: halves of tenths, never fifths of thirds.
+  assert.equal(plan.tickStride, 8);
+  // A stride inside a step divides its subdivisions (halves of tenths, never fifths of thirds) and keeps
+  // them 6 units apart; past the step it is whole steps, 14 apart.
+  assert.equal(NUMBER_LINE_ZOOM.minSubdivisionSpacing, 6);
   assert.equal(planTickStride(1.5, 10), 5);
-  assert.equal(planTickStride(2.5, 3), 3);
+  assert.equal(planTickStride(2.5, 3), 6);
   assert.equal(planTickStride(3.5, 4), 2);
-  assert.equal(planTickStride(10, 4), 1);
+  assert.equal(planTickStride(7.5, 4), 1);
+  // −5 to 5 in quarters (11.5 units a quarter) keeps every quarter.
+  assert.equal(planNumberLineCard({ range: { min: -5, max: 5 }, ticks: { step: 1, subdivisions: 4 } }).tickStride, 1);
   // Zoomed in, every quarter comes back.
   const zoomed = planNumberLineCard(quarters, undefined, { min: 10, max: 15 });
   assert.equal(zoomed.tickStride, 1);

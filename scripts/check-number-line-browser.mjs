@@ -624,7 +624,7 @@ try {
   const sameCamera = (a, b) => ["panX", "panY", "scale"].every((key) => Math.abs(a[key] - b[key]) < 1e-6);
   await mountZoom(rounding, "rounding");
   const roundingRest = await zoomState();
-  check(roundingRest.ticks === 58, `300..410 at rest: every second tick plus the marked 345 and 347 (58): ${roundingRest.ticks}`);
+  check(roundingRest.ticks === 24, `300..410 at rest: every fifth tick plus the marked 347 (24): ${roundingRest.ticks}`);
   check(["340", "345", "347", "350"].every((value) => roundingRest.labels.includes(value)), `the marked values keep their labels at rest: ${roundingRest.labels.join(" ")}`);
   check(roundingRest.buttons.out?.text === "−" && roundingRest.buttons.in?.text === "+" && roundingRest.buttons.whole?.text === "整条", `the card draws −, + and 整条: ${JSON.stringify(roundingRest.buttons)}`);
   check(roundingRest.buttons.out.disabled && roundingRest.buttons.whole.disabled && !roundingRest.buttons.in.disabled, `at rest only + is live: ${JSON.stringify(roundingRest.buttons)}`);
@@ -726,7 +726,7 @@ try {
   };
   await mountZoom(pages, "pages");
   const pagesRest = await zoomState();
-  check(pagesRest.ticks === 71, `0..70 at 6.57 units a tick keeps every tick: ${pagesRest.ticks}`);
+  check(pagesRest.ticks === 16, `0..70 at 6.57 units a tick draws every fifth (decision 0024; 47 is marked): ${pagesRest.ticks}`);
   const restDrag = await dragTo(52.3);
   await mountZoom(pages, "pages");
   for (let press = 0; press < 3; press += 1) await page.click(".number-line-zoom-in");

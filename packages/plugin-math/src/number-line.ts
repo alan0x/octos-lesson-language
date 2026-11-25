@@ -502,8 +502,18 @@ export function jumpHops(content: Pick<NumberLineContent, "range" | "ticks">, en
 export interface NumberLineWindow { min: number; max: number }
 
 export const NUMBER_LINE_ZOOM = {
-  /** Board units between drawn ticks, at least; closer ticks are thinned on a 1-2-5 stride. */
-  minTickSpacing: 6,
+  /**
+   * Board units between drawn ticks, at least; closer ticks are thinned on a 1-2-5 stride. 14 units is about
+   * 9 px on a card drawn 370 px wide, as in Learn: 0 to 70 by ones (6.6 units a tick, a comb at that size)
+   * draws every fifth number, as decision 0024 says.
+   */
+  minTickSpacing: 14,
+  /**
+   * Board units between the parts of one step (quarters, tenths), at least. Smaller than minTickSpacing: the
+   * parts are what a fraction lesson counts, so they stay unless they truly crowd (−5 to 5 in quarters keeps
+   * all 41 ticks).
+   */
+  minSubdivisionSpacing: 6,
   /** Zooming in stops when one smallest tick is about this many board units wide. */
   maxTickSpacing: 48,
   /** What one press of "+" or "−" multiplies the zoom by. */
@@ -569,16 +579,18 @@ export function numberLineZoomCentre(window: NumberLineWindow, marked: readonly 
 }
 
 /**
- * The stride, in smallest ticks, ticks are drawn on so they are at least `minTickSpacing` apart, when one
+ * The stride, in smallest ticks, ticks are drawn on so they are at least `minTickSpacing` apart (the parts
+ * of one step: `minSubdivisionSpacing`), when one
  * smallest tick is `spacing` board units wide (decision 0024). Strides are 1, 2, 5 × 10ⁿ: inside a major
  * step only those that divide its subdivisions (halves of quarters, fifths of tenths), past it whole
  * multiples of the major step, so every drawn tick still falls on a major tick or an even share of one.
  */
 export function planTickStride(spacing: number, subdivisions = 1): number {
   const enough = (stride: number) => stride * spacing >= NUMBER_LINE_ZOOM.minTickSpacing * (1 - 1e-9);
+  const partsEnough = (stride: number) => stride * spacing >= NUMBER_LINE_ZOOM.minSubdivisionSpacing * (1 - 1e-9);
   for (const stride of [1, 2, 5, 10, 20, 50]) {
     if (stride >= subdivisions) break;
-    if (subdivisions % stride === 0 && enough(stride)) return stride;
+    if (subdivisions % stride === 0 && partsEnough(stride)) return stride;
   }
   for (let scale = 1; scale <= 1e9; scale *= 10) {
     for (const factor of [1, 2, 5]) if (enough(subdivisions * factor * scale)) return subdivisions * factor * scale;
