@@ -679,6 +679,12 @@ try {
   await page.keyboard.press("Enter");
   const keyed = await zoomState();
   check(keyed.zoomed, "Enter on + zooms the line");
+  // A button that disables itself hands the focus on: "整条" by keyboard leaves the focus on "+".
+  await page.focus(".number-line-zoom-whole");
+  await page.keyboard.press("Enter");
+  const handedOn = await page.evaluate(() => document.activeElement?.className);
+  check(handedOn === "number-line-zoom-in", `after 整条 the focus moves to an enabled button: ${handedOn}`);
+  await page.keyboard.press("Enter");
   await page.evaluate(() => window.mounted.view.setLocale("en-US"));
   const english = await zoomState();
   check(english.buttons.whole.text === "Whole line" && english.buttons.in.label === "Zoom in", `the buttons speak English on an English board: ${JSON.stringify(english.buttons)}`);
@@ -686,6 +692,26 @@ try {
   await page.evaluate(() => window.mounted.view.focusTargets([Object.keys(window.session.projection.board.nodes).find((id) => id.endsWith(":node:line"))]));
   const resumed = await zoomState();
   check(!resumed.zoomed && Math.abs(resumed.window[1] - resumed.window[0] - 110) < 1e-6, `the teaching camera brings back the whole line: ${resumed.window.join("..")}`);
+  // A redrawn line keeps the board's emphasis: an end shown only when emphasized stays shown as the line
+  // zooms and as the teaching camera brings the whole line back.
+  await mountZoom(latentCases[1][1], "latent-zoom");
+  const endShown = () => page.evaluate(() => {
+    const end = [...document.querySelectorAll(".number-line-point")].find((group) => /end/.test(group.dataset.id ?? ""));
+    return end ? getComputedStyle(end).display !== "none" : null;
+  });
+  check(await endShown(), "the emphasized end is shown at rest");
+  await page.click(".number-line-zoom-in");
+  check((await zoomState()).zoomed && await endShown(), "the emphasized end stays shown on the zoomed line");
+  await page.evaluate(() => window.mounted.view.focusTargets([Object.keys(window.session.projection.board.nodes).find((id) => id.endsWith(":node:line"))]));
+  check(!(await zoomState()).zoomed && await endShown(), "the emphasized end stays shown when the whole line comes back");
+  // A line too short to zoom (0..4, already over 48 units a tick) still keeps the wheel from the board.
+  await mountZoom(normalizeAuthoringLesson(lesson({ range: { min: 0, max: 4 }, ticks: { step: 1 } }), host("short")), "short");
+  const short = await zoomState();
+  check(short.buttons.in.disabled && short.buttons.out.disabled && short.buttons.whole.disabled, `a line that cannot zoom shows its buttons disabled: ${JSON.stringify(short.buttons)}`);
+  const shortBox = await (await page.$(".number-line-preview")).boundingBox();
+  await page.mouse.move(shortBox.x + shortBox.width / 2, shortBox.y + shortBox.height / 2);
+  await page.mouse.wheel(0, -100);
+  check(sameCamera((await zoomState()).camera, short.camera), "the wheel over a line that cannot zoom does not zoom the board");
   // A point dragged on a zoomed line lands on the same stop as on the whole line, and the card keeps its size.
   const dragTo = async (value) => {
     const state = await zoomState();

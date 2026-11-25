@@ -3436,9 +3436,9 @@ export class InfiniteBoardView {
   private onWheel(event: WheelEvent): void {
     if (this.inputOwner === "course-object") return;
     // Over a number line card the wheel zooms the line, never the board (decision 0024), also at the
-    // line's limits; a line too short to zoom leaves the wheel to the board.
+    // line's limits and on a line too short to zoom at all.
     const line = numberLineZoomControl(boardWheelTargetsNumberLine(event.composedPath()) as Element | undefined);
-    if (line?.zoomable) {
+    if (line) {
       event.preventDefault();
       if (event.deltaY === 0) return;
       line.zoomAt(event.ctrlKey ? trackpadPinchZoomFactor(event.deltaY, event.deltaMode)

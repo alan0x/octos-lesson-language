@@ -492,8 +492,11 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   };
   const sync = () => {
     const span = plan.window.max - plan.window.min;
+    const focused = toolbar.contains(document.activeElement) ? document.activeElement : null;
     zoomIn.disabled = !limits.zoomable || span <= limits.minSpan * (1 + 1e-9);
     zoomOut.disabled = whole.disabled = !plan.zoomed;
+    // A button that reached its limit hands the keyboard focus to one that still works.
+    if (focused instanceof HTMLButtonElement && focused.disabled) (zoomIn.disabled ? zoomOut : zoomIn).focus();
   };
   const show = (next: NumberLineWindow | undefined, notify: boolean) => {
     const window = clampNumberLineWindow(content, next, width);
