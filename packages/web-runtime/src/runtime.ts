@@ -1334,6 +1334,10 @@ export class BrowserLessonSession {
     this.studentOperationLog.operations.push(operation);
     this.persistStudentOperations();
     this.persistStudentTaskProgress();
+    // The next task may start from a practice pile of its own: lay it now, as the card's "done" does, or its
+    // window stays shut until a reload (BT-31, base-ten check 4: a mat task after a typed answer never opened).
+    this.activatePractice();
+    this.persist();
     this.emit();
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
@@ -1521,6 +1525,10 @@ export class BrowserLessonSession {
     this.studentOperationLog.operations.push(operation);
     this.persistStudentOperations();
     this.persistStudentTaskProgress();
+    // The next task may start from a practice pile of its own: lay it now, as the card's "done" does, or its
+    // window stays shut until a reload (BT-31, base-ten check 4: a mat task after a typed answer never opened).
+    this.activatePractice();
+    this.persist();
     this.emit();
     return this.studentTasks.find((task) => task.task_id === taskId)!;
   }
