@@ -406,6 +406,11 @@ export const BASE_TEN_WORDS = {
       none_loose: ["There is no loose one to use.", "There is no loose ten to use.", "There is no loose hundred to use."],
     },
     other: "That can't be done here.",
+    /** How to work the mat (owner, 2026-11-24: the component says how it is used, as fixed text): two columns, then three. */
+    howTo: [
+      "Tap a block to put it in the tray; tap it again to take it out. When the tray holds ten, press Make a ten. Press Break a ten to turn a ten into ten ones. Then press I'm done.",
+      "Tap a block to put it in its tray; tap it again to take it out. When a tray holds ten, press Make a ten or Make a hundred. Press Break a ten or Break a hundred to turn it into ten of the place below. Then press I'm done.",
+    ],
   },
   "zh-CN": {
     matLabel: "数位方块",
@@ -424,8 +429,21 @@ export const BASE_TEN_WORDS = {
       none_loose: ["没有散的一可以用了。", "没有散的十可以用了。", "没有散的百可以用了。"],
     },
     other: "这里不能这样做。",
+    howTo: [
+      "点一个方块，把它放进托盘；再点一下就拿出来。托盘里有十个时，按「换成一个十」。按「拆开一个十」，把一个十拆成十个一。做好后按「我做完了」。",
+      "点一个方块，把它放进托盘；再点一下就拿出来。托盘里有十个时，按「换成一个十」或「换成一个百」。按「拆开一个十」或「拆开一个百」，把它拆成十个低一位的方块。做好后按「我做完了」。",
+    ],
   },
 } as const;
+
+/**
+ * How to work the mat, in its language (owner, 2026-11-24): fixed text the host shows with a task on the
+ * card, so the lesson's own words need not say how to use it. Two columns, or three.
+ */
+export function baseTenHowTo(raw: unknown): string {
+  const words = BASE_TEN_WORDS[baseTenLanguage(raw)];
+  return words.howTo[(raw as { columns?: unknown } | null)?.columns === 3 ? 1 : 0]!;
+}
 
 /** What the card tells a learner when a tap is refused, in the mat's language (US English by default). */
 export function baseTenRefusalText(reason: BaseTenRefusal, place: number, language: BaseTenLanguage = "en-US"): string {
