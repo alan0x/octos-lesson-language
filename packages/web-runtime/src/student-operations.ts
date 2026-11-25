@@ -113,6 +113,11 @@ export interface StudentCardSubmitOperation {
   kind: "card_submit";
   target: { kind: "student_task"; task_id: string };
   input: StudentInputMethod;
+  /**
+   * The card's bound counts and trays, by variable, when the learner said done (decision 0023 amendment 5).
+   * A later task without its own pile opens on the learner's own pile from it, also after a replay.
+   */
+  pile?: Record<string, number>;
 }
 
 /** A row of blanks submitted in one go (decision 0023 amendment 1): each blank's typed text by its name. */
@@ -290,6 +295,10 @@ export function parseStudentOperationLog(
       } else {
         const target = (operation as Partial<StudentCardSubmitOperation>).target;
         if (target?.kind !== "student_task" || typeof target.task_id !== "string" || !target.task_id) return undefined;
+        const pile = (operation as Partial<StudentCardSubmitOperation>).pile;
+        if (pile !== undefined && (!pile || typeof pile !== "object" || Array.isArray(pile)
+          || Object.keys(pile).length < 1 || Object.keys(pile).length > 6
+          || Object.values(pile).some((value) => !Number.isInteger(value) || value < 0))) return undefined;
       }
       ids.add(operation.id as string);
       lastSequence = operation.sequence as number;

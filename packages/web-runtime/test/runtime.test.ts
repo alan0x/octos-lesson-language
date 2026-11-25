@@ -1580,6 +1580,52 @@ test("a count task (decision 0023 amendment 5): taps only, judged on done by the
   assert.equal(replayed.studentTasks[1]!.available, true);
 });
 
+test("a count task on three columns keeps the learner's own pile after done, on restore and after a replay", () => {
+  // 126 as 1 hundred, 9 tens, 26 ones; "make the ones 16". The learner breaks the hundred and trades ten
+  // ones: 0 hundreds, 20 tens, 16 ones. Another pile has 16 ones too (1 hundred, 10 tens); the mat must not
+  // swap the learner's pile for it (owner, 2026-11-24: a hundred the child broke came back).
+  const pile = { ones: 26, tray_ones: 0, tens: 9, tray_tens: 0, hundreds: 1 };
+  const tasks = [{
+    as: "count", prompt: "Make the ones 16. Then tap I'm done.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "card_tap", node: "mat" }, { kind: "card_submit" }],
+    completion: { kind: "card_fact", node: "mat", fact: "count", at: "ones", value: 16 }, hints: ["Ten ones make a ten."],
+    start: { kind: "practice", variables: Object.keys(pile), values: pile },
+  }, {
+    as: "number", anchor: "mat", prompt: "What number is it?", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "answer_entry" }], completion: { kind: "numeric_answer", answer: "126" }, hints: ["It never changed."],
+  }];
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(sliderLesson(tasks, { columns: 3, noSliders: true }), store, "own-pile", { reducedMotion: true });
+  const card = "slide:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(sessionValues(session), pile);
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "break", place: 2 }));
+  for (let i = 0; i < 10; i += 1) assert.ok("operation" in session.tapStudentCard(card, { kind: "ungather", place: 1 }));
+  for (let i = 0; i < 10; i += 1) assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }));
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "make", place: 0 }));
+  const own = { ones: 16, tray_ones: 0, tens: 20, tray_tens: 0, hundreds: 0 };
+  assert.deepEqual(sessionValues(session), own);
+  assert.equal(session.submitStudentCard("count").status, "succeeded");
+  // The done operation records the learner's pile.
+  const submitted = session.studentOperations.at(-1) as { kind: string; pile?: Record<string, number> };
+  assert.deepEqual([submitted.kind, submitted.pile], ["card_submit", own]);
+  assert.deepEqual(sessionValues(session), own, "after done");
+  assert.equal(session.studentTasks[1]!.available, true);
+  const restored = new BrowserLessonSession(sliderLesson(tasks, { columns: 3, noSliders: true }), store, "own-pile", { reducedMotion: true });
+  assert.deepEqual(sessionValues(restored), own, "restored");
+  session.seek(0);
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(sessionValues(session), own, "after a replay");
+  // Units left in a tray go back loose: the count is the same, the tray is tidy.
+  const tidy = new BrowserLessonSession(sliderLesson(tasks, { columns: 3, noSliders: true }), new MemoryStore(), "tidy", { reducedMotion: true });
+  while (tidy.projection.status !== "completed") tidy.advance();
+  for (let i = 0; i < 10; i += 1) tidy.tapStudentCard(card, { kind: "gather", place: 0 });
+  tidy.tapStudentCard(card, { kind: "make", place: 0 });
+  for (let i = 0; i < 3; i += 1) tidy.tapStudentCard(card, { kind: "gather", place: 0 });
+  assert.equal(tidy.submitStudentCard("count").status, "succeeded");
+  assert.deepEqual(sessionValues(tidy), { ones: 16, tray_ones: 0, tens: 10, tray_tens: 0, hundreds: 1 });
+});
+
 test("replaying the lesson lays a card task's practice pile again (review of #87)", () => {
   const session = new BrowserLessonSession(tradingLesson(), new MemoryStore(), "trade-replay", { reducedMotion: true });
   const card = "trade:node:mat";
@@ -1681,8 +1727,8 @@ test("a row of blanks (decision 0023 amendment 1): judged whole, never says whic
 });
 
 // Decision 0023 amendment 4: a slider on a place's count, each stop one trade by the card's tap rules.
-function sliderLesson(tasks: unknown[], options: { columns?: 2 | 3 } = {}): ReturnType<typeof normalizeAuthoringLesson> {
-  const variable = (as: string, initial: number, max: number, control?: unknown) => ({ as, initial, min: 0, max, label: as, ...(control ? { control } : {}) });
+function sliderLesson(tasks: unknown[], options: { columns?: 2 | 3; noSliders?: boolean } = {}): ReturnType<typeof normalizeAuthoringLesson> {
+  const variable = (as: string, initial: number, max: number, control?: unknown) => ({ as, initial, min: 0, max, label: as, ...(control && !options.noSliders ? { control } : {}) });
   const slider = { kind: "slider", step: 10 };
   const three = options.columns === 3;
   const lesson = {

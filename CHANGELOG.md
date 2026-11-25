@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- **A count task keeps the learner's own pile** (decision 0023 amendment 5; owner, 2026-11-24). After "done", a later task without its own pile opened on a computed pile with the asked count, nearest the practice pile; on three columns that could differ from the learner's (a hundred they broke came back). `card_submit` now records `pile`, the card's bound counts and trays when the learner said done, and the mat lays that pile tidy (tray units loose in their place), after a restore and a replay too. A log without `pile` falls back as before.
+
 ### Added
 
 - **A count the learner taps the card to** (player 0.15.0, capability `student-tasks:card_fact:count`; decision 0023 amendment 5; owner, 2026-11-24: the model never names a control, and the trading mat is worked by its own taps, not a slider). A card task may complete on `{"kind": "card_fact", "node", "fact": "count", "at": "ones" | "tens" | "hundreds", "value"}`: the place's count, tray included, equals `value` when the learner says done. The validator refuses a place the card does not have, a value that is not a whole number, a value the practice pile already has, and a value taps cannot reach from the practice pile (an exact search over the tap rules, `baseTenTapReachable`, naming the counts that can be made); only `count` takes `at` and `value`. An attempt records the count and the target. After it is done, a later task without `start` opens on the pile with that count and every tray empty nearest the practice pile. Amendment 4's slider stays supported, so lessons that use it still play; Coach stops writing it. Tests: validation, requirements, the tap search against the slider search, judging, restore and replay.
