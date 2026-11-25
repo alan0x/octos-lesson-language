@@ -37,6 +37,8 @@ const EN: Readonly<Record<string, string>> = {
   "这段手写暂时无法显示：{description}": "This handwriting can't be shown right now: {description}",
   "请结合旁白理解空间关系。": "Use the narration to understand the spatial relationships.",
   "三维场景暂时无法交互。静态说明：{description}": "The 3D scene is temporarily unavailable for interaction. Static description: {description}",
+  // The number line's own zoom (decision 0024).
+  "数轴缩放": "Number line zoom", "整条": "Whole line", "缩小数轴": "Zoom out", "放大数轴": "Zoom in", "显示整条数轴": "Show the whole line",
 };
 
 /** Explicit UI bindings only: authored lesson text is never translated here. */

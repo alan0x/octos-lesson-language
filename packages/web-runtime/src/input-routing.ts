@@ -48,6 +48,21 @@ export function boardWheelTargetsInteractiveUi(path: readonly unknown[]): boolea
   });
 }
 
+/**
+ * The number line card a wheel event is over, if any (decision 0024): there the
+ * wheel zooms the line itself, never the board, wherever on the card it is
+ * (its buttons and title included). Returns the card for the board to find
+ * the line's zoom in; elsewhere, undefined, and the wheel zooms the board.
+ */
+export function boardWheelTargetsNumberLine(path: readonly unknown[]): unknown {
+  return path.find((candidate) => {
+    if (!candidate || typeof candidate !== "object") return false;
+    const element = candidate as InputPathElement;
+    return element.getAttribute?.("data-kind") === "number_line"
+      && /(?:^|\s)board-node(?:\s|$)/u.test(element.getAttribute?.("class") ?? "");
+  });
+}
+
 const textInputTags = new Set([
   "INPUT",
   "SELECT",

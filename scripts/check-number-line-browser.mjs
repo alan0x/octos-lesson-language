@@ -8,6 +8,11 @@
 // - quarter-step decimal labels read 0.25 and 0.75;
 // - several jumps on one line (0017): landing numbers drawn, labels apart, a move that reverses over an
 //   earlier one on its own lane with no arc crossing another, steady card height while moves animate.
+// - the card's own zoom (0024): ticks thinned at rest with marked values kept; "−", "+" and "whole line"
+//   with their limits; the wheel over the card zooms the line and never the board, outside it the board;
+//   a two-finger pinch on the card zooms the line; a drag on the zoomed line moves it; a point dragged
+//   on a zoomed line lands on the same stop; the card never resizes; the teaching camera brings back
+//   the whole line; the buttons speak the board's language.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 import { existsSync } from "node:fs";
@@ -217,6 +222,18 @@ const by25 = normalizeAuthoringLesson(lesson({
   points: [{ as: "start", value: 0, label: "起点" }, { as: "end", value: 125, label: "终点" }],
   jumps: [{ as: "j1", from: "start", by: 125, label: "5 个 25", hops: true }],
 }), host("by-25"));
+
+// 0024: BT-20 (round 347 to the nearest ten) with a title, and BT-19's line with a point the learner drags.
+const rounding = normalizeAuthoringLesson(lesson({
+  title: "把 347 四舍五入到十位", range: { min: 300, max: 410 }, ticks: { step: 1 },
+  points: [{ as: "low", value: 340 }, { as: "half", value: 345, style: "open" }, { as: "n", value: 347, label: "要取整的数" }, { as: "high", value: 350 }],
+  jumps: [{ as: "up", from: "n", by: 3 }],
+}), host("rounding"));
+const pages = normalizeAuthoringLesson(lesson({
+  range: { min: 0, max: 70 }, ticks: { step: 1 },
+  points: [{ as: "start", value: 47, label: "起点", interaction: { kind: "drag", variable: "s" } }],
+  bindings: [{ target: "start.value", expression: "s" }],
+}, { variables: [{ as: "s", initial: 47, min: 0, max: 70, label: "页" }] }), host("pages"));
 
 const bundle = await build({
   stdin: { contents: `
@@ -513,7 +530,8 @@ try {
   check(["8", "10", "13"].every((value) => makeTenView.ticks.includes(value)), `make ten keeps 8, 10 and 13 labelled: ${makeTenView.ticks.join(" ")}`);
   check(makeTenView.jumps.map((jump) => jump.label).join(" ") === "+2 +3" && makeTenView.jumps.every((jump) => jump.leaders === 0), `make ten draws two jumps on the line: ${JSON.stringify(makeTenView.jumps)}`);
   check(makeTenView.overlaps.length === 0, `make ten labels overlap: ${makeTenView.overlaps.join(", ")}`);
-  check(makeTenView.viewBox === "0 0 520 130", `chained jumps in one direction share one lane, as tall as one jump: ${makeTenView.viewBox}`);
+  // 130 for the line, its jumps and labels, and 14 for the zoom's overview strip (0024).
+  check(makeTenView.viewBox === "0 0 520 144", `chained jumps in one direction share one lane, as tall as one jump: ${makeTenView.viewBox}`);
   const [upDownUpView] = (await jumpStates(upDownUp, "up-down-up")).slice(-1);
   check(upDownUpView.jumps.map((jump) => jump.leaders).join(" ") === "0 2 2", `the moves that overlap earlier ones are raised with leaders: ${upDownUpView.jumps.map((jump) => jump.leaders).join(" ")}`);
   check(upDownUpView.jumps[1].arcs.length === 1 && upDownUpView.jumps[0].arcs.length === 6, `a raised move is one arc; the first keeps its hops: ${upDownUpView.jumps.map((jump) => jump.arcs.length).join(" ")}`);
@@ -564,6 +582,162 @@ try {
   check(stepsEnd.jumps.every((jump) => jump.leaders === 0) && stepsEnd.overlaps.length === 0, `tens then ones stays on one lane, labels apart: ${stepsEnd.overlaps.join(", ")}`);
   const [by25View] = (await jumpStates(by25, "by-25")).slice(-1);
   check(by25View.jumps[0].arcs.length === 5 && by25View.ticks.join(" ") === "0 25 50 75 100 125 150 175 200", `counting by 25: five hops on 25-unit ticks: ${by25View.jumps[0].arcs.length} hops, ${by25View.ticks.join(" ")}`);
+  // 0024: the card's own zoom.
+  // The board eases its camera in once mounted (a 760 ms transition); measure after it settles.
+  const settle = (target = page) => target.waitForTimeout(900);
+  // A fresh board element: the boards mounted above are never disposed, and their wheel and pointer
+  // handlers on the old element would act on this card too.
+  const mountZoom = async (events, id) => { await page.evaluate(({ events, id }) => {
+    const old = document.querySelector("#board");
+    old.replaceWith(old.cloneNode(false));
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), id);
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    mounted.view.setVariableInputHandler((alias, value, event) => {
+      if (event.phase === "start") return session.beginStudentVariableOperation(alias, { control: event.control, input: event.input });
+      if (!event.operation_id) return;
+      if (event.phase === "update") session.updateStudentVariableOperation(event.operation_id, value);
+      else session.commitStudentVariableOperation(event.operation_id, value);
+      mounted.view.render(session.projection.board);
+    });
+    mounted.view.render(session.projection.board);
+    Object.assign(window, { session, mounted });
+  }, { events, id }); await settle(); };
+  // The window, read from the overview strip; the camera; the card's size; the buttons.
+  const zoomState = () => page.evaluate(() => {
+    const svg = document.querySelector(".number-line-preview");
+    const strip = svg.querySelector(".number-line-overview-window");
+    const card = svg.closest(".board-node").getBoundingClientRect();
+    const range = window.session.projection.board.nodes[Object.keys(window.session.projection.board.nodes).find((id) => id.endsWith(":node:line"))].content.range;
+    const at = (x) => range.min + (x - 30) / 460 * (range.max - range.min);
+    const x = Number(strip.getAttribute("x")), width = Number(strip.getAttribute("width"));
+    const ticks = [...svg.querySelectorAll(".number-line-tick")].map((node) => Number(node.getAttribute("x1")));
+    const buttons = Object.fromEntries([...document.querySelectorAll(".number-line-zoom button")].map((node) => [node.className.replace("number-line-zoom-", ""), { disabled: node.disabled, text: node.textContent, label: node.getAttribute("aria-label") }]));
+    return {
+      window: [at(x), at(x + width)], viewBox: svg.getAttribute("viewBox"), cardHeight: Math.round(card.height), camera: window.mounted.view.getCameraState(),
+      ticks: ticks.length, gap: Math.min(...ticks.slice(1).map((value, index) => value - ticks[index])),
+      labels: [...svg.querySelectorAll(".number-line-tick-label")].map((node) => node.textContent), buttons,
+      zoomed: svg.classList.contains("number-line-zoomed"), manual: document.querySelector("#board").classList.contains("manual-navigation"),
+      s: window.session.projection.board.variables?.s?.value,
+    };
+  });
+  const sameCamera = (a, b) => ["panX", "panY", "scale"].every((key) => Math.abs(a[key] - b[key]) < 1e-6);
+  await mountZoom(rounding, "rounding");
+  const roundingRest = await zoomState();
+  check(roundingRest.ticks === 58, `300..410 at rest: every second tick plus the marked 345 and 347 (58): ${roundingRest.ticks}`);
+  check(["340", "345", "347", "350"].every((value) => roundingRest.labels.includes(value)), `the marked values keep their labels at rest: ${roundingRest.labels.join(" ")}`);
+  check(roundingRest.buttons.out?.text === "−" && roundingRest.buttons.in?.text === "+" && roundingRest.buttons.whole?.text === "整条", `the card draws −, + and 整条: ${JSON.stringify(roundingRest.buttons)}`);
+  check(roundingRest.buttons.out.disabled && roundingRest.buttons.whole.disabled && !roundingRest.buttons.in.disabled, `at rest only + is live: ${JSON.stringify(roundingRest.buttons)}`);
+  check(Object.values(roundingRest.buttons).every((button) => button.label), `every zoom button has an accessible name: ${JSON.stringify(roundingRest.buttons)}`);
+  // The wheel over the line zooms the line, anchored under the pointer, and leaves the board's camera alone.
+  const roundingBox = await (await page.$(".number-line-preview")).boundingBox();
+  const pointerAt = (value) => roundingBox.x + roundingBox.width * (30 + 460 * (value - 300) / 110) / 520;
+  await page.mouse.move(pointerAt(347), roundingBox.y + roundingBox.height * 0.4);
+  for (let notch = 0; notch < 6; notch += 1) await page.mouse.wheel(0, -100);
+  const wheeled = await zoomState();
+  check(wheeled.window[1] - wheeled.window[0] < 60 && wheeled.window[0] > 300, `the wheel over the line zoomed it: ${wheeled.window.join("..")}`);
+  check(Math.abs((347 - wheeled.window[0]) / (wheeled.window[1] - wheeled.window[0]) - 47 / 110) < 0.02, `the wheel zooms around the value under the pointer: ${wheeled.window.join("..")}`);
+  check(sameCamera(wheeled.camera, roundingRest.camera), `the wheel over the line never zooms the board: ${JSON.stringify([roundingRest.camera, wheeled.camera])}`);
+  check(wheeled.viewBox === roundingRest.viewBox && wheeled.cardHeight === roundingRest.cardHeight, `the card keeps its size as it zooms: ${roundingRest.viewBox} → ${wheeled.viewBox}, ${roundingRest.cardHeight} → ${wheeled.cardHeight}`);
+  check(wheeled.manual, "zooming the line is manual navigation");
+  // Over the card's title, too; outside the card the wheel zooms the board as before.
+  const title = await (await page.$(".board-node .node-title")).boundingBox();
+  await page.mouse.move(title.x + 10, title.y + title.height / 2);
+  await page.mouse.wheel(0, -100);
+  const overTitle = await zoomState();
+  check(sameCamera(overTitle.camera, roundingRest.camera) && overTitle.window[1] - overTitle.window[0] < wheeled.window[1] - wheeled.window[0], `the wheel over the card's title zooms the line, not the board: ${overTitle.window.join("..")}`);
+  const cardBox = await (await page.$(".board-node")).boundingBox();
+  await page.mouse.move(Math.min(990, cardBox.x + cardBox.width + 60), Math.min(590, cardBox.y + cardBox.height + 40));
+  await page.mouse.wheel(0, -100);
+  const outside = await zoomState();
+  check(!sameCamera(outside.camera, overTitle.camera) && outside.window.join() === overTitle.window.join(), `the wheel outside the card zooms the board and not the line: ${JSON.stringify([overTitle.camera, outside.camera])}`);
+  // The buttons: + up to one tick about 48 units wide, then disabled; whole line back to the start.
+  await mountZoom(rounding, "rounding");
+  for (let press = 0; press < 12; press += 1) {
+    const plus = await page.$(".number-line-zoom-in:not([disabled])");
+    if (plus) await plus.click();
+  }
+  const deepest = await zoomState();
+  check(deepest.buttons.in.disabled && !deepest.buttons.out.disabled && !deepest.buttons.whole.disabled, `at the limit + is disabled: ${JSON.stringify(deepest.buttons)}`);
+  check(Math.abs(deepest.gap - 48) < 0.5, `at the limit one tick is about 48 units: ${deepest.gap}`);
+  check(deepest.window[0] <= 347 && deepest.window[1] >= 347, `+ zooms around the marked values: ${deepest.window.join("..")}`);
+  check(deepest.viewBox === roundingRest.viewBox, `the card keeps its height at the limit: ${deepest.viewBox}`);
+  // A drag on the zoomed line's track moves it, not the board.
+  const deepBox = await (await page.$(".number-line-preview")).boundingBox();
+  await page.mouse.move(deepBox.x + deepBox.width * 0.3, deepBox.y + deepBox.height * 0.25);
+  await page.mouse.down();
+  await page.mouse.move(deepBox.x + deepBox.width * 0.6, deepBox.y + deepBox.height * 0.25, { steps: 6 });
+  await page.mouse.up();
+  const panned = await zoomState();
+  check(panned.window[0] < deepest.window[0] - 1 && Math.abs((panned.window[1] - panned.window[0]) - (deepest.window[1] - deepest.window[0])) < 1e-6, `dragging the zoomed line moves it: ${deepest.window.join("..")} → ${panned.window.join("..")}`);
+  check(sameCamera(panned.camera, deepest.camera), `dragging the zoomed line leaves the board where it is: ${JSON.stringify([deepest.camera, panned.camera])}`);
+  await page.click(".number-line-zoom-whole");
+  const whole = await zoomState();
+  check(Math.abs(whole.window[0] - 300) < 1e-6 && Math.abs(whole.window[1] - 410) < 1e-6 && whole.buttons.whole.disabled && whole.ticks === roundingRest.ticks, `whole line shows the whole range again: ${whole.window.join("..")}`);
+  // Enter on a focused button zooms; the language follows the board's.
+  await page.focus(".number-line-zoom-in");
+  await page.keyboard.press("Enter");
+  const keyed = await zoomState();
+  check(keyed.zoomed, "Enter on + zooms the line");
+  await page.evaluate(() => window.mounted.view.setLocale("en-US"));
+  const english = await zoomState();
+  check(english.buttons.whole.text === "Whole line" && english.buttons.in.label === "Zoom in", `the buttons speak English on an English board: ${JSON.stringify(english.buttons)}`);
+  // The teaching camera taking over brings the whole line back.
+  await page.evaluate(() => window.mounted.view.focusTargets([Object.keys(window.session.projection.board.nodes).find((id) => id.endsWith(":node:line"))]));
+  const resumed = await zoomState();
+  check(!resumed.zoomed && Math.abs(resumed.window[1] - resumed.window[0] - 110) < 1e-6, `the teaching camera brings back the whole line: ${resumed.window.join("..")}`);
+  // A point dragged on a zoomed line lands on the same stop as on the whole line, and the card keeps its size.
+  const dragTo = async (value) => {
+    const state = await zoomState();
+    const box = await (await page.$(".number-line-preview")).boundingBox();
+    const handleBox = await (await page.$(".number-line-drag-handle")).boundingBox();
+    const y = handleBox.y + handleBox.height / 2;
+    await page.mouse.move(handleBox.x + handleBox.width / 2, y);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * (30 + 460 * (value - state.window[0]) / (state.window[1] - state.window[0])) / 520, y, { steps: 6 });
+    await page.mouse.up();
+    return zoomState();
+  };
+  await mountZoom(pages, "pages");
+  const pagesRest = await zoomState();
+  check(pagesRest.ticks === 71, `0..70 at 6.57 units a tick keeps every tick: ${pagesRest.ticks}`);
+  const restDrag = await dragTo(52.3);
+  await mountZoom(pages, "pages");
+  for (let press = 0; press < 3; press += 1) await page.click(".number-line-zoom-in");
+  const zoomedPages = await zoomState();
+  const zoomDrag = await dragTo(52.3);
+  check(restDrag.s === 52 && zoomDrag.s === 52, `a drag to 52.3 stops at 52 at rest and zoomed in: ${restDrag.s}, ${zoomDrag.s}`);
+  check(zoomDrag.zoomed && zoomDrag.window.join() === zoomedPages.window.join() && zoomDrag.viewBox === pagesRest.viewBox, `the zoomed line stays put while its point is dragged: ${zoomedPages.window.join("..")} → ${zoomDrag.window.join("..")}`);
+  check(zoomedPages.cardHeight === pagesRest.cardHeight, `the dragged card keeps its height zoomed: ${pagesRest.cardHeight}, ${zoomedPages.cardHeight}`);
+  // Two fingers on the card zoom the line, not the board.
+  const touchPage = await browser.newPage({ viewport: { width: 1000, height: 600 }, hasTouch: true });
+  touchPage.on("pageerror", (error) => errors.push(error.message));
+  await touchPage.goto(`http://127.0.0.1:${server.address().port}/`);
+  await touchPage.waitForFunction(() => window.BrowserLessonSession);
+  await touchPage.evaluate((events) => {
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "pinch");
+    while (session.projection.status !== "completed") session.advance();
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    mounted.view.render(session.projection.board);
+    Object.assign(window, { session, mounted });
+  }, rounding);
+  await settle(touchPage);
+  const pinchState = () => touchPage.evaluate(() => {
+    const strip = document.querySelector(".number-line-overview-window");
+    return { width: Number(strip.getAttribute("width")), camera: window.mounted.view.getCameraState() };
+  });
+  const beforePinch = await pinchState();
+  const pinchBox = await (await touchPage.$(".number-line-preview")).boundingBox();
+  const client = await touchPage.context().newCDPSession(touchPage);
+  const cy = pinchBox.y + pinchBox.height * 0.3, cx = pinchBox.x + pinchBox.width * 0.6;
+  const fingers = (spread) => [{ x: cx - spread, y: cy, id: 1 }, { x: cx + spread, y: cy, id: 2 }];
+  await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: fingers(20) });
+  for (const spread of [30, 45, 60, 80, 100]) await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: fingers(spread) });
+  await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  const afterPinch = await pinchState();
+  check(afterPinch.width < beforePinch.width * 0.4, `a pinch on the card zooms the line: strip ${beforePinch.width} → ${afterPinch.width}`);
+  check(sameCamera(afterPinch.camera, beforePinch.camera), `a pinch on the card never zooms the board: ${JSON.stringify([beforePinch.camera, afterPinch.camera])}`);
+  await touchPage.close();
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
   await browser.close();
@@ -573,4 +747,4 @@ if (failures.length) {
   console.error(failures.map((failure) => `FAIL ${failure}`).join("\n"));
   process.exit(1);
 }
-console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, several jumps (landing numbers, lanes for reversing moves, no crossing arcs, steady height), hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point, solution sets readable");
+console.log("number line browser checks passed: drag through the session, dense labels, decimal labels, bound jump end, point values labelled on a thinned line, point names apart, several jumps (landing numbers, lanes for reversing moves, no crossing arcs, steady height), hidden answers kept back, steady geometry while dragging, tall cards measured, steady height as a lone jump end moves, emphasis (not pointing) reveals a hidden point, solution sets readable, the card's own zoom (thinned ticks at rest, buttons and limits, wheel and pinch on the line not the board, drag to move, same stops, steady size, whole line on the teaching camera)");

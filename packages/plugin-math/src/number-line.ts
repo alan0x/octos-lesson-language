@@ -493,3 +493,132 @@ export function jumpHops(content: Pick<NumberLineContent, "range" | "ticks">, en
   if (Math.abs(ends.to - reached) > 1e-9 * Math.max(1, Math.abs(ends.to))) pieces.push({ from: reached, to: ends.to });
   return pieces;
 }
+
+/**
+ * The number line's own zoom (decision 0024): the learner looks at a window [min, max] of the range,
+ * and the numbers spread apart; text, dots and strokes keep their size. A window is a view only: it is
+ * never in the lesson, the log or a check, and a lesson restored opens on the whole line.
+ */
+export interface NumberLineWindow { min: number; max: number }
+
+export const NUMBER_LINE_ZOOM = {
+  /** Board units between drawn ticks, at least; closer ticks are thinned on a 1-2-5 stride. */
+  minTickSpacing: 6,
+  /** Zooming in stops when one smallest tick is about this many board units wide. */
+  maxTickSpacing: 48,
+  /** What one press of "+" or "−" multiplies the zoom by. */
+  buttonFactor: 1.6,
+  /** What one notch of the mouse wheel multiplies the zoom by. */
+  wheelFactor: 1.15,
+} as const;
+
+const zoomRange = (content: Pick<NumberLineContent, "range">): NumberLineWindow => ({ min: content.range.min, max: content.range.max });
+
+/**
+ * How far a line can zoom, drawn `width` board units long: the narrowest window (one smallest tick about
+ * `maxTickSpacing` wide, never narrower than the whole range allows) and whether the card can zoom at all.
+ */
+export function numberLineZoomLimits(content: Pick<NumberLineContent, "range" | "ticks">, width: number): { minSpan: number; fullSpan: number; zoomable: boolean } {
+  const fullSpan = content.range.max - content.range.min;
+  const minSpan = Math.min(fullSpan, tickUnit(content) * width / NUMBER_LINE_ZOOM.maxTickSpacing);
+  return { minSpan, fullSpan, zoomable: fullSpan > minSpan * (1 + 1e-9) };
+}
+
+/** A window kept inside the range, no narrower than the zoom limit and no wider than the whole line. */
+export function clampNumberLineWindow(content: Pick<NumberLineContent, "range" | "ticks">, window: NumberLineWindow | undefined, width: number): NumberLineWindow {
+  const { minSpan, fullSpan } = numberLineZoomLimits(content, width);
+  if (!window || !Number.isFinite(window.min) || !Number.isFinite(window.max)) return zoomRange(content);
+  const span = Math.min(fullSpan, Math.max(minSpan, window.max - window.min));
+  if (span >= fullSpan * (1 - 1e-9)) return zoomRange(content);
+  const min = Math.min(content.range.max - span, Math.max(content.range.min, window.min));
+  return { min, max: min + span };
+}
+
+/** Whether a window shows less than the whole line. */
+export function isZoomedWindow(content: Pick<NumberLineContent, "range">, window: NumberLineWindow): boolean {
+  const fullSpan = content.range.max - content.range.min;
+  return window.max - window.min < fullSpan * (1 - 1e-9);
+}
+
+/**
+ * Zooms by `factor` (above 1 zooms in) around `anchor`, a value that stays where it is on the line; the
+ * result is clamped, so it stops at the limits.
+ */
+export function zoomNumberLineWindow(content: Pick<NumberLineContent, "range" | "ticks">, window: NumberLineWindow, factor: number, anchor: number, width: number): NumberLineWindow {
+  if (!(factor > 0) || !Number.isFinite(factor)) return clampNumberLineWindow(content, window, width);
+  const { minSpan, fullSpan } = numberLineZoomLimits(content, width);
+  const span = window.max - window.min;
+  const next = Math.min(fullSpan, Math.max(minSpan, span / factor));
+  const at = Math.min(window.max, Math.max(window.min, anchor));
+  const share = span > 0 ? (at - window.min) / span : 0.5;
+  return clampNumberLineWindow(content, { min: at - share * next, max: at - share * next + next }, width);
+}
+
+/** Moves the window by `delta` (in values), kept inside the range. */
+export function panNumberLineWindow(content: Pick<NumberLineContent, "range" | "ticks">, window: NumberLineWindow, delta: number, width: number): NumberLineWindow {
+  return clampNumberLineWindow(content, { min: window.min + delta, max: window.max + delta }, width);
+}
+
+/**
+ * Where "+" and "−" zoom around: the middle of the marked values in view (the numbers the card is about),
+ * else the middle of the window.
+ */
+export function numberLineZoomCentre(window: NumberLineWindow, marked: readonly number[]): number {
+  const inView = marked.filter((value) => value >= window.min - 1e-9 && value <= window.max + 1e-9);
+  return inView.length ? (Math.min(...inView) + Math.max(...inView)) / 2 : (window.min + window.max) / 2;
+}
+
+/**
+ * The stride, in smallest ticks, ticks are drawn on so they are at least `minTickSpacing` apart, when one
+ * smallest tick is `spacing` board units wide (decision 0024). Strides are 1, 2, 5 × 10ⁿ: inside a major
+ * step only those that divide its subdivisions (halves of quarters, fifths of tenths), past it whole
+ * multiples of the major step, so every drawn tick still falls on a major tick or an even share of one.
+ */
+export function planTickStride(spacing: number, subdivisions = 1): number {
+  const enough = (stride: number) => stride * spacing >= NUMBER_LINE_ZOOM.minTickSpacing * (1 - 1e-9);
+  for (const stride of [1, 2, 5, 10, 20, 50]) {
+    if (stride >= subdivisions) break;
+    if (subdivisions % stride === 0 && enough(stride)) return stride;
+  }
+  for (let scale = 1; scale <= 1e9; scale *= 10) {
+    for (const factor of [1, 2, 5]) if (enough(subdivisions * factor * scale)) return subdivisions * factor * scale;
+  }
+  return subdivisions * 1e9;
+}
+
+/**
+ * The ticks drawn in a window: those on the stride (counted from 0, so 0 keeps its tick), plus every tick
+ * at a value the card marks. `ticks` is the whole line's plan; ticks outside the window are left out.
+ */
+export function thinNumberLineTicks(
+  content: Pick<NumberLineContent, "range" | "ticks">, ticks: readonly PlannedTick[], window: NumberLineWindow, width: number, marked: readonly number[],
+): { ticks: PlannedTick[]; stride: number } {
+  const unit = tickUnit(content);
+  const spacing = unit * width / (window.max - window.min);
+  const stride = planTickStride(spacing, content.ticks?.subdivisions ?? 1);
+  const isMarked = (value: number) => marked.some((mark) => Math.abs(mark - value) <= 1e-9 * Math.max(1, Math.abs(value)));
+  const tolerance = 1e-9 * Math.max(1, Math.abs(window.min), Math.abs(window.max));
+  return {
+    stride,
+    ticks: ticks.filter((tick) => tick.value >= window.min - tolerance && tick.value <= window.max + tolerance
+      && (Math.round(tick.value / unit) % stride === 0 || isMarked(tick.value))),
+  };
+}
+
+/**
+ * The value a point dragged to board position `x` takes: on the smallest-tick grid, inside the window the
+ * line shows (when zoomed in, a stop just past the window's edge gives way to the one inside it) and inside
+ * the range. The stops are the same whatever the zoom (decision 0024).
+ */
+export function numberLineDragValue(
+  line: { x0: number; x1: number; min: number; max: number; grid: Pick<NumberLineContent, "range" | "ticks"> }, x: number,
+): number {
+  const { x0, x1, min, max, grid } = line;
+  const raw = Math.min(max, Math.max(min, min + (x - x0) / (x1 - x0) * (max - min)));
+  const snapped = snapToTick(grid, raw);
+  const unit = tickUnit(grid);
+  const tolerance = 1e-9 * Math.max(1, Math.abs(min), Math.abs(max));
+  if (snapped > max + tolerance) return snapToTick(grid, snapped - unit);
+  if (snapped < min - tolerance) return snapToTick(grid, snapped + unit);
+  return snapped;
+}

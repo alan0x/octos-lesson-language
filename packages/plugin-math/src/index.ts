@@ -339,7 +339,7 @@ export * from "./plot-tokens.js";
 export { PLOT_MARKS, markParts, polynomialOf, type MarkPart, type PlotMark } from "./plot-marks.js";
 export { formulaBars, pieceBars, type AxisBar, type SignCheck } from "./plot-domain-range.js";
 export { intervalOf, signOf, type Interval } from "./interval.js";
-export { renderNumberLine, NUMBER_LINE_VIEW_WIDTH } from "./number-line-view.js";
+export { renderNumberLine, planNumberLineCard, numberLineZoomControl, NUMBER_LINE_VIEW_WIDTH, type NumberLineCardPlan, type NumberLineViewContext, type NumberLineZoomControl } from "./number-line-view.js";
 // The fraction model (decision 0021, amended).
 export * from "./fraction-model.js";
 export { buildFractionModel, type BuiltFractionModel, type FractionModelInput } from "./fraction-model-builder.js";

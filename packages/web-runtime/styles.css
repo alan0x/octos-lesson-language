@@ -137,6 +137,21 @@
 .number-line-interval-label { fill: #1d6f66; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
 .number-line-interval.emphasis-focus .number-line-interval-bar { stroke: #e19b35; }
 .number-line-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
+/* The number line's own zoom (decision 0024): buttons at the card's top right, a strip under the line. */
+.number-line-view { position: static; }
+.number-line-view:first-child { padding-top: 16px; }
+.board-node:has(> .number-line-view) > .node-title { padding-right: 160px; }
+.number-line-zoom { position: absolute; top: 20px; right: 12px; z-index: 1; display: flex; gap: 4px; }
+.number-line-zoom button { min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid #cec8bd; border-radius: 7px; background: #fffdf7; color: #214c48; cursor: pointer; font: 600 15px/1 ui-sans-serif, system-ui, sans-serif; }
+.number-line-zoom button.number-line-zoom-whole { font-size: 12px; }
+.number-line-zoom button:hover:not(:disabled) { background: #eef7f4; border-color: #87bcb4; }
+.number-line-zoom button:disabled { opacity: .38; cursor: default; }
+.number-line-zoom button:focus-visible { outline: 2px solid #167d78; outline-offset: 2px; }
+.number-line-preview.number-line-zoomed { cursor: grab; }
+.viewport.dragging .number-line-preview.number-line-zoomed { cursor: grabbing; }
+.number-line-overview-track { fill: #e4ded2; }
+.number-line-overview-window { fill: #167d78; opacity: .5; }
+.number-line-overview-count { fill: #6b7773; font: 600 10px/1 ui-sans-serif, system-ui, sans-serif; }
 .fraction-model-preview { display: block; width: 100%; height: auto; overflow: visible; }
 .fraction-model-part { stroke: #4f5b57; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
 .fraction-model-part-shaded { fill: rgba(35,135,124,.62); }

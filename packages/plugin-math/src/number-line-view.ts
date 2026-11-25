@@ -3,10 +3,16 @@
  * emphasis helpers, so parts are marked like every other card's parts
  * (`data-id`). Values come from the content as the board state holds it, with
  * bindings already applied.
+ *
+ * The card has its own zoom (decision 0024): "−", "+" and "whole line" buttons,
+ * and a strip under the line showing the part in view. The board routes the
+ * wheel, pinches and drags on the zoomed line to it (`numberLineZoomControl`),
+ * and keeps the window across redraws (`zoom` in the context).
  */
 import {
-  jumpEnds, jumpHops, planJumpLanes, tickUnit, numberLineValue, planNumberLineTicks, planTickLabels, planTickStep, stackLabels,
-  type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type TickLabel,
+  clampNumberLineWindow, isZoomedWindow, jumpEnds, jumpHops, numberLineValue, numberLineZoomCentre, numberLineZoomLimits, NUMBER_LINE_ZOOM,
+  panNumberLineWindow, planJumpLanes, planNumberLineTicks, planTickLabels, planTickStep, stackLabels, thinNumberLineTicks, tickUnit, zoomNumberLineWindow,
+  type NumberLineContent, type NumberLineJump, type NumberLinePoint, type NumberLineInterval, type NumberLineWindow, type PlannedTick, type TickLabel,
 } from "./number-line.js";
 import { evaluateMathExpression, referencedMathVariables } from "../../core/src/math-expression.js";
 
@@ -19,6 +25,17 @@ export interface NumberLineViewContext {
   applyEmphasis(element: Element, id: string): void;
   /** The lesson's variables with their ranges, so a moving card can size itself for every reachable state. */
   variables?: Readonly<Record<string, { value: number; initial: number; min: number; max: number; control?: { step?: number } }>>;
+  /**
+   * The window the learner zoomed to, kept by the board across redraws, and how the card tells the board
+   * the learner zoomed or moved the line (undefined: the whole line). Without it the card still zooms,
+   * until it is drawn again.
+   */
+  zoom?: { window?: NumberLineWindow; change(window: NumberLineWindow | undefined): void };
+  /**
+   * Sets the card's own UI text (its buttons) in the board's language: `apply` is called with a function
+   * from the Chinese source text to the text to show, now and again when the language changes.
+   */
+  localize?(element: Element, apply: (text: (source: string) => string) => void): void;
 }
 
 type Part = { id?: string; as?: string };
@@ -32,7 +49,7 @@ function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Reco
   return node;
 }
 
-function label(svg: SVGSVGElement, value: string, x: number, y: number, className: string, anchor = "middle"): SVGTextElement {
+function label(svg: Element, value: string, x: number, y: number, className: string, anchor = "middle"): SVGTextElement {
   const node = element("text", { x, y, "text-anchor": anchor }, className);
   node.textContent = value;
   svg.append(node);
@@ -135,12 +152,44 @@ function reachableLaneCount(content: NumberLineContent, variables: NumberLineVie
   return most;
 }
 
-/** The SVG for a number line, with its parts marked for emphasis and dragging. */
-export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknown>, context: NumberLineViewContext): void {
+/** Board units from the line's last row to the overview strip's middle, and below it. */
+const STRIP_GAP = 12, STRIP_BELOW = 10;
+
+/** Where a number line card draws everything, for one window of its range (decision 0024). */
+export interface NumberLineCardPlan {
+  /** The window drawn; the whole range when not zoomed. */
+  window: NumberLineWindow;
+  zoomed: boolean;
+  x0: number; x1: number;
+  mapX(value: number): number;
+  inView(value: number): boolean;
+  lineY: number; height: number;
+  /** The ticks drawn (thinned, in the window) and the label row of each labelled one. */
+  ticks: PlannedTick[]; labelRow: Map<number, number>; rowHeight: number;
+  /** The stride, in smallest ticks, the ticks are drawn on. */
+  tickStride: number;
+  nameRows: Map<NumberLinePoint, number>; nameRowCount: number; nameRowHeight: number;
+  labelsAbove: boolean; labelledPoints: boolean; pointLabelY: number;
+  jumpLanes: number[]; reservedLanes: number; jumpLane: number; laneArc: number;
+  /** The values the card marks (their ticks and labels always stay). */
+  marked: number[];
+  /** The middle of the overview strip under the line. */
+  stripY: number;
+}
+
+/**
+ * The card's geometry for a window (the whole range when none). The card's height and its line's height
+ * are the same in every window: label rows are reserved for the whole line as well as the window, so a
+ * card never resizes as the learner zooms (decision 0024 §6).
+ */
+export function planNumberLineCard(raw: Record<string, unknown>, variables?: NumberLineViewContext["variables"], requested?: NumberLineWindow): NumberLineCardPlan {
   const content = raw as unknown as NumberLineContent;
-  const { min, max } = content.range;
-  const ticks = planNumberLineTicks(content);
-  const fractions = ticks.some((tick) => tick.label?.kind === "fraction");
+  const x0 = SIDE, x1 = NUMBER_LINE_VIEW_WIDTH - SIDE;
+  const whole: NumberLineWindow = { min: content.range.min, max: content.range.max };
+  const window = clampNumberLineWindow(content, requested, x1 - x0);
+  const zoomed = isZoomedWindow(content, window);
+  const allTicks = planNumberLineTicks(content);
+  const fractions = allTicks.some((tick) => tick.label?.kind === "fraction");
   const jumps = content.jumps ?? [];
   const intervals = content.intervals ?? [];
   const points = content.points ?? [];
@@ -154,23 +203,18 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const laneCount = Math.max(1, ...jumpLanes.map((lane) => lane + 1));
   // A static card is as tall as its lanes. A moving card reserves the most lanes any state can need: a
   // reversing jump appears only once its change grows from 0, and the card must not grow then.
-  const reservedLanes = moving && jumps.length > 1 ? Math.max(laneCount, reachableLaneCount(content, context.variables)) : laneCount;
+  const reservedLanes = moving && jumps.length > 1 ? Math.max(laneCount, reachableLaneCount(content, variables)) : laneCount;
   const JUMP_LANE = 36, LANE_ARC = 22;
   const jumpZone = !jumps.length ? 0 : reservedLanes === 1 ? 58 : 44 + (reservedLanes - 1) * JUMP_LANE;
   const intervalZone = intervals.some((interval) => interval.label) ? 20 : 0;
   // Point labels sit above the line unless jump arcs are there; below, they clear the tick labels.
   const labelsAbove = jumps.length === 0;
   const labelledPoints = points.some((point) => point.label);
-  const x0 = SIDE, x1 = NUMBER_LINE_VIEW_WIDTH - SIDE;
-  const mapX = (value: number) => x0 + (value - min) / (max - min) * (x1 - x0);
-  // Point names that would overlap (Start and End a quarter apart) go on further rows, away from the line.
-  // A card whose points move (bound or dragged) keeps one geometry in every state: it reserves the
-  // rows its labels could need, so the axis never jumps under the pointer and the card never resizes.
-  const named = points.flatMap((point) => { const value = numberLineValue(point.value); return point.label && value !== undefined ? [{ point, x: mapX(value), width: textWidth(point.label) }] : []; });
-  const nameRows = new Map(stackLabels(named).map((row, index) => [named[index]!.point, row]));
-  const nameRowCount = Math.max(1, ...[...nameRows.values()].map((row) => row + 1), moving ? named.length : 1);
-  const nameRowHeight = 16;
-  const lineY = 18 + jumpZone + intervalZone + (labelsAbove && labelledPoints ? 24 + (nameRowCount - 1) * nameRowHeight : 0);
+  const mapperFor = (view: NumberLineWindow) => (value: number) => x0 + (value - view.min) / (view.max - view.min) * (x1 - x0);
+  const inViewFor = (view: NumberLineWindow) => {
+    const tolerance = 1e-9 * Math.max(1, Math.abs(view.min), Math.abs(view.max));
+    return (value: number) => value >= view.min - tolerance && value <= view.max + tolerance;
+  };
   // Labels thin out on a regular stride when they would overlap, but the values the card marks
   // (points the learner sees, and where jumps start and end) keep theirs, on extra rows if needed.
   // A point shown only when emphasized is an answer kept back: its value is never pinned, even where a jump ends.
@@ -181,10 +225,6 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     // An interval's or a ray's ends are the boundary of a solution set: their numbers stay too (0016).
     ...intervals.flatMap((interval) => [interval.from, interval.to].filter((end) => end !== null).map((end) => numberLineValue(end as never))),
   ].filter((value): value is number => value !== undefined && !latent.some((hidden) => hidden !== undefined && Math.abs(hidden - value) < 1e-9));
-  const labelled = ticks.filter((tick) => tick.label);
-  const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
-  const labelRow = new Map([...labelPlan.shown].map((index) => [labelled[index]!.value, labelPlan.rows.get(index) ?? 0]));
-  const rowHeight = fractions ? 32 : 18;
   // As many rows as there could be marked numbers in any state, counted from the card's parts, never
   // from their current values (review of #51: a jump whose end has no point of its own separates from
   // its start as its change grows from 0, and the card grew mid-animation): one per visible point, and
@@ -193,19 +233,70 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   const jumpMarks = jumps.reduce((count, jump) => count + 1
     + (typeof jump.from === "string" && points.some((point) => point.as === jump.from) ? 0 : 1), 0);
   const intervalMarks = intervals.reduce((count, interval) => count + (interval.from === null ? 0 : 1) + (interval.to === null ? 0 : 1), 0);
-  // At most two of them can crowd one label's width at once in practice (a point next to a jump's end);
-  // reserving a row for every part left a rounding line's four points and jump with five empty rows
-  // (decision 0016). A rarer state that needs a third row grows the card when it happens.
-  const tickRows = moving && labelPlan.thinned ? Math.max(labelPlan.rowCount, Math.min(2, visiblePoints + jumpMarks + intervalMarks)) : labelPlan.rowCount;
+  const allNamed = points.filter((point) => point.label && numberLineValue(point.value) !== undefined);
+  // Ticks closer than six board units are drawn on a 1-2-5 stride (decision 0024, also at rest); labels
+  // then thin among the drawn ticks, so every label has its tick.
+  const layout = (view: NumberLineWindow) => {
+    const mapX = mapperFor(view), inView = inViewFor(view);
+    const thinned = thinNumberLineTicks(content, allTicks, view, x1 - x0, marked);
+    const labelled = thinned.ticks.filter((tick) => tick.label);
+    const labelPlan = planTickLabels(labelled.map((tick) => ({ x: mapX(tick.value), width: tickLabelWidth(tick.label!), major: tick.major, value: tick.value })), planTickStep(content), marked);
+    const labelRow = new Map([...labelPlan.shown].map((index) => [labelled[index]!.value, labelPlan.rows.get(index) ?? 0]));
+    // At most two of them can crowd one label's width at once in practice (a point next to a jump's end);
+    // reserving a row for every part left a rounding line's four points and jump with five empty rows
+    // (decision 0016). A rarer state that needs a third row grows the card when it happens. A line is
+    // crowded when not every tick's label fits: its labels thin, or its ticks do (0024).
+    const crowded = labelPlan.thinned || thinned.stride > 1;
+    const tickRows = moving && crowded ? Math.max(labelPlan.rowCount, Math.min(2, visiblePoints + jumpMarks + intervalMarks)) : labelPlan.rowCount;
+    // Point names that would overlap (Start and End a quarter apart) go on further rows, away from the line.
+    // A card whose points move (bound or dragged) keeps one geometry in every state: it reserves the
+    // rows its labels could need, so the axis never jumps under the pointer and the card never resizes.
+    const named = allNamed.flatMap((point) => { const value = numberLineValue(point.value)!; return inView(value) ? [{ point, x: mapX(value), width: textWidth(point.label!) }] : []; });
+    const nameRows = new Map(stackLabels(named).map((row, index) => [named[index]!.point, row]));
+    const nameRowCount = Math.max(1, ...[...nameRows.values()].map((row) => row + 1), moving ? allNamed.length : 1);
+    return { mapX, inView, ticks: thinned.ticks, stride: thinned.stride, labelRow, tickRows, nameRows, nameRowCount };
+  };
+  const current = layout(window);
+  // Rows are reserved for the whole line too, so zooming never changes the card's height.
+  const rest = zoomed ? layout(whole) : current;
+  const tickRows = Math.max(current.tickRows, rest.tickRows);
+  const nameRowCount = Math.max(current.nameRowCount, rest.nameRowCount);
+  const nameRowHeight = 16;
+  const lineY = 18 + jumpZone + intervalZone + (labelsAbove && labelledPoints ? 24 + (nameRowCount - 1) * nameRowHeight : 0);
+  const rowHeight = fractions ? 32 : 18;
   const tickLabelHeight = rowHeight * tickRows;
   const pointLabelY = labelsAbove ? lineY - 16 : lineY + 14 + tickLabelHeight + 14;
-  const height = (labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight) + 8;
+  const bottom = labelsAbove || !labelledPoints ? lineY + 14 + tickLabelHeight : pointLabelY + (nameRowCount - 1) * nameRowHeight;
+  const stripY = bottom + STRIP_GAP;
+  return {
+    window, zoomed, x0, x1, mapX: current.mapX, inView: current.inView, lineY, height: stripY + STRIP_BELOW,
+    ticks: current.ticks, labelRow: current.labelRow, rowHeight, tickStride: current.stride,
+    nameRows: current.nameRows, nameRowCount, nameRowHeight, labelsAbove, labelledPoints, pointLabelY,
+    jumpLanes, reservedLanes, jumpLane: JUMP_LANE, laneArc: LANE_ARC, marked, stripY,
+  };
+}
 
-  const svg = element("svg", { viewBox: `0 0 ${NUMBER_LINE_VIEW_WIDTH} ${height}`, role: "img" }, "number-line-preview");
+/** Draws a number line's SVG for a planned window. */
+function drawNumberLine(content: NumberLineContent, plan: NumberLineCardPlan, context: NumberLineViewContext): SVGSVGElement {
+  const { x0, x1, mapX, inView, lineY, height, rowHeight, labelsAbove, labelledPoints, pointLabelY, nameRowCount, nameRowHeight, jumpLanes, reservedLanes } = plan;
+  const { min, max } = plan.window;
+  const jumps = content.jumps ?? [];
+  const intervals = content.intervals ?? [];
+  const points = content.points ?? [];
+
+  const svg = element("svg", { viewBox: `0 0 ${NUMBER_LINE_VIEW_WIDTH} ${height}`, role: "img" }, "number-line-preview", plan.zoomed ? "number-line-zoomed" : "");
   const defs = element("defs", {});
   const marker = element("marker", { id: `number-line-arrow-${Math.random().toString(36).slice(2, 9)}`, markerUnits: "userSpaceOnUse", markerWidth: 11, markerHeight: 11, refX: 8, refY: 5, orient: "auto" });
   marker.append(element("path", { d: "M0,0 L10,5 L0,10 Z" }, "number-line-arrowhead"));
   defs.append(marker);
+  // Zoomed in, arcs and bars that run past the window stop at the line's ends.
+  let clip: string | undefined;
+  if (plan.zoomed) {
+    const clipPath = element("clipPath", { id: `number-line-window-${Math.random().toString(36).slice(2, 9)}` });
+    clipPath.append(element("rect", { x: x0 - 18, y: 0, width: x1 - x0 + 36, height }));
+    defs.append(clipPath);
+    clip = `url(#${clipPath.id})`;
+  }
   svg.append(defs);
   const arrow = `url(#${marker.id})`;
 
@@ -213,26 +304,27 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   svg.append(element("line", { x1: x0 - 18, x2: x1 + 18, y1: lineY, y2: lineY }, "number-line-axis"));
   svg.append(element("path", { d: `M${x1 + 18},${lineY} l-7,-5 m7,5 l-7,5 M${x0 - 18},${lineY} l7,-5 m-7,5 l7,5` }, "number-line-axis"));
 
-  // Every tick is drawn, before the intervals, so no tick runs through an interval's open end; its label
-  // only when the plan above keeps it.
-  for (const tick of ticks) {
+  // The ticks the plan keeps are drawn, before the intervals, so no tick runs through an interval's open
+  // end; a label only when the plan keeps it.
+  for (const tick of plan.ticks) {
     const x = mapX(tick.value);
     svg.append(element("line", { x1: x, x2: x, y1: lineY - (tick.major ? 8 : 5), y2: lineY + (tick.major ? 8 : 5) }, tick.major ? "number-line-tick" : "number-line-tick number-line-tick-minor"));
-    const row = labelRow.get(tick.value);
+    const row = plan.labelRow.get(tick.value);
     if (tick.label && row !== undefined) tickLabel(svg, tick.label, x, lineY + 10 + row * rowHeight);
   }
 
   for (const interval of intervals) {
     const from = interval.from === null ? undefined : numberLineValue(interval.from);
     const to = interval.to === null ? undefined : numberLineValue(interval.to);
+    if ((from !== undefined && from > max) || (to !== undefined && to < min)) continue;
     const start = from === undefined ? x0 - 18 : mapX(from), end = to === undefined ? x1 + 18 : mapX(to);
-    const group = element("g", {}, "number-line-interval");
+    const group = element("g", clip ? { "clip-path": clip } : {}, "number-line-interval");
     group.dataset.id = idOf(interval as Part);
     group.append(element("line", { x1: start, x2: end, y1: lineY, y2: lineY }, "number-line-interval-bar"));
     if (from === undefined) group.append(element("path", { d: `M${start},${lineY} l9,-6 m-9,6 l9,6` }, "number-line-interval-bar"));
     if (to === undefined) group.append(element("path", { d: `M${end},${lineY} l-9,-6 m9,6 l-9,6` }, "number-line-interval-bar"));
     for (const [value, closed] of [[from, interval.from_closed ?? true], [to, interval.to_closed ?? true]] as const) {
-      if (value === undefined) continue;
+      if (value === undefined || !inView(value)) continue;
       group.append(element("circle", { cx: mapX(value), cy: lineY, r: 6 }, closed ? "number-line-end-closed" : "number-line-end-open"));
     }
     if (interval.label) {
@@ -249,20 +341,22 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
   for (const jump of jumps) {
     const ends = jumpEnds(content, jump as NumberLineJump);
     if (!ends || ends.from === ends.to) continue;
-    const group = element("g", {}, "number-line-jump");
+    // Zoomed in, a jump wholly on one side of the window is not drawn.
+    if (Math.max(ends.from, ends.to) < min || Math.min(ends.from, ends.to) > max) continue;
+    const group = element("g", clip ? { "clip-path": clip } : {}, "number-line-jump");
     group.dataset.id = idOf(jump as Part);
     // Lane 0 stands on the line; higher lanes on a raised baseline. Hops stand on the line, under any arc
     // over them, so a jump on a higher lane is one arc even when it has hops.
     const lane = jumpLanes[jumps.indexOf(jump)] ?? 0;
     const hops = Boolean(jump.hops) && lane === 0;
-    const base = lineY - 4 - lane * JUMP_LANE;
+    const base = lineY - 4 - lane * plan.jumpLane;
     // Whole hops, then a shorter last one when a variable stops between ticks: the arrow ends at ends.to.
     const pieces = jumpHops(content, ends, hops);
     const span = (piece: { from: number; to: number }) => Math.abs(mapX(piece.to) - mapX(piece.from));
     const natural = hops ? 18 : Math.min(46, 14 + span(ends) / 5);
     // With lanes, every arc stays low enough to clear the lane above it. The cap follows the reserved
     // lanes, so an arc keeps its height when a reversing jump appears.
-    const hopHeight = reservedLanes > 1 ? Math.min(natural, LANE_ARC) : natural;
+    const hopHeight = reservedLanes > 1 ? Math.min(natural, plan.laneArc) : natural;
     pieces.forEach((piece, index) => {
       const a = mapX(piece.from), b = mapX(piece.to);
       // A short last hop is lower, in proportion to its length.
@@ -289,13 +383,14 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
 
   for (const point of points) {
     const value = numberLineValue(point.value);
-    if (value === undefined) continue;
+    // Zoomed in, a point outside the window is not drawn; the strip below counts it.
+    if (value === undefined || !inView(value)) continue;
     const x = mapX(value);
     const group = element("g", {}, "number-line-point", point.shown === "when_emphasized" ? "number-line-latent" : "");
     group.dataset.id = idOf(point as Part);
     group.append(element("circle", { cx: x, cy: lineY, r: 6.5 }, point.style === "open" ? "number-line-dot-open" : "number-line-dot"));
     if (point.label) {
-      const row = nameRows.get(point) ?? 0;
+      const row = plan.nameRows.get(point) ?? 0;
       const y = labelsAbove ? pointLabelY - row * nameRowHeight : pointLabelY + row * nameRowHeight;
       const text = element("text", { x, y, "text-anchor": "middle" }, "number-line-point-label");
       text.textContent = point.label;
@@ -304,7 +399,8 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     }
     const variable = (point as NumberLinePoint).interaction?.variable;
     if (variable) {
-      // The board's pointer handler turns a drag into a value on the smallest-tick grid.
+      // The board's pointer handler turns a drag into a value on the smallest-tick grid, inside the
+      // window shown (numberLineDragValue): the same stops whatever the zoom.
       const handle = element("circle", { cx: x, cy: lineY, r: 14 }, "number-line-drag-handle");
       Object.assign(handle.dataset, {
         ollVariableControl: variable, ollControlKind: "number_line_point",
@@ -317,7 +413,118 @@ export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknow
     context.applyEmphasis(group, idOf(point as Part));
     svg.append(group);
   }
-  parent.append(svg);
+
+  // The overview strip: the whole line, and the part of it in view. Marked values outside the window
+  // are counted at its ends.
+  const strip = element("g", {}, "number-line-overview");
+  const whole = content.range;
+  const stripX = (value: number) => x0 + (value - whole.min) / (whole.max - whole.min) * (x1 - x0);
+  strip.append(element("rect", { x: x0, y: plan.stripY - 2, width: x1 - x0, height: 4, rx: 2 }, "number-line-overview-track"));
+  const left = stripX(min), right = stripX(max);
+  strip.append(element("rect", { x: left, y: plan.stripY - 4, width: Math.max(4, right - left), height: 8, rx: 3 }, "number-line-overview-window"));
+  const outside = [...new Set(plan.marked.map((value) => Number(value.toPrecision(12))))];
+  const before = outside.filter((value) => !inView(value) && value < min).length;
+  const after = outside.filter((value) => !inView(value) && value > max).length;
+  if (before) label(strip, `◀ ${before}`, x0 - 6, plan.stripY + 4, "number-line-overview-count", "end");
+  if (after) label(strip, `${after} ▶`, x1 + 6, plan.stripY + 4, "number-line-overview-count", "start");
+  svg.append(strip);
+  return svg;
+}
+
+/**
+ * A number line card's zoom, for the board to drive (decision 0024): the board routes the wheel and
+ * two-finger pinches over the card, and a drag on the zoomed line, here instead of to its camera.
+ */
+export interface NumberLineZoomControl {
+  /** Whether the line can zoom at all (its whole range is wider than the zoom limit). */
+  readonly zoomable: boolean;
+  /** Whether it shows less than the whole line now. */
+  readonly zoomed: boolean;
+  /** Zooms by `factor` (above 1 zooms in) around the value under `clientX`. */
+  zoomAt(factor: number, clientX: number): void;
+  /** Moves the line with a pointer that moved `clientDx` pixels. */
+  panBy(clientDx: number): void;
+  /** Back to the whole line, without telling the board (the teaching camera is taking over). */
+  showWhole(): void;
+  /** Whether an event target is on the line's drawing (not its buttons). */
+  onLine(target: EventTarget | null): boolean;
+}
+
+const zoomControls = new WeakMap<Element, NumberLineZoomControl>();
+
+/** The zoom of the number line drawn in `card` (or of the card's view itself), if it has one. */
+export function numberLineZoomControl(card: Element | null | undefined): NumberLineZoomControl | undefined {
+  if (!card) return undefined;
+  const view = zoomControls.has(card) ? card : card.querySelector?.(".number-line-view");
+  return view ? zoomControls.get(view) : undefined;
+}
+
+/** The SVG for a number line, with its parts marked for emphasis and dragging, and its own zoom (0024). */
+export function renderNumberLine(parent: HTMLElement, raw: Record<string, unknown>, context: NumberLineViewContext): void {
+  const content = raw as unknown as NumberLineContent;
+  const width = NUMBER_LINE_VIEW_WIDTH - 2 * SIDE;
+  const limits = numberLineZoomLimits(content, width);
+  let plan = planNumberLineCard(raw, context.variables, context.zoom?.window);
+  const view = document.createElement("div");
+  view.className = "number-line-view";
+  // The card's own buttons: real buttons, outside the board's pan and the learner's ink.
+  const toolbar = document.createElement("div");
+  toolbar.className = "number-line-zoom";
+  toolbar.setAttribute("role", "group");
+  toolbar.dataset.ollBoardInput = "ignore";
+  toolbar.dataset.ollInkInput = "ignore";
+  const localize = context.localize ?? ((_element: Element, apply: (text: (source: string) => string) => void) => apply((source) => source));
+  localize(toolbar, (text) => toolbar.setAttribute("aria-label", text("数轴缩放")));
+  const button = (face: string, name: string, action: () => void, className: string) => {
+    const node = document.createElement("button");
+    node.type = "button";
+    node.className = className;
+    localize(node, (text) => { node.textContent = text(face); node.setAttribute("aria-label", text(name)); node.title = text(name); });
+    node.addEventListener("click", action);
+    toolbar.append(node);
+    return node;
+  };
+  let svg = drawNumberLine(content, plan, context);
+  const valueAt = (clientX: number) => {
+    const rect = svg.getBoundingClientRect();
+    const x = rect.width > 0 ? (clientX - rect.left) / rect.width * NUMBER_LINE_VIEW_WIDTH : (plan.x0 + plan.x1) / 2;
+    return plan.window.min + (x - plan.x0) / (plan.x1 - plan.x0) * (plan.window.max - plan.window.min);
+  };
+  const sync = () => {
+    const span = plan.window.max - plan.window.min;
+    zoomIn.disabled = !limits.zoomable || span <= limits.minSpan * (1 + 1e-9);
+    zoomOut.disabled = whole.disabled = !plan.zoomed;
+  };
+  const show = (next: NumberLineWindow | undefined, notify: boolean) => {
+    const window = clampNumberLineWindow(content, next, width);
+    if (window.min === plan.window.min && window.max === plan.window.max) return;
+    plan = planNumberLineCard(raw, context.variables, window);
+    const drawn = drawNumberLine(content, plan, context);
+    svg.replaceWith(drawn);
+    svg = drawn;
+    sync();
+    if (notify) context.zoom?.change(plan.zoomed ? { ...plan.window } : undefined);
+  };
+  const zoomBy = (factor: number, anchor: number) => show(zoomNumberLineWindow(content, plan.window, factor, anchor, width), true);
+  const zoomOut = button("−", "缩小数轴", () => zoomBy(1 / NUMBER_LINE_ZOOM.buttonFactor, numberLineZoomCentre(plan.window, plan.marked)), "number-line-zoom-out");
+  const zoomIn = button("+", "放大数轴", () => zoomBy(NUMBER_LINE_ZOOM.buttonFactor, numberLineZoomCentre(plan.window, plan.marked)), "number-line-zoom-in");
+  const whole = button("整条", "显示整条数轴", () => show(undefined, true), "number-line-zoom-whole");
+  sync();
+  view.append(toolbar, svg);
+  zoomControls.set(view, {
+    get zoomable() { return limits.zoomable; },
+    get zoomed() { return plan.zoomed; },
+    zoomAt: (factor, clientX) => zoomBy(factor, valueAt(clientX)),
+    panBy: (clientDx) => {
+      const rect = svg.getBoundingClientRect();
+      if (!(rect.width > 0)) return;
+      const delta = -clientDx / rect.width * NUMBER_LINE_VIEW_WIDTH / (plan.x1 - plan.x0) * (plan.window.max - plan.window.min);
+      show(panNumberLineWindow(content, plan.window, delta, width), true);
+    },
+    showWhole: () => show(undefined, false),
+    onLine: (target) => typeof Node !== "undefined" && target instanceof Node && svg.contains(target),
+  });
+  parent.append(view);
   if (content.caption) {
     const caption = document.createElement("div");
     caption.className = "number-line-caption";

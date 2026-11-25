@@ -174,7 +174,8 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
   }
   if (kind === "scene3d") return { width: 460, height: 360 + (typeof content.caption === "string" && content.caption.trim() ? 12 + 20 * content.caption.split("\n").length : 0) };
   // A wide, low strip; the board measures its real height after drawing.
-  if (kind === "number_line") return { width: 560, height: 120 + (Array.isArray(content.jumps) && content.jumps.length ? 58 : 0) + (content.title ? 32 : 0) };
+  // The line's own zoom (decision 0024) adds a strip under it, and a row for its buttons when it has no title.
+  if (kind === "number_line") return { width: 560, height: 134 + (Array.isArray(content.jumps) && content.jumps.length ? 58 : 0) + (content.title ? 32 : 16) };
   // Sized from its plan, which every value of a bound numerator shares (its wholes are written).
   if (kind === "fraction_model") {
     try {

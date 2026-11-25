@@ -4,11 +4,11 @@ import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./p
 import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
 import { planAxisTicks } from "./axis-ticks.js";
 import { visibleBoard } from "./visible-board.js";
-import { renderNumberLine } from "../../plugin-math/src/number-line-view.js";
+import { numberLineZoomControl, renderNumberLine, type NumberLineViewContext, type NumberLineZoomControl } from "../../plugin-math/src/number-line-view.js";
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
 import { baseTenStepDelay, baseTenStepFrames, renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
 import { baseTenMat, type BaseTenMat, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
-import { snapToTick, type NumberLineContent } from "../../plugin-math/src/number-line.js";
+import { numberLineDragValue, NUMBER_LINE_ZOOM, type NumberLineContent, type NumberLineWindow } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
 // The inline-math rule lives in core so the player shortens titles by it too; re-exported for hosts.
@@ -38,6 +38,7 @@ import {
   type ViewportInsets,
 } from "./camera.js";
 import {
+  boardWheelTargetsNumberLine,
   boardInputTargetsInteractiveUi,
   boardKeyboardTargetsTextInput,
   boardWheelTargetsInteractiveUi,
@@ -1765,6 +1766,8 @@ function renderContent(
   plotAnimation?: PlotSampleAnimation,
   /** The board's variables with their ranges (number lines size moving cards from them). */
   variableStates?: Readonly<Record<string, { value: number; initial: number; min: number; max: number }>>,
+  /** A number line's zoom window, kept by the board, and how it hears the learner zoomed (decision 0024). */
+  numberLineZoom?: NumberLineViewContext["zoom"],
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
@@ -1772,7 +1775,15 @@ function renderContent(
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   // The math plugin's number line (decision 0013); it marks its own parts for emphasis.
-  if (node.kind === "number_line") { renderNumberLine(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)), ...(variableStates ? { variables: variableStates } : {}) }); return; }
+  if (node.kind === "number_line") {
+    renderNumberLine(parent, content, {
+      applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)),
+      ...(variableStates ? { variables: variableStates } : {}),
+      ...(numberLineZoom ? { zoom: numberLineZoom } : {}),
+      localize: (element, apply) => bindUi(parent, element, "number-line", () => apply((source) => ui(parent, source))),
+    });
+    return;
+  }
   // The math plugin's fraction model (decision 0021); it marks its own fractions for emphasis.
   if (node.kind === "fraction_model") { renderFractionModel(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
   // The math plugin's trading mat (decision 0023); it marks its own places for emphasis. Taps arrive with the tap control.
@@ -1937,6 +1948,16 @@ export class InfiniteBoardView {
   private renderedOperation?: PlaybackOperation;
   private scene3dInputHandler?: Scene3dViewInputHandler;
   private scene3dViews: Record<string, Scene3dViewState> = {};
+  /**
+   * Number lines the learner zoomed (decision 0024), by card: a view only, never in the lesson or its
+   * log. A redraw keeps the window; the teaching camera taking over again shows the whole lines.
+   */
+  private readonly numberLineWindows = new Map<string, NumberLineWindow>();
+  /**
+   * The number line card each pointer of the board's gesture went down on, and whether on the line
+   * itself: a pinch with both fingers on one card zooms its line, and a drag on a zoomed line moves it.
+   */
+  private readonly lineGesturePointers = new Map<number, { card: Element; onLine: boolean } | undefined>();
   private regionLayouts: Record<string, RegionLayoutConstraint> = {};
   private readonly cameraAuthority = new TeachingCameraAuthority();
   private cameraFrame?: number;
@@ -2081,7 +2102,7 @@ export class InfiniteBoardView {
     }
     const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
       ? this.captureReflowAnchor(board) : undefined;
-    if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; }
+    if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; this.numberLineWindows.clear(); }
     this.board = board ?? undefined;
     this.operation = operation;
     this.pointer.hidden = true;
@@ -2372,6 +2393,7 @@ export class InfiniteBoardView {
       // gesture outright so a pending pan/pinch cannot keep moving the
       // camera (or later replay a deferred teaching focus) under new input.
       this.gesture.reset();
+      this.lineGesturePointers.clear();
       this.pendingCameraFocus = undefined;
       this.spacePanPointerId = undefined;
       this.finishVariableDrag();
@@ -2399,6 +2421,7 @@ export class InfiniteBoardView {
   abortActiveGesture(): void {
     if (this.gesture.isActive()) this.beginManualNavigation();
     this.gesture.reset();
+    this.lineGesturePointers.clear();
     this.spacePanPointerId = undefined;
     this.viewport.classList.remove("dragging");
     this.replayPendingCameraFocus();
@@ -2741,6 +2764,7 @@ export class InfiniteBoardView {
     this.cameraAuthority.reset();
     if (this.cameraFrame !== undefined) this.hostWindow.cancelAnimationFrame(this.cameraFrame);
     this.gesture.reset();
+    this.lineGesturePointers.clear();
     this.pendingCameraFocus = undefined;
     this.spacePanHeld = false;
     this.spacePanPointerId = undefined;
@@ -2757,7 +2781,7 @@ export class InfiniteBoardView {
   private clearBoard(): void {
     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); disposeScene3d(element); }
     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.blockElements.clear(); for (const id of Object.keys(this.equalsX)) delete this.equalsX[id]; this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.numberLineWindows.clear(); this.inkShownStrokes.clear(); this.plotsAwaitingRemeasure.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.blockElements.clear(); for (const id of Object.keys(this.equalsX)) delete this.equalsX[id]; this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
     this.lastAttentionTargets = [];
     this.lastFramedScene = undefined;
   }
@@ -2867,6 +2891,10 @@ export class InfiniteBoardView {
               : kind === "ink" && node.id === activeReviseId && shownBefore !== undefined ? shownBefore : undefined,
             plotAnimation,
             board.variables,
+            kind === "number_line" ? {
+              ...(this.numberLineWindows.has(node.id) ? { window: this.numberLineWindows.get(node.id)! } : {}),
+              change: (window) => this.numberLineZoomed(node.id, window),
+            } : undefined,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
           if (cardContext) { updateBaseTenTrade(element, node.content ?? {}, cardContext); this.cardFrames.set(node.id, cardFrame); this.cardSteps.delete(node.id); }
@@ -3406,10 +3434,18 @@ export class InfiniteBoardView {
     this.transform();
   }
   private onWheel(event: WheelEvent): void {
-    if (
-      this.inputOwner === "course-object"
-      || boardWheelTargetsInteractiveUi(event.composedPath())
-    ) return;
+    if (this.inputOwner === "course-object") return;
+    // Over a number line card the wheel zooms the line, never the board (decision 0024), also at the
+    // line's limits; a line too short to zoom leaves the wheel to the board.
+    const line = numberLineZoomControl(boardWheelTargetsNumberLine(event.composedPath()) as Element | undefined);
+    if (line?.zoomable) {
+      event.preventDefault();
+      if (event.deltaY === 0) return;
+      line.zoomAt(event.ctrlKey ? trackpadPinchZoomFactor(event.deltaY, event.deltaMode)
+        : event.deltaY < 0 ? NUMBER_LINE_ZOOM.wheelFactor : 1 / NUMBER_LINE_ZOOM.wheelFactor, event.clientX);
+      return;
+    }
+    if (boardWheelTargetsInteractiveUi(event.composedPath())) return;
     event.preventDefault();
     this.beginManualNavigation();
     const rect = this.viewport.getBoundingClientRect();
@@ -3432,7 +3468,26 @@ export class InfiniteBoardView {
   private resumeAutomaticCamera(): boolean {
     if (!this.cameraAuthority.resumeTeachingCamera()) return false;
     this.viewport.classList.remove("manual-navigation");
+    this.showWholeNumberLines();
     return true;
+  }
+  /** The learner zoomed or moved a number line: manual navigation, as a pan or zoom of the board is (0024). */
+  private numberLineZoomed(id: string, window: NumberLineWindow | undefined): void {
+    if (window) this.numberLineWindows.set(id, window);
+    else this.numberLineWindows.delete(id);
+    this.beginManualNavigation();
+    // The card redrew its line in place; its parts take the board's latest emphasis again.
+    const element = this.nodeElements.get(id), node = this.board?.nodes[id];
+    if (element && node) this.syncNodeFragmentEmphasis(element, node);
+  }
+  /** The teaching camera takes over again: every zoomed number line shows its whole range (0024 §7). */
+  private showWholeNumberLines(): void {
+    for (const id of this.numberLineWindows.keys()) {
+      const element = this.nodeElements.get(id), node = this.board?.nodes[id];
+      numberLineZoomControl(element)?.showWhole();
+      if (element && node) this.syncNodeFragmentEmphasis(element, node);
+    }
+    this.numberLineWindows.clear();
   }
   private zoomAt(factor: number, x: number, y: number): void { const next = Math.min(2.2, Math.max(.15, this.scale * factor)); const worldX = (x - this.panX) / this.scale; const worldY = (y - this.panY) / this.scale; this.scale = next; this.panX = x - worldX * next; this.panY = y - worldY * next; this.transform(); }
   private updateVariableDrag(event: PointerEvent): void {
@@ -3444,9 +3499,8 @@ export class InfiniteBoardView {
     let value: number;
     if (drag.line) {
       // Along the line, snapped to its smallest tick, within the variable's range.
-      const { x0, x1, min, max, grid } = drag.line;
-      const snapped = snapToTick(grid, min + (x - x0) / (x1 - x0) * (max - min));
-      value = Math.min(variable.max, Math.max(variable.min, snapped));
+      // Inside the window the line shows when it is zoomed in (decision 0024); the same stops either way.
+      value = Math.min(variable.max, Math.max(variable.min, numberLineDragValue(drag.line, x)));
       if (value === drag.lastValue) return;
     } else {
       const rawAngle = Math.atan2(drag.centerY - y, x - drag.centerX);
@@ -3541,6 +3595,13 @@ export class InfiniteBoardView {
     // Middle-button autoscroll and other button defaults would fight the pan.
     if (auxiliaryPan || spacePan) event.preventDefault();
     this.beginManualNavigation();
+    // A finger or mouse on a number line card may pinch its line, or move the line when it is zoomed in
+    // (decision 0024); the recognizer follows at most two pointers, and so does this.
+    if (this.lineGesturePointers.size < 2 || this.lineGesturePointers.has(event.pointerId)) {
+      const card = auxiliaryPan || spacePan ? null : (event.target as Element).closest?.(".board-node[data-kind='number_line']") ?? null;
+      const line = numberLineZoomControl(card);
+      this.lineGesturePointers.set(event.pointerId, card && line ? { card, onLine: line.onLine(event.target) } : undefined);
+    }
     this.feedGesture(event, "down");
     if (spacePan) this.spacePanPointerId = event.pointerId;
     if (this.gesture.isActive()) this.viewport.classList.add("dragging");
@@ -3574,9 +3635,33 @@ export class InfiniteBoardView {
       type,
     });
     this.applyGestureActions(actions);
+    if (type === "up" || type === "cancel") this.lineGesturePointers.delete(event.pointerId);
+    if (!this.gesture.isActive()) this.lineGesturePointers.clear();
+  }
+  /**
+   * The number line a board gesture moves instead of the camera (decision 0024): two fingers that went
+   * down on one number line card zoom its line, and one pointer that went down on a zoomed line moves it.
+   * Anything else (one finger on a line at rest, a pinch across two cards) moves the board as before.
+   */
+  private gestureNumberLine(): NumberLineZoomControl | undefined {
+    const pointers = [...this.lineGesturePointers.values()];
+    const first = pointers[0];
+    if (!first || pointers.some((pointer) => pointer?.card !== first.card)) return undefined;
+    const line = numberLineZoomControl(first.card);
+    if (!line?.zoomable) return undefined;
+    const phase = this.gesture.phase;
+    if (phase === "pinching" && pointers.length === 2) return line;
+    if (phase === "panning" && pointers.length === 1 && first.onLine && line.zoomed) return line;
+    return undefined;
   }
   private applyGestureActions(actions: BoardGestureAction[]): void {
+    const line = this.gestureNumberLine();
     for (const action of actions) {
+      if (line) {
+        if (action.type === "panBy") line.panBy(action.dx);
+        else if (action.type === "zoomAt") line.zoomAt(action.factor, action.x + this.viewport.getBoundingClientRect().left);
+        continue;
+      }
       if (action.type === "panBy") {
         this.panX += action.dx;
         this.panY += action.dy;
