@@ -612,18 +612,11 @@ export function thinNumberLineTicks(
   const unit = tickUnit(content);
   const spacing = unit * width / (window.max - window.min);
   const subdivisions = content.ticks?.subdivisions ?? 1;
-  // An answer kept back until emphasized sits on a tick like its neighbours: a tick of its own would give it
-  // away, and none would leave the revealed dot between ticks. The stride shrinks until every hidden value
-  // on the grid is on it (review of #107; 57 on 0 to 70 keeps every tick, 52 keeps every second).
-  const onStride = (value: number, stride: number) => Math.round(value / unit) % stride === 0;
+  // A line with an answer kept back until emphasized is not thinned: a tick of the answer's own would give it
+  // away, none would leave the revealed dot between ticks, and a stride chosen to include it would say what
+  // it is a multiple of (review of #107, rounds 1 and 2). It draws every tick, as before zoom; zoom still helps.
   const onGrid = (value: number) => Math.abs(value / unit - Math.round(value / unit)) <= 1e-9 * Math.max(1, Math.abs(value / unit));
-  const kept = hidden.filter(onGrid);
-  let stride = planTickStride(spacing, subdivisions);
-  if (kept.some((value) => !onStride(value, stride))) {
-    const strides: number[] = [1, 2, 5, 10, 20, 50].filter((each) => each < subdivisions && subdivisions % each === 0);
-    for (let scale = 1; subdivisions * scale < stride * 10; scale *= 10) strides.push(...[1, 2, 5].map((factor) => subdivisions * factor * scale));
-    stride = strides.filter((each) => each <= stride).sort((a, b) => b - a).find((each) => kept.every((value) => onStride(value, each))) ?? 1;
-  }
+  const stride = hidden.some(onGrid) ? 1 : planTickStride(spacing, subdivisions);
   const isMarked = (value: number) => marked.some((mark) => Math.abs(mark - value) <= 1e-9 * Math.max(1, Math.abs(value)));
   const tolerance = 1e-9 * Math.max(1, Math.abs(window.min), Math.abs(window.max));
   return {

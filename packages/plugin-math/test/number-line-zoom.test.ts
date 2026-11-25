@@ -185,21 +185,19 @@ test("a point dragged on a zoomed line lands on the same stops as on the whole l
   assert.equal(numberLineDragValue(line(whole), -100), 0);
 });
 
-test("an answer kept back until emphasized sits on a tick like its neighbours, never one of its own (review of #107)", () => {
+test("a line with an answer kept back until emphasized draws every tick, so nothing points at it (review of #107)", () => {
   const hiddenAt = (value: number) => planNumberLineCard({
     range: { min: 0, max: 70 }, ticks: { step: 1 },
     points: [{ as: "start", value: 47, label: "Start" }, { as: "end", value, shown: "when_emphasized" }],
     jumps: [{ as: "more", from: "start", by: value - 47 }],
   });
-  // 52 is even: the line draws every second number, so 52 has a tick and so do its neighbours 50 and 54.
-  const even = hiddenAt(52);
-  assert.equal(even.tickStride, 2);
-  for (const value of [50, 52, 54]) assert.ok(values(even).includes(value), `${value} has a tick`);
-  assert.ok(!labelled(even).includes(52), "the answer's number is not written");
-  // 57 is on no thinned stride: every tick stays, as before zoom existed.
-  const odd = hiddenAt(57);
-  assert.equal(odd.tickStride, 1);
-  assert.ok(values(odd).includes(57) && values(odd).includes(56) && values(odd).includes(58));
-  // 55 is on the stride of five the line would use anyway.
-  assert.equal(hiddenAt(55).tickStride, 5);
+  for (const value of [52, 55, 57]) {
+    const plan = hiddenAt(value);
+    assert.equal(plan.tickStride, 1, `${value}: no stride says what the answer is a multiple of`);
+    assert.ok(values(plan).includes(value), `${value} has a tick, like every number`);
+    // Its number is written only where every such number is (55, like 50 and 60), never pinned for it.
+    if (value % 5) assert.ok(!labelled(plan).includes(value), `${value}: the answer's number is not written`);
+  }
+  // A hidden value off the grid (47.5 on a line by ones) changes nothing: the line thins as usual.
+  assert.equal(hiddenAt(47.5).tickStride, 5);
 });
