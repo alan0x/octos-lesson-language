@@ -13,7 +13,7 @@ import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberL
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
 import {
   BASE_TEN_SLIDER_STEP, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenBoundField, baseTenChanges,
-  baseTenMat, baseTenRefusalText, baseTenSliderPlace, baseTenSliderReachable, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName,
+  baseTenMat, baseTenRefusalText, baseTenSliderPlace, baseTenSliderReachable, baseTenTapReachable, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName,
 } from "../../plugin-math/src/base-ten-trade.js";
 import {
   bindingCapabilitiesForNodeKind,
@@ -448,7 +448,13 @@ function validateCardStudentTask(
   resolveLocal(registry, completion.node, `${path}/completion/node`, ["node"]);
   const content = cards.get(completion.node);
   if (!content) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, "A card_fact task reads a base_ten_trade card");
-  if (completion.fact !== "no_trade_left") fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
+  if (completion.fact !== "no_trade_left" && completion.fact !== "count") fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
+  // Only a count names a place and a value (amendment 5).
+  for (const key of Object.keys(completion)) {
+    if (!["kind", "node", "fact", ...(completion.fact === "count" ? ["at", "value"] : [])].includes(key)) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/${key}`, `Unknown field '${key}' of a ${completion.fact} card fact`);
+    }
+  }
   requireArray(task.allowed_operations, `${path}/allowed_operations`);
   // Besides its taps and "done", a card task may let the learner trade with its counts' sliders (amendment 4).
   const operations = task.allowed_operations as Array<{ kind?: unknown; node?: unknown; variable?: unknown; controls?: unknown }>;
@@ -481,7 +487,31 @@ function validateCardStudentTask(
     if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
     validateBaseTenTradeContent(baseTenContentAt(content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
   }
+  if (completion.fact === "count") validateCardCountTarget(completion, path, baseTenMat(baseTenContentAt(content, variables, { ...initial, ...startValues })));
   validateTaskFeedback(task, path);
+}
+
+/**
+ * A count the learner makes by tapping (amendment 5): a place the card has, a whole number, not met by
+ * the practice pile, and reached by an exact search over the card's tap rules from that pile.
+ */
+function validateCardCountTarget(completion: AuthoringCardStudentTask["completion"], path: string, pile: ReturnType<typeof baseTenMat>): void {
+  const place = BASE_TEN_TRADE_PLACES.indexOf(completion.at as BaseTenPlaceName);
+  if (place < 0 || place >= pile.columns) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/at`, `A count is of a place the card has: ${BASE_TEN_TRADE_PLACES.slice(0, pile.columns).join(", ")}`);
+  }
+  const value = completion.value;
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`, "A count is a whole number");
+  }
+  if (pile.counts[place] === value) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`, `The practice pile already has ${value} ${completion.at}`);
+  }
+  const reached = [...new Set(baseTenTapReachable(pile).map((mat) => mat.counts[place]!))].sort((a, b) => a - b);
+  if (!reached.includes(value as number)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`,
+      `Tapping this pile makes ${reached.join(" or ")} ${completion.at}, never ${value}`);
+  }
 }
 
 /** A row of blanks (decision 0023 amendment 1): fixed text and one to six blanks, each a numeric answer. */

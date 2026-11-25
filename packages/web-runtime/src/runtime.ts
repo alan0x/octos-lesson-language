@@ -1,6 +1,6 @@
 import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
 import {
-  applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, baseTenSliderMove,
+  BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, baseTenSliderMove, baseTenTapReachable,
   type BaseTenMat, type BaseTenRefusal, type BaseTenStep, type BaseTenTap,
 } from "../../plugin-math/src/base-ten-trade.js";
 import { cardSliderAliases, cardSliderTarget, type CardSliderTarget } from "./card-slider.js";
@@ -1679,7 +1679,7 @@ export class BrowserLessonSession {
       // holds the practice pile's digits; it is laid tidy, trays empty (a learner may finish with a few in a tray).
       const done = this.studentTaskDefinitions.slice(0, activeIndex < 0 ? undefined : activeIndex).reverse()
         .find(task => task.completion.kind === "card_fact") as AuthoringCardStudentTask | undefined;
-      const traded = done?.start ? this.tradedPracticePile(done) : undefined;
+      const traded = done?.start ? (done.completion.fact === "count" ? this.countedPracticePile(done) : this.tradedPracticePile(done)) : undefined;
       if (!done || !traded) return;
       key = `${this.practiceKey(done.as)}:done`;
       values = traded;
@@ -1707,6 +1707,34 @@ export class BrowserLessonSession {
     places.forEach((place, p) => {
       const count = bound.get(`${place.id}.count`);
       if (count) result[count] = p === columns - 1 ? Math.floor(value / 10 ** p) : Math.floor(value / 10 ** p) % 10;
+      const tray = bound.get(`${place.id}.tray`);
+      if (tray) result[tray] = 0;
+    });
+    return result;
+  }
+
+  /**
+   * A count task's practice pile once its count is made (amendment 5): of the piles taps can make with that
+   * count and every tray empty, the one nearest the practice pile (on two columns the only one).
+   */
+  private countedPracticePile(task: AuthoringCardStudentTask): Record<string, number> | undefined {
+    const node = this.player.snapshot.board?.nodes?.[task.completion.node];
+    const variables = this.player.snapshot.board?.variables;
+    if (!node || node.kind !== "base_ten_trade" || !variables || !task.start) return undefined;
+    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
+    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
+      .map((binding) => [binding.target, binding.expression.trim()]));
+    const at = (alias: string | undefined) => alias === undefined ? 0 : task.start!.values?.[alias] ?? variables[alias]?.initial ?? 0;
+    const start = baseTenMat({ ...node.content, places: places.map((place) => ({ ...place, count: at(bound.get(`${place.id}.count`)), tray: at(bound.get(`${place.id}.tray`)) })) });
+    const p = BASE_TEN_TRADE_PLACES.indexOf(task.completion.at!);
+    const distance = (mat: typeof start) => mat.counts.reduce((sum, count, q) => sum + Math.abs(count - start.counts[q]!), 0);
+    const made = baseTenTapReachable(start).filter((mat) => mat.counts[p] === task.completion.value && mat.trays.every((tray) => tray === 0))
+      .sort((a, b) => distance(a) - distance(b))[0];
+    if (!made) return undefined;
+    const result: Record<string, number> = {};
+    places.forEach((place, q) => {
+      const count = bound.get(`${place.id}.count`);
+      if (count) result[count] = made.counts[q]!;
       const tray = bound.get(`${place.id}.tray`);
       if (tray) result[tray] = 0;
     });

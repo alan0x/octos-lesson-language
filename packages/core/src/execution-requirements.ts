@@ -12,7 +12,7 @@ import {
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.14.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.15.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -32,6 +32,8 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:numeric_answer": "0.5.0",
   // Decision 0023: the learner taps a card and says "done"; an older player has no taps or card facts.
   "student-tasks:card_fact": "0.14.0",
+  // Decision 0023 amendment 5: a count the learner taps the card to; an older player knows only no_trade_left.
+  "student-tasks:card_fact:count": "0.15.0",
   // Decision 0023 amendment 1: a row of blanks answered in one go; an older player has no such question.
   "student-tasks:numeric_row": "0.14.0",
   // The lesson taps a card by the card's rules (a demonstration); an older player does not know the action.
@@ -267,6 +269,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     for (const task of event.lesson?.tasks ?? []) {
       if (task.start) add("practice-start", `${path}/lesson/tasks/${task.as}/start`);
       add(`student-tasks:${task.completion.kind}`, `${path}/lesson/tasks/${task.as}`);
+      if (task.completion.kind === "card_fact" && task.completion.fact === "count") add("student-tasks:card_fact:count", `${path}/lesson/tasks/${task.as}/completion/fact`);
     }
     for (const beat of event.step?.beats ?? []) {
       if (beat.pace === "continuous") add("beat-pace:continuous", `${path}/step/beats/${beat.id}/pace`);
