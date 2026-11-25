@@ -8,6 +8,7 @@
 
 ### Fixed
 
+- **A task after a typed answer opens at once** (base-ten check 4, BT-31). Only a card's "done" laid the next task's practice pile, so a card task with `start` right after a typed answer or a row of blanks stayed shut, its card inert, until the page was reloaded. `submitStudentAnswer` and `submitStudentRow` now lay it too.
 - **A count task keeps the learner's own pile** (decision 0023 amendment 5; owner, 2026-11-24). After "done", a later task without its own pile opened on a computed pile with the asked count, nearest the practice pile; on three columns that could differ from the learner's (a hundred they broke came back). `card_submit` now records `pile`, the card's bound counts and trays when the learner said done, and the mat lays that pile tidy (tray units loose in their place), after a restore and a replay too. A log without `pile` falls back as before.
 
 ### Added

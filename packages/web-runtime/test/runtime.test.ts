@@ -1460,14 +1460,18 @@ test("a learner drags a number-line point through the session, and the task judg
 });
 
 // Trading tens and ones (decision 0023): a card the learner taps, then says "done".
-function tradingLesson(): ReturnType<typeof normalizeAuthoringLesson> {
+function tradingLesson(typedFirst = false): ReturnType<typeof normalizeAuthoringLesson> {
   const variable = (as: string, initial: number, max: number) => ({ as, initial, min: 0, max, label: as });
   const lesson = {
     dsl: "octos.lesson", version: "0.1", profile: "authoring",
     lesson: {
       mode: "explain", language: "en-US", title: "Trading tens and ones", goals: ["Ten ones make a ten"],
       variables: [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 9)],
-      tasks: [{
+      tasks: [...(typedFirst ? [{
+        as: "first", anchor: "mat", prompt: "Three tens and fourteen ones: what number is that?",
+        availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "answer_entry" }],
+        completion: { kind: "numeric_answer", answer: "44" }, hints: ["Trade ten ones for a ten first."],
+      }] : []), {
         as: "trade",
         start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tray_ones: 0, tens: 2 } },
         prompt: "Make tens until you can't. Then tap I'm done.",
@@ -1490,6 +1494,23 @@ function tradingLesson(): ReturnType<typeof normalizeAuthoringLesson> {
   } as unknown as AuthoringLesson;
   return normalizeAuthoringLesson(lesson, { lessonId: "trade", boardId: "b", baseRevision: 0, regionIntent: "new_topic" });
 }
+
+test("a card task with a practice pile right after a typed answer opens at once (BT-31, base-ten check 4)", () => {
+  // Only the card's "done" laid the next task's practice pile; after a typed answer the mat stayed inert, the
+  // task stayed shut and the learner was stuck until a reload.
+  const session = new BrowserLessonSession(tradingLesson(true), new MemoryStore(), "trade", { reducedMotion: true });
+  const card = "trade:node:mat";
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(session.studentTasks.find((task) => task.task_id === "first")!.available, true);
+  const answered = session.submitStudentAnswer("first", "44");
+  assert.ok(!("unreadable" in answered) && answered.status === "succeeded");
+  const trade = session.studentTasks.find((task) => task.task_id === "trade")!;
+  assert.equal(trade.available, true, "the card task opens");
+  assert.equal(session.studentCardLive(card), true);
+  const values = Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+  assert.deepEqual(values, { ones: 17, tray_ones: 0, tens: 2 }, "its practice pile is laid");
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "gather", place: 0 }));
+});
 
 test("a card task: taps change the bound counts together, only exactly ten trade, and done is judged by the card", () => {
   const events = tradingLesson();
