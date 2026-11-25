@@ -4,7 +4,30 @@
 
 ### Added
 
+- **The number line zooms on its own: the numbers spread apart, the text stays the same size** (decision 0024; owner, 2026-11-25). Every number line card (all `number_line*` recipes) shows a window of its range. Zooming changes the space between the numbers. Text size, dot size and stroke widths stay the same.
+  - **Buttons.** "−", "+" and "整条" / "Whole line" sit at the card's top right, in the board's language. They are real buttons, with accessible names and a visible focus ring, and they are disabled at the limits. "−" and "+" zoom around the middle of the marked values in view.
+  - **Wheel and pinch.** The wheel over the card zooms the line around the value under the pointer, and never the board, also at the limits and on a line too short to zoom. Outside the card, the wheel zooms the board as before. A two-finger pinch on the card zooms the line.
+  - **Moving the line.** When zoomed in, dragging the line moves it. A draggable point still drags as before, and it lands on the same stops. While zoomed it stays inside the window shown.
+  - **Overview strip.** A thin strip under the line shows which part of the whole line is in view. Marked values outside the window are counted at its ends (◀ 1, 1 ▶).
+  - **Limits.** Zooming in stops when one smallest tick is about 48 units wide, so it never adds finer ticks. Zooming out stops at the whole range.
+  - **Card size.** The card's height never changes with zoom: label rows are reserved for the whole line as well as the window.
+  - **Lesson moves.** Zooming counts as manual navigation. When the teaching camera takes over again, every line shows its whole range.
+  - **View only.** The zoom is not in the schema or the log. It does not affect checks or student operations, and a restored lesson opens on the whole line.
+  - **Board hook.** `renderNumberLine` takes `zoom` (the window the board keeps across redraws, and a `change` callback) and `localize` in its context. `numberLineZoomControl(card)` lets the board route the wheel, pinches and drags on the line to the card. `boardWheelTargetsNumberLine` finds the card under the wheel.
+  - **Every card changes at rest.** The overview strip adds 14 units to each card. A card without a title also gets a 16-pixel row for the buttons.
+  - **Versions.** No schema, feature or plugin version changes: the zoom is drawing only, and lessons are unchanged.
+  - **Tests and checks.** Unit tests cover thinning at rest and zoomed, marked labels, subdivisions, limits, clamping, a steady card height and drag stops. The browser check adds buttons and limits, the wheel on and off the card, the wheel over the title, a CDP two-finger pinch, track dragging, a drag while zoomed, Enter, the English labels and the teaching camera's reset.
+
 - **The mat says how it is used** (math plugin; owner, 2026-11-24: how to work a component is the component's own fixed text, not the lesson's). `baseTenHowTo(content)` gives one sentence group in the mat's language, for two or three columns: tap a block into the tray and again to take it out, Make when a tray holds ten, Break to turn one into ten of the place below, then "I'm done". A host shows it with a task on the card.
+
+### Changed
+
+- **Ticks closer than 6 units thin out, also at rest** (decision 0024, the owner's answer 2). Ticks are then drawn on a 1-2-5 multiple of the smallest tick, counted from 0, so they are at least 6 board units apart.
+  - **Subdivisions.** Within a step, a stride must divide the subdivisions (halves of quarters, never thirds of halves). Beyond that, strides are whole multiples of the step.
+  - **Marked values.** Every tick at a marked value stays, with its label (visible points, jump ends, interval ends).
+  - **Labels.** Labels thin among the drawn ticks with the existing plan, so every label has its tick.
+  - **Moving cards.** A moving card counts thinned ticks as crowded and reserves its second label row, so it never grows mid-drag.
+  - **Examples.** A line 300 to 410 by ones draws every second number, plus 345 and 347. A line 0 to 70 by ones is 6.57 units a tick and keeps every tick. The decision expected every fifth there; the 6-unit rule as written does not thin it.
 
 ### Fixed
 
