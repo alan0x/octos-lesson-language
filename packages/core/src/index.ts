@@ -462,7 +462,7 @@ function validateCardStudentTask(
   const card = cards.get(completion.node);
   if (!card) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `A card_fact task reads a ${tapCardKindList()} card`);
   const { kind, content } = card;
-  const fact = Object.hasOwn(kind.facts, completion.fact) ? kind.facts[completion.fact] : undefined;
+  const fact = typeof completion.fact === "string" && Object.hasOwn(kind.facts, completion.fact) ? kind.facts[completion.fact] : undefined;
   if (!fact) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
   // Each fact names its own fields: only a count names a place and a value (amendment 5).
   for (const key of Object.keys(completion)) {
