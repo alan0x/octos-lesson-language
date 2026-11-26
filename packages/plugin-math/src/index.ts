@@ -348,6 +348,8 @@ export { renderFractionModel } from "./fraction-model-view.js";
 export * from "./base-ten-trade.js";
 export { buildBaseTenTrade, type BuiltBaseTenTrade, type BaseTenTradeInput } from "./base-ten-trade-builder.js";
 export { renderBaseTenTrade, type BaseTenTradeViewContext } from "./base-ten-trade-view.js";
+// How to work a tapped card, by its kind.
+export { cardHowTo } from "./card-how-to.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,

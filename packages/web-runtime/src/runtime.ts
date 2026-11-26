@@ -1,8 +1,6 @@
 import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIntent, type AuthoringCardStudentTask, type AuthoringStudentTask, type CanonicalEvent, type Delivery } from "../../core/src/index.js";
-import {
-  BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenChanges, baseTenLanguage, baseTenMat, baseTenRefusalText, baseTenSliderMove, baseTenTapReachable,
-  type BaseTenMat, type BaseTenRefusal, type BaseTenStep, type BaseTenTap,
-} from "../../plugin-math/src/base-ten-trade.js";
+import { baseTenMat, baseTenSliderMove, type BaseTenRefusal, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
+import { BASE_TEN_TRADE_CARD, tapCardKind, type CardTap, type TapCardKind } from "../../core/src/cards.js";
 import { cardSliderAliases, cardSliderTarget, type CardSliderTarget } from "./card-slider.js";
 import {
   HeadlessLessonPlayer,
@@ -1360,18 +1358,21 @@ export class BrowserLessonSession {
    * bound lesson variable in one step and logged as one operation. A tap the rules refuse changes
    * nothing, is not logged, and returns the card's reason for the learner.
    */
+  tapStudentCard(nodeId: string, tap: BaseTenTap, input?: StudentInputMethod): { operation: StudentCardTapOperation } | { refused: BaseTenRefusal | "inert"; message: string };
+  tapStudentCard(nodeId: string, tap: CardTap, input?: StudentInputMethod): { operation: StudentCardTapOperation } | { refused: string; message: string };
   tapStudentCard(
     nodeId: string,
-    tap: BaseTenTap,
+    tap: CardTap,
     input: StudentInputMethod = "unknown",
-  ): { operation: StudentCardTapOperation } | { refused: BaseTenRefusal | "inert"; message: string } {
+  ): { operation: StudentCardTapOperation } | { refused: string; message: string } {
     if (!this.studentCardLive(nodeId)) return { refused: "inert", message: "" };
     const node = this.player.snapshot.board?.nodes?.[nodeId];
-    if (!node || node.kind !== "base_ten_trade") throw new Error(`Card '${nodeId}' is not a base-ten trade card`);
-    const before = baseTenMat(node.content);
-    const result = applyBaseTenTap(before, tap);
-    if (!result.ok) return { refused: result.reason, message: baseTenRefusalText(result.reason, tap.place, baseTenLanguage(node.content)) };
-    const changes = this.cardChanges(nodeId, before, result.mat);
+    const card = tapCardKind(node?.kind);
+    if (!node || !card) throw new Error(`Card '${nodeId}' is not a base-ten trade card`);
+    const before = card.state(node.content);
+    const result = card.apply(before, tap);
+    if (!result.ok) return { refused: result.reason, message: card.refusalText(result.reason, tap.place, card.language(node.content)) };
+    const changes = this.cardChanges(nodeId, card, before, result.state);
     try {
       this.player.setVariables(Object.fromEntries(changes.map((change) => [change.alias, change.after])));
     } catch (error) {
@@ -1388,7 +1389,7 @@ export class BrowserLessonSession {
       lesson_id: this.player.snapshot.lesson_id,
       kind: "card_tap",
       target: { kind: "card_node", node_id: nodeId },
-      tap: { kind: tap.kind, place: tap.place },
+      tap: { kind: tap.kind, place: tap.place } as StudentCardTapOperation["tap"],
       changes,
       input,
     };
@@ -1414,14 +1415,13 @@ export class BrowserLessonSession {
       && operation.variable !== undefined && this.isCardSlider(operation.variable));
   }
 
-  /** The lesson variables a change of the card's mat writes, each with its value before and after. */
-  private cardChanges(nodeId: string, before: BaseTenMat, after: BaseTenMat): Array<{ alias: string; before: number; after: number }> {
+  /** The lesson variables a change of the card's state writes, each with its value before and after. */
+  private cardChanges(nodeId: string, card: TapCardKind, before: unknown, after: unknown): Array<{ alias: string; before: number; after: number }> {
     const node = this.player.snapshot.board?.nodes?.[nodeId];
-    const places = (Array.isArray(node?.content?.places) ? node.content.places : []) as Array<{ id?: string }>;
     const bound = new Map(((node?.content?.bindings ?? []) as Array<{ target: string; expression: string }>)
       .map((binding) => [binding.target, binding.expression.trim()]));
-    return baseTenChanges(before, after).map((change) => {
-      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
+    return card.changes(before, after).map((change) => {
+      const alias = bound.get(card.fieldTarget(node?.content, change.place, change.field));
       if (!alias || !this.player.snapshot.board?.variables?.[alias]) throw new Error(`Card '${nodeId}' has no variable for ${change.field} of place ${change.place}`);
       return { alias, before: change.before, after: change.after };
     });
@@ -1452,7 +1452,7 @@ export class BrowserLessonSession {
       let mat = before;
       let sequence = this.nextStudentOperationSequence;
       operations = move.steps.map((step) => {
-        const changes = this.cardChanges(card.nodeId, mat, step.mat);
+        const changes = this.cardChanges(card.nodeId, BASE_TEN_TRADE_CARD, mat, step.mat);
         mat = step.mat;
         return {
           profile: "octos.student.operation", version: "0.1",
@@ -1462,7 +1462,7 @@ export class BrowserLessonSession {
           tap: { kind: step.tap.kind, place: step.tap.place }, changes, input, control: "slider",
         };
       });
-      this.player.setVariables(Object.fromEntries(this.cardChanges(card.nodeId, before, move.mat).map((change) => [change.alias, change.after])));
+      this.player.setVariables(Object.fromEntries(this.cardChanges(card.nodeId, BASE_TEN_TRADE_CARD, before, move.mat).map((change) => [change.alias, change.after])));
       this.nextStudentOperationSequence = sequence;
     } catch (error) {
       this.reportFailure("input", error);
@@ -1689,7 +1689,7 @@ export class BrowserLessonSession {
       // holds the practice pile's digits; it is laid tidy, trays empty (a learner may finish with a few in a tray).
       const done = this.studentTaskDefinitions.slice(0, activeIndex < 0 ? undefined : activeIndex).reverse()
         .find(task => task.completion.kind === "card_fact") as AuthoringCardStudentTask | undefined;
-      const traded = done?.start ? (done.completion.fact === "count" ? this.countedPracticePile(done) : this.tradedPracticePile(done)) : undefined;
+      const traded = done?.start ? this.donePracticePile(done) : undefined;
       if (!done || !traded) return;
       key = `${this.practiceKey(done.as)}:done`;
       values = traded;
@@ -1702,83 +1702,37 @@ export class BrowserLessonSession {
     }
   }
 
-  /** A card task's practice pile once every trade is made: the tap variables at each place's digit, trays empty. */
-  private tradedPracticePile(task: AuthoringCardStudentTask): Record<string, number> | undefined {
+  /**
+   * A card task's pile once it is done, by the card's own rule for its fact: a trading task's practice pile
+   * once every trade is made, a count task's pile as the learner left it (amendment 5).
+   */
+  private donePracticePile(task: AuthoringCardStudentTask): Record<string, number> | undefined {
     const node = this.player.snapshot.board?.nodes?.[task.completion.node];
     const variables = this.player.snapshot.board?.variables;
-    if (!node || node.kind !== "base_ten_trade" || !variables || !task.start) return undefined;
-    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
-    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
-      .map((binding) => [binding.target, binding.expression.trim()]));
-    const at = (alias: string | undefined) => alias === undefined ? 0 : task.start!.values?.[alias] ?? variables[alias]?.initial ?? 0;
-    const columns = places.length;
-    const value = places.reduce((sum, place, p) => sum + at(bound.get(`${place.id}.count`)) * 10 ** p, 0);
-    const result: Record<string, number> = {};
-    places.forEach((place, p) => {
-      const count = bound.get(`${place.id}.count`);
-      if (count) result[count] = p === columns - 1 ? Math.floor(value / 10 ** p) : Math.floor(value / 10 ** p) % 10;
-      const tray = bound.get(`${place.id}.tray`);
-      if (tray) result[tray] = 0;
+    const card = tapCardKind(node?.kind);
+    if (!node || !card || !variables || !task.start) return undefined;
+    const fact = Object.hasOwn(card.facts, task.completion.fact) ? card.facts[task.completion.fact] : undefined;
+    const logged = [...this.studentOperationLog.operations].reverse()
+      .find((operation) => operation.kind === "card_submit" && operation.target.task_id === task.as && operation.pile) as StudentCardSubmitOperation | undefined;
+    return fact?.donePile({
+      content: node.content,
+      completion: task.completion,
+      startValue: (alias) => alias === undefined ? 0 : task.start!.values?.[alias] ?? variables[alias]?.initial ?? 0,
+      submitted: logged?.pile,
     });
-    return result;
   }
 
   /** A card's bound counts and trays as they stand, by variable (whole numbers), or undefined. */
   private cardPile(nodeId: string): Record<string, number> | undefined {
     const node = this.player.snapshot.board?.nodes?.[nodeId];
     const variables = this.player.snapshot.board?.variables;
-    if (!node || node.kind !== "base_ten_trade" || !variables) return undefined;
+    if (!node || !tapCardKind(node.kind) || !variables) return undefined;
     const pile: Record<string, number> = {};
     for (const binding of (node.content.bindings ?? []) as Array<{ expression: string }>) {
       const value = variables[binding.expression.trim()]?.value;
       if (typeof value === "number" && Number.isFinite(value)) pile[binding.expression.trim()] = Math.max(0, Math.round(value));
     }
     return Object.keys(pile).length ? pile : undefined;
-  }
-
-  /**
-   * A count task's pile once it is done (amendment 5): the learner's own pile, as logged when they said done,
-   * laid tidy (each tray's units loose in their place, so no count changes). A log from before the pile was
-   * recorded falls back to the pile with that count and every tray empty nearest the practice pile.
-   */
-  private countedPracticePile(task: AuthoringCardStudentTask): Record<string, number> | undefined {
-    const node = this.player.snapshot.board?.nodes?.[task.completion.node];
-    const variables = this.player.snapshot.board?.variables;
-    if (!node || node.kind !== "base_ten_trade" || !variables || !task.start) return undefined;
-    const places = (Array.isArray(node.content.places) ? node.content.places : []) as Array<{ id?: string }>;
-    const bound = new Map(((node.content.bindings ?? []) as Array<{ target: string; expression: string }>)
-      .map((binding) => [binding.target, binding.expression.trim()]));
-    const logged = [...this.studentOperationLog.operations].reverse()
-      .find((operation) => operation.kind === "card_submit" && operation.target.task_id === task.as && operation.pile) as StudentCardSubmitOperation | undefined;
-    // Only a pile that holds the count asked for, every count and tray of the card, is the learner's done pile.
-    const countAlias = bound.get(`${places[BASE_TEN_TRADE_PLACES.indexOf(task.completion.at!)]?.id}.count`);
-    const usable = logged?.pile && countAlias && logged.pile[countAlias] === task.completion.value
-      && [...bound.values()].every((alias) => logged.pile![alias] !== undefined);
-    if (usable && logged?.pile) {
-      const own: Record<string, number> = {};
-      for (const place of places) {
-        const count = bound.get(`${place.id}.count`);
-        if (count) own[count] = logged.pile[count]!;
-        const tray = bound.get(`${place.id}.tray`);
-        if (tray) own[tray] = 0;
-      }
-      return own;
-    }
-    const at = (alias: string | undefined) => alias === undefined ? 0 : task.start!.values?.[alias] ?? variables[alias]?.initial ?? 0;
-    const start = baseTenMat({ ...node.content, places: places.map((place) => ({ ...place, count: at(bound.get(`${place.id}.count`)), tray: at(bound.get(`${place.id}.tray`)) })) });
-    const p = BASE_TEN_TRADE_PLACES.indexOf(task.completion.at!);
-    const distance = (mat: typeof start) => mat.counts.reduce((sum, count, q) => sum + Math.abs(count - start.counts[q]!), 0);
-    const made = baseTenTapReachable(start).filter((mat) => mat.counts[p] === task.completion.value && mat.trays.every((tray) => tray === 0))
-      .sort((a, b) => distance(a) - distance(b))[0];
-    if (!made) return undefined;
-    const result: Record<string, number> = {};
-    places.forEach((place, q) => {
-      const count = bound.get(`${place.id}.count`);
-      if (count) result[count] = made.counts[q]!;
-      const tray = bound.get(`${place.id}.tray`);
-      if (tray) result[tray] = 0;
-    });
-    return result;
   }
 
   private beginPhaseTransition(key: string, kind: PhaseTransition["kind"], to: Record<string, number>, from?: Record<string, number>): void {

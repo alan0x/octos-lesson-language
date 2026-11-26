@@ -12,9 +12,10 @@ import { solidFaceKeys, solidFaceTarget } from "./solid-face-targets.js";
 import { NUMBER_LINE_KIND, numberLineValue, planNumberLineTicks, validateNumberLineContent, type NumberLineContent } from "../../plugin-math/src/number-line.js";
 import { FRACTION_MODEL_KIND, FRACTION_MODEL_PART_FIELDS, validateFractionModelContent } from "../../plugin-math/src/fraction-model.js";
 import {
-  BASE_TEN_SLIDER_STEP, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenBoundField, baseTenChanges,
-  baseTenMat, baseTenRefusalText, baseTenSliderPlace, baseTenSliderReachable, baseTenTapReachable, hasTray, validateBaseTenTradeContent, type BaseTenPlaceName,
+  BASE_TEN_SLIDER_STEP, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, baseTenBoundField,
+  baseTenMat, baseTenSliderPlace, baseTenSliderReachable, validateBaseTenTradeContent, type BaseTenPlaceName,
 } from "../../plugin-math/src/base-ten-trade.js";
+import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList, type TapCardKind } from "./cards.js";
 import {
   bindingCapabilitiesForNodeKind,
   OLL_ACTION_NAMES,
@@ -392,53 +393,65 @@ export function baseTenTapVariables(
   /** Who writes the fields, for the messages: a tap, or a slider on a count (decision 0023 amendment 4). */
   writer = "Tapping a card",
 ): Map<string, string> {
-  const columns = content.columns === 3 ? 3 : 2;
+  return cardTapVariables(BASE_TEN_TRADE_CARD, content, declarations, path, writer);
+}
+
+/**
+ * The fields of a tap card a tap writes, each to its own lesson variable: every field the card's kind
+ * lists, bound to a bare declared variable whose range is exactly the field's, so no tap can leave a
+ * variable's range or the card. Returns the variable of each field, keyed by its binding target.
+ */
+function cardTapVariables(
+  kind: TapCardKind,
+  content: JsonObject,
+  declarations: readonly AuthoringVariable[],
+  path: string,
+  writer = "Tapping a card",
+): Map<string, string> {
   const bindings = new Map<string, string>();
   for (const binding of (Array.isArray(content.bindings) ? content.bindings : []) as JsonObject[]) {
     if (typeof binding.target === "string" && typeof binding.expression === "string") bindings.set(binding.target, binding.expression.trim());
   }
   const result = new Map<string, string>();
   const used = new Set<string>();
-  for (let p = 0; p < columns; p += 1) {
-    const place = BASE_TEN_TRADE_PLACES[p]!;
-    const fields: Array<["count" | "tray", number]> = [["count", columns === 2 && p === 1 ? 9 : BASE_TEN_TRADE_LIMITS.drawn[p]!]];
-    if (hasTray(columns, p)) fields.push(["tray", BASE_TEN_TRADE_LIMITS.tray]);
-    for (const [field, most] of fields) {
-      const target = `${place}.${field}`;
-      const alias = bindings.get(target);
-      const declaration = declarations.find((variable) => variable.as === alias);
-      if (!alias || !declaration) {
-        fail("OLL_INVALID_STUDENT_TASK", path, `${writer} needs '${target}' bound to its own lesson variable`);
-      }
-      if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
-      used.add(alias);
-      if (declaration.min !== 0 || declaration.max !== most || declaration.wrap) {
-        fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from 0 to ${most}, the most a trade can make`);
-      }
-      result.set(target, alias);
+  for (const { place, field, min, max } of kind.tapFields(content)) {
+    const target = kind.fieldTarget(content, place, field);
+    const alias = bindings.get(target);
+    const declaration = declarations.find((variable) => variable.as === alias);
+    if (!alias || !declaration) {
+      fail("OLL_INVALID_STUDENT_TASK", path, `${writer} needs '${target}' bound to its own lesson variable`);
     }
+    if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
+    used.add(alias);
+    if (declaration.min !== min || declaration.max !== max || declaration.wrap) {
+      fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from ${min} to ${max}, the most a trade can make`);
+    }
+    result.set(target, alias);
   }
   return result;
 }
 
 /** The card's content with its tap variables at the given values, for checking a starting pile. */
-function baseTenContentAt(content: JsonObject, variables: Map<string, string>, values: Record<string, number>): JsonObject {
-  const at = structuredClone(content);
-  delete at.bindings;
-  for (const place of (Array.isArray(at.places) ? at.places : []) as JsonObject[]) {
-    for (const field of ["count", "tray"]) {
-      const alias = variables.get(`${place.as}.${field}`);
-      if (alias !== undefined && values[alias] !== undefined) place[field] = values[alias];
-    }
-  }
-  return at;
+function cardContentAt(kind: TapCardKind, content: JsonObject, variables: Map<string, string>, values: Record<string, number>): JsonObject {
+  return kind.contentAt(content, (place, field) => {
+    const alias = variables.get(kind.fieldTarget(content, place, field));
+    return alias !== undefined && values[alias] !== undefined ? values[alias] : undefined;
+  });
+}
+
+/** A tap card of this lesson: its kind and its content as written. */
+interface LessonTapCard { kind: TapCardKind; content: JsonObject }
+
+/** The trading mats among a lesson's tap cards, in the order written: the cards a count slider trades on. */
+function matCardContents(cards: ReadonlyMap<string, LessonTapCard>): Map<string, JsonObject> {
+  return new Map([...cards].filter(([, card]) => card.kind.kind === BASE_TEN_TRADE_KIND).map(([alias, card]) => [alias, card.content]));
 }
 
 function validateCardStudentTask(
   task: AuthoringCardStudentTask,
   path: string,
   registry: Registry,
-  cards: Map<string, JsonObject>,
+  cards: ReadonlyMap<string, LessonTapCard>,
   declarations: readonly AuthoringVariable[],
   startValues: Record<string, number>,
   availableControls: Map<string, Set<string>>,
@@ -446,12 +459,14 @@ function validateCardStudentTask(
 ): void {
   const completion = task.completion;
   resolveLocal(registry, completion.node, `${path}/completion/node`, ["node"]);
-  const content = cards.get(completion.node);
-  if (!content) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, "A card_fact task reads a base_ten_trade card");
-  if (completion.fact !== "no_trade_left" && completion.fact !== "count") fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
-  // Only a count names a place and a value (amendment 5).
+  const card = cards.get(completion.node);
+  if (!card) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `A card_fact task reads a ${tapCardKindList()} card`);
+  const { kind, content } = card;
+  const fact = Object.hasOwn(kind.facts, completion.fact) ? kind.facts[completion.fact] : undefined;
+  if (!fact) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/fact`, `Unsupported card fact '${String(completion.fact)}'`);
+  // Each fact names its own fields: only a count names a place and a value (amendment 5).
   for (const key of Object.keys(completion)) {
-    if (!["kind", "node", "fact", ...(completion.fact === "count" ? ["at", "value"] : [])].includes(key)) {
+    if (!["kind", "node", "fact", ...fact.keys].includes(key)) {
       fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/${key}`, `Unknown field '${key}' of a ${completion.fact} card fact`);
     }
   }
@@ -467,7 +482,7 @@ function validateCardStudentTask(
     || new Set(sliders.map((operation) => operation.variable)).size !== sliders.length) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), and may allow a slider on its counts (variable_change with controls [\"slider\"]), nothing else");
   }
-  const variables = baseTenTapVariables(content, declarations, `${path}/completion/node`);
+  const variables = cardTapVariables(kind, content, declarations, `${path}/completion/node`);
   // Only taps and the card's own trade sliders change its counts while its task is open (review of #87;
   // amendment 4), so a tap never meets a pile its rules do not keep, and no count leaves its range.
   for (const alias of variables.values()) {
@@ -480,38 +495,17 @@ function validateCardStudentTask(
   const initial = Object.fromEntries(declarations.map((variable) => [variable.as, variable.initial]));
   const failAt = (message: string, where: string) => (failPath: string, detail: string): never =>
     fail("OLL_INVALID_STUDENT_TASK", where, `${message}: ${detail} (${failPath.replace(/^\$\//, "")})`);
-  validateBaseTenTradeContent(baseTenContentAt(content, variables, initial), "$", failAt("The lesson's pile is not a starting pile", `${path}/completion/node`));
+  kind.validateContent(cardContentAt(kind, content, variables, initial), "$", failAt("The lesson's pile is not a starting pile", `${path}/completion/node`));
   if (task.start) {
     const selected = new Set(task.start.variables ?? []);
     const missing = [...variables.values()].filter((alias) => !selected.has(alias));
     if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
-    validateBaseTenTradeContent(baseTenContentAt(content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
+    kind.validateContent(cardContentAt(kind, content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
   }
-  if (completion.fact === "count") validateCardCountTarget(completion, path, baseTenMat(baseTenContentAt(content, variables, { ...initial, ...startValues })));
+  // The fact's own target, checked against the practice pile by the card's rules (a count: amendment 5).
+  fact.validate?.(completion, kind.state(cardContentAt(kind, content, variables, { ...initial, ...startValues })),
+    (field, message) => fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/${field}`, message));
   validateTaskFeedback(task, path);
-}
-
-/**
- * A count the learner makes by tapping (amendment 5): a place the card has, a whole number, not met by
- * the practice pile, and reached by an exact search over the card's tap rules from that pile.
- */
-function validateCardCountTarget(completion: AuthoringCardStudentTask["completion"], path: string, pile: ReturnType<typeof baseTenMat>): void {
-  const place = BASE_TEN_TRADE_PLACES.indexOf(completion.at as BaseTenPlaceName);
-  if (place < 0 || place >= pile.columns) {
-    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/at`, `A count is of a place the card has: ${BASE_TEN_TRADE_PLACES.slice(0, pile.columns).join(", ")}`);
-  }
-  const value = completion.value;
-  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`, "A count is a whole number");
-  }
-  if (pile.counts[place] === value) {
-    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`, `The practice pile already has ${value} ${completion.at}`);
-  }
-  const reached = [...new Set(baseTenTapReachable(pile).map((mat) => mat.counts[place]!))].sort((a, b) => a - b);
-  if (!reached.includes(value as number)) {
-    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/value`,
-      `Tapping this pile makes ${reached.join(" or ")} ${completion.at}, never ${value}`);
-  }
 }
 
 /** A row of blanks (decision 0023 amendment 1): fixed text and one to six blanks, each a numeric answer. */
@@ -703,7 +697,7 @@ function cardSliderTask(
   const missing = [...variables.values()].filter((alias) => !Object.hasOwn(startValues, alias));
   if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
   const values = { ...Object.fromEntries(declarations.map((variable) => [variable.as, variable.initial])), ...startValues };
-  const pile = baseTenContentAt(content, variables, values);
+  const pile = cardContentAt(BASE_TEN_TRADE_CARD, content, variables, values);
   validateBaseTenTradeContent(pile, "$", (failPath, detail) => fail("OLL_INVALID_STUDENT_TASK", `${path}/start/values`,
     `The task's starting pile is not a starting pile: ${detail} (${failPath.replace(/^\$\//, "")})`));
   const places = [...allowedVariables].map((alias) => cardSliders.get(alias)!.place);
@@ -722,9 +716,11 @@ function validateStudentTasks(
   scene3dCameras: Map<string, { yaw: number; pitch: number; zoom: number }>,
   registry: Registry,
   numberLineGrids: Map<string, NumberLineContent> = new Map(),
-  baseTenTradeContents: Map<string, JsonObject> = new Map(),
+  tapCards: ReadonlyMap<string, LessonTapCard> = new Map(),
   cardSliders: ReadonlyMap<string, CardSlider> = new Map(),
 ): void {
+  // Sliders on a card's count are the trading mat's own (amendment 4).
+  const matContents = matCardContents(tapCards);
   const taskAliases = new Set<string>();
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
     const path = `/lesson/tasks/${index}`;
@@ -758,7 +754,7 @@ function validateStudentTasks(
       continue;
     }
     if (task.completion.kind === "card_fact") {
-      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, baseTenTradeContents, document.lesson.variables ?? [], startValues, availableControls, cardSliders);
+      validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, tapCards, document.lesson.variables ?? [], startValues, availableControls, cardSliders);
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -799,7 +795,7 @@ function validateStudentTasks(
     });
     // A slider on a card's count (amendment 4): the task trades on one card, from a whole starting pile.
     const card = [...allowedVariables].some((alias) => cardSliders.has(alias))
-      ? cardSliderTask(expressionTask, path, allowedVariables, cardSliders, baseTenTradeContents, document.lesson.variables ?? [], startValues)
+      ? cardSliderTask(expressionTask, path, allowedVariables, cardSliders, matContents, document.lesson.variables ?? [], startValues)
       : undefined;
     const target = requireFiniteNumber(expressionTask.completion.value, `${path}/completion/value`);
     const tolerance = requireFiniteNumber(expressionTask.completion.tolerance, `${path}/completion/tolerance`);
@@ -912,10 +908,13 @@ function bindableTargets(action: WriteAction): Map<string, Set<string>> {
   return targets;
 }
 
+/** Node kinds whose fields lesson variables may drive: every tap card among them. */
+const BINDABLE_NODE_KINDS: readonly string[] = ["geometry", "plot", "scene3d", NUMBER_LINE_KIND, FRACTION_MODEL_KIND, ...TAP_CARD_KIND_NAMES];
+
 function validateValueBindings(action: WriteAction, path: string, variables: Map<string, number>): void {
   if (action.content.bindings === undefined) return;
-  if (action.kind !== "geometry" && action.kind !== "plot" && action.kind !== "scene3d" && action.kind !== NUMBER_LINE_KIND && action.kind !== FRACTION_MODEL_KIND && action.kind !== BASE_TEN_TRADE_KIND) {
-    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, "Bindings are only supported on geometry, plot, scene3d, number_line, fraction_model and base_ten_trade nodes");
+  if (!BINDABLE_NODE_KINDS.includes(action.kind)) {
+    fail("OLL_INVALID_BINDING", `${path}/content/bindings`, `Bindings are only supported on ${BINDABLE_NODE_KINDS.slice(0, -1).join(", ")} and ${BINDABLE_NODE_KINDS.at(-1)} nodes`);
   }
   requireArray(action.content.bindings, `${path}/content/bindings`);
   const targets = bindableTargets(action);
@@ -1799,8 +1798,9 @@ function validateActionPayload(action: AuthoringAction, path: string): void {
     requireString(action.expression, `${path}/expression`);
   } else if (action.do === "tap") {
     requireString(action.target, `${path}/target`);
-    if (!["gather", "ungather", "make", "break"].includes(action.tap)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/tap`, `Unknown tap '${String(action.tap)}'`);
-    if (!(BASE_TEN_TRADE_PLACES as readonly string[]).includes(action.at)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/at`, `Unknown place '${String(action.at)}'`);
+    // The target is not resolved yet: a tap and a place some tap card has (its own card checks them when played).
+    if (!Object.values(TAP_CARD_KINDS).some((card) => card.taps.includes(action.tap))) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/tap`, `Unknown tap '${String(action.tap)}'`);
+    if (!Object.values(TAP_CARD_KINDS).some((card) => card.places.includes(action.at))) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/at`, `Unknown place '${String(action.at)}'`);
   } else if (action.do === "animate") {
     requireVariableAlias(action.variable, `${path}/variable`);
     requireFiniteNumber(action.value, `${path}/value`);
@@ -1901,8 +1901,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   // Number lines of this lesson, so a revision is checked by the same rules (decision 0013).
   const numberLineNodes = new Set<string>();
   const fractionModelNodes = new Set<string>();
-  const baseTenTradeNodes = new Set<string>();
-  const baseTenTradeContents = new Map<string, JsonObject>();
+  /** Cards the learner (or a demonstration) taps, by alias, each with its kind and content as written. */
+  const tapCards = new Map<string, LessonTapCard>();
   /** Cards the lesson taps; their counts change only by taps (review of #89). */
   const tappedCards = new Set<string>();
   /** Lesson variables as playback leaves them, so each demonstration tap is checked in the state it meets. */
@@ -2069,10 +2069,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             fractionModelNodes.add(action.as);
             validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
-          if (action.kind === BASE_TEN_TRADE_KIND) {
-            baseTenTradeNodes.add(action.as);
-            baseTenTradeContents.set(action.as, action.content);
-            validateBaseTenTradeContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
+          const tapCard = tapCardKind(action.kind);
+          if (tapCard) {
+            tapCards.set(action.as, { kind: tapCard, content: action.content });
+            tapCard.validateContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           if (action.kind === "scene3d") {
             scene3dHighlights.set(action.as, new Set(((action.content.highlights ?? []) as JsonObject[]).map((highlight) => highlight.as as string)));
@@ -2102,10 +2102,13 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
 
         if (action.do === "tap") {
           const target = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
-          const content = baseTenTradeContents.get(target.alias);
-          if (!content || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, "A tap acts on a whole base_ten_trade card of this lesson");
+          const card = tapCards.get(target.alias);
+          if (!card || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, `A tap acts on a whole ${tapCardKindList()} card of this lesson`);
           requireVisible(action.target, `${actionPath}/target`);
-          baseTenTapVariables(content, document.lesson.variables ?? [], `${actionPath}/target`);
+          // The tap and place the shape check let through are this card's own (always so with one kind of tap card).
+          if (!card.kind.taps.includes(action.tap)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/tap`, `Unknown tap '${String(action.tap)}'`);
+          if (!card.kind.places.includes(action.at)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/at`, `Unknown place '${String(action.at)}'`);
+          cardTapVariables(card.kind, card.content, document.lesson.variables ?? [], `${actionPath}/target`);
           tappedCards.add(target.alias);
           return;
         }
@@ -2170,12 +2173,13 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (fractionModelNodes.has(resolved.alias)) {
             validateFractionModelContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
-          if (baseTenTradeNodes.has(resolved.alias)) {
+          const revisedCard = tapCards.get(resolved.alias);
+          if (revisedCard) {
             // A revision replaces the content and cannot carry bindings, so a bound mat would freeze (review of #87).
-            if (Array.isArray(baseTenTradeContents.get(resolved.alias)?.bindings)) {
+            if (Array.isArray(revisedCard.content.bindings)) {
               fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/target`, "A trading card bound to lesson variables is not revised: its counts change by taps");
             }
-            validateBaseTenTradeContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
+            revisedCard.kind.validateContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
           // A revision that declares addressable parts (a point added to a
           // grid) makes exactly those parts addressable from then on; one that
@@ -2228,16 +2232,16 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if ((action.when ?? "during_speech") !== phase) return;
           if (action.do === "animate") playedValues[action.variable] = action.value;
           if (action.do !== "tap") return;
-          const content = baseTenTradeContents.get(splitTarget(action.target, `${beatPath}/actions/${actionIndex}/target`).alias)!;
-          const variables = baseTenTapVariables(content, document.lesson.variables ?? [], `${beatPath}/actions/${actionIndex}/target`);
-          const place = (BASE_TEN_TRADE_PLACES as readonly string[]).indexOf(action.at);
-          const mat = baseTenMat(baseTenContentAt(content, variables, playedValues));
-          const result = applyBaseTenTap(mat, { kind: action.tap, place });
+          const { kind, content } = tapCards.get(splitTarget(action.target, `${beatPath}/actions/${actionIndex}/target`).alias)!;
+          const variables = cardTapVariables(kind, content, document.lesson.variables ?? [], `${beatPath}/actions/${actionIndex}/target`);
+          const place = kind.places.indexOf(action.at);
+          const state = kind.state(cardContentAt(kind, content, variables, playedValues));
+          const result = kind.apply(state, { kind: action.tap, place });
           if (!result.ok) {
-            fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions/${actionIndex}`, `The card refuses this tap here: ${baseTenRefusalText(result.reason, place)}`);
+            fail("OLL_INVALID_OPERATION_PAYLOAD", `${beatPath}/actions/${actionIndex}`, `The card refuses this tap here: ${kind.refusalText(result.reason, place)}`);
           }
-          for (const change of baseTenChanges(mat, result.mat)) {
-            const alias = variables.get(`${BASE_TEN_TRADE_PLACES[change.place] as BaseTenPlaceName}.${change.field}`)!;
+          for (const change of kind.changes(state, result.state)) {
+            const alias = variables.get(kind.fieldTarget(content, change.place, change.field))!;
             const declaration = (document.lesson.variables ?? []).find((variable) => variable.as === alias)!;
             // The reducer writes the change to the variable, so it must lie in the variable's range (review of #89).
             if (change.after < declaration.min || change.after > declaration.max) {
@@ -2254,16 +2258,17 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
   // differently than checked here (review of #89): those counts change only by taps.
   // A slider on a card's count moves by trades and is live only while a task that allows it is open
   // (amendment 4), so no learner changes the pile a demonstration tap meets.
-  const cardSliders = cardSliderVariables(document, baseTenTradeContents, availableStudentControls);
+  const cardSliders = cardSliderVariables(document, matCardContents(tapCards), availableStudentControls);
   for (const alias of tappedCards) {
-    for (const variable of baseTenTapVariables(baseTenTradeContents.get(alias)!, document.lesson.variables ?? [], `/content`).values()) {
+    const card = tapCards.get(alias)!;
+    for (const variable of cardTapVariables(card.kind, card.content, document.lesson.variables ?? [], `/content`).values()) {
       if (cardSliders.get(variable)?.card === alias) continue;
       if ((document.lesson.variables ?? []).find((declaration) => declaration.as === variable)?.control || availableStudentControls.get(variable)?.size) {
         fail("OLL_INVALID_VARIABLE", "/lesson/variables", `Variable '${variable}' is changed only by tapping the card; it cannot have its own control`);
       }
     }
   }
-  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, baseTenTradeContents, cardSliders);
+  validateStudentTasks(document, lessonVariables, availableStudentControls, scene3dCameras, registry, numberLineGrids, tapCards, cardSliders);
   validateReflections(document, registry);
 
   if (document.close?.focus) {
@@ -2414,12 +2419,14 @@ function normalizeAction(
   context: {
     host: NormalizationHost;
     registry: Registry;
+    /** The kind of each tap card the lesson writes, by alias: a tap's place is an index into its card's places. */
+    tapCards: ReadonlyMap<string, TapCardKind>;
     sequence: number;
     beatIndex: number;
     actionIndex: number;
   },
 ): CanonicalAction {
-  const { host, registry, sequence, beatIndex, actionIndex } = context;
+  const { host, registry, tapCards, sequence, beatIndex, actionIndex } = context;
   const actionId = `${host.lessonId}:action:${sequence}:${beatIndex + 1}:${actionIndex + 1}`;
 
   if (action.do === "write") {
@@ -2508,7 +2515,7 @@ function normalizeAction(
       action_id: actionId,
       op: "card.tap",
       target: canonicalTarget(registry, action.target),
-      tap: { kind: action.tap, place: (BASE_TEN_TRADE_PLACES as readonly string[]).indexOf(action.at) },
+      tap: { kind: action.tap, place: tapCards.get(splitTarget(action.target, "target").alias)?.places.indexOf(action.at) ?? -1 },
     };
   }
   if (action.do === "view") {
@@ -2549,6 +2556,16 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
     }
   }
   const registry = buildCanonicalRegistry(document, host);
+  const tapCards = new Map<string, TapCardKind>();
+  for (const step of document.steps) {
+    for (const beat of step.beats) {
+      for (const action of beat.actions) {
+        if (action.do !== "write") continue;
+        const card = tapCardKind(action.kind);
+        if (card) tapCards.set(action.as, card);
+      }
+    }
+  }
   const canonicalLesson = structuredClone(document.lesson);
   for (const reflection of canonicalLesson.reflections ?? []) {
     reflection.anchor = requireRegistryId(registry, reflection.anchor);
@@ -2609,7 +2626,7 @@ export function normalizeAuthoringLesson(document: AuthoringLesson, host: Normal
           const stage: Record<ActionPhase, CanonicalAction[]> = { before_speech: [], during_speech: [], after_speech: [] };
           beat.actions.forEach((action, actionIndex) => {
             const phase = action.when ?? "during_speech";
-            stage[phase].push(normalizeAction(action, { host, registry, sequence, beatIndex, actionIndex }));
+            stage[phase].push(normalizeAction(action, { host, registry, tapCards, sequence, beatIndex, actionIndex }));
           });
           if (beat.start?.kind === "replay") {
             stage.before_speech.unshift({
@@ -2824,14 +2841,14 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
     Object.assign(state, setLessonVariables(state, action.transition.values));
   } else if (action.op === "card.tap") {
     const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
-    if (!node || node.kind !== BASE_TEN_TRADE_KIND || !action.tap) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "A tap acts on a base-ten trade card");
-    const before = baseTenMat(node.content);
-    const result = applyBaseTenTap(before, action.tap);
-    if (!result.ok) fail("OLL_INVALID_EVENT", "action.tap", `The card refuses this tap: ${baseTenRefusalText(result.reason, action.tap.place)}`);
-    const places = (Array.isArray(node.content.places) ? node.content.places : []) as JsonObject[];
+    const card = tapCardKind(node?.kind);
+    if (!node || !card || !action.tap) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "A tap acts on a base-ten trade card");
+    const before = card.state(node.content);
+    const result = card.apply(before, action.tap);
+    if (!result.ok) fail("OLL_INVALID_EVENT", "action.tap", `The card refuses this tap: ${card.refusalText(result.reason, action.tap.place)}`);
     const bound = new Map(((node.content.bindings ?? []) as JsonObject[]).map((binding) => [binding.target, String(binding.expression).trim()]));
-    const values = Object.fromEntries(baseTenChanges(before, result.mat).map((change) => {
-      const alias = bound.get(`${places[change.place]?.id}.${change.field}`);
+    const values = Object.fromEntries(card.changes(before, result.state).map((change) => {
+      const alias = bound.get(card.fieldTarget(node.content, change.place, change.field));
       if (!alias) fail("OLL_INVALID_EVENT", "action.target", `The card has no variable for ${change.field} of place ${change.place}`);
       return [alias, change.after];
     }));
