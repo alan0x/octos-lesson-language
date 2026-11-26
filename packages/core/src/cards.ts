@@ -275,15 +275,30 @@ function chartDonePile(fact: "built" | "pulled_all") {
   return ({ content, startValue, submitted }: CardDonePileContext): Record<string, number> | undefined => {
     const bound = boundTargets(content);
     const aliases = [...bound.values()];
-    if (submitted && aliases.every((alias) => submitted[alias] !== undefined)
+    const targetAlias = bound.get("target");
+    const target = targetAlias ? startValue(targetAlias) : Number(content.target);
+    // A logged pile is the learner's only if it is a chart they could have made on this task: the task's own
+    // number (never one read from the pile itself), every place 0 to 9, and in pulling apart each place's
+    // disks either on the chart or in its part (review of #113: a tampered pile replayed as wrong maths).
+    const places = (Array.isArray(content.places) ? content.places : []) as Array<{ id?: string; as?: string; place: number }>;
+    const fits = (pile: Readonly<Record<string, number>>): boolean => {
+      if (targetAlias && pile[targetAlias] !== target) return false;
+      return places.every((item) => {
+        const name = item.id ?? item.as;
+        const count = bound.get(`${name}.count`);
+        const pulled = bound.get(`${name}.pulled`);
+        const values = [count, pulled].filter((alias): alias is string => alias !== undefined).map((alias) => pile[alias]!);
+        if (!values.every((value) => Number.isInteger(value) && value >= 0 && value <= 9)) return false;
+        return pulled === undefined || (count !== undefined && pile[count]! + pile[pulled]! === placeValueDigitAt(target, item.place));
+      });
+    };
+    if (submitted && aliases.every((alias) => submitted[alias] !== undefined) && fits(submitted)
       && placeValueFacts(placeValueChartState(chartContentAtPile(content, bound, submitted)))[fact]) {
       return Object.fromEntries(aliases.map((alias) => [alias, submitted[alias]!]));
     }
-    const targetAlias = bound.get("target");
-    const target = targetAlias ? startValue(targetAlias) : Number(content.target);
     const result: Record<string, number> = {};
     if (targetAlias) result[targetAlias] = target;
-    for (const item of (Array.isArray(content.places) ? content.places : []) as Array<{ id?: string; as?: string; place: number }>) {
+    for (const item of places) {
       const name = item.id ?? item.as;
       const digit = placeValueDigitAt(target, item.place);
       const count = bound.get(`${name}.count`);

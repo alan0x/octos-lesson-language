@@ -2085,6 +2085,42 @@ test("a chart task to pull apart: each place taken out, a zero refused, then a r
   assert.deepEqual(chartValues(restored), values);
 });
 
+test("a replayed chart pile is the learner's only if they could have made it on that task (review of #113)", () => {
+  const replay = (mode: "build" | "apart", target: number, practice: number, work: (session: BrowserLessonSession, card: string) => void, tamper: (pile: Record<string, number>) => void) => {
+    const lesson = chartLesson({ mode, given: mode === "build" ? "name" : "numeral", target, practice: [practice] });
+    const events = normalizeAuthoringLesson(lesson, chartHost(`pv-${mode}`));
+    const store = new MemoryStore();
+    const session = new BrowserLessonSession(events, store, `pv-${mode}`, { reducedMotion: true });
+    const card = `pv-${mode}:node:chart`;
+    while (session.projection.status !== "completed") session.advance();
+    work(session, card);
+    assert.equal(session.submitStudentCard("practice-1").status, "succeeded");
+    const honest = chartValues(session);
+    for (const log of store.studentOperations.values()) for (const operation of log.operations) if (operation.kind === "card_submit" && operation.pile) tamper(operation.pile);
+    store.values.clear(); // no checkpoint: the chart is rebuilt from the log
+    const restored = new BrowserLessonSession(events, store, `pv-${mode}`, { reducedMotion: true });
+    while (restored.projection.status !== "completed") restored.advance();
+    assert.deepEqual(chartValues(restored), honest, `${mode}: the task's own chart, not the edited one`);
+  };
+  replay("build", 4_050_000, 3_012_000, (session, card) => {
+    for (let i = 0; i < 3; i += 1) session.tapStudentCard(card, { kind: "add", place: chartAt(3) });
+    session.tapStudentCard(card, { kind: "add", place: chartAt(1) });
+    for (let i = 0; i < 2; i += 1) session.tapStudentCard(card, { kind: "add", place: chartAt(0) });
+  }, (pile) => {
+    for (const key of Object.keys(pile)) pile[key] = 0;
+    pile.number = 4_000_000;
+    pile[chartVariable("count", 3)] = 4;
+  });
+  replay("apart", 347_392, 256_418, (session, card) => {
+    for (const place of [2, 1, 0, -1, -2, -3]) session.tapStudentCard(card, { kind: "take_out", place: chartAt(place) });
+  }, (pile) => {
+    for (const key of Object.keys(pile)) pile[key] = 0;
+    pile.number = 300_000;
+    pile[chartVariable("pulled", 2)] = 9;
+    pile[chartVariable("pulled", 1)] = 9;
+  });
+});
+
 test("the student log keeps a chart's taps and its whole pile, and refuses a tap no card takes", () => {
   const tap = (kind: string, place: number) => ({
     profile: "octos.student.operation", version: "0.1", id: `l:card-tap:${place}${kind}`, sequence: 1, lesson_id: "l", kind: "card_tap",
