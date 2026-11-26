@@ -264,12 +264,16 @@ export type PlaceValueTaskFault = "zero" | "one_place";
 
 /**
  * A task the card refuses because what it shows would be the answer: a number with one non-zero place, given
- * as a sum of values ("4,000") or pulled apart ("0.05 = __"), shows the numeral the child is asked to write.
+ * as a sum of values ("4,000"), as one times its place ("1 × 1,000") or pulled apart ("0.05 = __"), shows the
+ * numeral the child is asked to write.
  * The compiler refuses such a number with the chart's capability, so the section is written again.
  */
 export function placeValueTaskFault(value: number, given: PlaceValueGiven | string): PlaceValueTaskFault | undefined {
   if (!value) return "zero";
-  if ((given === "expanded" || given === "numeral") && placeValueParts(value).length < 2) return "one_place";
+  const parts = placeValueParts(value);
+  if ((given === "expanded" || given === "numeral") && parts.length < 2) return "one_place";
+  // "1 × 1,000" writes the place's value, which is the number itself (review of #111).
+  if (given === "expanded_factors" && parts.length === 1 && parts[0]!.digit === 1) return "one_place";
   return undefined;
 }
 
