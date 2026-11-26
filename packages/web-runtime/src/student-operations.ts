@@ -1,3 +1,18 @@
+import { TAP_CARD_KINDS } from "../../core/src/cards.js";
+import type { CardTapKind } from "../../core/src/types.js";
+
+/**
+ * The most fields a card's pile binds: a ten-column place-value chart to pull apart binds a count and a
+ * pulled count per place and its number (decision 0025); the mat binds five at most.
+ */
+const CARD_PILE_MAX_FIELDS = 21;
+
+/** A tap some card kind takes, at a place that kind has (the log names a place by its index). */
+function knownCardTap(tap: { kind?: unknown; place?: unknown }): boolean {
+  return Number.isInteger(tap.place) && (tap.place as number) >= 0
+    && Object.values(TAP_CARD_KINDS).some((card) => card.taps.includes(tap.kind as string) && (tap.place as number) < card.places.length);
+}
+
 export type StudentInputMethod = "mouse" | "touch" | "pen" | "keyboard" | "unknown";
 export type StudentVariableControl = "slider" | "geometry_point" | "number_line_point" | "reset";
 
@@ -91,8 +106,11 @@ export interface StudentCardTapOperation {
   lesson_id: string;
   kind: "card_tap";
   target: { kind: "card_node"; node_id: string };
-  /** What was tapped: gather, ungather, make or break, at a place (0 = ones). */
-  tap: { kind: "gather" | "ungather" | "make" | "break"; place: number };
+  /**
+   * What was tapped, at a place's index in its card kind's places: on the mat gather, ungather, make or break
+   * (0 = ones); on a place-value chart add, remove or take_out (the place plus three, 3 = ones; decision 0025).
+   */
+  tap: { kind: CardTapKind; place: number };
   /** Every variable the tap changed, in one step. */
   changes: Array<{ alias: string; before: number; after: number }>;
   input: StudentInputMethod;
@@ -114,7 +132,8 @@ export interface StudentCardSubmitOperation {
   target: { kind: "student_task"; task_id: string };
   input: StudentInputMethod;
   /**
-   * The card's bound counts and trays, by variable, when the learner said done (decision 0023 amendment 5).
+   * The card's bound fields (counts and trays; a chart's counts, pulled counts and number), by variable, when
+   * the learner said done (decision 0023 amendment 5).
    * A later task without its own pile opens on the learner's own pile from it, also after a replay.
    */
   pile?: Record<string, number>;
@@ -285,7 +304,7 @@ export function parseStudentOperationLog(
         const target = (operation as Partial<StudentCardTapOperation>).target;
         if (
           target?.kind !== "card_node" || typeof target.node_id !== "string" || !target.node_id
-          || !tap || !["gather", "ungather", "make", "break"].includes(tap.kind) || !Number.isInteger(tap.place) || tap.place < 0 || tap.place > 2
+          || !tap || !knownCardTap(tap)
           || !Array.isArray(changes) || changes.length < 1 || changes.length > 6
           || changes.some((change) => !change || typeof change.alias !== "string" || !change.alias
             || !Number.isFinite(change.before) || !Number.isFinite(change.after))
@@ -297,7 +316,7 @@ export function parseStudentOperationLog(
         if (target?.kind !== "student_task" || typeof target.task_id !== "string" || !target.task_id) return undefined;
         const pile = (operation as Partial<StudentCardSubmitOperation>).pile;
         if (pile !== undefined && (!pile || typeof pile !== "object" || Array.isArray(pile)
-          || Object.keys(pile).length < 1 || Object.keys(pile).length > 6
+          || Object.keys(pile).length < 1 || Object.keys(pile).length > CARD_PILE_MAX_FIELDS
           || Object.values(pile).some((value) => !Number.isInteger(value) || value < 0))) return undefined;
       }
       ids.add(operation.id as string);

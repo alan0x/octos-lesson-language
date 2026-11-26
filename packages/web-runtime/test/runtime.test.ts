@@ -18,9 +18,10 @@ import type {
   StudentVariableOperation,
 } from "../src/student-operations.js";
 import type { StudentTaskProgressLog, StudentTaskSnapshot } from "../src/student-tasks.js";
-import { applyBaseTenTap, baseTenMat } from "../../plugin-math/src/base-ten-trade.js";
+import { applyBaseTenTap, baseTenMat, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import { parseStudentOperationLog, type StudentOperation } from "../src/student-operations.js";
 import { variableControlModels } from "../src/variable-controls.js";
+import { chartHost, chartLesson, chartVariable } from "../../plugin-math/test/place-value-chart-fixtures.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -1799,7 +1800,7 @@ function replayCardTaps(start: Record<string, number>, operations: readonly Stud
     const before = baseTenMat({ columns: values.hundreds === undefined ? 2 : 3, places: [
       { count: values.ones, tray: values.tray_ones }, { count: values.tens, tray: values.tray_tens }, { count: values.hundreds },
     ] });
-    const result = applyBaseTenTap(before, operation.tap);
+    const result = applyBaseTenTap(before, operation.tap as BaseTenTap);
     assert.ok(result.ok, `the logged tap ${JSON.stringify(operation.tap)} is taken`);
     for (const change of operation.changes) {
       assert.equal(values[change.alias], change.before);
@@ -2005,4 +2006,112 @@ test("replaying the lesson lays a card slider task's practice pile again, and th
   const node = board.nodes["slide:node:mat"]!;
   (node.content.places as Array<{ count: number }>)[0]!.count = 25.6;
   assert.deepEqual(variableControlModels(board).map((model) => [model.value, model.min, model.max]), [[26, 6, 56]]);
+});
+
+// ---------------------------------------------------------------- the place-value chart (decision 0025)
+
+const chartValues = (session: BrowserLessonSession) => Object.fromEntries(Object.entries(session.projection.board?.variables ?? {}).map(([k, v]) => [k, v.value]));
+const chartAt = (place: number) => place + 3;
+
+test("a chart task to build: the number and an empty chart laid at once, taps by the card's rules, done judged by the card", () => {
+  const lesson = chartLesson({ mode: "build", given: "name", target: 4_050_000, practice: [3_012_000] });
+  const events = normalizeAuthoringLesson(lesson, chartHost("pv"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pv", { reducedMotion: true });
+  const card = "pv:node:chart";
+  assert.deepEqual(session.tapStudentCard(card, { kind: "add", place: chartAt(0) }), { refused: "inert", message: "" });
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(session.studentCardLive(card), true);
+  assert.equal(session.projection.board!.nodes[card]!.content.target, 3_012_000, "the task's own number");
+  assert.equal(chartValues(session)[chartVariable("count", 3)], 0);
+  // Done before the number is built is a failed attempt, not a refusal.
+  assert.equal(session.submitStudentCard("practice-1").status, "in_progress");
+  for (let i = 0; i < 3; i += 1) assert.ok("operation" in session.tapStudentCard(card, { kind: "add", place: chartAt(3) }, "mouse"));
+  const ten = session.tapStudentCard(card, { kind: "add", place: chartAt(1) });
+  assert.ok("operation" in ten);
+  assert.deepEqual(ten.operation.changes, [{ alias: chartVariable("count", 1), before: 0, after: 1 }]);
+  assert.deepEqual(ten.operation.tap, { kind: "add", place: chartAt(1) });
+  for (let i = 0; i < 9; i += 1) session.tapStudentCard(card, { kind: "add", place: chartAt(0) });
+  // A tenth disk is refused in the chart's words; taking one away is a tap too.
+  assert.deepEqual(session.tapStudentCard(card, { kind: "add", place: chartAt(0) }), { refused: "full", message: "This place holds nine at most. Ten of them make one of the next place." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "take_out", place: chartAt(0) }), { refused: "wrong_mode", message: "That can't be done here." });
+  for (let i = 0; i < 7; i += 1) session.tapStudentCard(card, { kind: "remove", place: chartAt(0) });
+  assert.equal(chartValues(session)[chartVariable("count", 0)], 2);
+  const done = session.submitStudentCard("practice-1", "touch");
+  assert.equal(done.status, "succeeded");
+  assert.deepEqual(done.attempts.map((attempt) => [attempt.actual, attempt.target, attempt.succeeded]), [[0, 1, false], [1, 1, true]]);
+  assert.equal(session.studentCardLive(card), false);
+  // Restored: the whole log (ten-place taps, the learner's pile with its number) and the chart the learner made.
+  const restored = new BrowserLessonSession(events, store, "pv", { reducedMotion: true });
+  assert.deepEqual(restored.studentOperations, session.studentOperations);
+  assert.deepEqual(restored.studentTasks, session.studentTasks);
+  assert.deepEqual(chartValues(restored), chartValues(session));
+  const submit = session.studentOperations.find((operation) => operation.kind === "card_submit" && operation.pile?.number === 3_012_000);
+  assert.ok(submit, "done logs the learner's chart and its number");
+});
+
+test("a chart task to pull apart: each place taken out, a zero refused, then a row asks about the learner's parts", () => {
+  const row = {
+    as: "parts", anchor: "chart", prompt: "Write what each part is worth.", availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "row_entry" }],
+    completion: { kind: "numeric_row", parts: [{ text: "256.418 =" }, { blank: { as: "h", answer: "200", label: "hundreds" } }, { text: "+" }, { blank: { as: "t", answer: "50", label: "tens" } },
+      { text: "+" }, { blank: { as: "o", answer: "6", label: "ones" } }, { text: "+" }, { blank: { as: "a", answer: "0.4", label: "tenths" } }, { text: "+" },
+      { blank: { as: "b", answer: "0.01", label: "hundredths" } }, { text: "+" }, { blank: { as: "c", answer: "0.008", label: "thousandths" } }] },
+    hints: ["Each part is its disks' value."],
+  };
+  const lesson = chartLesson({ mode: "apart", given: "numeral", target: 347_392, practice: [256_418], extraTasks: [row] });
+  const events = normalizeAuthoringLesson(lesson, chartHost("pv-apart"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pv-apart", { reducedMotion: true });
+  const card = "pv-apart:node:chart";
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(chartValues(session)[chartVariable("count", 2)], 2, "the task's own number, whole");
+  assert.deepEqual(session.tapStudentCard(card, { kind: "add", place: chartAt(2) }), { refused: "wrong_mode", message: "That can't be done here." });
+  for (const place of [2, 1, 0, -1, -2]) assert.ok("operation" in session.tapStudentCard(card, { kind: "take_out", place: chartAt(place) }));
+  assert.deepEqual(session.tapStudentCard(card, { kind: "take_out", place: chartAt(1) }), { refused: "empty", message: "There is no disk in this place." });
+  assert.equal(session.submitStudentCard("practice-1").status, "in_progress");
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "take_out", place: chartAt(-3) }));
+  assert.equal(session.submitStudentCard("practice-1").status, "succeeded");
+  // The row opens over the learner's pulled-apart chart: every place in its part.
+  assert.equal(session.studentTasks[1]!.available, true);
+  const values = chartValues(session);
+  assert.deepEqual([2, 1, 0, -1, -2, -3].map((place) => [values[chartVariable("count", place)], values[chartVariable("pulled", place)]]), [[0, 2], [0, 5], [0, 6], [0, 4], [0, 1], [0, 8]]);
+  assert.equal(values.number, 256_418);
+  assert.equal((session.submitStudentRow("parts", { h: "200", t: "50", o: "6", a: ".4", b: "0.01", c: "8/1000" }) as StudentTaskSnapshot).status, "succeeded");
+  // Restored: the same log, tasks and chart.
+  const restored = new BrowserLessonSession(events, store, "pv-apart", { reducedMotion: true });
+  assert.deepEqual(restored.studentOperations, session.studentOperations);
+  assert.deepEqual(restored.studentTasks.map((task) => task.status), ["succeeded", "succeeded"]);
+  assert.deepEqual(chartValues(restored), values);
+});
+
+test("the student log keeps a chart's taps and its whole pile, and refuses a tap no card takes", () => {
+  const tap = (kind: string, place: number) => ({
+    profile: "octos.student.operation", version: "0.1", id: `l:card-tap:${place}${kind}`, sequence: 1, lesson_id: "l", kind: "card_tap",
+    target: { kind: "card_node", node_id: "l:node:chart" }, tap: { kind, place }, changes: [{ alias: "count_ones", before: 0, after: 1 }], input: "mouse",
+  });
+  const log = (operation: unknown) => ({ profile: "octos.student.operation-log", version: "0.1", lesson_id: "l", operations: [operation] });
+  assert.equal(parseStudentOperationLog(log(tap("add", 9)), "l")?.operations.length, 1);
+  assert.equal(parseStudentOperationLog(log(tap("take_out", 0)), "l")?.operations.length, 1);
+  assert.equal(parseStudentOperationLog(log(tap("gather", 2)), "l")?.operations.length, 1, "the mat's taps as before");
+  assert.equal(parseStudentOperationLog(log(tap("gather", 3)), "l"), undefined, "the mat has three places");
+  assert.equal(parseStudentOperationLog(log(tap("add", 10)), "l"), undefined, "the chart has ten places");
+  assert.equal(parseStudentOperationLog(log(tap("fold", 0)), "l"), undefined);
+  const pile = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`v${i}`, i]));
+  const submit = (keys: Record<string, number>) => ({ profile: "octos.student.operation", version: "0.1", id: "l:card-submit:1", sequence: 1, lesson_id: "l", kind: "card_submit",
+    target: { kind: "student_task", task_id: "t" }, input: "mouse", pile: keys });
+  assert.equal(parseStudentOperationLog(log(submit(pile)), "l")?.operations.length, 1);
+  assert.equal(parseStudentOperationLog(log(submit({ ...pile, v21: 1 })), "l"), undefined);
+});
+
+test("a practice start changes the chart's number at once, while its disks ease (no numbers between)", () => {
+  const lesson = chartLesson({ mode: "build", given: "name", target: 4_050_000, practice: [3_012_000],
+    beats: [{ key: "build", say: "Four thousands.", actions: [{ do: "animate", variable: chartVariable("count", 3), value: 4 }] } as any] });
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(lesson, chartHost("pv-ease")), new MemoryStore(), "pv-ease");
+  for (let step = 0; step < 50 && session.projection.status !== "completed"; step += 1) session.advance();
+  assert.equal(session.projection.status, "completed");
+  const values = chartValues(session);
+  // The number is the task's at once, never one between 4,050 and 3,012, while the thousands' disks ease away.
+  assert.equal(values.number, 3_012_000);
+  assert.ok(values[chartVariable("count", 3)]! > 0, `the disks ease: ${values[chartVariable("count", 3)]}`);
 });

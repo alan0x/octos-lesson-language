@@ -15,9 +15,12 @@ import {
   BASE_TEN_SLIDER_STEP, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_PART_FIELDS, BASE_TEN_TRADE_PLACES, baseTenBoundField,
   baseTenMat, baseTenSliderPlace, baseTenSliderReachable, validateBaseTenTradeContent, type BaseTenPlaceName,
 } from "../../plugin-math/src/base-ten-trade.js";
+import { PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PART_FIELDS, validatePlaceValueChartContent } from "../../plugin-math/src/place-value-chart.js";
 import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList, type TapCardKind } from "./cards.js";
 import {
   bindingCapabilitiesForNodeKind,
+  cardBindingCapabilitiesForNodeKind,
+  OLL_CANONICAL_CARD_BINDING_CAPABILITIES,
   OLL_ACTION_NAMES,
   OLL_CANONICAL_BINDING_CAPABILITIES,
 } from "./capabilities.js";
@@ -399,7 +402,8 @@ export function baseTenTapVariables(
 /**
  * The fields of a tap card a tap writes, each to its own lesson variable: every field the card's kind
  * lists, bound to a bare declared variable whose range is exactly the field's, so no tap can leave a
- * variable's range or the card. Returns the variable of each field, keyed by its binding target.
+ * variable's range or the card. Returns the variable of each field, keyed by its binding target, and of
+ * each card-level field (the chart's `target`) bound to a bare declared variable of its own.
  */
 function cardTapVariables(
   kind: TapCardKind,
@@ -424,17 +428,26 @@ function cardTapVariables(
     if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields a tap changes`);
     used.add(alias);
     if (declaration.min !== min || declaration.max !== max || declaration.wrap) {
-      fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from ${min} to ${max}, the most a trade can make`);
+      fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' (${target}) must run from ${min} to ${max}, ${kind.kind === BASE_TEN_TRADE_KIND ? "the most a trade can make" : "the most its taps can make"}`);
     }
     result.set(target, alias);
+  }
+  // A card-level field taps never change (the number a chart shows), when it is bound: its own variable too.
+  for (const field of kind.cardFields ?? []) {
+    const alias = bindings.get(field);
+    if (alias === undefined) continue;
+    if (!declarations.some((variable) => variable.as === alias)) fail("OLL_INVALID_STUDENT_TASK", path, `The card's '${field}' is bound to a lesson variable of its own, not '${alias}'`);
+    if (used.has(alias)) fail("OLL_INVALID_STUDENT_TASK", path, `Variable '${alias}' is bound to two fields of the card`);
+    used.add(alias);
+    result.set(field, alias);
   }
   return result;
 }
 
-/** The card's content with its tap variables at the given values, for checking a starting pile. */
+/** The card's content with its tap variables (and bound card-level fields) at the given values, for checking a starting pile. */
 function cardContentAt(kind: TapCardKind, content: JsonObject, variables: Map<string, string>, values: Record<string, number>): JsonObject {
-  return kind.contentAt(content, (place, field) => {
-    const alias = variables.get(kind.fieldTarget(content, place, field));
+  return kind.contentAt(content, (target) => {
+    const alias = variables.get(target);
     return alias !== undefined && values[alias] !== undefined ? values[alias] : undefined;
   });
 }
@@ -499,8 +512,16 @@ function validateCardStudentTask(
   if (task.start) {
     const selected = new Set(task.start.variables ?? []);
     const missing = [...variables.values()].filter((alias) => !selected.has(alias));
-    if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every count and tray; missing ${missing.join(", ")}`);
-    kind.validateContent(cardContentAt(kind, content, variables, { ...initial, ...startValues }), "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
+    if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every ${kind.kind === BASE_TEN_TRADE_KIND ? "count and tray" : "field the card binds"}; missing ${missing.join(", ")}`);
+    const practice = cardContentAt(kind, content, variables, { ...initial, ...startValues });
+    kind.validateContent(practice, "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
+    kind.validateStart?.(kind.state(practice), (message) => fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The practice pile is not a starting pile: ${message}`));
+    // A card-level field (the chart's number) is the task's own: never the number the lesson showed (decision 0025 §4).
+    for (const field of kind.cardFields ?? []) {
+      const alias = variables.get(field);
+      if (alias === undefined) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `A card task starts on its own ${field}: bind the card's '${field}' to a lesson variable the task's start sets`);
+      if (startValues[alias] === initial[alias]) fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The task's ${field} (${alias} = ${startValues[alias]}) is the lesson's own; a practice task starts on another`);
+    }
   }
   // The fact's own target, checked against the practice pile by the card's rules (a count: amendment 5).
   fact.validate?.(completion, kind.state(cardContentAt(kind, content, variables, { ...initial, ...startValues })),
@@ -926,8 +947,13 @@ function validateValueBindings(action: WriteAction, path: string, variables: Map
     for (const field of Object.keys(binding)) {
       if (!["target", "expression", "label", "allow_zero", "hide_when_undefined"].includes(field)) fail("OLL_INVALID_BINDING", `${bindingPath}/${field}`, `Unknown binding field '${field}'`);
     }
-    const { alias, property } = splitBindingTarget(binding.target, `${bindingPath}/target`);
-    if (!targets.get(alias)?.has(property)) {
+    // A card-level field (the chart's `target`) is bound by its bare name, on a kind that declares it.
+    const cardField = typeof binding.target === "string" && !binding.target.includes(".");
+    if (cardField && !cardBindingCapabilitiesForNodeKind(action.kind).includes(binding.target as string)) {
+      fail("OLL_REFERENCE_NOT_FOUND", `${bindingPath}/target`, `Binding target '${String(binding.target)}' is not a field of a ${action.kind} card`);
+    }
+    const { alias, property } = cardField ? { alias: "", property: binding.target as string } : splitBindingTarget(binding.target, `${bindingPath}/target`);
+    if (!cardField && !targets.get(alias)?.has(property)) {
       fail("OLL_REFERENCE_NOT_FOUND", `${bindingPath}/target`, `Binding target '${binding.target}' is not a supported numeric field`);
     }
     // A mark that does not exist for some values (an intercept that leaves the axis, the symmetry axis of a
@@ -1071,11 +1097,35 @@ function checkBaseTenTradeBoundValues(content: JsonObject, path: string, declara
   checkPluginBoundValues(content, path, declarations, BASE_TEN_TRADE_PART_FIELDS, validate);
   // A three-column mat binds five variables and the corner check varies only four, so each variable is
   // also checked on its own at its minimum and maximum (review of #86): no count can leave the mat.
+  checkEachBoundVariable(content, path, declarations, BASE_TEN_TRADE_PART_FIELDS, validate);
+}
+
+/**
+ * A place-value chart stays drawable for every value its variables can take (decision 0025): each count and
+ * pulled count within nine, and the number within its columns. The joint rules (a place's disks make its
+ * digit; a task that would show its answer; a chart already built) belong to a starting chart: the card as
+ * its variables start it and each task's start are checked against them.
+ */
+function checkPlaceValueChartBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validatePlaceValueChartContent(evaluated, path, failAt, { boundValues: true });
+  checkPluginBoundValues(content, path, declarations, PLACE_VALUE_CHART_PART_FIELDS, validate);
+  // A chart binds up to 21 variables and the corner check varies only four, so each is also checked alone.
+  checkEachBoundVariable(content, path, declarations, PLACE_VALUE_CHART_PART_FIELDS, validate);
+}
+
+/** Each referenced variable on its own at its minimum and maximum, the others at their start. */
+function checkEachBoundVariable(
+  content: JsonObject,
+  path: string,
+  declarations: readonly { as: string; initial: number; min: number; max: number }[],
+  fields: readonly string[],
+  validate: (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => void,
+): void {
   const bindings = Array.isArray(content.bindings) ? content.bindings as JsonObject[] : [];
   const known = new Set(declarations.map((declaration) => declaration.as));
   const referenced = new Set(bindings.flatMap((binding) => referencedMathVariables(String(binding.expression), known)));
   const withIds = structuredClone(content);
-  if (Array.isArray(withIds.places)) withIds.places = withIds.places.map((item: JsonObject) => ({ ...item, id: item.as }));
+  for (const field of fields) if (Array.isArray(withIds[field])) withIds[field] = withIds[field].map((item: JsonObject) => ({ ...item, id: item.as }));
   const initials = Object.fromEntries(declarations.map((declaration) => [declaration.as, declaration.initial]));
   for (const declaration of declarations.filter((each) => referenced.has(each.as))) {
     for (const value of new Set([declaration.min, declaration.max])) {
@@ -1086,10 +1136,19 @@ function checkBaseTenTradeBoundValues(content: JsonObject, path: string, declara
       } catch (error) {
         fail("OLL_INVALID_BINDING", `${path}/bindings`, `${where}: ${(error as Error).message}`);
       }
-      if (Array.isArray(evaluated.places)) evaluated.places = evaluated.places.map(({ id: _id, ...item }: JsonObject) => item);
+      for (const field of fields) if (Array.isArray(evaluated[field])) evaluated[field] = evaluated[field].map(({ id: _id, ...item }: JsonObject) => item);
       validate(evaluated, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `${where}: ${message}`));
     }
   }
+}
+
+/** A card's bindings to a bare variable, by binding target (an expression that is more than a name is left out). */
+function bareBindings(content: JsonObject): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const binding of (Array.isArray(content.bindings) ? content.bindings : []) as JsonObject[]) {
+    if (typeof binding.target === "string" && typeof binding.expression === "string" && VARIABLE_PATTERN.test(binding.expression.trim())) result.set(binding.target, binding.expression.trim());
+  }
+  return result;
 }
 
 /** Evaluates a plugin card at each referenced variable's minimum, maximum and start, and checks each result. */
@@ -2096,6 +2155,13 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (action.kind === NUMBER_LINE_KIND) checkNumberLineBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === FRACTION_MODEL_KIND) checkFractionModelBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === BASE_TEN_TRADE_KIND) checkBaseTenTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          if (action.kind === PLACE_VALUE_CHART_KIND) checkPlaceValueChartBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          // A card with starting rules is checked as its variables start it, not only as written (review of #111).
+          if (tapCard?.validateStart && Array.isArray(action.content.bindings)) {
+            const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
+            tapCard.validateContent(cardContentAt(tapCard, action.content, bareBindings(action.content), initials), `${actionPath}/content`,
+              (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, `As its variables start it: ${message}`));
+          }
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
@@ -2177,7 +2243,9 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (revisedCard) {
             // A revision replaces the content and cannot carry bindings, so a bound mat would freeze (review of #87).
             if (Array.isArray(revisedCard.content.bindings)) {
-              fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/target`, "A trading card bound to lesson variables is not revised: its counts change by taps");
+              fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/target`, revisedCard.kind.kind === BASE_TEN_TRADE_KIND
+                ? "A trading card bound to lesson variables is not revised: its counts change by taps"
+                : `A ${revisedCard.kind.kind} card bound to lesson variables is not revised: its fields change by taps and task starts`);
             }
             revisedCard.kind.validateContent(action.content, `${actionPath}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, message));
           }
@@ -2331,9 +2399,11 @@ function normalizeAddressableContent(_host: NormalizationHost, nodeId: string, c
   }
   if (Array.isArray(clone.bindings)) {
     clone.bindings = clone.bindings.map((binding) => {
-      const { alias, property } = splitBindingTarget(binding.target, "content.bindings.target");
+      // A card-level field keeps its bare name: it is the card's own, not a part's.
+      const cardField = typeof binding.target === "string" && !binding.target.includes(".");
+      const { alias, property } = cardField ? { alias: "", property: binding.target } : splitBindingTarget(binding.target, "content.bindings.target");
       return {
-        target: `${nodeId}:fragment:${alias}.${property}`,
+        target: cardField ? property : `${nodeId}:fragment:${alias}.${property}`,
         expression: binding.expression,
         ...(binding.label !== undefined ? { label: structuredClone(binding.label) } : {}),
         ...(binding.allow_zero === true ? { allow_zero: true } : {}),
@@ -2705,6 +2775,8 @@ function bindingValues(state: SemanticBoardState): Record<string, number> {
 }
 
 function bindingTarget(content: JsonObject, target: string): { record: JsonObject; property: string } {
+  // A card-level field (the chart's `target`) is bound by its bare name and lives on the content itself.
+  if (!target.includes(".") && OLL_CANONICAL_CARD_BINDING_CAPABILITIES.includes(target)) return { record: content, property: target };
   const separator = target.lastIndexOf(".");
   if (separator <= 0) fail("OLL_INVALID_BINDING", "content.bindings.target", `Invalid canonical binding target '${target}'`);
   const fragmentId = target.slice(0, separator);
@@ -2842,7 +2914,7 @@ export function applyCanonicalAction(state: SemanticBoardState, action: Canonica
   } else if (action.op === "card.tap") {
     const node = action.target?.node_id ? state.nodes[action.target.node_id] : undefined;
     const card = tapCardKind(node?.kind);
-    if (!node || !card || !action.tap) fail("OLL_REFERENCE_NOT_FOUND", "action.target", "A tap acts on a base-ten trade card");
+    if (!node || !card || !action.tap) fail("OLL_REFERENCE_NOT_FOUND", "action.target", `A tap acts on a ${tapCardKindList()} card`);
     const before = card.state(node.content);
     const result = card.apply(before, action.tap);
     if (!result.ok) fail("OLL_INVALID_EVENT", "action.tap", `The card refuses this tap: ${card.refusalText(result.reason, action.tap.place)}`);

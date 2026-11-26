@@ -25,6 +25,7 @@ export {
   variableAnimationFocusTargets,
   type BoardInputOwner,
   type CameraListener,
+  type CardTapHandler,
   type DiagramLayout,
   type DiagramPointLayout,
   type DiagramConnectionGeometry,
@@ -71,11 +72,14 @@ export {
   targetRect,
   type BoardLayout,
   type BoardLayoutOptions,
+  type MeasureOptions,
   type MeasuredNodeSizes,
   type Rect,
   type RegionLayoutConstraint,
 } from "./layout.js";
 export { visibleBoard } from "./visible-board.js";
+// Cards the learner taps, by kind (the trading mat, decision 0023; the place-value chart, decision 0025).
+export { tapCardKind, type CardTap } from "../../core/src/cards.js";
 export {
   boardInputTargetsInteractiveUi,
   boardKeyboardTargetsTextInput,

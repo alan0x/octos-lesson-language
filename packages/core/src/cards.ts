@@ -1,5 +1,5 @@
 /**
- * Cards the learner taps (decision 0023; a second kind by decision 0025), routed by card kind.
+ * Cards the learner taps, routed by card kind: the trading mat (decision 0023) and the place-value chart (0025).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -8,13 +8,20 @@
  *
  * Field keys are binding targets, `${place}.${field}`: a place is named by `as` in authoring content and by
  * its canonical `id` on the board, so a kind derives the key from the content it is handed. A tap names a
- * place by its index, as the log does. This module imports nothing from the core's index (it takes `fail`
+ * place by its index into the kind's `places`, as the log does. A kind may also have card-level fields
+ * (`cardFields`, the chart's `target`) that taps never change: each is bound by its bare name, and a
+ * practice task's start sets it, so a task starts on its own number. This module imports nothing from the core's index (it takes `fail`
  * callbacks), so the core, the reducer and the web runtime can all load it.
  */
 import {
   BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LIMITS, BASE_TEN_TRADE_PLACES, applyBaseTenTap, baseTenChanges, baseTenFacts, baseTenLanguage, baseTenMat,
   baseTenRefusalText, baseTenTapReachable, hasTray, validateBaseTenTradeContent, type BaseTenLanguage, type BaseTenMat, type BaseTenPlaceName, type BaseTenRefusal,
 } from "../../plugin-math/src/base-ten-trade.js";
+import {
+  PLACE_VALUE_CHART_KIND, PLACE_VALUE_PLACE_ALIASES, PLACE_VALUE_TAP_PLACES, applyPlaceValueTap, placeValueChanges, placeValueChartState, placeValueDigitAt,
+  placeValueFacts, placeValueLanguage, placeValueRefusalText, placeValueTapIndex, placeValueTapPlace, validatePlaceValueChartContent,
+  type PlaceValueChartState, type PlaceValueRefusal, type PlaceValueTap,
+} from "../../plugin-math/src/place-value-chart.js";
 import type { JsonObject } from "./types.js";
 
 type Fail = (path: string, message: string) => never;
@@ -82,8 +89,21 @@ export interface TapCardKind<S = unknown> {
   tapFields(content: unknown): CardTapField[];
   /** The binding target that drives a field in this content: `${place}.${field}`, by `id` or `as`. */
   fieldTarget(content: unknown, place: number, field: string): string;
-  /** The content with its tap fields at the given values (bindings dropped), for checking a pile. */
-  contentAt(content: JsonObject, value: (place: number, field: string) => number | undefined): JsonObject;
+  /**
+   * Card-level fields a lesson variable may drive, each bound by its bare name (its binding target is the
+   * name). Taps never change them; a card task's practice start sets each, so it starts on its own number.
+   */
+  readonly cardFields?: readonly string[];
+  /**
+   * The content with its bound fields (tap fields and card fields) at the values `value` gives by binding
+   * target (bindings dropped), for checking a pile. A field `value` leaves undefined keeps its written value.
+   */
+  contentAt(content: JsonObject, value: (target: string) => number | undefined): JsonObject;
+  /**
+   * The rules a card task's starting pile keeps besides the content's (a chart to build starts empty). A kind
+   * that has them is also checked as its variables start it, bound fields at their initial values.
+   */
+  validateStart?(state: S, fail: (message: string) => never): void;
   /** The facts a `card_fact` task may read, by name. */
   readonly facts: Readonly<Record<string, CardFactKind<S>>>;
 }
@@ -123,12 +143,12 @@ export const BASE_TEN_TRADE_CARD: TapCardKind<BaseTenMat> = Object.freeze({
     return fields;
   },
   fieldTarget: (content: unknown, place: number, field: string) => `${placeName(content, place)}.${field}`,
-  contentAt(content: JsonObject, value: (place: number, field: string) => number | undefined): JsonObject {
+  contentAt(content: JsonObject, value: (target: string) => number | undefined): JsonObject {
     const at = structuredClone(content);
     delete at.bindings;
     for (const [p, place] of ((Array.isArray(at.places) ? at.places : []) as JsonObject[]).entries()) {
       for (const field of ["count", "tray"]) {
-        const v = value(p, field);
+        const v = value(`${placeName(content, p)}.${field}`);
         if (v !== undefined) place[field] = v;
       }
     }
@@ -228,9 +248,127 @@ export const BASE_TEN_TRADE_CARD: TapCardKind<BaseTenMat> = Object.freeze({
   }),
 });
 
-/** Every card kind the learner taps, by node kind. The mat is the only one so far. */
+/** A chart place's content item: by its place number, never by its position (columns differ per chart). */
+const chartPlace = (content: unknown, place: number): { id?: unknown; as?: unknown } | undefined => {
+  const places = (content as { places?: unknown } | null)?.places;
+  return (Array.isArray(places) ? places : []).find((item) => (item as { place?: unknown } | null)?.place === place) as { id?: unknown; as?: unknown } | undefined;
+};
+const chartFieldTarget = (content: unknown, index: number, field: string): string => {
+  const place = placeValueTapPlace(index);
+  const item = chartPlace(content, place);
+  return `${item?.id ?? item?.as ?? PLACE_VALUE_PLACE_ALIASES[place]}.${field}`;
+};
+
+/** The chart's content at a pile given by variable (bound fields only), for reading a fact on it. */
+const chartContentAtPile = (content: JsonObject, bound: Map<string, string>, pile: Readonly<Record<string, number>>): JsonObject =>
+  PLACE_VALUE_CHART_CARD.contentAt(content, (target) => {
+    const alias = bound.get(target);
+    return alias === undefined ? undefined : pile[alias];
+  });
+
+/**
+ * The chart's pile once a task is done: the learner's own, as logged when they said done, when it holds the
+ * fact; else the one the fact describes (built: the number's digits; pulled apart: every place in its part).
+ * The number is the task's own, so later tasks ask about the chart the learner made.
+ */
+function chartDonePile(fact: "built" | "pulled_all") {
+  return ({ content, startValue, submitted }: CardDonePileContext): Record<string, number> | undefined => {
+    const bound = boundTargets(content);
+    const aliases = [...bound.values()];
+    if (submitted && aliases.every((alias) => submitted[alias] !== undefined)
+      && placeValueFacts(placeValueChartState(chartContentAtPile(content, bound, submitted)))[fact]) {
+      return Object.fromEntries(aliases.map((alias) => [alias, submitted[alias]!]));
+    }
+    const targetAlias = bound.get("target");
+    const target = targetAlias ? startValue(targetAlias) : Number(content.target);
+    const result: Record<string, number> = {};
+    if (targetAlias) result[targetAlias] = target;
+    for (const item of (Array.isArray(content.places) ? content.places : []) as Array<{ id?: string; as?: string; place: number }>) {
+      const name = item.id ?? item.as;
+      const digit = placeValueDigitAt(target, item.place);
+      const count = bound.get(`${name}.count`);
+      if (count) result[count] = fact === "built" ? digit : 0;
+      const pulled = bound.get(`${name}.pulled`);
+      if (pulled) result[pulled] = fact === "built" ? 0 : digit;
+    }
+    return result;
+  };
+}
+
+/** A fact of one task only: a chart to build is built, a chart to pull apart is pulled apart. */
+const chartFact = (fact: "built" | "pulled_all", mode: "build" | "apart"): CardFactKind<PlaceValueChartState> => ({
+  keys: [],
+  validate(_completion: CardFactCompletion, state: PlaceValueChartState, fail: (field: string, message: string) => never): void {
+    if (state.mode !== mode) fail("fact", `'${fact}' is read on a chart whose mode is '${mode}'; this chart's is '${state.mode}'`);
+  },
+  read: (_completion: CardFactCompletion, state: PlaceValueChartState) => {
+    const actual = placeValueFacts(state)[fact] ? 1 : 0;
+    return { actual, target: 1, succeeded: actual === 1 };
+  },
+  donePile: chartDonePile(fact),
+});
+
+/**
+ * The place-value chart (decision 0025): build a number disk by disk (`add`, `remove`), or pull it apart place
+ * by place (`take_out`). A tap's place is its index in `PLACE_VALUE_TAP_PLACES` (the place plus three); an
+ * authoring tap's `at` is the place's alias. The number (`target`) is a card-level field.
+ */
+export const PLACE_VALUE_CHART_CARD: TapCardKind<PlaceValueChartState> = Object.freeze({
+  kind: PLACE_VALUE_CHART_KIND,
+  taps: ["add", "remove", "take_out"],
+  places: PLACE_VALUE_TAP_PLACES,
+  cardFields: ["target"],
+  validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueChartContent(raw, path, fail),
+  state: placeValueChartState,
+  apply: (state: PlaceValueChartState, tap: CardTap): CardTapResult<PlaceValueChartState> =>
+    applyPlaceValueTap(state, { tap: tap.kind as PlaceValueTap["tap"], place: placeValueTapPlace(tap.place) }),
+  refusalText: (reason: string, _place: number, language?: string) => placeValueRefusalText(reason as PlaceValueRefusal, language === "zh-CN" ? "zh-CN" : "en-US"),
+  language: placeValueLanguage,
+  changes: (before: PlaceValueChartState, after: PlaceValueChartState): CardFieldChange[] =>
+    placeValueChanges(before, after).map(({ place, field, before: from, after: to }) => ({ place: placeValueTapIndex(place), field, before: from, after: to })),
+  tapFields(content: unknown): CardTapField[] {
+    const state = placeValueChartState(content);
+    return state.columns.flatMap((place) => [
+      { place: placeValueTapIndex(place), field: "count", min: 0, max: 9 },
+      ...(state.mode === "apart" ? [{ place: placeValueTapIndex(place), field: "pulled", min: 0, max: 9 }] : []),
+    ]);
+  },
+  fieldTarget: chartFieldTarget,
+  contentAt(content: JsonObject, value: (target: string) => number | undefined): JsonObject {
+    const at = structuredClone(content);
+    delete at.bindings;
+    for (const item of (Array.isArray(at.places) ? at.places : []) as JsonObject[]) {
+      for (const field of at.mode === "apart" ? ["count", "pulled"] : ["count"]) {
+        const v = value(`${item.id ?? item.as}.${field}`);
+        if (v !== undefined) item[field] = v;
+      }
+    }
+    const target = value("target");
+    if (target !== undefined) at.target = target;
+    return at;
+  },
+  /** A chart to build starts empty; one to pull apart starts whole, nothing pulled out. */
+  validateStart(state: PlaceValueChartState, fail: (message: string) => never): void {
+    state.columns.forEach((place, i) => {
+      const digit = placeValueDigitAt(state.target, place);
+      if (state.mode === "build" && state.counts[i] !== 0) fail(`A chart to build starts empty; it has ${state.counts[i]} in place ${place}`);
+      if (state.mode === "apart" && (state.counts[i] !== digit || state.pulled[i] !== 0)) {
+        fail(`A chart to pull apart starts whole, nothing pulled out; place ${place} has ${state.counts[i]} on the chart and ${state.pulled[i]} pulled out, of ${digit}`);
+      }
+    });
+  },
+  facts: Object.freeze({
+    /** Build: the chart holds exactly the number (each place under ten, so its digits). */
+    built: chartFact("built", "build"),
+    /** Pull apart: every place has been taken out. */
+    pulled_all: chartFact("pulled_all", "apart"),
+  }),
+});
+
+/** Every card kind the learner taps, by node kind. */
 export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
+  [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_CARD as TapCardKind,
 });
 
 /** The tap card of a node kind, or undefined when the kind is not one. */

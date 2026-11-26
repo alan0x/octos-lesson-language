@@ -2,6 +2,7 @@ import { layoutTeachingRegion } from "./teaching-layout.js";
 import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from "../../core/src/index.js";
 import { planFractionModel } from "../../plugin-math/src/fraction-model.js";
 import { planBaseTenTrade } from "../../plugin-math/src/base-ten-trade.js";
+import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -79,7 +80,18 @@ export interface BoardLayoutOptions {
   regions?: Record<string, RegionLayoutConstraint>;
   /** Where each math card's first "=" is, from its left edge in board units, as the host measured it. */
   equalsX?: Record<string, number>;
+  /**
+   * The width in screen pixels a card can take at most on this screen (the board's viewport less its focus
+   * margins and a card's frame). A place-value chart too wide for it wraps its periods into rows (decision 0025).
+   */
+  cardFitWidth?: number;
 }
+
+/** What sizing a card may read besides its content: the screen's width for a card (`BoardLayoutOptions`). */
+export type MeasureOptions = Pick<BoardLayoutOptions, "cardFitWidth">;
+
+/** A card's frame around its content: the board node's padding and border, each side. */
+export const CARD_FRAME = { x: 19, y: 17 } as const;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -162,7 +174,7 @@ export function cycleDiagramAspect(boxes: number): number {
   return boxes <= 4 ? 300 / 520 : 360 / 520;
 }
 
-export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "width" | "height"> {
+export function measureSemanticNode(node: Record<string, any>, options: MeasureOptions = {}): Pick<Rect, "width" | "height"> {
   const content = node.content ?? {};
   const length = visibleContentLength(content);
   const kind = String(node.kind ?? "text");
@@ -190,6 +202,12 @@ export function measureSemanticNode(node: Record<string, any>): Pick<Rect, "widt
     const plan = planBaseTenTrade(content);
     const width = content.columns === 3 ? 860 : 600;
     return { width, height: Math.round(plan.height * width / plan.width) + 30 + (content.title ? 32 : 0) + (content.caption ? 28 : 0) };
+  }
+  // Sized from its plan at its natural size (one unit a pixel), in one row or, on a narrow screen, wrapped
+  // into rows; under it the line it gives the learner and a notice.
+  if (kind === "place_value_chart") {
+    const plan = planPlaceValueChart(content, options.cardFitWidth === undefined ? {} : { fitWidth: options.cardFitWidth });
+    return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + 64 };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
@@ -267,7 +285,7 @@ export function computeBoardLayout(
     return node.placement?.relation === "annotates" && Boolean(annotationBox(node)) && Boolean(anchor) && anchor!.placement?.relation !== "annotates";
   };
   const annotations = Object.values(state.nodes).filter(onAnchor);
-  const blocks = continuationBlocks(state, measuredNodeSizes, options.equalsX ?? {});
+  const blocks = continuationBlocks(state, measuredNodeSizes, options.equalsX ?? {}, options);
   if (!annotations.length && !blocks.size) return computeFlowLayout(state, measuredNodeSizes, options);
   const members = new Set([...blocks.values()].flatMap((block) => [...block.members.keys()]));
   const flowNodes = Object.fromEntries(Object.entries(state.nodes).filter(([id, node]) => !onAnchor(node) && !members.has(id)));
@@ -316,8 +334,8 @@ interface ContinuationBlock {
  * card's block. A math card with `align: "equals"` moves sideways so its "="
  * lines up with the nearest math above it in the block whose "=" the host measured.
  */
-function continuationBlocks(state: SemanticBoardState, sizes: MeasuredNodeSizes, equalsX: Record<string, number>): Map<string, ContinuationBlock> {
-  const size = (id: string) => sizes[id] ?? measureSemanticNode(state.nodes[id]!);
+function continuationBlocks(state: SemanticBoardState, sizes: MeasuredNodeSizes, equalsX: Record<string, number>, options: MeasureOptions = {}): Map<string, ContinuationBlock> {
+  const size = (id: string) => sizes[id] ?? measureSemanticNode(state.nodes[id]!, options);
   const continues = (id: string) => {
     const node = state.nodes[id];
     const anchor = String(node?.placement?.anchor);
@@ -401,7 +419,7 @@ function computeFlowLayout(
     if (options.regions?.[regionId]?.flow !== "reading") continue;
     if (["inside", "overlay"].includes(node.placement?.relation ?? "")) continue;
     if (!VISUAL_LANE_KINDS.has(String(node.kind ?? "text"))) continue;
-    const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
+    const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node, options);
     const profile = regionFlowProfiles.get(regionId) ?? { hasVisual: false, visualWidth: 0 };
     profile.hasVisual = true;
     profile.visualWidth = Math.max(profile.visualWidth, size.width);
@@ -625,7 +643,7 @@ function computeFlowLayout(
     // supports their internal coordinate systems.
     if (ids.some(id => ["inside", "overlay"].includes(state.nodes[id]!.placement?.relation ?? ""))) continue;
     if (!ids.length) continue;
-    const sizes = Object.fromEntries(ids.map(id => [id, measuredNodeSizes[id] ?? measureSemanticNode(state.nodes[id]!)]));
+    const sizes = Object.fromEntries(ids.map(id => [id, measuredNodeSizes[id] ?? measureSemanticNode(state.nodes[id]!, options)]));
     const result = layoutTeachingRegion(state, ids, sizes, constraint, [...Object.values(nodes), ...Object.values(attachments)]);
     Object.assign(nodes, result.nodes); Object.assign(attachments, result.attachments);
     ids.forEach(id => teachingIds.add(id));
@@ -633,7 +651,7 @@ function computeFlowLayout(
   }
   for (const node of orderedNodes()) {
     if (teachingIds.has(node.id)) continue;
-    let size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
+    let size = measuredNodeSizes[node.id] ?? measureSemanticNode(node, options);
     const placement = node.placement ?? { relation: "new_region" };
     const regionId = typeof node.region_id === "string" && node.region_id
       ? node.region_id

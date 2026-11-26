@@ -9,13 +9,14 @@
  * `place-value-disk-new`, for the stylesheet's pop), so a count animating 0 -> 3 shows disks one at a time.
  * Fills and sizes are attributes, so the chart reads without the stylesheet; its classes are for styling.
  *
- * Every element a learner can tap carries `data-oll-tap` ("add:3", "remove:3", "take_out:-1"); the board
- * turns a tap into the card's tap rules. When the card is not live (the lesson is playing, or no open task
+ * Every element a learner can tap carries `data-oll-tap`, the tap and its place's index (`placeValueTapIndex`:
+ * the place plus three, so "add:6" is the thousands and "take_out:2" the tenths); the board turns a tap into
+ * the card's tap rules. When the card is not live (the lesson is playing, or no open task
  * lets the learner tap it) the same chart is drawn without buttons or tap cues.
  */
 import {
   PLACE_VALUE_PLACE_ALIASES, PLACE_VALUE_WORDS, placeValueChartState, placeValueColumnName, placeValueDiskAt, placeValueDiskFont,
-  placeValueGivenText, placeValueLanguage, planPlaceValueChart, type PlaceValueChartPlan, type PlaceValueLanguage,
+  placeValueGivenText, placeValueLanguage, placeValueTapIndex, planPlaceValueChart, type PlaceValueChartPlan, type PlaceValueLanguage,
 } from "./place-value-chart.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -27,6 +28,11 @@ export interface PlaceValueChartViewContext {
   live?: boolean;
   /** A one-line message under the chart (a refused tap's reason). */
   notice?: string;
+  /**
+   * The width in screen pixels the card can take at most; on a narrow screen the chart wraps its periods
+   * into rows (`planPlaceValueChart`). The board passes the same width to its layout.
+   */
+  fitWidth?: number;
 }
 
 interface ChartView {
@@ -60,8 +66,8 @@ function element<K extends keyof SVGElementTagNameMap>(name: K, attributes: Reco
 
 const round = (value: number) => Math.round(value * 100) / 100;
 
-function frameOf(raw: Record<string, unknown>): string {
-  return JSON.stringify([placeValueLanguage(raw), raw.mode === "apart" ? "apart" : "build", raw.top_place, raw.decimals === true]);
+function frameOf(raw: Record<string, unknown>, plan: PlaceValueChartPlan): string {
+  return JSON.stringify([placeValueLanguage(raw), raw.mode === "apart" ? "apart" : "build", raw.top_place, raw.decimals === true, plan.bands]);
 }
 
 function setTappable(target: SVGElement, tap: string | undefined, label: string, live: boolean): void {
@@ -99,8 +105,8 @@ function diskElement(plan: PlaceValueChartPlan, place: number, at: { x: number; 
 }
 
 /** The chart's fixed parts: background, period band, heads, columns, parts, point and buttons. Drawn once per frame. */
-function create(parent: HTMLElement, raw: Record<string, unknown>): ChartView {
-  const plan = planPlaceValueChart(raw);
+function create(parent: HTMLElement, raw: Record<string, unknown>, fitWidth: number | undefined): ChartView {
+  const plan = planPlaceValueChart(raw, fitWidth === undefined ? {} : { fitWidth });
   const language = placeValueLanguage(raw);
   const words = PLACE_VALUE_WORDS[language];
   const given = document.createElement("div");
@@ -119,7 +125,7 @@ function create(parent: HTMLElement, raw: Record<string, unknown>): ChartView {
   for (const column of plan.columns) {
     const group = element("g", {}, "place-value-place");
     group.dataset.place = String(column.place);
-    const head = element("text", { x: round(column.x + column.width / 2), y: round(plan.headY), "text-anchor": "middle", "font-size": plan.fontSize, "font-weight": 700, fill: COLORS.ink }, "place-value-head");
+    const head = element("text", { x: round(column.x + column.width / 2), y: round(column.headY), "text-anchor": "middle", "font-size": plan.fontSize, "font-weight": 700, fill: COLORS.ink }, "place-value-head");
     column.head.forEach((line, k) => {
       const span = element("tspan", { x: round(column.x + column.width / 2), dy: k === 0 ? (column.head.length === 1 ? 13 : 0) : 13 });
       span.textContent = line;
@@ -157,7 +163,7 @@ function create(parent: HTMLElement, raw: Record<string, unknown>): ChartView {
   notice.setAttribute("aria-live", "polite");
   parent.append(given, svg, notice);
   return {
-    plan, frame: frameOf(raw), language, svg, given, notice, groups,
+    plan, frame: frameOf(raw, plan), language, svg, given, notice, groups,
     disks: new Map(plan.columns.map((column) => [column.place, []])), pulled: new Map(plan.columns.map((column) => [column.place, []])), layers, buttons,
   };
 }
@@ -192,20 +198,20 @@ function update(view: ChartView, raw: Record<string, unknown>, context: PlaceVal
     const disks = view.disks.get(place)!;
     reconcile(view, place, disks, layer.disks, state.counts[i]!, false);
     // Building, a disk on the chart is tapped to take it away.
-    for (const disk of disks) setTappable(disk, state.mode === "build" ? `remove:${place}` : undefined, words.removeLabel(name), live);
+    for (const disk of disks) setTappable(disk, state.mode === "build" ? `remove:${placeValueTapIndex(place)}` : undefined, words.removeLabel(name), live);
     if (state.mode === "apart") reconcile(view, place, view.pulled.get(place)!, layer.pulled, state.pulled[i]!, true);
     const button = view.buttons.get(place)!;
     // Buttons show only while the learner can tap; a place with nothing on the chart has nothing to take out.
     const shown = live && (state.mode === "build" || state.counts[i]! > 0);
     button.setAttribute("visibility", shown ? "visible" : "hidden");
-    setTappable(button, shown ? `${state.mode === "apart" ? "take_out" : "add"}:${place}` : undefined, state.mode === "apart" ? words.takeOutLabel(name) : words.addLabel(name), live);
+    setTappable(button, shown ? `${state.mode === "apart" ? "take_out" : "add"}:${placeValueTapIndex(place)}` : undefined, state.mode === "apart" ? words.takeOutLabel(name) : words.addLabel(name), live);
   });
   view.notice.textContent = context.notice ?? "";
 }
 
 /** Draws the card into an empty parent. */
 export function renderPlaceValueChart(parent: HTMLElement, raw: Record<string, unknown>, context: PlaceValueChartViewContext): void {
-  const view = create(parent, raw);
+  const view = create(parent, raw, context.fitWidth);
   views.set(parent, view);
   update(view, raw, context);
 }
@@ -217,7 +223,7 @@ export function renderPlaceValueChart(parent: HTMLElement, raw: Record<string, u
  */
 export function updatePlaceValueChart(parent: HTMLElement, raw: Record<string, unknown>, context: PlaceValueChartViewContext): boolean {
   const view = views.get(parent);
-  if (!view || !view.svg.isConnected || view.frame !== frameOf(raw)) return false;
+  if (!view || !view.svg.isConnected || view.frame !== frameOf(raw, planPlaceValueChart(raw, context.fitWidth === undefined ? {} : { fitWidth: context.fitWidth }))) return false;
   update(view, raw, context);
   return true;
 }

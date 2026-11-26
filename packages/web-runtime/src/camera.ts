@@ -111,6 +111,8 @@ export interface ViewportOcclusion {
 export type AttentionMode = "detail" | "relationship" | "overview" | "course";
 
 const FOCUS_MARGIN = 70;
+/** The teaching camera's margin around what it frames, when the host sets none (`ViewportInsets.focusMargin`). */
+export const CAMERA_FOCUS_MARGIN = FOCUS_MARGIN;
 const REVEAL_MARGIN = FOCUS_MARGIN;
 const MIN_READABLE_FOCUS_WIDTH = 240;
 const MIN_AUTOMATIC_SCALE = .18;

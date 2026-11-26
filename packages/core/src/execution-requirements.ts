@@ -1,4 +1,4 @@
-import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES, OLL_PLUGIN_NODE_KINDS } from "./capabilities.js";
+import { OLL_NODE_KINDS, OLL_CANONICAL_BINDING_CAPABILITIES, OLL_CANONICAL_CARD_BINDING_CAPABILITIES, OLL_PLUGIN_NODE_KINDS } from "./capabilities.js";
 import { MATH_PLUGIN_MANIFEST } from "../../plugin-math/src/manifest.js";
 import {
   NUMBER_LINE_FEATURE, NUMBER_LINE_JUMP_LANES_FEATURE, NUMBER_LINE_JUMP_LANES_VERSION, NUMBER_LINE_KIND, NUMBER_LINE_PLUGIN_VERSION, usesJumpLanes,
@@ -9,10 +9,11 @@ import {
   BASE_TEN_TRADE_FEATURE, BASE_TEN_TRADE_KIND, BASE_TEN_TRADE_LANGUAGE_FEATURE, BASE_TEN_TRADE_LANGUAGE_VERSION, BASE_TEN_TRADE_PLUGIN_VERSION,
   BASE_TEN_TRADE_SLIDER_FEATURE, BASE_TEN_TRADE_SLIDER_VERSION, baseTenSliderPlace,
 } from "../../plugin-math/src/base-ten-trade.js";
+import { PLACE_VALUE_CHART_FEATURE, PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PLUGIN_VERSION } from "../../plugin-math/src/place-value-chart.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.15.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.16.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -34,6 +35,11 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   "student-tasks:card_fact": "0.14.0",
   // Decision 0023 amendment 5: a count the learner taps the card to; an older player knows only no_trade_left.
   "student-tasks:card_fact:count": "0.15.0",
+  // Decision 0025: a place-value chart is built, or pulled apart; an older player knows only the mat's facts.
+  "student-tasks:card_fact:built": "0.16.0",
+  "student-tasks:card_fact:pulled_all": "0.16.0",
+  // Decision 0025: a card-level field bound by its bare name (the chart's number); an older player cannot place it.
+  "value-bindings:card-field": "0.16.0",
   // Decision 0023 amendment 1: a row of blanks answered in one go; an older player has no such question.
   "student-tasks:numeric_row": "0.14.0",
   // The lesson taps a card by the card's rules (a demonstration); an older player does not know the action.
@@ -120,7 +126,7 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION, [PLACE_VALUE_CHART_FEATURE]: PLACE_VALUE_CHART_PLUGIN_VERSION },
     detect(content, kind, use, lesson) {
       if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
         use(NUMBER_LINE_FEATURE);
@@ -134,6 +140,7 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
         // A slider on a place's count moves by trades (amendment 4); an older player would write the count directly.
         if (lesson?.variables.some((variable) => variable.control?.kind === "slider" && baseTenSliderPlace(content, variable.as) !== undefined)) use(BASE_TEN_TRADE_SLIDER_FEATURE);
       }
+      if (kind === PLACE_VALUE_CHART_KIND) use(PLACE_VALUE_CHART_FEATURE);
     },
   },
 ]);
@@ -142,7 +149,7 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
 const FIRST_PARTY_FEATURES: Readonly<Record<string, string>> = Object.freeze(Object.assign({}, ...FIRST_PARTY_EXTENSIONS.map((extension) => extension.features)));
 
 /** First-party plugin node kinds and the feature each requires. */
-const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE, [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_FEATURE });
+const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE, [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_FEATURE, [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_FEATURE });
 
 /** The extensions a check uses: those passed, plus first-party plugins not overridden. */
 export function installedExtensions(options: ExecutionOptions = {}): readonly ExecutionExtension[] {
@@ -250,7 +257,14 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
         if ((binding as { label?: unknown }).label !== undefined) add("binding-labels", `${path}/bindings/${index}`);
         if ((binding as { allow_zero?: unknown }).allow_zero !== undefined) add("bound-zero-radius", `${path}/bindings/${index}`);
         if ((binding as { hide_when_undefined?: unknown }).hide_when_undefined !== undefined) add("binding-hide-undefined", `${path}/bindings/${index}`);
-        const property = { property: (binding as { target?: string }).target?.split(".").at(-1) };
+        const target = (binding as { target?: string }).target;
+        // A card-level field is bound by its bare name (decision 0025).
+        if (typeof target === "string" && !target.includes(".")) {
+          if (!OLL_CANONICAL_CARD_BINDING_CAPABILITIES.includes(target)) throw new ExecutionCapabilityError(`${path}/bindings/${index}`, `Unsupported card binding '${target}'`);
+          add("value-bindings:card-field", `${path}/bindings/${index}`);
+          continue;
+        }
+        const property = { property: target?.split(".").at(-1) };
         // Full reference and numerical validation remains owned by the core validator.
         if (property.property && !Object.values(OLL_CANONICAL_BINDING_CAPABILITIES)
           .some(properties => properties.includes(property.property!))) {
@@ -269,7 +283,8 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
     for (const task of event.lesson?.tasks ?? []) {
       if (task.start) add("practice-start", `${path}/lesson/tasks/${task.as}/start`);
       add(`student-tasks:${task.completion.kind}`, `${path}/lesson/tasks/${task.as}`);
-      if (task.completion.kind === "card_fact" && task.completion.fact === "count") add("student-tasks:card_fact:count", `${path}/lesson/tasks/${task.as}/completion/fact`);
+      // Every fact after the first (no_trade_left) needs the player that introduced it.
+      if (task.completion.kind === "card_fact" && task.completion.fact !== "no_trade_left") add(`student-tasks:card_fact:${String(task.completion.fact)}`, `${path}/lesson/tasks/${task.as}/completion/fact`);
     }
     for (const beat of event.step?.beats ?? []) {
       if (beat.pace === "continuous") add("beat-pace:continuous", `${path}/step/beats/${beat.id}/pace`);

@@ -196,6 +196,23 @@
 @media (prefers-reduced-motion: reduce) { .base-ten-unit { transition: none; } }
 .base-ten-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
 .base-ten-caption { margin-top: 6px; color: #5b6763; font-size: 13px; }
+/* The place-value chart (decision 0025): the given line, the chart drawn at its natural size (fills and sizes are
+   SVG attributes, so it reads without this sheet), the disks that pop in, and a refused tap's notice. */
+.place-value-given { margin: 0 0 8px; color: #1d2433; font: 700 20px/1.3 ui-sans-serif, system-ui, sans-serif; overflow-wrap: anywhere; }
+.place-value-chart { display: block; width: 100%; height: auto; overflow: visible; font-family: ui-sans-serif, system-ui, sans-serif; }
+.place-value-column, .place-value-part { vector-effect: non-scaling-stroke; }
+.place-value-disk { transform-box: fill-box; transform-origin: center; }
+.place-value-disk-new { animation: place-value-pop .28s ease-out both; }
+@keyframes place-value-pop { from { transform: scale(.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .place-value-disk-new { animation: none; } }
+.place-value-chart:not(.place-value-chart-live) .place-value-button { pointer-events: none; }
+.place-value-live { cursor: pointer; }
+.place-value-live:hover .place-value-disk-face, .place-value-button.place-value-live:hover rect { filter: brightness(1.08); }
+.place-value-live:focus { outline: none; }
+.place-value-live:focus-visible .place-value-disk-face, .place-value-button.place-value-live:focus-visible rect { stroke: #1d2433; stroke-width: 3; }
+.place-value-place.emphasis-focus .place-value-column { stroke: #e15d45; stroke-width: 3; }
+.place-value-place.emphasis-supporting .place-value-column { stroke: #d79a29; stroke-width: 2.5; stroke-dasharray: 6 4; }
+.place-value-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }
