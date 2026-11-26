@@ -2237,3 +2237,33 @@ test("a trade lesson's demonstration moves by columns finished; the practice sta
   const values = chartValues(session);
   assert.deepEqual([values.a, values.b, values.finished, ...[3, 2, 1, 0].map((place) => values[tradeVariable(place)])], [4_658_000, 1_573_000, 0, 0, 0, 0, 0]);
 });
+
+test("a trade task has no done: a host's done before the chart is complete does nothing, and the snapshot says so", () => {
+  const lesson = tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]] });
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(lesson, tradeHost("pt-done")), new MemoryStore(), "pt-done", { reducedMotion: true });
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(session.studentTasks[0]!.auto_submit, true);
+  assert.equal(session.studentTasks[1]!.auto_submit, undefined, "a typed answer keeps its own button");
+  const snapshot = session.submitStudentCard("practice-1");
+  assert.deepEqual([snapshot.status, snapshot.attempts.length], ["not_started", 0]);
+  assert.equal(session.studentOperations.filter((operation) => operation.kind === "card_submit").length, 0);
+});
+
+test("a practice chart restored complete, its submission lost, is submitted when it is laid again (review of #116)", () => {
+  const lesson = tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]] });
+  const events = normalizeAuthoringLesson(lesson, tradeHost("pt-lost"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pt-lost", { reducedMotion: true });
+  const card = "pt-lost:node:sum";
+  while (session.projection.status !== "completed") session.advance();
+  for (const [kind, place] of [["down", 0], ["trade", 0], ["down", 1], ["trade", 1], ["down", 2], ["trade", 2], ["down", 3]] as const) session.tapStudentCard(card, { kind, place: tradeAt(place) });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  // As if the submission failed after the completing tap was saved: no card_submit, the task still open.
+  for (const log of store.studentOperations.values()) log.operations = log.operations.filter((operation) => operation.kind !== "card_submit");
+  for (const log of store.studentTaskProgress.values()) for (const task of log.tasks) { task.status = "not_started"; task.attempts = []; }
+  const restored = new BrowserLessonSession(events, store, "pt-lost", { reducedMotion: true });
+  while (restored.projection.status !== "completed") restored.advance();
+  assert.equal(restored.studentTasks[0]!.status, "succeeded", "the complete chart closes its task");
+  assert.equal(restored.studentTasks[1]!.available, true);
+  assert.equal(restored.studentCardLive(card), false);
+});

@@ -42,6 +42,9 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   // Decision 0026: the place-value trade card is complete; its task ends on the tap that completes it, with no
   // "done" (the player submits it). An older player knows neither the fact nor a task without "done".
   "student-tasks:card_fact:complete": "0.17.0",
+  // Decision 0026: the player draws and plays the place-value trade card (its demonstration by columns finished,
+  // its taps); a lesson that only demonstrates it needs that player too.
+  "card:place_value_trade": "0.17.0",
   // Decision 0025: a card-level field bound by its bare name (the chart's number); an older player cannot place it.
   "value-bindings:card-field": "0.16.0",
   // Decision 0023 amendment 1: a row of blanks answered in one go; an older player has no such question.
@@ -307,6 +310,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
           const pluginFeature = PLUGIN_NODE_FEATURES[String(action.node.kind)];
           if (pluginFeature) add(pluginFeature, `${actionPath}/node/kind`);
           else add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
+          if (action.node.kind === PLACE_VALUE_TRADE_KIND) add("card:place_value_trade", `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);

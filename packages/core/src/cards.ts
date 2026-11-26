@@ -553,7 +553,12 @@ export function tapCardKind(kind: unknown): TapCardKind | undefined {
 export const TAP_CARD_KIND_NAMES: readonly string[] = Object.freeze(Object.keys(TAP_CARD_KINDS));
 
 /** Kinds joined for a message: "a", "a or b", "a, b or c". */
-export function tapCardKindList(conjunction: "or" | "and" = "or"): string {
-  const names = TAP_CARD_KIND_NAMES;
+export function tapCardKindList(conjunction: "or" | "and" = "or", names: readonly string[] = TAP_CARD_KIND_NAMES): string {
   return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} ${conjunction} ${names.at(-1)}`;
 }
+
+/** The kinds a lesson may tap (a demonstration tap): every tap card except those shown by a demonstration field. */
+export const LESSON_TAP_CARD_KIND_NAMES: readonly string[] = Object.freeze(TAP_CARD_KIND_NAMES.filter((name) => !TAP_CARD_KINDS[name]!.demonstration));
+
+/** The kinds a lesson may tap, joined for a message. */
+export const lessonTapCardKindList = (conjunction: "or" | "and" = "or"): string => tapCardKindList(conjunction, LESSON_TAP_CARD_KIND_NAMES);

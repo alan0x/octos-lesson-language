@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
+  applyCanonicalAction, assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
   setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
 } from "../../core/src/index.js";
 import { PLACE_VALUE_TRADE_CARD, tapCardKind } from "../../core/src/cards.js";
@@ -231,4 +231,34 @@ test("a card valid as written is checked as its variables start it: a starting p
     assert.match(error.path, /^\/steps\/0\/beats\/0\/actions\/0\/content/);
     return true;
   });
+});
+
+test("the demonstration's rules cannot be bypassed (review of #116): plain bindings, beats before the card, the pair", () => {
+  // Each field is bound to one variable by name.
+  const expression = add();
+  for (const binding of card(expression).content.bindings) if (binding.target === "finished") binding.expression = "finished + 0";
+  assert.throws(() => validateAuthoringLesson(expression), /A place_value_trade card binds each field to one lesson variable by name, not 'finished \+ 0'/);
+  const status = add();
+  for (const binding of card(status).content.bindings) if (binding.target === "ones.status") binding.expression = "col_ones * 1";
+  assert.throws(() => validateAuthoringLesson(status), /not 'col_ones \* 1'/);
+  // A beat before the card is written cannot move its fields either.
+  const before = (values: Record<string, number>) => { const lesson = add(); lesson.steps[0]!.beats.unshift(animate("pre", values)); return lesson; };
+  assert.throws(() => validateAuthoringLesson(before({ [tradeVariable(0)]: 1 })), /'col_ones' is a column's state on a place_value_trade card/);
+  assert.throws(() => validateAuthoringLesson(before({ finished: 1.5 })), /a whole number, not 1.5/);
+  // The pair is not animated: it would pass through pairs the card refuses (4,000 + 1,600 carries nowhere).
+  assert.throws(() => validateAuthoringLesson(add({ beats: [animate("pair", { a: tradeValue("4000"), b: tradeValue("1600") })] })),
+    /'a' is a number of a place_value_trade card's problem: the lesson does not animate it; a replay or a task's start sets the pair/);
+  assert.throws(() => validateAuthoringLesson(add({ beats: [animate("pair", { b: tradeValue("1573") })] })), /'b' is a number of a place_value_trade card's problem/);
+});
+
+test("a lesson that only demonstrates the card needs the player that draws it (0.17.0); a canonical card.tap on it is refused", () => {
+  const events = normalizeAuthoringLesson(tradeLesson({ operation: "add", a: "3486", b: "2739", beats: [animate("two", { finished: 2 })] }), tradeHost("only"));
+  const requirements = deriveExecutionRequirements(events);
+  assert.equal(requirements.minimumPlayerVersion, "0.17.0");
+  assert.ok(requirements.requiredCapabilities.includes("card:place_value_trade"));
+  assert.throws(() => assertExecutionSupported(events, "0.16.0"), /0.17.0/);
+  // A hand-written canonical tap on the card never reaches its rules.
+  const board = reduceCanonicalEvents(events);
+  assert.throws(() => applyCanonicalAction(board, { action_id: "x", op: "card.tap", target: { node_id: "only:node:sum" }, tap: { kind: "down", place: 3 } } as any),
+    /A place_value_trade card is not tapped by a lesson: it is shown by its 'finished'/);
 });

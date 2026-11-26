@@ -26,7 +26,8 @@ const lessons = {
   add: tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]] }),
   sub: tradeLesson({ operation: "subtract", a: "50003", b: "2476", practice: [["40002", "3585"]] }),
   zh: tradeLesson({ operation: "subtract", language: "zh-CN", a: "3000", b: "1468", practice: [["5000", "2367"]] }),
-  demoAdd: tradeLesson({ operation: "add", a: "3486", b: "2739", beats: [animate("two", "finished", 2)] }),
+  // The lesson's own demonstration: columns finished 2, then 4; then a practice on another pair.
+  demoAdd: tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]], beats: [animate("two", "finished", 2), animate("all", "finished", 4)] }),
   demoSub: tradeLesson({ operation: "subtract", a: "50003", b: "2476", beats: [animate("ones", "finished", 1)] }),
   emphasis: tradeLesson({ operation: "add", a: "3486", b: "2739",
     beats: [{ key: "tens", say: "Look at the tens.", actions: [{ do: "emphasize", target: "sum#tens", emphasis: "focus" }] }] }),
@@ -104,7 +105,17 @@ const read = (page) => page.evaluate(() => {
   return {
     given: card.querySelector(".place-value-trade-given")?.textContent ?? "", howto: card.querySelector(".place-value-trade-howto")?.textContent ?? "",
     notice: card.querySelector(".place-value-trade-notice")?.textContent ?? "", colnote: card.querySelector(".place-value-trade-colnote")?.textContent ?? "",
-    colnoteAt: card.querySelector(".place-value-trade-note")?.closest(".place-value-trade-overlay") ? card.querySelector(".place-value-trade-note").getAttribute("x") : null,
+    // The column whose answer cell holds the fact said at a column, if one is said there.
+    colnoteAt: (() => {
+      const note = card.querySelector(".place-value-trade-note");
+      if (!note) return null;
+      const box = note.getBoundingClientRect();
+      const cell = [...svg.querySelectorAll("rect.place-value-trade-cell-answer")].find((rect) => {
+        const r = rect.getBoundingClientRect();
+        return box.left >= r.left - 0.5 && box.right <= r.right + 0.5 && box.top >= r.top - 0.5 && box.bottom <= r.bottom + 0.5;
+      });
+      return cell ? cell.dataset.place : "outside";
+    })(),
     columns, live: svg.querySelectorAll(".place-value-trade-live").length, downs: [...svg.querySelectorAll(".place-value-trade-down")].filter((b) => b.getAttribute("visibility") !== "hidden").length,
     landing: svg.querySelectorAll(".place-value-trade-landing").length, arrows: svg.querySelectorAll(".place-value-trade-arrow").length,
     labels: [...svg.querySelectorAll(".place-value-trade-label")].map((label) => label.textContent), values, text: card.textContent,
@@ -143,12 +154,17 @@ try {
   // A trade before anything is below the line is refused, said at its column.
   await cell(page, 0, "answer");
   now = await read(page);
-  check(now.colnote === "Nothing below the line here yet." && now.notice === "", `a refused tap is said at its column: ${JSON.stringify([now.colnote, now.notice])}`);
+  check(now.colnote === "Nothing below the line here yet." && now.colnoteAt === "0" && now.notice === "", `a refused tap is said at its column, the ones: ${JSON.stringify([now.colnote, now.colnoteAt, now.notice])}`);
   await down(page, 0);
   now = await read(page);
   check(now.columns[0].answer === 11 && now.columns[0].ten === 1 && now.colnote === "", `↓ puts the ones together below the line, ten ringed: ${JSON.stringify(now.columns[0])}`);
   check(now.howto === "Tap the ringed ten to trade it for one 10." && now.landing === 1 && now.arrows === 1, `the line names the ringed ten; a landing spot and an arrow: ${JSON.stringify([now.howto, now.landing, now.arrows])}`);
-  check(await page.evaluate(() => document.getAnimations().length > 0), "a learner's ↓ animates the disks coming down");
+  // The ones' disks below the line fly in from the rows; a column the tap did not touch does not move.
+  const moving = await page.evaluate(() => {
+    const running = (selector) => [...document.querySelectorAll(selector)].filter((element) => element.getAnimations().some((animation) => animation.playState === "running")).length;
+    return { ones: running('.place-value-trade-place[data-place="0"] .place-value-trade-disk[data-row="answer"]'), thousands: running('.place-value-trade-place[data-place="3"] .place-value-trade-disk') };
+  });
+  check(moving.ones >= 10 && moving.thousands === 0, `a learner's ↓ animates the ones coming down, and only them: ${JSON.stringify(moving)}`);
   if (shots) { await page.waitForTimeout(1300); await page.screenshot({ path: `${shots}/add-ring-en.png` }); }
   await ring(page, 0);
   now = await read(page);
@@ -181,7 +197,7 @@ try {
   check(now.colnote === "Nothing below the line here yet." && now.columns[1].top === 0 && now.columns[2].top === 0, `an empty answer cell says so and breaks nothing: ${JSON.stringify([now.colnote, now.columns])}`);
   await down(page, 0);
   now = await read(page);
-  check(now.colnote === "This column has 2; taking away 5 needs more.", `a short column's fact, with its counts, at its column: ${now.colnote}`);
+  check(now.colnote === "This column has 2; taking away 5 needs more." && now.colnoteAt === "0", `a short column's fact, with its counts, at its column: ${JSON.stringify([now.colnote, now.colnoteAt])}`);
   check(now.columns[4].canBreak === 4 && now.howto === "Tap a marked 10,000 to break it into ten 1,000s.", `the ten thousands are marked; the line names them: ${JSON.stringify([now.columns[4], now.howto])}`);
   if (shots) { await page.waitForTimeout(1300); await page.screenshot({ path: `${shots}/sub-short-en.png` }); }
   await marked(page);
@@ -207,54 +223,44 @@ try {
   check(now.label === "在数位表上加减" && now.given === "5000 − 2367" && now.howto === "点 ↓ 拿走。不够时，把左边某一位的一个圆片拆成十个。", `the card speaks Chinese: ${JSON.stringify([now.label, now.given, now.howto])}`);
   await down(page, 0);
   now = await read(page);
-  check(now.colnote === "这一位只有 0 个，拿走 7 个不够。" && now.howto === "点一个标出的一千，把它拆成十个一百。", `the short column in Chinese: ${JSON.stringify([now.colnote, now.howto])}`);
+  check(now.colnote === "这一位只有 0 个，拿走 7 个不够。" && now.colnoteAt === "0" && now.howto === "点一个标出的一千，把它拆成十个一百。", `the short column in Chinese: ${JSON.stringify([now.colnote, now.colnoteAt, now.howto])}`);
   if (shots) { await page.waitForTimeout(1300); await page.screenshot({ path: `${shots}/sub-short-zh.png` }); }
 
-  // The program's demonstration: columns finished 0 -> 1 -> 2, each column's actions one after another.
-  const demo = await page.evaluate(async ({ events }) => {
+  // The program's demonstration, played by the lesson itself (its own animate of columns finished, 2 then 4, with
+  // motion): each column's bring-down and trade one after another, sampled as the card draws them; then the move
+  // to a practice start on another pair, fresh.
+  const playDemo = (name, stopAt, sample) => page.evaluate(async ({ events, name, stopAt, sample }) => {
     document.querySelector("#board").replaceChildren();
-    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "demoAdd", { reducedMotion: true });
+    localStorage.clear();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), name, { reducedMotion: false });
     const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
-    const find = () => Object.values(session.projection.board?.nodes ?? {}).find((candidate) => candidate.kind === "place_value_trade");
-    for (let step = 0; step < 20 && !find(); step += 1) session.advance();
-    mounted.view.render(session.projection.board);
-    const board = structuredClone(session.projection.board);
-    const node = Object.values(board.nodes).find((candidate) => candidate.kind === "place_value_trade");
-    const count = (place, row) => document.querySelectorAll(`.place-value-trade-place[data-place="${place}"] .place-value-trade-disk[data-row="${row}"]`).length;
     const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+    const node = () => Object.values(session.projection.board?.nodes ?? {}).find((candidate) => candidate.kind === "place_value_trade");
+    const read = () => [...document.querySelectorAll(".place-value-trade-place")].sort((x, y) => Number(y.dataset.place) - Number(x.dataset.place))
+      .map((group) => group.querySelectorAll(`.place-value-trade-disk[data-row="${sample}"]`).length).join(",");
     const seen = [];
-    for (const finished of [0.5, 1]) { node.content.finished = finished; mounted.view.render(structuredClone(board)); }
-    seen.push(["ones down", count(0, "answer"), count(1, "carry")]);
-    await wait(1400);
-    seen.push(["ones traded", count(0, "answer"), count(1, "carry")]);
-    node.content.finished = 2;
-    mounted.view.render(structuredClone(board));
-    seen.push(["tens down", count(1, "answer"), count(1, "carry"), count(2, "carry")]);
-    await wait(1500);
-    seen.push(["tens traded", count(1, "answer"), count(2, "carry")]);
-    return seen;
-  }, { events: events.demoAdd });
-  check(JSON.stringify(demo) === '[["ones down",15,0],["ones traded",5,1],["tens down",12,0,0],["tens traded",2,1]]',
-    `columns finished plays each bring-down, then its trade: ${JSON.stringify(demo)}`);
-  const chain = await page.evaluate(async ({ events }) => {
-    document.querySelector("#board").replaceChildren();
-    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "demoSub", { reducedMotion: true });
-    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
-    const find = () => Object.values(session.projection.board?.nodes ?? {}).find((candidate) => candidate.kind === "place_value_trade");
-    for (let step = 0; step < 20 && !find(); step += 1) session.advance();
-    mounted.view.render(session.projection.board);
-    const board = structuredClone(session.projection.board);
-    const node = Object.values(board.nodes).find((candidate) => candidate.kind === "place_value_trade");
-    const tops = () => [4, 3, 2, 1, 0].map((place) => document.querySelectorAll(`.place-value-trade-place[data-place="${place}"] .place-value-trade-disk[data-row="top"]`).length).join(" ");
-    const wait = (ms) => new Promise((done) => setTimeout(done, ms));
-    node.content.finished = 1;
-    mounted.view.render(structuredClone(board));
-    const seen = [tops()];
-    for (let i = 0; i < 5; i += 1) { await wait(870); seen.push(tops()); }
-    return seen;
-  }, { events: events.demoSub });
-  check(JSON.stringify(chain) === '["4 10 0 0 3","4 9 10 0 3","4 9 9 10 3","4 9 9 9 13","4 9 9 9 0","4 9 9 9 0"]',
-    `one column finished on 50,003 − 2,476 breaks across the zeros, one disk at a time, then takes away: ${JSON.stringify(chain)}`);
+    const note = () => { const now = read(); if (seen.at(-1) !== now) seen.push(now); };
+    // The lesson plays until its variable reaches the value, the narration standing still while the card works.
+    for (let i = 0; i < 400 && !(Number(node()?.content.finished) >= stopAt); i += 1) { session.advance(); mounted.view.render(session.projection.board); note(); await wait(20); }
+    for (let t = 0; t < 70; t += 1) { await wait(150); mounted.view.render(session.projection.board); note(); }
+    // The rest of the lesson, then its practice start.
+    for (let i = 0; i < 400 && session.projection.status !== "completed"; i += 1) { session.advance(); mounted.view.render(session.projection.board); await wait(20); }
+    for (let t = 0; t < 30; t += 1) { await wait(100); mounted.view.render(session.projection.board); }
+    const values = Object.fromEntries(Object.entries(session.projection.board.variables).map(([k, v]) => [k, v.value]));
+    const rows = (row) => [...document.querySelectorAll(".place-value-trade-place")].sort((x, y) => Number(y.dataset.place) - Number(x.dataset.place))
+      .map((group) => group.querySelectorAll(`.place-value-trade-disk[data-row="${row}"]`).length).join(",");
+    return { seen, after: { values, answers: rows("answer"), tops: rows("top"), given: document.querySelector(".place-value-trade-given")?.textContent, tasks: session.studentTasks.map((task) => task.available) } };
+  }, { events: events[name], name, stopAt, sample });
+  const inOrder = (seen, expected) => { let at = 0; for (const state of seen) if (state === expected[at]) at += 1; return at === expected.length; };
+  const demo = await playDemo("demoAdd", 4, "answer");
+  check(inOrder(demo.seen, ["0,0,0,15", "0,0,0,5", "0,0,12,5", "0,0,2,5", "0,12,2,5", "0,2,2,5", "6,2,2,5"]) && demo.seen.at(-1) === "6,2,2,5",
+    `the lesson's columns finished 2 then 4 plays each bring-down, then its trade, column by column: ${JSON.stringify(demo.seen)}`);
+  check(demo.after.given === "4,658 + 1,573" && demo.after.answers === "0,0,0,0" && demo.after.tops === "4,6,5,8" && demo.after.values.finished === 0
+    && [3, 2, 1, 0].every((place) => demo.after.values[tradeVariable(place)] === 0) && demo.after.tasks[0] === true,
+    `from the demonstration to a fresh practice on its own pair: ${JSON.stringify(demo.after)}`);
+  const chain = await playDemo("demoSub", 1, "top");
+  check(inOrder(chain.seen, ["4,10,0,0,3", "4,9,10,0,3", "4,9,9,10,3", "4,9,9,9,13", "4,9,9,9,0"]),
+    `one column finished on 50,003 − 2,476 breaks across the zeros, one disk at a time, then takes away: ${JSON.stringify(chain.seen)}`);
   if (shots) await page.screenshot({ path: `${shots}/demo-chain-en.png` });
 
   // Emphasis on one column marks that column only.
@@ -326,7 +332,8 @@ try {
     await page.waitForTimeout(500);
     await down(page, -2);
     const fit = await noteFits();
-    check(fit?.fits === true, `${name}: the short column's fact fits its six-column cell: ${JSON.stringify(fit)}`);
+    const at = (await read(page)).colnoteAt;
+    check(fit?.fits === true && at === "-2", `${name}: the short column's fact fits its six-column cell, the hundredths: ${JSON.stringify([fit, at])}`);
     if (shots) await page.screenshot({ path: `${shots}/widest-note-${name}.png` });
   }
   // The narrowest cards keep the problem, the line (on two lines if it must), the chart and the notice inside the card.

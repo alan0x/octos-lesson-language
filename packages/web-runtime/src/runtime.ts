@@ -439,6 +439,8 @@ export class BrowserLessonSession {
         narration.delivery,
       );
     }
+    // A practice card restored already complete (its completing tap saved, its submission lost) closes its task.
+    this.settleJudgedCardTask();
   }
 
   get playbackEpoch(): number { return this.phaseState.epoch; }
@@ -1419,6 +1421,38 @@ export class BrowserLessonSession {
     return true;
   }
 
+  /**
+   * Whether a card task may be submitted now: always, unless its fact is judged on each tap and the card does not
+   * hold it (then there is no "done"; decision 0026).
+   */
+  private judgedCardTaskHolds(definition: AuthoringStudentTask): boolean {
+    if (definition.completion.kind !== "card_fact") return true;
+    const completion = (definition as AuthoringCardStudentTask).completion;
+    const node = this.player.snapshot.board?.nodes?.[completion.node];
+    const card = tapCardKind(node?.kind);
+    const fact = card && typeof completion.fact === "string" && Object.hasOwn(card.facts, completion.fact) ? card.facts[completion.fact] : undefined;
+    if (!fact?.judgedOnTap) return true;
+    return !!node && !!card && fact.read(completion, card.state(node.content)).succeeded;
+  }
+
+  /**
+   * A practice card laid or restored already holding a fact judged on each tap (its completing tap was saved but
+   * its submission was not) is submitted now, so its task never stays open with nothing left to tap.
+   */
+  private settleJudgedCardTask(): void {
+    if (this.settlingCardTask || this.failureState || !this.studentTaskWindowOpen || this.phaseState.transition) return;
+    const active = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find((task) => task.as === active?.task_id);
+    if (definition?.completion.kind !== "card_fact" || !this.studentTasks.find((task) => task.task_id === definition.as)?.available) return;
+    this.settlingCardTask = true;
+    try {
+      this.submitJudgedCardTask(definition.completion.node, "unknown");
+    } finally {
+      this.settlingCardTask = false;
+    }
+  }
+  private settlingCardTask = false;
+
   /** Whether the open task lets the learner move this card count's slider (decision 0023 amendment 4). */
   private cardSliderLive(alias: string): boolean {
     if (this.failureState || !this.studentTaskWindowOpen || !cardSliderTarget(this.player.snapshot.board, alias)) return false;
@@ -1563,6 +1597,9 @@ export class BrowserLessonSession {
       throw new Error(`Student task '${taskId}' is not currently available`);
     }
     if (progress.status === "succeeded") return this.studentTasks.find((task) => task.task_id === taskId)!;
+    // A fact the card judges on each tap has no "done" (decision 0026): a host's "done" on a card that does not
+    // hold it yet changes nothing and is no attempt; the tap that completes the card submits it.
+    if (!this.judgedCardTaskHolds(definition)) return this.studentTasks.find((task) => task.task_id === taskId)!;
     const sequence = this.nextStudentOperationSequence;
     this.nextStudentOperationSequence += 1;
     const pile = this.cardPile(definition.completion.node);
@@ -1719,6 +1756,7 @@ export class BrowserLessonSession {
     } catch (error) {
       this.reportFailure("animation", error);
     }
+    this.settleJudgedCardTask();
   }
 
   /**
