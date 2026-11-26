@@ -1442,3 +1442,19 @@ test("a question card wider than its formula opens below a card beside the formu
     assert.ok(answer.y >= plot.y + plot.height, `${width}: the card opens below the plot (${answer.y} vs ${plot.y + plot.height})`);
   }
 });
+
+test("a place-value chart is sized from its plan, and on a narrow screen from its wrapped rows (decision 0025)", () => {
+  const places = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3].map((place) => ({ id: `p${place + 3}`, place, count: 0 }));
+  const content = { mode: "build", given: "name", top_place: 6, decimals: true, target: 4_050_000, places };
+  const node = { id: "chart", kind: "place_value_chart", content };
+  const fit = 375 - 2 * 24 - 2 * 19;
+  const desktop = measureSemanticNode(node);
+  const phone = measureSemanticNode(node, { cardFitWidth: fit });
+  // One row of ten columns at its natural size, plus the card's frame; on a phone three rows, under half as wide.
+  assert.equal(desktop.width, 830 + 38);
+  assert.ok(phone.width < desktop.width / 2, `phone width ${phone.width}`);
+  assert.ok(phone.height > 2 * desktop.height, `phone height ${phone.height}`);
+  // The board's layout passes the screen's width to every measure it makes.
+  const board = emptyBoard({ chart: card("chart", "place_value_chart", { content }) });
+  assert.equal(computeBoardLayout(board, {}, { cardFitWidth: fit }).nodes.chart!.width, phone.width);
+});

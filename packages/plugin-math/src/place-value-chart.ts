@@ -56,6 +56,16 @@ export const PLACE_VALUE_PLACE_ALIASES: Readonly<Record<number, string>> = {
   [-1]: "tenths", [-2]: "hundredths", [-3]: "thousandths",
 };
 
+/**
+ * The places a tap names, by index: a canonical `card.tap`'s and a logged tap's `place` is an index here, the
+ * place plus three (thousandths 0, ones 3, millions 9). The index does not depend on the card's columns, so a
+ * log means the same on every chart. An authoring tap's `at` is the alias.
+ */
+export const PLACE_VALUE_TAP_PLACES: readonly string[] = Object.freeze(Array.from({ length: PLACE_VALUE_MAX_PLACE - PLACE_VALUE_MIN_PLACE + 1 }, (_, i) => PLACE_VALUE_PLACE_ALIASES[i + PLACE_VALUE_MIN_PLACE]!));
+/** A place (6 to -3) as a tap's index, and back. */
+export const placeValueTapIndex = (place: number): number => place - PLACE_VALUE_MIN_PLACE;
+export const placeValueTapPlace = (index: number): number => index + PLACE_VALUE_MIN_PLACE;
+
 const SHORT: Record<PlaceValueLanguage, "en" | "zh"> = { "en-US": "en", "zh-CN": "zh" };
 const short = (language: PlaceValueLanguage | undefined): "en" | "zh" => SHORT[language ?? "en-US"] ?? "en";
 
@@ -408,6 +418,10 @@ export function validatePlaceValueChartContent(raw: unknown, path: string, fail:
   if (placeValueTaskFault(target, given as PlaceValueGiven) === "one_place") {
     fail(`${path}/target`, `${placeValueNumeral(target)} has one non-zero place: given as ${given === "numeral" ? "a numeral to pull apart" : "an expanded form"}, it shows its own answer`);
   }
+  // A chart that already holds the number leaves nothing to build (review of #111).
+  if (mode === "build" && (content.places as Array<{ place: number; count: number }>).reduce((sum, item) => sum + item.count * 10 ** (item.place + 3), 0) === target) {
+    fail(`${path}/places`, `The chart already holds ${placeValueNumeral(target)}: a build task starts before the number is built`);
+  }
 }
 
 // ---------------------------------------------------------------- state, taps and facts
@@ -590,6 +604,8 @@ export interface PlaceValueColumnPlan {
   place: number;
   x: number;
   width: number;
+  /** The baseline of the head's first line (each band has its own). */
+  headY: number;
   /** The column's name, in one or two lines. */
   head: string[];
   box: PlaceValueBox;
@@ -606,13 +622,33 @@ export interface PlaceValueChartPlan {
   /** A disk's diameter. */
   disk: number;
   fontSize: number;
-  /** The baseline of each head's first line. */
+  /** The baseline of each head's first line in the first band. */
   headY: number;
+  /**
+   * The rows the columns are laid in, each a run of whole periods (the decimals are one): one row, or on a
+   * narrow screen several, highest places first. Each lists its columns' places.
+   */
+  bands: number[][];
   periods: Array<{ name: string; x: number; width: number; y: number }>;
   columns: PlaceValueColumnPlan[];
-  /** The decimal point, between the ones and the tenths. */
+  /** The decimal point, between the ones and the tenths (at the start of the decimals' band when wrapped). */
   point?: { x: number; y: number };
 }
+
+export interface PlaceValueChartPlanOptions {
+  /**
+   * The width in screen pixels the card can take at most (a phone's screen less the board's margins). A chart
+   * whose disks would draw smaller than `PLACE_VALUE_FIT_DISK_PX` across that width in one row wraps its
+   * periods into bands instead (decision 0025: the real card needs a phone layout). Absent: one row.
+   */
+  fitWidth?: number;
+}
+
+/**
+ * The size a disk keeps on a narrow screen, in pixels: 24 is the smallest a learner taps reliably, with room
+ * for the board's own margins around the card.
+ */
+export const PLACE_VALUE_FIT_DISK_PX = 25;
 
 /** One fill per place, so neighbouring places differ (the sketch's palette). */
 export const PLACE_VALUE_FILLS: Readonly<Record<number, string>> = {
@@ -630,61 +666,101 @@ const EDGE = 10;
 const BAND = 20;
 const HEAD = 30;
 const BUTTON = 30;
+/** Between two bands of a wrapped chart. */
+const BAND_GAP = 14;
 /** Nine disks two to a row. */
 const ROWS = Math.ceil(PLACE_VALUE_MAX_PER_PLACE / 2);
 const BOX = 2 * PAD + ROWS * DISK + (ROWS - 1) * GAP;
+
+/** A run of columns' width: their columns, the gaps between them, and the point before tenths. */
+const runWidth = (places: readonly number[]): number =>
+  places.length * COLUMN + (places.length - 1) * COLUMN_GAP + (places.includes(-1) ? POINT : 0);
+
+/**
+ * The bands of a chart's columns: one row, unless `fitWidth` is given and one row would draw its disks under
+ * `PLACE_VALUE_FIT_DISK_PX` across it. Then whole periods (the decimals are one) are packed in order into rows
+ * that each fit, so a period is never split; a period too wide alone keeps a row of its own.
+ */
+export function placeValueChartBands(columns: readonly number[], language: PlaceValueLanguage = "en-US", { fitWidth }: PlaceValueChartPlanOptions = {}): number[][] {
+  const fits = (places: readonly number[]) => fitWidth === undefined || DISK * fitWidth / (runWidth(places) + 2 * EDGE) >= PLACE_VALUE_FIT_DISK_PX;
+  if (fits(columns)) return [[...columns]];
+  const periods: number[][] = [];
+  for (const place of columns) {
+    const last = periods.at(-1);
+    if (last && placeValuePeriodName(last[0]!, language) === placeValuePeriodName(place, language) && (last[0]! < 0) === (place < 0)) last.push(place);
+    else periods.push([place]);
+  }
+  const bands: number[][] = [];
+  for (const period of periods) {
+    const last = bands.at(-1);
+    if (last && fits([...last, ...period])) last.push(...period);
+    else bands.push([...period]);
+  }
+  return bands;
+}
 
 /**
  * The chart's layout, from the sketch: a band naming each whole period, a head per column, a column per
  * place with its disks two to a row, the decimal point between the ones and the tenths, a row of buttons,
  * and (pull apart) each place's part below. Sized for nine in every place, so the card keeps one size
- * whatever the learner does; only the columns (fixed content) change its width.
+ * whatever the learner does; only the columns (fixed content) and the screen's width change it. On a narrow
+ * screen (`fitWidth`) the periods wrap into rows, each drawn the same way, so disks and buttons keep their size.
  */
-export function planPlaceValueChart(raw: unknown): PlaceValueChartPlan {
+export function planPlaceValueChart(raw: unknown, options: PlaceValueChartPlanOptions = {}): PlaceValueChartPlan {
   const content = (raw ?? {}) as Partial<PlaceValueChartContent>;
   const language = placeValueLanguage(content);
   const words = PLACE_VALUE_WORDS[language];
   const state = placeValueChartState(content);
   const fontSize = 12;
-  const bandY = EDGE;
-  const headTop = bandY + BAND + 4;
-  const boxY = headTop + HEAD + 4;
-  const buttonY = boxY + BOX + 6;
-  const partY = buttonY + BUTTON + 8;
+  const bands = placeValueChartBands(state.columns, language, options);
+  // Within a band, top to bottom: the period names, the heads, the disks, the buttons, then the parts.
+  const bandHeight = BAND + 4 + HEAD + 4 + BOX + 6 + BUTTON + (state.mode === "apart" ? 8 + BOX : 0);
   const columns: PlaceValueColumnPlan[] = [];
-  let x = EDGE;
-  let point: { x: number; y: number } | undefined;
-  for (const place of state.columns) {
-    if (place === -1) {
-      point = { x: x + POINT / 2 - COLUMN_GAP / 2, y: boxY + BOX / 2 };
-      x += POINT;
-    }
-    const name = placeValueColumnName(place, language);
-    columns.push({
-      place,
-      x,
-      width: COLUMN,
-      head: language === "en-US" && name.includes(" ") ? name.split(" ") : [name],
-      box: { x, y: boxY, width: COLUMN, height: BOX },
-      button: { x, y: buttonY, width: COLUMN, height: BUTTON, text: state.mode === "apart" ? words.takeOut : words.add },
-      ...(state.mode === "apart" ? { part: { x, y: partY, width: COLUMN, height: BOX } } : {}),
-      diskLabel: placeValueDiskLabel(place, language),
-      fill: PLACE_VALUE_FILLS[place]!,
-    });
-    x += COLUMN + COLUMN_GAP;
-  }
-  const width = x - COLUMN_GAP + EDGE;
   const periods: PlaceValueChartPlan["periods"] = [];
-  for (let i = 0; i < columns.length;) {
-    const name = placeValuePeriodName(columns[i]!.place, language);
-    let j = i;
-    while (j + 1 < columns.length && placeValuePeriodName(columns[j + 1]!.place, language) === name) j += 1;
-    periods.push({ name, x: columns[i]!.x, width: columns[j]!.x + COLUMN - columns[i]!.x, y: bandY });
-    i = j + 1;
-  }
-  const height = (state.mode === "apart" ? partY + BOX : buttonY + BUTTON) + EDGE;
-  return { width, height, disk: DISK, fontSize, headY: headTop + fontSize, periods, columns, ...(point ? { point } : {}) };
+  let point: { x: number; y: number } | undefined;
+  let width = 0;
+  bands.forEach((band, b) => {
+    const bandY = EDGE + b * (bandHeight + BAND_GAP);
+    const headTop = bandY + BAND + 4;
+    const boxY = headTop + HEAD + 4;
+    const buttonY = boxY + BOX + 6;
+    const partY = buttonY + BUTTON + 8;
+    let x = EDGE;
+    const first = columns.length;
+    for (const place of band) {
+      if (place === -1) {
+        point = { x: x + POINT / 2 - (x === EDGE ? 0 : COLUMN_GAP / 2), y: boxY + BOX / 2 };
+        x += POINT;
+      }
+      const name = placeValueColumnName(place, language);
+      columns.push({
+        place,
+        x,
+        width: COLUMN,
+        headY: headTop + fontSize,
+        head: language === "en-US" && name.includes(" ") ? name.split(" ") : [name],
+        box: { x, y: boxY, width: COLUMN, height: BOX },
+        button: { x, y: buttonY, width: COLUMN, height: BUTTON, text: state.mode === "apart" ? words.takeOut : words.add },
+        ...(state.mode === "apart" ? { part: { x, y: partY, width: COLUMN, height: BOX } } : {}),
+        diskLabel: placeValueDiskLabel(place, language),
+        fill: PLACE_VALUE_FILLS[place]!,
+      });
+      x += COLUMN + COLUMN_GAP;
+    }
+    width = Math.max(width, x - COLUMN_GAP + EDGE);
+    const inBand = columns.slice(first);
+    for (let i = 0; i < inBand.length;) {
+      const name = placeValuePeriodName(inBand[i]!.place, language);
+      let j = i;
+      while (j + 1 < inBand.length && placeValuePeriodName(inBand[j + 1]!.place, language) === name) j += 1;
+      periods.push({ name, x: inBand[i]!.x, width: inBand[j]!.x + COLUMN - inBand[i]!.x, y: bandY });
+      i = j + 1;
+    }
+  });
+  const height = EDGE + bands.length * bandHeight + (bands.length - 1) * BAND_GAP + EDGE;
+  return { width, height, disk: DISK, fontSize, headY: columns[0]?.headY ?? EDGE + BAND + 4 + fontSize, bands, periods, columns, ...(point ? { point } : {}) };
 }
+
 
 /** Where the i-th disk of a column (or of its part, `part: true`) lies: its centre, two to a row. */
 export function placeValueDiskAt(plan: PlaceValueChartPlan, place: number, index: number, part = false): { x: number; y: number } {

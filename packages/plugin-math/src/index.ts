@@ -331,6 +331,7 @@ import { buildCubeWithSection, buildFunctionSurface, buildImplicitSurface } from
 import { buildNumberLine } from "./number-line-builder.js";
 import { buildFractionModel } from "./fraction-model-builder.js";
 import { buildBaseTenTrade } from "./base-ten-trade-builder.js";
+import { buildPlaceValueChart } from "./place-value-chart-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
 export * from "./number-line-form.js";
@@ -350,7 +351,7 @@ export { buildBaseTenTrade, type BuiltBaseTenTrade, type BaseTenTradeInput } fro
 export { renderBaseTenTrade, type BaseTenTradeViewContext } from "./base-ten-trade-view.js";
 // How to work a tapped card, by its kind.
 export { cardHowTo } from "./card-how-to.js";
-// The place-value chart (decision 0025). Not yet a recipe in MATH_BUILDERS: it is wired in separately.
+// The place-value chart (decision 0025).
 export * from "./place-value-chart.js";
 export { buildPlaceValueChart, type BuiltPlaceValueChart, type PlaceValueChartInput } from "./place-value-chart-builder.js";
 export { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewContext } from "./place-value-chart-view.js";
@@ -360,6 +361,7 @@ export const MATH_BUILDERS = {
   number_line: buildNumberLine,
   fraction_model: buildFractionModel,
   base_ten_trade: buildBaseTenTrade,
+  place_value_chart: buildPlaceValueChart,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

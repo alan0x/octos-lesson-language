@@ -240,7 +240,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 }]
 ```
 
-- `node` 必须是本课写出的 `base_ten_trade` 卡片；`allowed_operations` 是点这张卡片（`card_tap`）和说做完了（`card_submit`），还可以加上这张卡片数位上的滑块（`{"kind": "variable_change", "variable": "ones", "controls": ["slider"]}`，见下）；
+- `node` 必须是本课写出的 `base_ten_trade` 或 `place_value_chart` 卡片；`allowed_operations` 是点这张卡片（`card_tap`）和说做完了（`card_submit`），还可以加上这张卡片数位上的滑块（`{"kind": "variable_change", "variable": "ones", "controls": ["slider"]}`，见下）；
 - 点按改变哪些数由卡片的规则决定（托盘只装十个，正好十个才换成一个高一位的，拆开放进空托盘）；一次点按可以同时改几个变量，作为一次 `card_tap` 操作记录。卡片上点按会改的每个数（每一位的个数、每个托盘）都必须绑定到它自己的课内变量，变量从 0 到卡片能画的最大值；
 - 只在这个任务开放时卡片才能点；讲解播放时、其他任务开放时都不能点，被拒绝的点按不记录；
 - 点按不算尝试；`card_submit` 才算一次尝试，卡片的事实成立就完成。`no_trade_left`：最高一位以下每一位都少于十（托盘里剩几个不满十的不影响；托盘满十时这一位已经是十个以上）；
@@ -248,6 +248,31 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - 卡片任务必须用 `start` 给出学生的练习堆，`start.variables` 包含所有点按会改的变量；课开始的那堆和练习堆都必须是合法的起始堆；
 - 点按会改的变量不能有自己的控件（可拖动的点等），只有数位上的滑块例外（下一段）；绑定了变量的卡片不能被 `revise`（修订不带绑定，卡片会冻住）；
 - 回到课里重看后，课再讲完时重新摆上练习堆。
+
+数位表（`place_value_chart`，数学插件 0.8.0，特性 `plugin:math/place-value-chart@1`，播放器 0.16.0，决定 0025）上的卡片任务：
+
+```json
+"tasks": [{
+  "as": "build",
+  "start": {"kind": "practice", "variables": ["number", "count_thousands", "count_hundreds", "count_tens", "count_ones"],
+            "values": {"number": 4050000, "count_thousands": 0, "count_hundreds": 0, "count_tens": 0, "count_ones": 0}},
+  "prompt": "Build the number on the chart. Then tap I'm done.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "card_tap", "node": "chart"}, {"kind": "card_submit"}],
+  "completion": {"kind": "card_fact", "node": "chart", "fact": "built"},
+  "hints": ["Read the number again, one place at a time."]
+}]
+```
+
+- 点按：摆数（`mode: "build"`）时 `add`（这一位放一个圆片，第十个被拒绝）、`remove`（拿走一个）；拆数（`mode: "apart"`）时 `take_out`（这一位的圆片都移到它下面的部分，没有圆片的一位被拒绝）。每一位的 `count` 和（拆数时）`pulled` 都绑定到自己的变量，变量从 0 到 9；
+- 事实（能力 `student-tasks:card_fact:built`、`student-tasks:card_fact:pulled_all`，播放器 0.16.0）：`built`，卡片上的圆片正好是这个数（只用于摆数）；`pulled_all`，每一位都拿出来了（只用于拆数）。都不带 `at`、`value`；
+- 练习从它自己的数开始：卡片的数 `target` 绑定到一个变量，写成没有点的目标 `{"target": "target", "expression": "number"}`（卡片级字段，能力 `value-bindings:card-field`，播放器 0.16.0；只有 `place_value_chart` 有，其他卡片的无点目标被拒绝）。`start` 设这个数和每个 `count`、`pulled`；这个数不能是课里的数；
+- 起始的数位表：列能放下这个数；摆数时卡片是空的，拆数时这个数完整在卡片上、什么都没拿出来；按读法以外的给法会显示答案的数（展开式或拆数时只有一位不是零，「1 × 1,000」）被拒绝；已经摆好的卡片被拒绝。卡片照它的变量开始时的值检查（不只是写出来的数），每个练习的起点也检查；
+- 点按的 `place` 是这一位在 `PLACE_VALUE_TAP_PLACES` 里的序号（位加三：千分位 0，个位 3，百万位 9），著作稿的 `at` 写这一位的名字（`ones`、`tenths`、`hundred-thousands`）；
+- 做完以后，后面没有 `start` 的题（例如拆数之后的一行几个空）看到的是孩子自己摆出或拆开的那张表，和它的数；
+- 练习开始时数立刻换成练习的数，圆片照常渐变，不会显示中间的数；
+- 手机上：画板给出卡片在屏幕上最多能占的宽度（`BoardLayoutOptions.cardFitWidth`），一行放不下、圆片会小于 25 像素时，数位表按级分成几行（小数部分一行，前面是小数点），每一级不拆开。卡片宽度按缩放 1 算：宿主让镜头保持在 0.9 左右（卡片比屏幕高时上下移动画板）时，375 像素宽的屏幕上圆片和按钮约 27 像素；镜头把整张卡片缩进屏幕高度时会更小；
+- 卡片自己的操作说明：`cardHowTo("place_value_chart", content)`。
 
 数位上的滑块（数学插件 0.7.0，特性 `plugin:math/base-ten-trade-slider@1`，决定 0023 修订 4）：
 
@@ -684,13 +709,13 @@ v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表�
 
 暂停 checkpoint 额外保存动作 ID、起点、终点和完成比例。恢复后从该比例继续。开启降低动态效果时不生成中间帧，但必须应用 `to`，因此最终语义状态与 Headless Reducer 一致。
 
-### 9.9a `card.tap`（0.14，决定 0023）
+### 9.9a `card.tap`（0.14，决定 0023；数位表 0.16，决定 0025）
 
 ```json
 {"action_id": "…", "op": "card.tap", "target": {"node_id": "…"}, "tap": {"kind": "make", "place": 0}}
 ```
 
-课程像学生一样点一张 `base_ten_trade` 卡片（演示）。`kind` 为 `gather`、`ungather`、`make` 或 `break`，`place` 是位（0 = 一）。Reducer 用卡片自己的规则算出这一下改变的所有数，一次性写入它们绑定的变量（不会出现只改了一半的中间状态）。著作稿写成 `{"do": "tap", "target": "mat", "tap": "make", "at": "ones"}`；校验器按播放顺序（重放起点，再按 before、during、after 三段）推算变量的值，卡片在那时会拒绝的点按在播放前就被拒绝，并说明卡片的理由。Web Runtime 把演示的点按画成和学生点按一样的动画。
+课程像学生一样点一张 `base_ten_trade` 卡片（演示）。`kind` 为 `gather`、`ungather`、`make` 或 `break`，`place` 是位（0 = 一）。Reducer 用卡片自己的规则算出这一下改变的所有数，一次性写入它们绑定的变量（不会出现只改了一半的中间状态）。著作稿写成 `{"do": "tap", "target": "mat", "tap": "make", "at": "ones"}`；校验器按播放顺序（重放起点，再按 before、during、after 三段）推算变量的值，卡片在那时会拒绝的点按在播放前就被拒绝，并说明卡片的理由。Web Runtime 把演示的点按画成和学生点按一样的动画。数位表（`place_value_chart`）的 `kind` 为 `add`、`remove` 或 `take_out`，`place` 是这一位的序号（位加三，3 = 个位）。
 
 ### 9.10 `board.hide`（0.6，仅学生讲课课程）
 

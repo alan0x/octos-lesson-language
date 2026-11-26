@@ -338,6 +338,51 @@ test("the plan: nine disks in every column and every part, none overlapping, ins
   assert.deepEqual(Object.keys(PLACE_VALUE_WORDS["en-US"].howTo), Object.keys(PLACE_VALUE_WORDS["zh-CN"].howTo));
 });
 
+test("a chart to build that already holds its number is refused; a tap names a place by its index (review of #111)", () => {
+  assert.throws(() => valid(chart("build", "4050", { counts: { 3: 4, 1: 5 } })), /already holds 4,050/);
+  assert.doesNotThrow(() => valid(chart("build", "4050", { counts: { 3: 4 } })));
+  // A bound count passes through the built value while it animates: only a starting chart is refused.
+  assert.doesNotThrow(() => valid(chart("build", "4050", { counts: { 3: 4, 1: 5 } }), { boundValues: true }));
+  assert.deepEqual(m.PLACE_VALUE_TAP_PLACES, ["thousandths", "hundredths", "tenths", "ones", "tens", "hundreds", "thousands", "ten-thousands", "hundred-thousands", "millions"]);
+  for (let place = -3; place <= 6; place += 1) {
+    assert.equal(m.placeValueTapPlace(m.placeValueTapIndex(place)), place);
+    assert.equal(m.PLACE_VALUE_TAP_PLACES[m.placeValueTapIndex(place)], m.PLACE_VALUE_PLACE_ALIASES[place]);
+  }
+});
+
+test("on a narrow screen the chart wraps whole periods into rows, so a disk keeps its size (decision 0025's phone layout)", () => {
+  // A phone 375 px wide, less the camera's 24 px margins and a card's frame: 289 px for the chart.
+  const phone = 375 - 2 * 24 - 2 * 19;
+  const wide = chart("build", "4050", { top: 6, decimals: true });
+  // One row unless asked; on a desktop board the ten columns still fit in one.
+  assert.deepEqual(planPlaceValueChart(wide).bands, [[6, 5, 4, 3, 2, 1, 0, -1, -2, -3]]);
+  assert.deepEqual(planPlaceValueChart(wide, { fitWidth: 860 }).bands, [[6, 5, 4, 3, 2, 1, 0, -1, -2, -3]]);
+  // On the phone: millions with the thousands, the ones, then the decimals with their point. No period is split.
+  const plan = planPlaceValueChart(wide, { fitWidth: phone });
+  assert.deepEqual(plan.bands, [[6, 5, 4, 3], [2, 1, 0], [-1, -2, -3]]);
+  assert.ok(m.PLACE_VALUE_FIT_DISK_PX >= 24);
+  assert.ok(plan.disk * phone / plan.width >= m.PLACE_VALUE_FIT_DISK_PX, `a disk is ${plan.disk * phone / plan.width} px`);
+  // Each row is drawn as one row is: heads above their own boxes, the point before the tenths, every disk in its box.
+  const rows = plan.bands.map((band) => plan.columns.filter((column) => band.includes(column.place)));
+  rows.forEach((row, b) => {
+    assert.ok(row.every((column) => column.headY === row[0]!.headY && column.box.y === row[0]!.box.y));
+    if (b) assert.ok(row[0]!.headY > rows[b - 1]![0]!.button.y + rows[b - 1]![0]!.button.height, "a row starts below the last row's buttons");
+    row.forEach((column, i) => { if (i) assert.ok(column.x >= row[i - 1]!.x + row[i - 1]!.width); });
+    for (const column of row) for (let i = 0; i < 9; i += 1) {
+      const at = placeValueDiskAt(plan, column.place, i);
+      assert.ok(at.y + plan.disk / 2 <= column.box.y + column.box.height && at.x + plan.disk / 2 <= plan.width);
+    }
+  });
+  const tenths = plan.columns.find((column) => column.place === -1)!;
+  assert.ok(plan.point && plan.point.x < tenths.x && plan.point.y > tenths.box.y && plan.point.y < tenths.box.y + tenths.box.height);
+  assert.deepEqual(plan.periods.map((period) => period.name), ["Millions", "Thousands", "Ones", ""]);
+  // Chinese periods are four places: 万级 (to millions), 个级, then the decimals.
+  assert.deepEqual(planPlaceValueChart(chart("apart", "3060400", { language: "zh-CN", top: 6, decimals: true }), { fitWidth: phone }).bands, [[6, 5, 4], [3, 2, 1, 0], [-1, -2, -3]]);
+  // A chart that fits stays in one row on the phone too.
+  assert.deepEqual(planPlaceValueChart(chart("build", "8063", { language: "zh-CN" }), { fitWidth: phone }).bands, [[3, 2, 1, 0]]);
+  assert.deepEqual(m.placeValueChartBands([2, 1, 0], "en-US", { fitWidth: phone }), [[2, 1, 0]]);
+});
+
 test("the builder: columns cover every number shown, bindings for driven values, output passes its own validator", () => {
   // A lesson number and a larger practice number with a fraction part: millions are not needed, decimals are.
   const built = buildPlaceValueChart({
@@ -374,9 +419,9 @@ test("the builder: columns cover every number shown, bindings for driven values,
   invalid((leak.actions[0] as unknown as { content: unknown }).content, /shows its own answer/);
 });
 
-test("the plugin's index exports the card without registering a recipe yet", () => {
+test("the plugin's index exports the card and registers its recipe", () => {
   assert.equal(math.PLACE_VALUE_CHART_KIND, "place_value_chart");
   assert.equal(typeof math.buildPlaceValueChart, "function");
   assert.equal(typeof math.renderPlaceValueChart, "function");
-  assert.ok(!("place_value_chart" in math.MATH_BUILDERS));
+  assert.equal(math.MATH_BUILDERS.place_value_chart, math.buildPlaceValueChart);
 });

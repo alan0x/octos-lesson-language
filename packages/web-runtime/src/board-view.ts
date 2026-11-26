@@ -8,6 +8,9 @@ import { numberLineZoomControl, renderNumberLine, type NumberLineViewContext, ty
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
 import { baseTenStepDelay, baseTenStepFrames, renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
 import { baseTenMat, type BaseTenMat, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
+import { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewContext } from "../../plugin-math/src/place-value-chart-view.js";
+import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
+import { tapCardKind, type CardTap } from "../../core/src/cards.js";
 import { numberLineDragValue, NUMBER_LINE_ZOOM, type NumberLineContent, type NumberLineWindow } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
 import { OLL_PLUGIN_NODE_KINDS, inlineMathSegments, referencedMathVariables, type CanonicalAction, type CanonicalTarget, type SemanticBoardState } from "../../core/src/index.js";
@@ -36,6 +39,7 @@ import {
   type BoardPoint,
   type CameraState,
   type ViewportInsets,
+  CAMERA_FOCUS_MARGIN,
 } from "./camera.js";
 import {
   boardWheelTargetsNumberLine,
@@ -52,6 +56,7 @@ import {
 } from "./gestures.js";
 import { computeConnectionRoute, routePath, stackConnectionLabel } from "./connection-layout.js";
 import {
+  CARD_FRAME,
   computeBoardLayout,
   cycleDiagramAspect,
   cycleDiagramPath,
@@ -1538,7 +1543,8 @@ export type VariableInputHandler = StudentVariableInputHandler;
  */
 export interface CardTapHandler {
   live(nodeId: string): boolean;
-  tap(nodeId: string, tap: BaseTenTap, input: ReturnType<typeof studentInputMethod>): { operation: unknown } | { refused: string; message: string };
+  /** One tap: its kind and its place's index in the card kind's places (a mat's `BaseTenTap`, a chart's index). */
+  tap(nodeId: string, tap: CardTap, input: ReturnType<typeof studentInputMethod>): { operation: unknown } | { refused: string; message: string };
   /**
    * The taps a slider on the card's count made since last asked, each with the mat it leaves, forgotten once
    * returned (the session's `takeStudentCardSteps`; decision 0023 amendment 4). The card animates each trade
@@ -1768,6 +1774,8 @@ function renderContent(
   variableStates?: Readonly<Record<string, { value: number; initial: number; min: number; max: number }>>,
   /** A number line's zoom window, kept by the board, and how it hears the learner zoomed (decision 0024). */
   numberLineZoom?: NumberLineViewContext["zoom"],
+  /** A place-value chart's state of play on the board: live, its notice, and the screen's width (decision 0025). */
+  placeValueChart?: PlaceValueChartViewContext,
 ): void {
   const content = node.content ?? {};
   // Learner ink speaks for itself; its role is not a card title.
@@ -1788,6 +1796,11 @@ function renderContent(
   if (node.kind === "fraction_model") { renderFractionModel(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
   // The math plugin's trading mat (decision 0023); it marks its own places for emphasis. Taps arrive with the tap control.
   if (node.kind === "base_ten_trade") { renderBaseTenTrade(parent, content, { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) }); return; }
+  // The math plugin's place-value chart (decision 0025); it marks its own places for emphasis, and taps arrive as the mat's do.
+  if (node.kind === "place_value_chart") {
+    renderPlaceValueChart(parent, content, placeValueChart ?? { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) });
+    return;
+  }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
   if (node.kind === "scene3d") {
     try {
@@ -1944,6 +1957,8 @@ export class InfiniteBoardView {
   private readonly cardLessonTaps = new Map<string, string>();
   /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
   private readonly cardFrames = new Map<string, string>();
+  /** The rows each place-value chart was last drawn in, so a resize that changes them redraws it. */
+  private readonly renderedPlaceValueBands = new Map<string, number[][]>();
   private renderedSemanticBoard: SemanticBoardState | null = null;
   private renderedOperation?: PlaybackOperation;
   private scene3dInputHandler?: Scene3dViewInputHandler;
@@ -2077,10 +2092,10 @@ export class InfiniteBoardView {
     // changed. Avoid alternating intrinsic/final-width DOM measurements on
     // every slider frame, which also forced layout for unrelated math cards.
     const semanticSizes = board ? JSON.stringify(Object.values(board.nodes).map(node =>
-      [node.id, node.kind, measureSemanticNode(node)])) : undefined;
+      [node.id, node.kind, measureSemanticNode(node, { cardFitWidth: this.cardFitWidth() })])) : undefined;
     if (!teachingCameraChanged && board && this.board?.board_id === board.board_id
       && this.layout && this.layoutMeasuredSizes && semanticSizes === this.layoutSemanticSizes) {
-      const candidate = computeBoardLayout(board, this.layoutMeasuredSizes, { regions: this.regionLayouts });
+      const candidate = computeBoardLayout(board, this.layoutMeasuredSizes, { regions: this.regionLayouts, cardFitWidth: this.cardFitWidth() });
       if (JSON.stringify(candidate) === JSON.stringify(this.layout)) {
         const priorSizes = new Map([...this.nodeMeasurements].map(([id, measurement]) => [id, measurement.size]));
         const sizes = this.syncNodes(board, this.layout, operation?.action, true);
@@ -2108,7 +2123,7 @@ export class InfiniteBoardView {
     this.pointer.hidden = true;
     this.layoutRevisionCounter += 1;
     if (!board) { this.clearBoard(); return; }
-    const layoutOptions = { regions: this.regionLayouts, equalsX: this.equalsX };
+    const layoutOptions = { regions: this.regionLayouts, equalsX: this.equalsX, cardFitWidth: this.cardFitWidth() };
     const provisionalLayout = computeBoardLayout(board, {}, layoutOptions);
     // Non-math cards report the width they were rendered at, which in a
     // teaching row may already be stretched to their column. Their layout
@@ -2118,7 +2133,7 @@ export class InfiniteBoardView {
     ).map(([id, size]) => {
       const node = board.nodes[id];
       return [id, node && node.kind !== "math"
-        ? { width: measureSemanticNode(node).width, height: size.height }
+        ? { width: measureSemanticNode(node, layoutOptions).width, height: size.height }
         : size];
     }));
     let measuredNodeSizes = intrinsicSizes;
@@ -2239,6 +2254,25 @@ export class InfiniteBoardView {
   setViewportInsets(insets: ViewportInsets): void {
     this.viewportInsets = { ...insets };
     this.resize();
+  }
+
+  /**
+   * The width in screen pixels a card can take at most: the viewport less its insets, the teaching camera's
+   * focus margins and a card's frame. A place-value chart too wide for it wraps into rows (decision 0025).
+   * Undefined before the board has a size.
+   */
+  private cardFitWidth(): number | undefined {
+    const width = this.viewport.clientWidth;
+    if (!width) return undefined;
+    const inset = (value: number | undefined) => (Number.isFinite(value) ? Math.max(0, value!) : 0);
+    const margin = Number.isFinite(this.viewportInsets.focusMargin) ? Math.max(0, this.viewportInsets.focusMargin!) : CAMERA_FOCUS_MARGIN;
+    return Math.max(1, width - inset(this.viewportInsets.left) - inset(this.viewportInsets.right) - 2 * margin - 2 * CARD_FRAME.x);
+  }
+
+  /** A chart's rows at this screen's width; a change redraws it. */
+  private placeValueBands(content: unknown): number[][] {
+    const fitWidth = this.cardFitWidth();
+    return planPlaceValueChart(content, fitWidth === undefined ? {} : { fitWidth }).bands;
   }
 
   /** Returns the camera currently visible on screen, including CSS-transition frames. */
@@ -2521,11 +2555,13 @@ export class InfiniteBoardView {
     const spec = (target as HTMLElement | SVGElement).dataset?.ollTap;
     if (!handler || !nodeId || !spec || !handler.live(nodeId)) return false;
     const [kind, placeText] = spec.split(":");
-    if (!["gather", "ungather", "make", "break"].includes(kind ?? "")) return false;
-    const tap = { kind, place: Number(placeText) } as BaseTenTap;
+    const card = tapCardKind(this.board?.nodes[nodeId]?.kind);
+    const place = Number(placeText);
+    if (!card || !card.taps.includes(kind ?? "") || !Number.isInteger(place) || place < 0 || place >= card.places.length) return false;
+    const tap = { kind: kind!, place } as CardTap;
     const piece = (target as HTMLElement | SVGElement).dataset.ollPiece;
     this.cardNotices.delete(nodeId);
-    this.cardSteps.set(nodeId, { tap, ...(piece ? { piece } : {}) });
+    this.cardSteps.set(nodeId, { tap: tap as BaseTenTap, ...(piece ? { piece } : {}) });
     const result = handler.tap(nodeId, tap, input);
     if ("refused" in result) {
       this.cardSteps.delete(nodeId);
@@ -2688,6 +2724,11 @@ export class InfiniteBoardView {
   }
 
   resize(): void {
+    // A screen turned or resized may change a place-value chart's rows (decision 0025): draw the board again.
+    if (this.board && this.layout && Object.values(this.board.nodes).some((node) => node.kind === "place_value_chart"
+      && JSON.stringify(this.placeValueBands(node.content)) !== JSON.stringify(this.renderedPlaceValueBands.get(node.id)))) {
+      this.render(this.renderedSemanticBoard, this.renderedOperation);
+    }
     if (!this.layout || !this.board || !this.cameraAuthority.layoutReframeAllowed) return;
     const operationFocus = focusTargetsInRegion(
       this.board,
@@ -2834,7 +2875,8 @@ export class InfiniteBoardView {
         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
         + (kind === "plot" ? plotVariableSignature(node, variableValues) + JSON.stringify(plotAnimation ?? null) : "")
         + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "")
-        + (kind === "base_ten_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? ""]) : "");
+        + (kind === "base_ten_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? ""]) : "")
+        + (kind === "place_value_chart" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.placeValueBands(node.content)]) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
@@ -2859,7 +2901,7 @@ export class InfiniteBoardView {
           this.cardSteps.delete(node.id);
           // A demonstration tap animates like a learner's, once per lesson action.
           if (!step && action?.op === "card.tap" && action.tap && action.target?.node_id === node.id && this.cardLessonTaps.get(node.id) !== action.action_id) {
-            step = { tap: action.tap };
+            step = { tap: action.tap as BaseTenTap };
             this.cardLessonTaps.set(node.id, action.action_id);
           }
           // A slider's trades (amendment 4) animate one tap after another, as the taps do.
@@ -2879,6 +2921,17 @@ export class InfiniteBoardView {
             try { updated = updateBaseTenTrade(element, content, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
           }
         }
+        // The place-value chart updates in place too, so a disk drawn stays and a new one pops in.
+        const chartContext: PlaceValueChartViewContext | undefined = kind === "place_value_chart" ? {
+          applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
+          live: this.cardTapHandler?.live(node.id) ?? false,
+          notice: this.cardNotices.get(node.id) ?? "",
+          ...(this.cardFitWidth() !== undefined ? { fitWidth: this.cardFitWidth()! } : {}),
+        } : undefined;
+        if (chartContext) {
+          this.renderedPlaceValueBands.set(node.id, this.placeValueBands(node.content));
+          try { updated = updatePlaceValueChart(element, node.content ?? {}, chartContext); } catch { updated = false; }
+        }
         if (!updated) {
           if (cardContext) this.stopCardSteps(node.id);
           disposeScene3d(element);
@@ -2895,6 +2948,7 @@ export class InfiniteBoardView {
               ...(this.numberLineWindows.has(node.id) ? { window: this.numberLineWindows.get(node.id)! } : {}),
               change: (window) => this.numberLineZoomed(node.id, window),
             } : undefined,
+            chartContext,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
           if (cardContext) { updateBaseTenTrade(element, node.content ?? {}, cardContext); this.cardFrames.set(node.id, cardFrame); this.cardSteps.delete(node.id); }

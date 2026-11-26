@@ -1,6 +1,12 @@
 import type { OllNodeKind } from "./capabilities.js";
 import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-answer.js";
 import type { BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
+import type { PlaceValueTap } from "../../plugin-math/src/place-value-chart.js";
+
+/** A tap a card takes: the trading mat's (decision 0023) or the place-value chart's (decision 0025). */
+export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"];
+/** A place an authoring tap names: the mat's, or a chart's alias (`ones`, `tenths`, `hundred-thousands`). */
+export type CardTapPlaceName = BaseTenPlaceName | "thousandths" | "hundredths" | "tenths" | "thousands" | "ten-thousands" | "hundred-thousands" | "millions";
 
 export type Alias = string;
 export type LocalReference = string;
@@ -119,13 +125,14 @@ export interface ViewAction extends BaseAction {
 /**
  * The lesson taps a card the way a learner would (decision 0023): a demonstration made of the same taps,
  * judged by the card's own rules. `at` is the place tapped: gather ones, make a ten from the ones' tray
- * (`make` at `ones`), break a ten (`break` at `tens`).
+ * (`make` at `ones`), break a ten (`break` at `tens`). On a place-value chart (decision 0025): add a disk at
+ * `tens`, remove one, or take out the `tenths`.
  */
 export interface TapCardAction extends BaseAction {
   do: "tap";
   target: Alias;
-  tap: "gather" | "ungather" | "make" | "break";
-  at: "ones" | "tens" | "hundreds";
+  tap: CardTapKind;
+  at: CardTapPlaceName;
 }
 
 export type AuthoringAction =
@@ -249,7 +256,7 @@ export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
  * card's own program judges a fact of what the learner made, only when the learner submits; taps are
  * not attempts. Every count the card's taps change is bound to its own lesson variable.
  */
-export type CardFact = "no_trade_left" | "count";
+export type CardFact = "no_trade_left" | "count" | "built" | "pulled_all";
 
 export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
   /** Tapping the card and saying done; and, besides, its count sliders, which trade (decision 0023 amendment 4). */
@@ -261,6 +268,8 @@ export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
     /**
      * `no_trade_left`: every place below the highest is under ten. `count` (amendment 5, player 0.15.0):
      * the place `at` holds exactly `value` (its tray included), a target the learner reaches by tapping.
+     * On a place-value chart (decision 0025, player 0.16.0): `built`, the chart holds exactly its number
+     * (a task to build), or `pulled_all`, every place is taken out (a task to pull apart).
      */
     fact: CardFact;
     /** With `count`: the place counted. */
@@ -423,8 +432,11 @@ export interface CanonicalAction {
     duration_intent: "brief" | "normal" | "extended";
   };
   revision?: { content: JsonObject; reason: string };
-  /** card.tap: what the lesson taps on a card, place 0 = ones (decision 0023). */
-  tap?: { kind: "gather" | "ungather" | "make" | "break"; place: number };
+  /**
+   * card.tap: what the lesson taps on a card, at a place's index into its kind's places: on the mat 0 = ones
+   * (decision 0023); on a place-value chart the place plus three, 3 = ones (decision 0025).
+   */
+  tap?: { kind: CardTapKind; place: number };
   /** scene3d.view: a highlighted part to show, or a named view. */
   view?: { show?: CanonicalTarget; preset?: "front" | "top" | "side" | "isometric" };
 }

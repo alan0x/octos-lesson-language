@@ -1368,7 +1368,7 @@ export class BrowserLessonSession {
     if (!this.studentCardLive(nodeId)) return { refused: "inert", message: "" };
     const node = this.player.snapshot.board?.nodes?.[nodeId];
     const card = tapCardKind(node?.kind);
-    if (!node || !card) throw new Error(`Card '${nodeId}' is not a base-ten trade card`);
+    if (!node || !card) throw new Error(`Card '${nodeId}' is not a card the learner taps`);
     const before = card.state(node.content);
     const result = card.apply(before, tap);
     if (!result.ok) return { refused: result.reason, message: card.refusalText(result.reason, tap.place, card.language(node.content)) };
@@ -1722,7 +1722,19 @@ export class BrowserLessonSession {
     });
   }
 
-  /** A card's bound counts and trays as they stand, by variable (whole numbers), or undefined. */
+  /** The variables bound to a card-level field (a chart's number): bound by a bare name, not `part.field`. */
+  private cardFieldAliases(): Set<string> {
+    const aliases = new Set<string>();
+    for (const node of Object.values(this.player.snapshot.board?.nodes ?? {})) {
+      if (!tapCardKind(node.kind)) continue;
+      for (const binding of (node.content?.bindings ?? []) as Array<{ target: string; expression: string }>) {
+        if (!binding.target.includes(".")) aliases.add(binding.expression.trim());
+      }
+    }
+    return aliases;
+  }
+
+  /** A card's bound fields as they stand (counts and trays, a chart's number), by variable (whole numbers), or undefined. */
   private cardPile(nodeId: string): Record<string, number> | undefined {
     const node = this.player.snapshot.board?.nodes?.[nodeId];
     const variables = this.player.snapshot.board?.variables;
@@ -1737,8 +1749,11 @@ export class BrowserLessonSession {
 
   private beginPhaseTransition(key: string, kind: PhaseTransition["kind"], to: Record<string, number>, from?: Record<string, number>): void {
     if (this.phaseState.ready.includes(key)) return;
-    const initial = from ?? Object.fromEntries(Object.keys(to).map(alias =>
-      [alias, this.player.snapshot.board?.variables?.[alias]?.value as number]));
+    const initial = { ...(from ?? Object.fromEntries(Object.keys(to).map(alias =>
+      [alias, this.player.snapshot.board?.variables?.[alias]?.value as number]))) };
+    // A card's own number (a chart's `target`, decision 0025) changes at once: easing it would show the numbers between.
+    const jumps = this.cardFieldAliases();
+    for (const alias of Object.keys(to)) if (jumps.has(alias)) initial[alias] = to[alias]!;
     if (this.options.reducedMotion || Object.entries(to).every(([alias, value]) => initial[alias] === value)) {
       this.player.setVariables(to);
       this.phaseState.ready.push(key);

@@ -1,7 +1,8 @@
 // Tap cards routed by card kind: the registry and the trading mat's entry in it. Piles here are invented.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList } from "../src/cards.js";
+import { BASE_TEN_TRADE_CARD, PLACE_VALUE_CHART_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList } from "../src/cards.js";
+import { PLACE_VALUE_CHART_KIND } from "../../plugin-math/src/place-value-chart.js";
 import {
   BASE_TEN_TRADE_KIND, applyBaseTenTap, baseTenChanges, baseTenHowTo, baseTenMat, baseTenRefusalText, type BaseTenMat,
 } from "../../plugin-math/src/base-ten-trade.js";
@@ -23,14 +24,18 @@ const canonical = (ones: number, tens: number, tray = 0) => ({
   ],
 });
 
-test("the registry holds the trading mat only, looked up by node kind", () => {
-  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND]);
+test("the registry holds the trading mat and the place-value chart, looked up by node kind", () => {
+  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND]);
   assert.equal(TAP_CARD_KINDS[BASE_TEN_TRADE_KIND], BASE_TEN_TRADE_CARD);
   assert.equal(tapCardKind(BASE_TEN_TRADE_KIND), BASE_TEN_TRADE_CARD);
+  assert.equal(tapCardKind(PLACE_VALUE_CHART_KIND), PLACE_VALUE_CHART_CARD);
   for (const kind of ["number_line", "fraction_model", "toString", "__proto__", "", undefined, 3]) assert.equal(tapCardKind(kind), undefined);
-  assert.equal(tapCardKindList(), "base_ten_trade");
-  assert.equal(tapCardKindList("and"), "base_ten_trade");
-  assert.ok(Object.isFrozen(TAP_CARD_KINDS) && Object.isFrozen(BASE_TEN_TRADE_CARD));
+  assert.equal(tapCardKindList(), "base_ten_trade or place_value_chart");
+  assert.equal(tapCardKindList("and"), "base_ten_trade and place_value_chart");
+  assert.ok(Object.isFrozen(TAP_CARD_KINDS) && Object.isFrozen(BASE_TEN_TRADE_CARD) && Object.isFrozen(PLACE_VALUE_CHART_CARD));
+  // The mat binds no card-level field and has no starting rules of its own: its checks are unchanged.
+  assert.equal(BASE_TEN_TRADE_CARD.cardFields, undefined);
+  assert.equal(BASE_TEN_TRADE_CARD.validateStart, undefined);
 });
 
 test("the mat's tap rules, refusals and changes are the plugin's own", () => {
@@ -65,7 +70,7 @@ test("the mat's tap fields, binding targets and content at values", () => {
   // Authoring content names a place by `as`; the board by its canonical `id`.
   assert.equal(card.fieldTarget(authored(1, 1), 0, "tray"), "ones.tray");
   assert.equal(card.fieldTarget(canonical(1, 1), 1, "count"), "l:node:mat:fragment:tens.count");
-  const at = card.contentAt(authored(1, 1), (place, field) => (place === 0 && field === "count" ? 23 : undefined));
+  const at = card.contentAt(authored(1, 1), (target) => (target === "ones.count" ? 23 : undefined));
   assert.equal(at.bindings, undefined);
   assert.deepEqual(at.places, [{ as: "ones", count: 23, tray: 0 }, { as: "tens", count: 1 }]);
 });
