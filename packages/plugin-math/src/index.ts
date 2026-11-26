@@ -355,6 +355,10 @@ export { cardHowTo } from "./card-how-to.js";
 export * from "./place-value-chart.js";
 export { buildPlaceValueChart, type BuiltPlaceValueChart, type PlaceValueChartInput } from "./place-value-chart-builder.js";
 export { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewContext } from "./place-value-chart-view.js";
+// Adding and subtracting on the place-value chart, drawn as the written column method (decision 0026).
+export * from "./place-value-trade.js";
+export { buildPlaceValueTrade, type BuiltPlaceValueTrade, type PlaceValueTradeInput } from "./place-value-trade-builder.js";
+export { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewContext } from "./place-value-trade-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
