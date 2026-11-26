@@ -213,6 +213,30 @@
 .place-value-place.emphasis-focus .place-value-column { stroke: #e15d45; stroke-width: 3; }
 .place-value-place.emphasis-supporting .place-value-column { stroke: #d79a29; stroke-width: 2.5; stroke-dasharray: 6 4; }
 .place-value-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
+/* Adding and subtracting on the chart as the written method (decision 0026): the problem, the line that follows
+   the chart (only while the learner can tap it), the chart at its natural size, and a notice. Desktop only. */
+.place-value-trade-given { margin: 0; color: #1d2433; font: 700 22px/1.3 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.place-value-trade-howto { min-height: 1.4em; margin: 2px 0 8px; color: #5b6478; font-size: 15.5px; line-height: 1.4; }
+.place-value-trade { display: block; width: 100%; height: auto; overflow: visible; font-family: ui-sans-serif, system-ui, sans-serif; }
+.place-value-trade-disk { transform-box: fill-box; transform-origin: center; }
+.place-value-trade-ghost { pointer-events: none; }
+.place-value-trade-cell-empty { stroke: #c9d0df; stroke-width: 2; stroke-dasharray: 6 4; }
+.place-value-trade-short { fill: rgba(47, 91, 211, .09); stroke: rgba(47, 91, 211, .45); stroke-width: 2; }
+.place-value-trade-can-break .place-value-trade-disk-face { stroke: #2f5bd3; stroke-width: 3; }
+.place-value-trade-ten-ready { animation: place-value-trade-ready 1.6s ease-in-out infinite; }
+@keyframes place-value-trade-ready { 50% { opacity: .78; } }
+.place-value-trade-landing { animation: place-value-trade-land 1.6s ease-in-out infinite; }
+@keyframes place-value-trade-land { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .place-value-trade-ten-ready, .place-value-trade-landing { animation: none; } }
+.place-value-trade:not(.place-value-trade-live) .place-value-trade-down { pointer-events: none; }
+.place-value-trade-live { cursor: pointer; }
+.place-value-trade-down.place-value-trade-live:hover circle, .place-value-trade-disk.place-value-trade-live:hover .place-value-trade-disk-face { filter: brightness(1.1); }
+.place-value-trade-live:focus { outline: none; }
+.place-value-trade-live:focus-visible circle, .place-value-trade-live:focus-visible rect { stroke: #1d2433; stroke-width: 3; }
+.place-value-trade-colnote { margin: 0; padding: 4px 6px; color: #1d2433; font: 600 13.5px/1.3 ui-sans-serif, system-ui, sans-serif; background: #e8edfb; border-left: 3px solid #2f5bd3; border-radius: 6px; }
+.place-value-trade-place.emphasis-focus .place-value-trade-strip { stroke: #e15d45; stroke-width: 3; }
+.place-value-trade-place.emphasis-supporting .place-value-trade-strip { stroke: #d79a29; stroke-width: 2.5; stroke-dasharray: 6 4; }
+.place-value-trade-notice { min-height: 1.4em; margin-top: 6px; color: #1d2433; font-weight: 700; font-size: 15px; }
 .geometry-circle.emphasis-focus, .geometry-polygon.emphasis-focus, .geometry-segment.emphasis-focus, .geometry-arc.emphasis-focus { stroke: #e15d45; stroke-width: 4.5; }
 .geometry-circle.emphasis-supporting, .geometry-polygon.emphasis-supporting, .geometry-segment.emphasis-supporting, .geometry-arc.emphasis-supporting { stroke: #d79a29; stroke-width: 4; }
 .geometry-circle.emphasis-warning, .geometry-polygon.emphasis-warning, .geometry-segment.emphasis-warning, .geometry-arc.emphasis-warning { stroke: #cc3447; stroke-width: 4.5; }

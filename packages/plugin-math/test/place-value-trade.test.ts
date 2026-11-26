@@ -559,10 +559,32 @@ test("builder: the columns the pair needs, every bound field, and the parts", ()
   valid(fixedContent);
 });
 
-test("the plugin index exports the card, not yet a recipe", () => {
+test("the plugin index exports the card and its recipe", () => {
   assert.equal(math.PLACE_VALUE_TRADE_KIND, "place_value_trade");
   assert.equal(typeof math.buildPlaceValueTrade, "function");
   assert.equal(typeof math.renderPlaceValueTrade, "function");
   assert.equal(typeof math.updatePlaceValueTrade, "function");
-  assert.equal("place_value_trade" in math.MATH_BUILDERS, false);
+  assert.equal(math.MATH_BUILDERS.place_value_trade, buildPlaceValueTrade);
+});
+
+test("the card draws a cell's counts within a cell, also for statuses no taps make (never a negative count)", () => {
+  for (const [a, op, b] of [["7352", "-", "2618"], ["50003", "-", "2476"], ["3486", "+", "2739"]] as const) {
+    const problem = prob(a, op, b);
+    const max = m.placeValueTradeMaxStatus(problem.operation);
+    const n = problem.columns.length;
+    let outside = 0, clampedReachable = 0;
+    const reachable = new Set(m.placeValueTradeReachable(problem).map(m.placeValueTradeStateKey));
+    for (let code = 0; code < (max + 1) ** n; code += 1) {
+      const status: Record<number, number> = {};
+      problem.columns.forEach((place, i) => { status[place] = Math.floor(code / (max + 1) ** i) % (max + 1); });
+      const state = { problem, status };
+      for (const place of problem.columns) {
+        const drawn = m.placeValueTradeDrawnCell(state, place);
+        if ([drawn.carry, drawn.top, drawn.second, drawn.answer].some((count) => count < 0 || count > 19)) outside += 1;
+        if (reachable.has(m.placeValueTradeStateKey(state)) && JSON.stringify(drawn) !== JSON.stringify(m.placeValueTradeCell(state, place))) clampedReachable += 1;
+      }
+    }
+    assert.equal(outside, 0, `${a} ${op} ${b}: every status combination draws whole counts in range`);
+    assert.equal(clampedReachable, 0, `${a} ${op} ${b}: a reachable state draws exactly the rules' counts`);
+  }
 });

@@ -3,6 +3,7 @@ import { OLL_PLUGIN_NODE_KINDS, type SemanticBoardState } from "../../core/src/i
 import { planFractionModel } from "../../plugin-math/src/fraction-model.js";
 import { planBaseTenTrade } from "../../plugin-math/src/base-ten-trade.js";
 import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
+import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -92,6 +93,8 @@ export type MeasureOptions = Pick<BoardLayoutOptions, "cardFitWidth">;
 
 /** A card's frame around its content: the board node's padding and border, each side. */
 export const CARD_FRAME = { x: 19, y: 17 } as const;
+/** A place-value trade card's lines around its chart: the problem, the line that follows it, and the notice. */
+const PLACE_VALUE_TRADE_TEXT_HEIGHT = 96;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -208,6 +211,14 @@ export function measureSemanticNode(node: Record<string, any>, options: MeasureO
   if (kind === "place_value_chart") {
     const plan = planPlaceValueChart(content, options.cardFitWidth === undefined ? {} : { fitWidth: options.cardFitWidth });
     return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + 64 };
+  }
+  // Sized from its plan at its natural size (one unit a pixel): the problem, the line that follows the chart,
+  // the chart, and a notice. Desktop only (decision 0026): no rows on a narrow screen.
+  if (kind === "place_value_trade") {
+    const plan = planPlaceValueTrade(content);
+    // A narrow card (two or three columns) keeps a second line for its instruction.
+    const text = PLACE_VALUE_TRADE_TEXT_HEIGHT + (plan.width < 640 ? 22 : 0);
+    return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + text };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };

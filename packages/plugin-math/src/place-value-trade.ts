@@ -29,7 +29,7 @@ import {
 
 export const PLACE_VALUE_TRADE_KIND = "place_value_trade";
 export const PLACE_VALUE_TRADE_FEATURE = "plugin:math/place-value-trade@1";
-/** The math plugin version that is to introduce the card (the manifest is bumped when the card is wired in). */
+/** The math plugin version that introduced the card. */
 export const PLACE_VALUE_TRADE_PLUGIN_VERSION = "0.9.0";
 /** The languages the card speaks: the chart's. A card without `language` speaks US English. */
 export const PLACE_VALUE_TRADE_LANGUAGES = PLACE_VALUE_CHART_LANGUAGES;
@@ -626,7 +626,7 @@ export function validatePlaceValueTradeContent(raw: unknown, path: string, fail:
   }
   const top = wholeNumber(content.top_place, `${path}/top_place`, PLACE_VALUE_TRADE_MIN_PLACE, PLACE_VALUE_TRADE_MAX_PLACE, fail, "The top place");
   const low = wholeNumber(content.low_place, `${path}/low_place`, PLACE_VALUE_TRADE_MIN_PLACE, 0, fail, "The low place");
-  if (top < low) fail(`${path}/top_place`, `The top place (${top}) is not below the low place (${low})`);
+  if (top < low) fail(`${path}/top_place`, `The top place (${top}) is below the low place (${low})`);
   const columns = placeValueTradeColumns(top, low);
   if (columns.length > PLACE_VALUE_TRADE_MAX_COLUMNS) fail(`${path}/top_place`, `The card draws at most ${PLACE_VALUE_TRADE_MAX_COLUMNS} columns; ${top} to ${low} is ${columns.length} (too_wide)`);
   const a = wholeNumber(content.a, `${path}/a`, 0, PLACE_VALUE_TRADE_MAX_VALUE, fail, "The first number (in thousandths)");

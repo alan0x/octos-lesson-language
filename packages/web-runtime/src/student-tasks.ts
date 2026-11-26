@@ -50,6 +50,11 @@ export interface StudentTaskProgressLog {
 
 export interface StudentTaskSnapshot extends StudentTaskProgress {
   available: boolean;
+  /**
+   * Present (true) on a card task with no "done": the tap that completes the card submits it (decision 0026), so
+   * a host shows no "done" button for it.
+   */
+  auto_submit?: true;
   prompt: string;
   hints: string[];
   success_message?: string;
@@ -295,6 +300,7 @@ export function taskSnapshots(
         && (progress.status === "succeeded" || index === activeTaskIndex),
       prompt: task.prompt,
       hints: [...task.hints],
+      ...(task.completion.kind === "card_fact" && !(task.allowed_operations as Array<{ kind: string }>).some((operation) => operation.kind === "card_submit") ? { auto_submit: true as const } : {}),
       ...(task.success_message ? { success_message: task.success_message } : {}),
       ...(currentHint ? { current_hint: currentHint } : {}),
     };

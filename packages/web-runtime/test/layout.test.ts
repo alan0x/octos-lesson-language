@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { reduceCanonicalEvents, type SemanticBoardState } from "../../core/src/index.js";
 import { computeBoardLayout, measureSemanticNode, targetRect, type MeasuredNodeSizes } from "../src/layout.js";
+import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
 import { parseCanonicalJsonl } from "../src/runtime.js";
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
@@ -1458,3 +1459,16 @@ test("a place-value chart is sized from its plan, and on a narrow screen from it
   const board = emptyBoard({ chart: card("chart", "place_value_chart", { content }) });
   assert.equal(computeBoardLayout(board, {}, { cardFitWidth: fit }).nodes.chart!.width, phone.width);
 });
+
+test("a place-value trade card is sized from its plan at its natural size, desktop only (decision 0026)", () => {
+  const content = { operation: "add", top_place: 3, low_place: -2, a: 4_999_990, b: 3_999_990, finished: 0,
+    places: [3, 2, 1, 0, -1, -2].map((place) => ({ id: `p${place + 3}`, place, status: 0 })) };
+  const node = { id: "sum", kind: "place_value_trade", content };
+  const plan = planPlaceValueTrade(content);
+  const size = measureSemanticNode(node);
+  assert.deepEqual(size, { width: Math.ceil(plan.width) + 38, height: Math.ceil(plan.height) + 34 + 96 });
+  // Six columns fit a 1,024 px window with the card's frame; a narrow screen does not change the card.
+  assert.ok(size.width <= 1024, `${size.width}`);
+  assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
+});
+

@@ -108,7 +108,8 @@ export interface StudentCardTapOperation {
   target: { kind: "card_node"; node_id: string };
   /**
    * What was tapped, at a place's index in its card kind's places: on the mat gather, ungather, make or break
-   * (0 = ones); on a place-value chart add, remove or take_out (the place plus three, 3 = ones; decision 0025).
+   * (0 = ones); on a place-value chart add, remove or take_out (the place plus three, 3 = ones; decision 0025); on
+   * a place-value trade card down, trade or break, at the same index (decision 0026).
    */
   tap: { kind: CardTapKind; place: number };
   /** Every variable the tap changed, in one step. */
