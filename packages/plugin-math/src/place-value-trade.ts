@@ -29,7 +29,7 @@ import {
 
 export const PLACE_VALUE_TRADE_KIND = "place_value_trade";
 export const PLACE_VALUE_TRADE_FEATURE = "plugin:math/place-value-trade@1";
-/** The math plugin version that is to introduce the card (the manifest is bumped when the card is wired in). */
+/** The math plugin version that introduced the card. */
 export const PLACE_VALUE_TRADE_PLUGIN_VERSION = "0.9.0";
 /** The languages the card speaks: the chart's. A card without `language` speaks US English. */
 export const PLACE_VALUE_TRADE_LANGUAGES = PLACE_VALUE_CHART_LANGUAGES;
@@ -250,6 +250,18 @@ export function placeValueTradeCell(state: PlaceValueTradeState, place: number):
   return { down: taken, carry: 0, top: taken ? 0 : n, second: db[place]!, answer: taken ? n : 0, topRing: !taken && ring, answerRing: taken && ring };
 }
 const cell = placeValueTradeCell;
+
+/**
+ * A cell as the card draws it: the rules' counts, never below zero nor past what a cell holds (19). Statuses no
+ * taps make (a variable between values, a restored pile) can make the rules' counts negative; they are drawn
+ * as empty, never as a negative number of disks. Reachable states draw exactly the rules' counts.
+ */
+export function placeValueTradeDrawnCell(state: PlaceValueTradeState, place: number): PlaceValueTradeCell {
+  const c = cell(state, place);
+  const clamp = (n: number) => Math.min(19, Math.max(0, n));
+  const top = clamp(c.top), answer = clamp(c.answer);
+  return { down: c.down, carry: clamp(c.carry), top, second: clamp(c.second), answer, topRing: c.topRing && top >= 10, answerRing: c.answerRing && answer >= 10 };
+}
 
 /** The value of every disk on the chart, in thousandths (rings are not disks). */
 export function placeValueTradeChartValue(state: PlaceValueTradeState): number {
@@ -917,6 +929,8 @@ const EDGE_BOTTOM = 14;
 const HEAD = 38;
 const LINE = 48;
 const DOWN_R = 20;
+/** The answer row is never lower than this, so a fact said at a column fits in its empty answer cell. */
+const NOTE_ROOM = 64;
 /** Room above a cell that may show a ringed ten, for its badge, and around the ring. */
 const RING_TOP = 22;
 const RING_EXTRA = 16;
@@ -965,7 +979,7 @@ export function planPlaceValueTrade(raw: unknown): PlaceValueTradePlan {
   rowTop.second = y; rowHeight.second = cellHeight(room.second); y += rowHeight.second;
   const lineY = y + LINE / 2;
   y += LINE;
-  rowTop.answer = y + 6; rowHeight.answer = cellHeight(room.answer) + 4; y += 6 + rowHeight.answer + 2;
+  rowTop.answer = y + 6; rowHeight.answer = Math.max(NOTE_ROOM, cellHeight(room.answer) + 4); y += 6 + rowHeight.answer + 2;
   const height = y + EDGE_BOTTOM;
   const plans: PlaceValueTradeColumnPlan[] = columns.map((place, k) => {
     const x = xOf(k);

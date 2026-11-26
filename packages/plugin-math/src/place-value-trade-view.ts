@@ -19,13 +19,15 @@
  */
 import { PLACE_VALUE_PLACE_ALIASES, placeValueColumnName, placeValueDiskLabel, placeValueTapIndex, placeValueTapPlace, type PlaceValueLanguage } from "./place-value-chart.js";
 import {
-  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeCell, placeValueTradeDemoSteps, placeValueTradeDiskAt,
+  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeDemoSteps, placeValueTradeDiskAt, placeValueTradeDrawnCell,
   placeValueTradeDiskFont, placeValueTradeInstruction, placeValueTradeLanguage, placeValueTradeProblemText, placeValueTradeRefusalPlace,
   placeValueTradeStart, placeValueTradeState, placeValueTradeStateKey, placeValueTradeUnitWord, planPlaceValueTrade,
   type PlaceValueTradeAnim, type PlaceValueTradePlan, type PlaceValueTradeRow, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "./place-value-trade.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+/** The card draws its cells' counts clamped (statuses no taps make never draw a negative count). */
+const placeValueTradeCell = placeValueTradeDrawnCell;
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 export interface PlaceValueTradeViewContext {
@@ -335,6 +337,8 @@ function drawNote(view: TradeView, state: PlaceValueTradeState): void {
     const object = element("foreignObject", { x: round(box.x + 2), y: round(box.y + 2), width: round(box.width - 4), height: round(box.height - 4) }, "place-value-trade-note");
     const text = document.createElementNS(XHTML_NS, "p") as HTMLParagraphElement;
     text.className = "place-value-trade-colnote";
+    // Narrower columns (five or six) say it smaller, so it fits the cell.
+    text.style.fontSize = `${view.plan.disk <= 24 ? 11 : view.plan.disk <= 28 ? 12.5 : 13.5}px`;
     text.textContent = note.text;
     object.append(text);
     view.overlay.append(object);

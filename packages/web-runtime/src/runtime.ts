@@ -1371,7 +1371,7 @@ export class BrowserLessonSession {
     if (!node || !card) throw new Error(`Card '${nodeId}' is not a card the learner taps`);
     const before = card.state(node.content);
     const result = card.apply(before, tap);
-    if (!result.ok) return { refused: result.reason, message: card.refusalText(result.reason, tap.place, card.language(node.content)) };
+    if (!result.ok) return { refused: result.reason, message: card.refusalText(result.reason, tap.place, card.language(node.content), before) };
     const changes = this.cardChanges(nodeId, card, before, result.state);
     try {
       this.player.setVariables(Object.fromEntries(changes.map((change) => [change.alias, change.after])));
@@ -1396,8 +1396,27 @@ export class BrowserLessonSession {
     this.studentOperationLog.operations.push(operation);
     this.persistStudentOperations();
     this.persist();
+    // A fact the card judges on each tap (decision 0026: the chart is complete) ends its task on the tap that
+    // makes it true: the player says "done" for the learner, so there is no "done" to tap.
+    if (this.submitJudgedCardTask(nodeId, input)) return { operation: structuredClone(operation) };
     this.emit();
     return { operation: structuredClone(operation) };
+  }
+
+  /**
+   * Submits the open card task on this card when its fact is one the card judges on each tap and the card now
+   * holds it. Returns whether it did (the submission saves and emits).
+   */
+  private submitJudgedCardTask(nodeId: string, input: StudentInputMethod): boolean {
+    const active = this.studentTaskProgressLog.tasks.find((task) => task.status !== "succeeded");
+    const definition = this.studentTaskDefinitions.find((task) => task.as === active?.task_id);
+    if (definition?.completion.kind !== "card_fact" || definition.completion.node !== nodeId) return false;
+    const node = this.player.snapshot.board?.nodes?.[nodeId];
+    const card = tapCardKind(node?.kind);
+    const fact = card && typeof definition.completion.fact === "string" && Object.hasOwn(card.facts, definition.completion.fact) ? card.facts[definition.completion.fact] : undefined;
+    if (!node || !card || !fact?.judgedOnTap || !fact.read(definition.completion, card.state(node.content)).succeeded) return false;
+    this.submitStudentCard(definition.as, input);
+    return true;
   }
 
   /** Whether the open task lets the learner move this card count's slider (decision 0023 amendment 4). */
@@ -1722,13 +1741,17 @@ export class BrowserLessonSession {
     });
   }
 
-  /** The variables bound to a card-level field (a chart's number): bound by a bare name, not `part.field`. */
+  /**
+   * The variables bound to a card-level field (a chart's number): bound by a bare name, not `part.field`; and
+   * every variable of a card whose fields all change at once (a trade card's column states, decision 0026).
+   */
   private cardFieldAliases(): Set<string> {
     const aliases = new Set<string>();
     for (const node of Object.values(this.player.snapshot.board?.nodes ?? {})) {
-      if (!tapCardKind(node.kind)) continue;
+      const card = tapCardKind(node.kind);
+      if (!card) continue;
       for (const binding of (node.content?.bindings ?? []) as Array<{ target: string; expression: string }>) {
-        if (!binding.target.includes(".")) aliases.add(binding.expression.trim());
+        if (!binding.target.includes(".") || card.fieldsAtOnce) aliases.add(binding.expression.trim());
       }
     }
     return aliases;

@@ -22,6 +22,7 @@ import { applyBaseTenTap, baseTenMat, type BaseTenTap } from "../../plugin-math/
 import { parseStudentOperationLog, type StudentOperation } from "../src/student-operations.js";
 import { variableControlModels } from "../src/variable-controls.js";
 import { chartHost, chartLesson, chartVariable } from "../../plugin-math/test/place-value-chart-fixtures.js";
+import { tradeHost, tradeLesson, tradeVariable } from "../../plugin-math/test/place-value-trade-fixtures.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -2133,6 +2134,8 @@ test("the student log keeps a chart's taps and its whole pile, and refuses a tap
   assert.equal(parseStudentOperationLog(log(tap("gather", 3)), "l"), undefined, "the mat has three places");
   assert.equal(parseStudentOperationLog(log(tap("add", 10)), "l"), undefined, "the chart has ten places");
   assert.equal(parseStudentOperationLog(log(tap("fold", 0)), "l"), undefined);
+  assert.equal(parseStudentOperationLog(log(tap("down", 3)), "l")?.operations.length, 1, "a trade card's taps (decision 0026)");
+  assert.equal(parseStudentOperationLog(log(tap("trade", 7)), "l")?.operations.length, 1);
   const pile = Object.fromEntries(Array.from({ length: 21 }, (_, i) => [`v${i}`, i]));
   const submit = (keys: Record<string, number>) => ({ profile: "octos.student.operation", version: "0.1", id: "l:card-submit:1", sequence: 1, lesson_id: "l", kind: "card_submit",
     target: { kind: "student_task", task_id: "t" }, input: "mouse", pile: keys });
@@ -2150,4 +2153,87 @@ test("a practice start changes the chart's number at once, while its disks ease 
   // The number is the task's at once, never one between 4,050 and 3,012, while the thousands' disks ease away.
   assert.equal(values.number, 3_012_000);
   assert.ok(values[chartVariable("count", 3)]! > 0, `the disks ease: ${values[chartVariable("count", 3)]}`);
+});
+
+// ---------------------------------------------------------------- the place-value trade card (decision 0026)
+
+const tradeAt = (place: number) => place + 3;
+
+test("a trade task: the pair laid at once, taps by the card's rules, the tap that completes the chart ends it, then the typed answer", () => {
+  const lesson = tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]] });
+  const events = normalizeAuthoringLesson(lesson, tradeHost("pt"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pt", { reducedMotion: true });
+  const card = "pt:node:sum";
+  assert.deepEqual(session.tapStudentCard(card, { kind: "down", place: tradeAt(0) }), { refused: "inert", message: "" });
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(session.studentCardLive(card), true);
+  assert.deepEqual([chartValues(session).a, chartValues(session).b], [4_658_000, 1_573_000], "the task's own pair");
+  // A refusal changes nothing and states the fact, in the card's words.
+  assert.deepEqual(session.tapStudentCard(card, { kind: "trade", place: tradeAt(0) }), { refused: "not_down", message: "Nothing below the line here yet." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: tradeAt(1) }), { refused: "wrong_op", message: "That can't be done here." });
+  // Any order: the hundreds first, then the ones and tens; a carry lands below a line already crossed.
+  const down = session.tapStudentCard(card, { kind: "down", place: tradeAt(2) }, "mouse");
+  assert.ok("operation" in down);
+  assert.deepEqual(down.operation.changes, [{ alias: tradeVariable(2), before: 0, after: 1 }]);
+  assert.deepEqual(down.operation.tap, { kind: "down", place: tradeAt(2) });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "down", place: tradeAt(2) }), { refused: "already_down", message: "This column is already below the line." });
+  for (const [kind, place] of [["down", 0], ["trade", 0], ["down", 1], ["trade", 1], ["trade", 2]] as const) assert.ok("operation" in session.tapStudentCard(card, { kind, place: tradeAt(place) }, "mouse"));
+  assert.equal(session.studentTasks[0]!.status, "not_started", "taps are not attempts");
+  assert.equal(session.studentCardLive(card), true);
+  // The last column comes down: the chart is complete and the task ends on that tap, with no "done".
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "down", place: tradeAt(3) }, "touch"));
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  assert.deepEqual(session.studentTasks[0]!.attempts.map((attempt) => [attempt.actual, attempt.target, attempt.succeeded]), [[1, 1, true]]);
+  assert.equal(session.studentCardLive(card), false);
+  const submit = session.studentOperations.at(-1)!;
+  assert.equal(submit.kind, "card_submit");
+  assert.equal((submit as { input: string }).input, "touch");
+  // The typed answer opens over the finished chart (one digit per column), read by the number reader.
+  assert.equal(session.studentTasks[1]!.available, true);
+  const values = chartValues(session);
+  assert.deepEqual([3, 2, 1, 0].map((place) => values[tradeVariable(place)]), [1, 2, 2, 2]);
+  assert.equal((session.submitStudentAnswer("answer-1", "6230") as StudentTaskSnapshot).status, "in_progress");
+  assert.deepEqual(session.submitStudentAnswer("answer-1", "six"), { unreadable: true });
+  assert.equal((session.submitStudentAnswer("answer-1", "６,２３１") as StudentTaskSnapshot).status, "succeeded");
+  // Restored: the same log, tasks and chart.
+  const restored = new BrowserLessonSession(events, store, "pt", { reducedMotion: true });
+  assert.deepEqual(restored.studentOperations, session.studentOperations);
+  assert.deepEqual(restored.studentTasks.map((each) => each.status), ["succeeded", "succeeded"]);
+  assert.deepEqual(chartValues(restored), values);
+});
+
+test("a trade task to subtract: a short column's fact with its counts, a borrow across zeros, then the difference", () => {
+  const lesson = tradeLesson({ operation: "subtract", a: "50003", b: "2476", practice: [["40002", "3585"]] });
+  const events = normalizeAuthoringLesson(lesson, tradeHost("pts"));
+  const session = new BrowserLessonSession(events, new MemoryStore(), "pts", { reducedMotion: true });
+  const card = "pts:node:sum";
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual(session.tapStudentCard(card, { kind: "down", place: tradeAt(0) }), { refused: "not_enough", message: "This column has 2; taking away 5 needs more." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: tradeAt(3) }), { refused: "none_to_break", message: "This column is empty." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: tradeAt(0) }), { refused: "no_right", message: "There is no column to the right to break into." });
+  for (const place of [4, 3, 2, 1]) assert.ok("operation" in session.tapStudentCard(card, { kind: "break", place: tradeAt(place) }));
+  assert.deepEqual(session.tapStudentCard(card, { kind: "break", place: tradeAt(4) }), { refused: "not_needed", message: "The thousands have 9; taking away 3 needs no more." });
+  for (const place of [0, 1, 2, 3]) session.tapStudentCard(card, { kind: "down", place: tradeAt(place) });
+  assert.equal(session.studentTasks[0]!.status, "not_started", "the ten thousands still have to come down");
+  session.tapStudentCard(card, { kind: "down", place: tradeAt(4) });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  assert.equal((session.submitStudentAnswer("answer-1", "36417") as StudentTaskSnapshot).status, "succeeded");
+});
+
+test("a trade lesson's demonstration moves by columns finished; the practice start lays the pair and fresh columns at once", () => {
+  const lesson = tradeLesson({ operation: "add", a: "3486", b: "2739", practice: [["4658", "1573"]],
+    beats: [{ key: "two", say: "The ones and the tens.", actions: [{ do: "animate", variable: "finished", value: 2 }] } as any] });
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(lesson, tradeHost("pt-demo")), new MemoryStore(), "pt-demo");
+  let demonstrated: number | undefined;
+  for (let step = 0; step < 50 && session.projection.status !== "completed"; step += 1) {
+    session.advance();
+    const node = session.projection.board?.nodes["pt-demo:node:sum"];
+    if (node && Number(node.content.finished) >= 2) demonstrated = Number(node.content.finished);
+  }
+  assert.equal(session.projection.status, "completed");
+  assert.equal(demonstrated, 2, "the card's columns finished followed the lesson's variable");
+  // Every bound field of the card changes at once at the practice start: no status between two states.
+  const values = chartValues(session);
+  assert.deepEqual([values.a, values.b, values.finished, ...[3, 2, 1, 0].map((place) => values[tradeVariable(place)])], [4_658_000, 1_573_000, 0, 0, 0, 0, 0]);
 });

@@ -16,6 +16,7 @@ import {
   baseTenMat, baseTenSliderPlace, baseTenSliderReachable, validateBaseTenTradeContent, type BaseTenPlaceName,
 } from "../../plugin-math/src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PART_FIELDS, validatePlaceValueChartContent } from "../../plugin-math/src/place-value-chart.js";
+import { PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PART_FIELDS, validatePlaceValueTradeContent } from "../../plugin-math/src/place-value-trade.js";
 import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList, type TapCardKind } from "./cards.js";
 import {
   bindingCapabilitiesForNodeKind,
@@ -488,11 +489,15 @@ function validateCardStudentTask(
   const operations = task.allowed_operations as Array<{ kind?: unknown; node?: unknown; variable?: unknown; controls?: unknown }>;
   const count = (kind: string) => operations.filter((operation) => operation?.kind === kind).length;
   const sliders = operations.filter((operation) => operation?.kind === "variable_change");
-  if (count("card_tap") !== 1 || count("card_submit") !== 1 || count("card_tap") + count("card_submit") + sliders.length !== operations.length
+  // A fact the card judges on each tap ends the task on the tap that makes it true: no "done" (decision 0026 §3).
+  if (fact.judgedOnTap && (operations.length !== 1 || count("card_tap") !== 1 || operations[0]!.node !== completion.node)) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, `A ${completion.fact} task allows only tapping its card (card_tap): the tap that completes the card ends the task, with no "done"`);
+  }
+  if (!fact.judgedOnTap && (count("card_tap") !== 1 || count("card_submit") !== 1 || count("card_tap") + count("card_submit") + sliders.length !== operations.length
     || operations.some((operation) => operation.kind === "card_tap" && operation.node !== completion.node)
     || sliders.some((operation) => cardSliders.get(String(operation.variable))?.card !== completion.node
       || !Array.isArray(operation.controls) || operation.controls.length !== 1 || operation.controls[0] !== "slider")
-    || new Set(sliders.map((operation) => operation.variable)).size !== sliders.length) {
+    || new Set(sliders.map((operation) => operation.variable)).size !== sliders.length)) {
     fail("OLL_INVALID_STUDENT_TASK", `${path}/allowed_operations`, "A card task allows tapping its card (card_tap) and saying done (card_submit), and may allow a slider on its counts (variable_change with controls [\"slider\"]), nothing else");
   }
   const variables = cardTapVariables(kind, content, declarations, `${path}/completion/node`);
@@ -516,11 +521,16 @@ function validateCardStudentTask(
     const practice = cardContentAt(kind, content, variables, { ...initial, ...startValues });
     kind.validateContent(practice, "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
     kind.validateStart?.(kind.state(practice), (message) => fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The practice pile is not a starting pile: ${message}`));
-    // A card-level field (the chart's number) is the task's own: never the number the lesson showed (decision 0025 §4).
-    for (const field of kind.cardFields ?? []) {
-      const alias = variables.get(field);
-      if (alias === undefined) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `A card task starts on its own ${field}: bind the card's '${field}' to a lesson variable the task's start sets`);
-      if (startValues[alias] === initial[alias]) fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The task's ${field} (${alias} = ${startValues[alias]}) is the lesson's own; a practice task starts on another`);
+    // The task's problem is its own: never the number the lesson showed (decision 0025 §4), nor the pair (0026 §5).
+    const own = kind.practiceFields ?? kind.cardFields ?? [];
+    for (const field of own) {
+      if (variables.get(field) === undefined) fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `A card task starts on its own ${field}: bind the card's '${field}' to a lesson variable the task's start sets`);
+    }
+    if (own.length && own.every((field) => startValues[variables.get(field)!] === initial[variables.get(field)!])) {
+      const values = own.map((field) => `${variables.get(field)} = ${startValues[variables.get(field)!]}`).join(", ");
+      fail("OLL_INVALID_PHASE_START", `${path}/start/values`, own.length === 1
+        ? `The task's ${own[0]} (${values}) is the lesson's own; a practice task starts on another`
+        : `The task's ${own.join(" and ")} (${values}) are the lesson's own; a practice task starts on another ${own.length === 2 ? "pair" : "problem"}`);
     }
   }
   // The fact's own target, checked against the practice pile by the card's rules (a count: amendment 5).
@@ -1113,6 +1123,19 @@ function checkPlaceValueChartBoundValues(content: JsonObject, path: string, decl
   checkEachBoundVariable(content, path, declarations, PLACE_VALUE_CHART_PART_FIELDS, validate);
 }
 
+/**
+ * A place-value trade card stays drawable for every value its variables can take (decision 0026): each number
+ * within the card's columns and two decimals, each status and "columns finished" in range. The joint rules
+ * (the pair the card refuses, the pair's columns, statuses the taps make) belong to a starting card: the card
+ * as its variables start it and each task's start are checked against them.
+ */
+function checkPlaceValueTradeBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validatePlaceValueTradeContent(evaluated, path, failAt, { boundValues: true });
+  checkPluginBoundValues(content, path, declarations, PLACE_VALUE_TRADE_PART_FIELDS, validate);
+  // Up to nine variables, and the corner check varies only four: each is also checked alone.
+  checkEachBoundVariable(content, path, declarations, PLACE_VALUE_TRADE_PART_FIELDS, validate);
+}
+
 /** Each referenced variable on its own at its minimum and maximum, the others at their start. */
 function checkEachBoundVariable(
   content: JsonObject,
@@ -1139,6 +1162,64 @@ function checkEachBoundVariable(
       for (const field of fields) if (Array.isArray(evaluated[field])) evaluated[field] = evaluated[field].map(({ id: _id, ...item }: JsonObject) => item);
       validate(evaluated, (failPath, message) => fail("OLL_INVALID_BINDING", failPath, `${where}: ${message}`));
     }
+  }
+}
+
+/**
+ * A lesson animates a variable of a card it shows by a demonstration field (decision 0026): only that field's
+ * own variable, a whole number, never back ("columns finished" goes forward a column at a time; the same value
+ * again leaves the card as it is). The card's tap fields change only by the learner's taps.
+ */
+function checkDemonstrationAnimate(
+  cards: ReadonlyMap<string, LessonTapCard>,
+  variable: string,
+  value: number,
+  before: number | undefined,
+  path: string,
+): void {
+  for (const { kind, content } of cards.values()) {
+    if (!kind.demonstration) continue;
+    const bound = bareBindings(content);
+    if (bound.get(kind.demonstration.field) === variable) {
+      const from = before ?? 0;
+      if (!Number.isInteger(value)) fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' counts the columns a ${kind.kind} card has finished: a whole number, not ${value}; from ${from}, ${kind.demonstration.next(content, from)}`);
+      if (value < from) fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' counts the columns a ${kind.kind} card has finished: it goes forward, not from ${from} back to ${value}; ${kind.demonstration.next(content, from)}`);
+    }
+    for (const { place, field } of kind.tapFields(content)) {
+      if (bound.get(kind.fieldTarget(content, place, field)) === variable) {
+        fail("OLL_INVALID_VARIABLE", `${path}/variable`, `'${variable}' is a column's state on a ${kind.kind} card: only the learner's taps change it; the lesson animates '${bound.get(kind.demonstration.field) ?? kind.demonstration.field}'`);
+      }
+    }
+  }
+}
+
+/**
+ * A replay start on a card shown by a demonstration field restarts the demonstration (decision 0026): that field
+ * at a whole number (it may go back: the replay shows it again), every column's state fresh, and the card's
+ * numbers a pair it takes.
+ */
+function checkDemonstrationReplay(cards: ReadonlyMap<string, LessonTapCard>, values: Readonly<Record<string, number>>, played: Readonly<Record<string, number>>, path: string): void {
+  for (const { kind, content } of cards.values()) {
+    if (!kind.demonstration) continue;
+    const bound = bareBindings(content);
+    const field = bound.get(kind.demonstration.field);
+    if (field !== undefined && Object.hasOwn(values, field) && !Number.isInteger(values[field])) {
+      fail("OLL_INVALID_PHASE_START", `${path}/values/${field}`, `'${field}' counts the columns a ${kind.kind} card has finished: a whole number, not ${values[field]}`);
+    }
+    let touched = field !== undefined && Object.hasOwn(values, field);
+    for (const { place, field: tapField } of kind.tapFields(content)) {
+      const alias = bound.get(kind.fieldTarget(content, place, tapField));
+      if (alias === undefined || !Object.hasOwn(values, alias)) continue;
+      touched = true;
+      if (values[alias] !== 0) fail("OLL_INVALID_PHASE_START", `${path}/values/${alias}`, `'${alias}' is a column's state on a ${kind.kind} card: a replay lays a fresh chart (0), not ${values[alias]}`);
+    }
+    for (const cardField of kind.practiceFields ?? []) if (bound.get(cardField) !== undefined && Object.hasOwn(values, bound.get(cardField)!)) touched = true;
+    if (!touched) continue;
+    const at = kind.contentAt(content, (target) => {
+      const alias = bound.get(target);
+      return alias === undefined ? undefined : ({ ...played, ...values })[alias];
+    });
+    kind.validateContent(at, "$", (failPath, message) => fail("OLL_INVALID_PHASE_START", path, `The replay's card is not one this card takes: ${message} (${failPath.replace(/^\$\//, "")})`));
   }
 }
 
@@ -2156,6 +2237,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (action.kind === FRACTION_MODEL_KIND) checkFractionModelBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === BASE_TEN_TRADE_KIND) checkBaseTenTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === PLACE_VALUE_CHART_KIND) checkPlaceValueChartBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          if (action.kind === PLACE_VALUE_TRADE_KIND) checkPlaceValueTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           // A card with starting rules is checked as its variables start it, not only as written (review of #111).
           if (tapCard?.validateStart && Array.isArray(action.content.bindings)) {
             const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
@@ -2170,6 +2252,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           const target = resolveLocal(registry, action.target, `${actionPath}/target`, ["node"]);
           const card = tapCards.get(target.alias);
           if (!card || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, `A tap acts on a whole ${tapCardKindList()} card of this lesson`);
+          // The model never names a control (decision 0026): such a card is shown by its demonstration field.
+          if (card.kind.demonstration) {
+            fail("OLL_INVALID_OPERATION", `${actionPath}/do`, `A ${card.kind.kind} card is not tapped by the lesson: animate the variable bound to its '${card.kind.demonstration.field}' (columns finished, counting from the right), and the program plays each column`);
+          }
           requireVisible(action.target, `${actionPath}/target`);
           // The tap and place the shape check let through are this card's own (always so with one kind of tap card).
           if (!card.kind.taps.includes(action.tap)) fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/tap`, `Unknown tap '${String(action.tap)}'`);
@@ -2183,6 +2269,12 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           const variable = document.lesson.variables?.find((candidate) => candidate.as === action.variable);
           if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/variable`, `Variable '${action.variable}' is not declared`);
           if (action.value < variable.min || action.value > variable.max) {
+            // A card's demonstration field says its own range (decision 0026: columns finished, 0 to the columns).
+            const shown = [...tapCards.values()].find(({ kind, content }) => kind.demonstration && bareBindings(content).get(kind.demonstration.field) === action.variable);
+            if (shown?.kind.demonstration) {
+              const { min, max } = shown.kind.demonstration.range(shown.content);
+              fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `'${action.variable}' counts the columns a ${shown.kind.kind} card has finished: ${min} to ${max}, not ${action.value}`);
+            }
             fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `Animation target for '${action.variable}' is outside its range`);
           }
           return;
@@ -2294,11 +2386,18 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       });
       // Play the beat's variable changes in playback order (a replay start, then each phase), so every
       // demonstration tap is checked by the card's rules in the state it will meet (decision 0023).
-      if (beat.start?.kind === "replay") Object.assign(playedValues, resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`));
+      if (beat.start?.kind === "replay") {
+        const replayed = resolvePhaseStart(beat.start, document.lesson.variables ?? [], `${beatPath}/start`);
+        checkDemonstrationReplay(tapCards, replayed, playedValues, `${beatPath}/start`);
+        Object.assign(playedValues, replayed);
+      }
       for (const phase of ["before_speech", "during_speech", "after_speech"] as const) {
         beat.actions.forEach((action, actionIndex) => {
           if ((action.when ?? "during_speech") !== phase) return;
-          if (action.do === "animate") playedValues[action.variable] = action.value;
+          if (action.do === "animate") {
+            checkDemonstrationAnimate(tapCards, action.variable, action.value, playedValues[action.variable], `${beatPath}/actions/${actionIndex}`);
+            playedValues[action.variable] = action.value;
+          }
           if (action.do !== "tap") return;
           const { kind, content } = tapCards.get(splitTarget(action.target, `${beatPath}/actions/${actionIndex}/target`).alias)!;
           const variables = cardTapVariables(kind, content, document.lesson.variables ?? [], `${beatPath}/actions/${actionIndex}/target`);

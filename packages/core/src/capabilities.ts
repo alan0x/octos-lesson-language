@@ -2,6 +2,7 @@ import { NUMBER_LINE_BINDINGS, NUMBER_LINE_KIND } from "../../plugin-math/src/nu
 import { FRACTION_MODEL_BINDINGS, FRACTION_MODEL_KIND } from "../../plugin-math/src/fraction-model.js";
 import { BASE_TEN_TRADE_BINDINGS, BASE_TEN_TRADE_KIND } from "../../plugin-math/src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_BINDINGS, PLACE_VALUE_CHART_CARD_BINDINGS, PLACE_VALUE_CHART_KIND } from "../../plugin-math/src/place-value-chart.js";
+import { PLACE_VALUE_TRADE_BINDINGS, PLACE_VALUE_TRADE_CARD_BINDINGS, PLACE_VALUE_TRADE_KIND } from "../../plugin-math/src/place-value-trade.js";
 
 /**
  * Executable capabilities implemented by the current OLL core/runtime.
@@ -30,7 +31,7 @@ export const OLL_NODE_KINDS = [
  * OLL and are always installed; their execution feature is the plugin's, not
  * `node:<kind>`, so an older player refuses them before playback.
  */
-export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND, BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND] as const;
+export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND, BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND] as const;
 
 export type OllNodeKind = typeof OLL_NODE_KINDS[number] | typeof OLL_PLUGIN_NODE_KINDS[number];
 
@@ -72,15 +73,18 @@ export const OLL_BINDING_CAPABILITIES = {
   fraction_model: FRACTION_MODEL_BINDINGS,
   base_ten_trade: BASE_TEN_TRADE_BINDINGS,
   place_value_chart: PLACE_VALUE_CHART_BINDINGS,
+  place_value_trade: PLACE_VALUE_TRADE_BINDINGS,
 } as const;
 
 /**
  * Card-level numeric fields lesson variables may drive, by node kind (player 0.16.0): a binding names one
- * by its bare name (`{"target": "target", "expression": "n"}`), not as `part.field`. Only the place-value
- * chart has one, its number, so a practice task starts on its own number (decision 0025).
+ * by its bare name (`{"target": "target", "expression": "n"}`), not as `part.field`. The place-value chart
+ * has one, its number, so a practice task starts on its own number (decision 0025); the place-value trade
+ * card has its two numbers and the demonstration's "columns finished" (decision 0026, player 0.17.0).
  */
 export const OLL_CARD_BINDING_CAPABILITIES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   place_value_chart: PLACE_VALUE_CHART_CARD_BINDINGS,
+  place_value_trade: PLACE_VALUE_TRADE_CARD_BINDINGS,
 });
 
 /** The card-level fields of a node kind, or none. */

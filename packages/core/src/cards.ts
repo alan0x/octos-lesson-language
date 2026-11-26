@@ -1,5 +1,6 @@
 /**
- * Cards the learner taps, routed by card kind: the trading mat (decision 0023) and the place-value chart (0025).
+ * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025)
+ * and the place-value trade card, adding and subtracting on the chart as the written method (0026).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -18,10 +19,16 @@ import {
   baseTenRefusalText, baseTenTapReachable, hasTray, validateBaseTenTradeContent, type BaseTenLanguage, type BaseTenMat, type BaseTenPlaceName, type BaseTenRefusal,
 } from "../../plugin-math/src/base-ten-trade.js";
 import {
-  PLACE_VALUE_CHART_KIND, PLACE_VALUE_PLACE_ALIASES, PLACE_VALUE_TAP_PLACES, applyPlaceValueTap, placeValueChanges, placeValueChartState, placeValueDigitAt,
+  PLACE_VALUE_CHART_KIND, PLACE_VALUE_PLACE_ALIASES, PLACE_VALUE_TAP_PLACES, applyPlaceValueTap, placeValueChanges, placeValueChartState, placeValueColumnName, placeValueDigitAt,
   placeValueFacts, placeValueLanguage, placeValueRefusalText, placeValueTapIndex, placeValueTapPlace, validatePlaceValueChartContent,
   type PlaceValueChartState, type PlaceValueRefusal, type PlaceValueTap,
 } from "../../plugin-math/src/place-value-chart.js";
+import {
+  PLACE_VALUE_TRADE_CARD_BINDINGS, PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PROBLEM_FIELDS, PLACE_VALUE_TRADE_TAPS, PLACE_VALUE_TRADE_WORDS,
+  applyPlaceValueTradeTap, placeValueTradeChanges, placeValueTradeColumns, placeValueTradeComplete, placeValueTradeDemoSteps, placeValueTradeLanguage,
+  placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeState, validatePlaceValueTradeContent,
+  type PlaceValueTradeOperation, type PlaceValueTradeState, type PlaceValueTradeTapKind,
+} from "../../plugin-math/src/place-value-trade.js";
 import type { JsonObject } from "./types.js";
 
 type Fail = (path: string, message: string) => never;
@@ -62,6 +69,11 @@ export interface CardFactKind<S> {
   validate?(completion: CardFactCompletion, state: S, fail: (field: string, message: string) => never): void;
   /** Reads the fact on the card as the learner left it, when they say done. */
   read(completion: CardFactCompletion, state: S): { actual: number; target: number; succeeded: boolean };
+  /**
+   * The card judges this fact itself, on each of the learner's taps: the tap that makes it true ends the task
+   * (the player submits it), so there is no "done" (decision 0026 §3). A task on it allows only tapping its card.
+   */
+  readonly judgedOnTap?: boolean;
   /** The pile (by variable) the card shows once this task is done, while later tasks ask about it. */
   donePile(context: CardDonePileContext): Record<string, number> | undefined;
 }
@@ -79,8 +91,11 @@ export interface TapCardKind<S = unknown> {
   state(content: unknown): S;
   /** The card's tap rules: the state a tap leaves, or the reason the card refuses it. */
   apply(state: S, tap: CardTap): CardTapResult<S>;
-  /** The sentence the card says for a refusal, in `language` (the card's default when absent). */
-  refusalText(reason: string, place: number, language?: string): string;
+  /**
+   * The sentence the card says for a refusal, in `language` (the card's default when absent). With `state`, the
+   * card as it was tapped, a card may state the counts behind it ("This column has 3; taking away 6 needs more.").
+   */
+  refusalText(reason: string, place: number, language?: string, state?: S): string;
   /** The language the card speaks, from its content. */
   language(content: unknown): string;
   /** The fields that differ between two states, in a fixed order. */
@@ -94,6 +109,25 @@ export interface TapCardKind<S = unknown> {
    * name). Taps never change them; a card task's practice start sets each, so it starts on its own number.
    */
   readonly cardFields?: readonly string[];
+  /**
+   * The card-level fields that make a task's own problem (all of `cardFields` when absent): each is bound, a
+   * card task's start sets it, and the start's values are not all the lesson's own (a chart's number; the
+   * trade card's pair, which differs as a pair).
+   */
+  readonly practiceFields?: readonly string[];
+  /**
+   * A card the lesson shows only through one card-level field (decision 0026: "columns finished"): the lesson
+   * never taps it nor moves its tap fields, and that field's variable moves forward, a whole number at a time.
+   */
+  readonly demonstration?: {
+    readonly field: string;
+    /** The field's range on this card, as a sentence for a refusal ("0 to 4 columns"). */
+    range(content: unknown): { min: number; max: number };
+    /** What the next value after `value` does on this card, for a refusal ("3 finishes the hundreds"), or why none. */
+    next(content: unknown, value: number): string;
+  };
+  /** Every bound field changes at once when a task starts (a column's status is a state, not an amount to ease). */
+  readonly fieldsAtOnce?: boolean;
   /**
    * The content with its bound fields (tap fields and card fields) at the values `value` gives by binding
    * target (bindings dropped), for checking a pile. A field `value` leaves undefined keeps its written value.
@@ -380,10 +414,135 @@ export const PLACE_VALUE_CHART_CARD: TapCardKind<PlaceValueChartState> = Object.
   }),
 });
 
+/** The tap a trade card's refusal answers: each reason belongs to one tap. */
+const TRADE_TAP_OF_REASON: Readonly<Record<string, PlaceValueTradeTapKind>> = Object.freeze({
+  already_down: "down", already_taken: "down", not_enough: "down",
+  not_down: "trade", not_ten: "trade", no_left: "trade",
+  none_to_break: "break", no_right: "break", not_needed: "break",
+});
+
+/** The trade card's content at a pile given by binding target (bound fields only). */
+const tradeContentAt = (content: JsonObject, value: (target: string) => number | undefined): JsonObject => {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const item of (Array.isArray(at.places) ? at.places : []) as JsonObject[]) {
+    const v = value(`${item.id ?? item.as}.status`);
+    if (v !== undefined) item.status = v;
+  }
+  for (const field of PLACE_VALUE_TRADE_CARD_BINDINGS) {
+    const v = value(field);
+    if (v !== undefined) at[field] = v;
+  }
+  return at;
+};
+
+/**
+ * The place-value trade card (decision 0026): add or subtract on the chart drawn as the written method. The
+ * learner's taps are `down` (the arrow under a column), `trade` (a ringed ten) and `break` (a disk), at a
+ * place's index in `PLACE_VALUE_TAP_PLACES` (the place plus three); each changes one column's status. The two
+ * numbers and the demonstration's "columns finished" are card-level fields. The lesson never taps the card:
+ * it shows it by "columns finished", and the program plays each column's bring-down, trades and breaks.
+ */
+export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.freeze({
+  kind: PLACE_VALUE_TRADE_KIND,
+  taps: PLACE_VALUE_TRADE_TAPS,
+  places: PLACE_VALUE_TAP_PLACES,
+  cardFields: PLACE_VALUE_TRADE_CARD_BINDINGS,
+  practiceFields: PLACE_VALUE_TRADE_PROBLEM_FIELDS,
+  demonstration: Object.freeze({
+    field: "finished",
+    range: (content: unknown) => ({ min: 0, max: placeValueTradeState(content).problem.columns.length }),
+    next(content: unknown, value: number): string {
+      const columns = placeValueTradeState(content).problem.columns;
+      const k = Math.max(0, Math.floor(value));
+      const place = columns[columns.length - 1 - k];
+      return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
+    },
+  }),
+  fieldsAtOnce: true,
+  validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueTradeContent(raw, path, fail),
+  state: placeValueTradeState,
+  apply: (state: PlaceValueTradeState, tap: CardTap): CardTapResult<PlaceValueTradeState> => {
+    const result = applyPlaceValueTradeTap(state, { tap: tap.kind as PlaceValueTradeTapKind, place: placeValueTapPlace(tap.place) });
+    return result.ok ? { ok: true, state: result.state } : { ok: false, reason: result.reason };
+  },
+  refusalText(reason: string, place: number, language?: string, state?: PlaceValueTradeState): string {
+    const lang = language === "zh-CN" ? "zh-CN" : "en-US";
+    const tap = TRADE_TAP_OF_REASON[reason];
+    if (state && tap) {
+      const text = placeValueTradeRefusalText(state, { tap, place: placeValueTapPlace(place) }, lang);
+      if (text) return text;
+    }
+    // Without the card as tapped: the reason's own sentence when it has no counts.
+    const words = PLACE_VALUE_TRADE_WORDS[lang];
+    const plain = reason === "not_down" ? words.refusal.nothing_yet : (words.refusal as Record<string, unknown>)[reason];
+    return typeof plain === "string" ? plain : words.other;
+  },
+  language: placeValueTradeLanguage,
+  changes: (before: PlaceValueTradeState, after: PlaceValueTradeState): CardFieldChange[] =>
+    placeValueTradeChanges(before, after).map(({ place, field, before: from, after: to }) => ({ place: placeValueTapIndex(place), field, before: from, after: to })),
+  tapFields(content: unknown): CardTapField[] {
+    const { problem } = placeValueTradeState(content);
+    return problem.columns.map((place) => ({ place: placeValueTapIndex(place), field: "status", min: 0, max: placeValueTradeMaxStatus(problem.operation) }));
+  },
+  fieldTarget: chartFieldTarget,
+  contentAt: tradeContentAt,
+  /** A practice chart starts fresh: no column worked, nothing demonstrated. */
+  validateStart(state: PlaceValueTradeState, fail: (message: string) => never): void {
+    const finished = (state as PlaceValueTradeState & { finished?: number }).finished ?? 0;
+    if (finished !== 0) fail(`A practice chart starts with no column demonstrated; columns finished is ${finished}`);
+    for (const place of state.problem.columns) {
+      if (state.status[place] !== 0) fail(`A practice chart starts fresh; the ${PLACE_VALUE_PLACE_ALIASES[place]} column's status is ${state.status[place]}`);
+    }
+  },
+  facts: Object.freeze({
+    /**
+     * Every column is finished: the answer row reads the answer in disks. Judged on each tap, so the task ends
+     * on the tap that completes the chart (there is no "done"); the typed answer is a task of its own after it.
+     */
+    complete: {
+      keys: [],
+      judgedOnTap: true,
+      read: (_completion: CardFactCompletion, state: PlaceValueTradeState) => {
+        const actual = placeValueTradeComplete(state) ? 1 : 0;
+        return { actual, target: 1, succeeded: actual === 1 };
+      },
+      /**
+       * The one finished chart of the task's own pair (every tap order ends on it, 0026 §3), computed, never read
+       * from a logged pile: the numbers are the task's, nothing is demonstrated, each column's status as finished.
+       */
+      donePile({ content, startValue }: CardDonePileContext): Record<string, number> | undefined {
+        const bound = boundTargets(content);
+        const number = (field: "a" | "b") => (bound.has(field) ? startValue(bound.get(field)) : Number(content[field]));
+        const columns = placeValueTradeColumns(Number(content.top_place), Number(content.low_place));
+        const operation: PlaceValueTradeOperation = content.operation === "subtract" ? "subtract" : "add";
+        let final: PlaceValueTradeState;
+        try {
+          final = placeValueTradeDemoSteps(placeValueTradeProblemOn(operation, number("a"), number("b"), columns)).final;
+        } catch {
+          return undefined;
+        }
+        const result: Record<string, number> = {};
+        for (const [target, alias] of bound) {
+          if (target === "a" || target === "b") result[alias] = number(target);
+          else if (target === "finished") result[alias] = 0;
+          else {
+            const item = ((Array.isArray(content.places) ? content.places : []) as Array<{ id?: string; as?: string; place: number }>)
+              .find((candidate) => `${candidate.id ?? candidate.as}.status` === target);
+            if (item) result[alias] = final.status[item.place] ?? 0;
+          }
+        }
+        return result;
+      },
+    },
+  }),
+});
+
 /** Every card kind the learner taps, by node kind. */
 export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
   [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_CARD as TapCardKind,
+  [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_CARD as TapCardKind,
 });
 
 /** The tap card of a node kind, or undefined when the kind is not one. */

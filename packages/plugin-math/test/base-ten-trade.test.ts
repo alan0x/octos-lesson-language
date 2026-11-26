@@ -290,7 +290,7 @@ test("a demonstration taps the card by its own rules: checked before playback in
   (slider.lesson.variables as unknown as Array<Record<string, unknown>>)[0]!.control = { kind: "slider", step: 10 };
   validateAuthoringLesson(slider);
   // Only a base-ten trade card, as a whole, can be tapped.
-  assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade or place_value_chart card/);
+  assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat#ones", tap: "gather", at: "ones" }])), /whole base_ten_trade, place_value_chart or place_value_trade card/);
   assert.throws(() => validateAuthoringLesson(demo([{ do: "tap", target: "mat", tap: "fold", at: "ones" }])), /Unknown tap 'fold'/);
 });
 

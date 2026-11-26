@@ -2,9 +2,13 @@ import type { OllNodeKind } from "./capabilities.js";
 import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-answer.js";
 import type { BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
 import type { PlaceValueTap } from "../../plugin-math/src/place-value-chart.js";
+import type { PlaceValueTradeTapKind } from "../../plugin-math/src/place-value-trade.js";
 
-/** A tap a card takes: the trading mat's (decision 0023) or the place-value chart's (decision 0025). */
-export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"];
+/**
+ * A tap a card takes: the trading mat's (decision 0023), the place-value chart's (decision 0025) or the
+ * place-value trade card's (decision 0026; a learner's only, never the lesson's).
+ */
+export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind;
 /** A place an authoring tap names: the mat's, or a chart's alias (`ones`, `tenths`, `hundred-thousands`). */
 export type CardTapPlaceName = BaseTenPlaceName | "thousandths" | "hundredths" | "tenths" | "thousands" | "ten-thousands" | "hundred-thousands" | "millions";
 
@@ -256,10 +260,13 @@ export interface AuthoringAnswerStudentTask extends AuthoringStudentTaskBase {
  * card's own program judges a fact of what the learner made, only when the learner submits; taps are
  * not attempts. Every count the card's taps change is bound to its own lesson variable.
  */
-export type CardFact = "no_trade_left" | "count" | "built" | "pulled_all";
+export type CardFact = "no_trade_left" | "count" | "built" | "pulled_all" | "complete";
 
 export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
-  /** Tapping the card and saying done; and, besides, its count sliders, which trade (decision 0023 amendment 4). */
+  /**
+   * Tapping the card and saying done; and, besides, its count sliders, which trade (decision 0023 amendment 4).
+   * A fact the card judges on each tap (`complete`) allows only tapping the card.
+   */
   allowed_operations: Array<{ kind: "card_tap"; node: Alias } | { kind: "card_submit" } | { kind: "variable_change"; variable: string; controls: ["slider"] }>;
   completion: {
     kind: "card_fact";
@@ -269,7 +276,9 @@ export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
      * `no_trade_left`: every place below the highest is under ten. `count` (amendment 5, player 0.15.0):
      * the place `at` holds exactly `value` (its tray included), a target the learner reaches by tapping.
      * On a place-value chart (decision 0025, player 0.16.0): `built`, the chart holds exactly its number
-     * (a task to build), or `pulled_all`, every place is taken out (a task to pull apart).
+     * (a task to build), or `pulled_all`, every place is taken out (a task to pull apart). On a place-value
+     * trade card (decision 0026, player 0.17.0): `complete`, every column is finished; judged on each tap, so the
+     * task allows only `card_tap` and ends on the tap that completes the chart (there is no "done").
      */
     fact: CardFact;
     /** With `count`: the place counted. */
