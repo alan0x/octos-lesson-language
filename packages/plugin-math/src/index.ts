@@ -348,6 +348,8 @@ export { renderFractionModel } from "./fraction-model-view.js";
 export * from "./base-ten-trade.js";
 export { buildBaseTenTrade, type BuiltBaseTenTrade, type BaseTenTradeInput } from "./base-ten-trade-builder.js";
 export { renderBaseTenTrade, type BaseTenTradeViewContext } from "./base-ten-trade-view.js";
+// How to work a tapped card, by its kind.
+export { cardHowTo } from "./card-how-to.js";
 // The place-value chart (decision 0025). Not yet a recipe in MATH_BUILDERS: it is wired in separately.
 export * from "./place-value-chart.js";
 export { buildPlaceValueChart, type BuiltPlaceValueChart, type PlaceValueChartInput } from "./place-value-chart-builder.js";

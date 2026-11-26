@@ -12,7 +12,7 @@ import {
   type StudentTaskVariableControl,
 } from "../../core/src/index.js";
 import type { AuthoringCardStudentTask, SemanticBoardState } from "../../core/src/index.js";
-import { BASE_TEN_TRADE_PLACES, baseTenFacts, baseTenMat } from "../../plugin-math/src/base-ten-trade.js";
+import { tapCardKind } from "../../core/src/cards.js";
 import type {
   StudentAnswerOperation,
   StudentOperation,
@@ -238,18 +238,13 @@ export function evaluateStudentTaskOperation(
     // Taps are not attempts; only saying "done" on this task is.
     if (operation.kind !== "card_submit" || operation.target.task_id !== task.as) return false;
     const node = board.nodes[(task as AuthoringCardStudentTask).completion.node];
-    if (!node || node.kind !== "base_ten_trade") throw new Error(`Card '${(task as AuthoringCardStudentTask).completion.node}' is not on the board`);
+    const card = tapCardKind(node?.kind);
+    if (!node || !card) throw new Error(`Card '${(task as AuthoringCardStudentTask).completion.node}' is not on the board`);
     const completion = (task as AuthoringCardStudentTask).completion;
-    if (completion.fact === "count") {
-      // The place's count, its tray included (amendment 5).
-      actual = baseTenMat(node.content).counts[BASE_TEN_TRADE_PLACES.indexOf(completion.at!)] ?? 0;
-      target = completion.value!;
-      succeeded = actual === target;
-    } else {
-      actual = baseTenFacts(baseTenMat(node.content)).no_trade_left ? 1 : 0;
-      target = 1;
-      succeeded = actual === 1;
-    }
+    // The card's own program reads the fact (a count: the place's count, its tray included; amendment 5).
+    const fact = typeof completion.fact === "string" && Object.hasOwn(card.facts, completion.fact) ? card.facts[completion.fact] : undefined;
+    if (!fact) throw new Error(`Card '${completion.node}' has no fact '${completion.fact}'`);
+    ({ actual, target, succeeded } = fact.read(completion, card.state(node.content)));
   } else if (task.completion.kind === "expression_target") {
     const variableTask = task as AuthoringVariableStudentTask;
     if (operation.kind !== "variable_change" || !variableOperationAllowed(variableTask, operation)) return false;

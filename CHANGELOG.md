@@ -22,6 +22,8 @@
 
 ### Changed
 
+- internal: card taps routed by card kind; no behaviour change. The trading mat is the only entry of a tap-card registry (`packages/core/src/cards.ts`), which the validator, the reducer and the web runtime reach instead of naming `base_ten_trade`; `cardHowTo(kind, content)` joins `baseTenHowTo` in the math plugin.
+
 - **Ticks closer than 6 units thin out, also at rest** (decision 0024, the owner's answer 2). Ticks are then drawn on a 1-2-5 multiple of the smallest tick, counted from 0, so they are at least 6 board units apart.
   - **Subdivisions.** Within a step, a stride must divide the subdivisions (halves of quarters, never thirds of halves). Beyond that, strides are whole multiples of the step.
   - **Marked values.** Every tick at a marked value stays, with its label (visible points, jump ends, interval ends).
