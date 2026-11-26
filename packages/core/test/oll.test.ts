@@ -1286,6 +1286,8 @@ test("card tasks (decision 0023): a trading card, its taps bound to whole-range 
   assert.equal(deriveExecutionRequirements(events).minimumPlayerVersion, "0.14.0");
   validateAuthoringLesson(base({ task: { start: { kind: "practice", variables: ["ones", "tray_ones", "tens"], values: { ones: 17, tens: 2 } } } }));
   assert.throws(() => validateAuthoringLesson(base({ task: { completion: { kind: "card_fact", node: "mat", fact: "all_traded" } } })), /Unsupported card fact/);
+  // A fact is a name, never a list that a lookup would coerce to one (review of #112).
+  assert.throws(() => validateAuthoringLesson(base({ task: { completion: { kind: "card_fact", node: "mat", fact: ["count"], at: "ones", value: 7 } } })), /Unsupported card fact/);
   assert.throws(() => validateAuthoringLesson(base({ task: { allowed_operations: [{ kind: "card_submit" }] } })), /card_tap.*card_submit/);
   assert.throws(() => validateAuthoringLesson(base({ variables: [variable("ones", 14, 59), variable("tray_ones", 0, 10), variable("tens", 3, 8)] })), /must run from 0 to 9/);
   assert.throws(() => validateAuthoringLesson(base({ content: { columns: 2, places: [{ as: "ones", count: 14, tray: 0 }, { as: "tens", count: 3 }],

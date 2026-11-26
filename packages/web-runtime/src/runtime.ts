@@ -1711,7 +1711,7 @@ export class BrowserLessonSession {
     const variables = this.player.snapshot.board?.variables;
     const card = tapCardKind(node?.kind);
     if (!node || !card || !variables || !task.start) return undefined;
-    const fact = Object.hasOwn(card.facts, task.completion.fact) ? card.facts[task.completion.fact] : undefined;
+    const fact = typeof task.completion.fact === "string" && Object.hasOwn(card.facts, task.completion.fact) ? card.facts[task.completion.fact] : undefined;
     const logged = [...this.studentOperationLog.operations].reverse()
       .find((operation) => operation.kind === "card_submit" && operation.target.task_id === task.as && operation.pile) as StudentCardSubmitOperation | undefined;
     return fact?.donePile({

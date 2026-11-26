@@ -242,7 +242,7 @@ export function evaluateStudentTaskOperation(
     if (!node || !card) throw new Error(`Card '${(task as AuthoringCardStudentTask).completion.node}' is not on the board`);
     const completion = (task as AuthoringCardStudentTask).completion;
     // The card's own program reads the fact (a count: the place's count, its tray included; amendment 5).
-    const fact = Object.hasOwn(card.facts, completion.fact) ? card.facts[completion.fact] : undefined;
+    const fact = typeof completion.fact === "string" && Object.hasOwn(card.facts, completion.fact) ? card.facts[completion.fact] : undefined;
     if (!fact) throw new Error(`Card '${completion.node}' has no fact '${completion.fact}'`);
     ({ actual, target, succeeded } = fact.read(completion, card.state(node.content)));
   } else if (task.completion.kind === "expression_target") {
