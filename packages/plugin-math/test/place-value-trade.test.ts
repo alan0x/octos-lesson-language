@@ -321,7 +321,7 @@ test("content rules: the pairs the card refuses, at the number the fault is abou
   invalid(card("7352", "-", "2618", { a: v("8765"), b: v("4321") }), /\$\/b: 8,765 − 4,321 has no column that borrows/);
   invalid(card("7352", "-", "2618", { a: v("2618"), b: v("7352") }), /\$\/b: 2,618 − 7,352 is below zero: the first number is the larger \(negative\)/);
   invalid(card("389457", "+", "247568", { a: v("999999"), b: v("1") }), /\$\/a: 999,999 \+ 1 needs 7 columns; the card draws at most 6, up to the hundred thousands \(too_wide\)/);
-  invalid(card("2.75", "+", "1.48", { a: 2755 }), /\$\/a: 2.755 has more than two decimals \(decimals\)/);
+  invalid(card("2.75", "+", "1.48", { a: 2755 }), /\$\/a: 2.755 \+ 1.48: a number has more than two decimals \(decimals\)/);
   invalid({ ...card("2.75", "+", "1.48"), top_place: 5, low_place: -2 }, /draws at most 6 columns; 5 to -2 is 8 \(too_wide\)/);
   // The card draws only the columns its pair needs: a practice pair of another shape is refused.
   invalid(card("3486", "+", "2739", { a: v("13486") }), /\$\/a: 13,486 has a place above the card's columns/);

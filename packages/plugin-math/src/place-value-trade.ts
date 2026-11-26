@@ -579,6 +579,11 @@ export function validatePlaceValueTradeContent(raw: unknown, path: string, fail:
   }
   const operation = content.operation as PlaceValueTradeOperation;
   if (!PLACE_VALUE_TRADE_OPERATIONS.includes(operation)) fail(`${path}/operation`, "The operation is 'add' or 'subtract'");
+  // A pair the card refuses is said as the pair's fault first, before the columns it would need.
+  const pairFault = options.boundValues || !readable(content.a) || !readable(content.b) ? undefined : placeValueTradeFault(operation, content.a, content.b);
+  if (pairFault) {
+    fail(`${path}/${pairFault === "negative" || pairFault === "no_trade" ? "b" : pairFault === "decimals" ? ((content.a as number) % 10 ? "a" : "b") : "a"}`, placeValueTradeFaultText(pairFault, operation, content.a, content.b));
+  }
   const top = wholeNumber(content.top_place, `${path}/top_place`, 0, PLACE_VALUE_TRADE_MAX_PLACE, fail, "The top place");
   const low = wholeNumber(content.low_place, `${path}/low_place`, PLACE_VALUE_TRADE_MIN_PLACE, 0, fail, "The low place");
   const columns = placeValueTradeColumns(top, low);
@@ -605,8 +610,6 @@ export function validatePlaceValueTradeContent(raw: unknown, path: string, fail:
     statuses.push(wholeNumber(place.status, `${at}/status`, 0, placeValueTradeMaxStatus(operation), fail, `The status of the ${placeValueColumnName(expected).toLowerCase()}`));
   }
   if (options.boundValues) return;
-  const fault = placeValueTradeFault(operation, a, b);
-  if (fault) fail(`${path}/${fault === "negative" || fault === "no_trade" ? "b" : fault === "decimals" ? (a % 10 ? "a" : "b") : "a"}`, placeValueTradeFaultText(fault, operation, a, b));
   // The card draws only the columns its numbers need (0026 §2): a practice pair is of the same shape as the lesson's.
   const need = placeValueTradeColumnsFor(operation, a, b);
   if (need.top_place !== top || need.low_place !== low) {

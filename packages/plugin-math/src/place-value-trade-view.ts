@@ -225,7 +225,8 @@ function draw(view: TradeView, state: PlaceValueTradeState): void {
         const disk = diskElement(plan, place, diskPosition(view, state, place, row, i));
         disk.dataset.row = row;
         disk.dataset.index = String(i);
-        if (tap) setTappable(disk, `${tap}:${index}`, words.diskBreak(u(place)), live);
+        // A disk answers a tap as its cell does: ↓ above the line (adding), a trade below it, a break (subtracting).
+        if (tap) setTappable(disk, `${tap}:${index}`, tap === "break" ? words.diskBreak(u(place)) : tap === "trade" ? words.tenAdd(u(place), u(place + 1)) : words.downAdd(name), live);
         if (source === place && row === (v.down ? "answer" : "top")) disk.classList.add("place-value-trade-can-break");
         layer.append(disk);
       }
@@ -258,15 +259,15 @@ function draw(view: TradeView, state: PlaceValueTradeState): void {
       return ring;
     };
     if (add) {
-      disks("carry", v.carry);
-      disks("top", v.top);
-      disks("second", v.second);
+      disks("carry", v.carry, "down");
+      disks("top", v.top, "down");
+      disks("second", v.second, "down");
       if (v.answerRing) {
         const ring = ten("answer", true);
         setTappable(ring, `trade:${index}`, words.tenAdd(u(place), u(place + 1)), live);
         layer.append(ring);
       }
-      disks("answer", v.answer);
+      disks("answer", v.answer, "trade");
       // While the column on the right has a ten ready, a dashed spot shows where its one will land.
       if (columns.includes(place - 1) && placeValueTradeCell(state, place - 1).answerRing) {
         const at = v.down ? diskPosition(view, state, place, "answer", v.answer) : placeValueTradeDiskAt(plan, place, "carry", 0);
