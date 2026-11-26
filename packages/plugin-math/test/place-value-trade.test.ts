@@ -69,6 +69,11 @@ test("sketch: problems, their columns, and the refusals", () => {
   eq(prob("5", "-", "1.36").columns, [0, -1, -2], "5 − 1.36: ones to hundredths");
   eq(prob("4999.99", "+", "3999.99").columns, [3, 2, 1, 0, -1, -2], "widest: 6 columns");
   eq(prob("389457", "+", "247568").columns, [5, 4, 3, 2, 1, 0], "six whole-number columns");
+  // (Not in the sketch's checks: a pair below 1 has no ones column, as the sketch draws it; review of #115.)
+  assert.deepEqual(prob("0.35", "+", "0.48").columns, [-1, -2], "0.35 + 0.48: tenths and hundredths only");
+  assert.deepEqual(prob("0.83", "-", "0.47").columns, [-1, -2], "0.83 − 0.47: tenths and hundredths only");
+  assert.deepEqual(prob("0.65", "+", "0.48").columns, [0, -1, -2], "0.65 + 0.48 = 1.13: the answer writes a one");
+  assert.deepEqual(prob("2.5", "+", "1.75").columns, [0, -1, -2], "2.5 + 1.75: hundredths from the second number");
   eq(prob("999999", "+", "1").fault, "too_wide", "1,000,000 needs a seventh column");
   eq(prob("12345", "+", "0.05").fault, "too_wide", "seven columns with a decimal");
   eq(prob("3", "-", "5").fault, "negative", "no negative differences");
@@ -341,7 +346,7 @@ test("content rules: fields, columns, statuses and the demonstration", () => {
   invalid({ ...card("3486", "+", "2739"), finished: 5 }, /columns finished is a whole number from 0 to 4/);
   invalid({ ...card("3486", "+", "2739"), finished: 1.5 }, /columns finished is a whole number/);
   invalid(card("3486", "+", "2739", { places: card("3486", "+", "2739").places.map((p) => ({ ...p, status: 3 })) }), /status of the thousands is a whole number from 0 to 2/);
-  // A state no taps make: the tens traded while the ones are still up is fine (free order), a status the column can't have is not.
+  // A state the taps make in any order (the tens brought down first) is valid; statuses the taps never make are not.
   const s = run(m.placeValueTradeStart(prob("3486", "+", "2739")), ["bringDown", 1]);
   valid(contentOf(s));
   const sub = m.placeValueTradeStart(prob("7352", "-", "2618"));
@@ -372,12 +377,43 @@ test("the card's state is total: any content draws, numbers between values never
   assert.equal(odd.finished, 4);
   assert.deepEqual(placeValueTradeState({}).problem.columns, [0]);
   assert.deepEqual(placeValueTradeState(null).status, { 0: 0 });
-  // Statuses no taps make still draw whole counts (a variable's corner): nothing below zero.
+  // Statuses no taps make (a variable's corner): the rules' cell can go below zero (2 ones, 8 taken away, nothing
+  // received); the card draws it clamped, whole counts, nothing below zero.
   const sub = card("7352", "-", "2618");
   const corner = placeValueTradeState({ ...sub, places: sub.places.map((p) => ({ ...p, status: 1 })) });
-  for (const p of corner.problem.columns) for (const value of Object.values(m.placeValueTradeCell(corner, p))) if (typeof value === "number") assert.ok(Number.isInteger(value));
+  assert.equal(m.placeValueTradeCell(corner, 0).answer, -6, "the ported rule, unclamped, on a state no taps make");
+  for (const p of corner.problem.columns) {
+    for (const value of Object.values(m.placeValueTradeDrawnCell(corner, p))) if (typeof value === "number") assert.ok(Number.isInteger(value) && value >= 0, `${p}: ${value}`);
+  }
   // A pair the card refuses demonstrates nothing: its statuses are drawn.
   assert.deepEqual(placeValueTradeState({ ...card("3486", "+", "2739", { a: v("9999"), b: v("9999") }), finished: 4 }).status, { 3: 0, 2: 0, 1: 0, 0: 0 });
+});
+
+test("a chart showing a demonstration takes no taps; a practice starts fresh (review of #115)", () => {
+  const content = card("3486", "+", "2739");
+  const shown = placeValueTradeState({ ...content, finished: 2 });
+  assert.equal(shown.finished, 2);
+  for (const tap of ["down", "trade", "break"] as const) {
+    for (const place of [3, 2, 1, 0]) assert.equal(reason(applyPlaceValueTradeTap(shown, { tap, place })), "demonstrating", `${tap} ${place}`);
+  }
+  assert.equal(placeValueTradeRefusalText(shown, { tap: "down", place: 2 }), "This chart shows the demonstration's columns.");
+  assert.equal(placeValueTradeRefusalText(shown, { tap: "down", place: 2 }, "zh-CN"), "这张表是演示。");
+  assert.equal(applyPlaceValueTradeTap(placeValueTradeState({ ...content, finished: 0 }), { tap: "down", place: 2 }).ok, true);
+  // A practice start: nothing demonstrated, no column worked. 4,658 + 1,573 with columns finished 4 would open complete.
+  const practice = card("4658", "+", "1573");
+  assert.equal(m.placeValueTradeStartFault(placeValueTradeState(practice)), undefined);
+  assert.equal(m.placeValueTradeStartFault(placeValueTradeState({ ...practice, finished: 4 })), "A practice chart starts with no column demonstrated; columns finished is 4");
+  const worked = { ...practice, places: practice.places.map((p) => (p.place === 1 ? { ...p, status: 1 } : p)) };
+  assert.equal(m.placeValueTradeStartFault(placeValueTradeState(worked)), "A practice chart starts fresh; the tens column's status is 1");
+});
+
+test("subtracting, a tap on an answer cell nothing has come down to says so (the sketch's page.js)", () => {
+  const sub = placeValueTradeState(card("7352", "-", "2618"));
+  assert.equal(reason(applyPlaceValueTradeTap(sub, { tap: "trade", place: 1 })), "not_down");
+  assert.equal(placeValueTradeRefusalText(sub, { tap: "trade", place: 1 }), "Nothing below the line here yet.");
+  assert.equal(placeValueTradeRefusalText(sub, { tap: "trade", place: 1 }, "zh-CN"), "这一位横线下面还没有圆片。");
+  const taken = run(sub, ["takeAway", 1]);
+  assert.equal(reason(applyPlaceValueTradeTap(taken, { tap: "trade", place: 1 })), "wrong_op", "below the line, its disks break instead");
 });
 
 test("taps: ↓, a ringed ten and a disk, by the sketch's rules; what a tap changes is one column's status", () => {
@@ -394,7 +430,8 @@ test("taps: ↓, a ringed ten and a disk, by the sketch's rules; what a tap chan
   const broke = applyPlaceValueTradeTap(sub, { tap: "break", place: 1 });
   assert.ok(broke.ok);
   assert.deepEqual(placeValueTradeChanges(sub, broke.state), [{ place: 0, field: "status", before: 0, after: 2 }]);
-  assert.equal(reason(applyPlaceValueTradeTap(sub, { tap: "trade", place: 0 })), "wrong_op");
+  assert.equal(reason(applyPlaceValueTradeTap(broke.state, { tap: "trade", place: 1 })), "not_down", "nothing has come down to the tens yet");
+  assert.equal(reason(applyPlaceValueTradeTap(sub, { tap: "trade", place: 7 })), "wrong_op");
 });
 
 test("facts: the chart, the columns finished, and the next value with the column it would finish", () => {

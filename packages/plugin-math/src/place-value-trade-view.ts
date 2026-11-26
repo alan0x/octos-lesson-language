@@ -286,11 +286,12 @@ function draw(view: TradeView, state: PlaceValueTradeState): void {
       disks("answer", v.answer, "break");
     }
     // The cells answer taps too: adding, the rows of a column still above the line bring it down and its answer
-    // trades; subtracting, row 2 takes away and the disks above or below the line break.
+    // trades; subtracting, row 2 takes away, the disks above or below the line break, and an answer cell nothing
+    // has come down to yet says so (the rules refuse a `trade` there: nothing below the line yet).
     const hits = view.hits.get(place)!;
     const cellTap: Partial<Record<PlaceValueTradeRow, string>> = add
       ? { carry: `down:${index}`, top: `down:${index}`, second: `down:${index}`, answer: `trade:${index}` }
-      : { top: `break:${index}`, second: `down:${index}`, answer: `break:${index}` };
+      : { top: `break:${index}`, second: `down:${index}`, answer: v.down ? `break:${index}` : `trade:${index}` };
     for (const [row, rect] of Object.entries(hits) as Array<[PlaceValueTradeRow, SVGRectElement]>) {
       setTappable(rect, cellTap[row], row === "second" || row === "carry" || (add && row === "top") ? (add ? words.downAdd(name) : words.downSub(name)) : add ? words.tenAdd(u(place), u(place + 1)) : words.diskBreak(u(place)), live);
       rect.classList.toggle("place-value-trade-cell-empty", row === "answer" && !v.down);
@@ -401,7 +402,7 @@ function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValu
       const node = diskNode(view, anim.from, "answer", i);
       if (node) fly(node, diskPosition(view, before, anim.from, "answer", i + 10), diskPosition(view, after, anim.from, "answer", i), 300, 420);
     }
-    const target = anim.landed === "carry" ? diskNode(view, anim.to, "carry", 0) : diskNode(view, anim.to, "answer", cellAfter(anim.to).answer - 1 + (cellAfter(anim.to).answerRing ? 0 : 0));
+    const target = anim.landed === "carry" ? diskNode(view, anim.to, "carry", 0) : diskNode(view, anim.to, "answer", cellAfter(anim.to).answer - 1);
     if (target && canAnimate(target)) {
       const to = anim.landed === "carry" ? diskPosition(view, after, anim.to, "carry", 0) : diskPosition(view, after, anim.to, "answer", cellAfter(anim.to).answer - 1);
       const move = `translate(${round(mid.x - to.x)}px, ${round(mid.y - to.y)}px)`;
