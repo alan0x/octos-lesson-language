@@ -81,6 +81,9 @@ test("sketch: numerals, expanded forms, place counts and the refused tasks", () 
   eq(m.placeValueTaskFault(v("0.05"), "numeral"), "one_place", "0.05 pulled apart is its own part");
   eq(m.placeValueTaskFault(v("4000"), "name"), undefined, "four thousand is fine");
   eq(m.placeValueTaskFault(v("4050"), "expanded"), undefined, "two places");
+  assert.equal(m.placeValueTaskFault(v("1000"), "expanded_factors"), "one_place", "1 × 1,000 shows the answer");
+  assert.equal(m.placeValueTaskFault(v("0.01"), "expanded_factors"), "one_place", "1 × (1/100) shows the answer");
+  assert.equal(m.placeValueTaskFault(v("4000"), "expanded_factors"), undefined, "4 × 1,000 does not");
 });
 
 test("sketch: columns are whole periods, so empty columns don't give away the digit count", () => {
