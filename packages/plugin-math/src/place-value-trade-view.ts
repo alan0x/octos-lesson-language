@@ -19,13 +19,15 @@
  */
 import { PLACE_VALUE_PLACE_ALIASES, placeValueColumnName, placeValueDiskLabel, placeValueTapIndex, placeValueTapPlace, type PlaceValueLanguage } from "./place-value-chart.js";
 import {
-  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeCell, placeValueTradeDemoSteps, placeValueTradeDiskAt,
+  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeDemoSteps, placeValueTradeDiskAt, placeValueTradeDrawnCell,
   placeValueTradeDiskFont, placeValueTradeInstruction, placeValueTradeLanguage, placeValueTradeProblemText, placeValueTradeRefusalPlace,
   placeValueTradeStart, placeValueTradeState, placeValueTradeStateKey, placeValueTradeUnitWord, planPlaceValueTrade,
   type PlaceValueTradeAnim, type PlaceValueTradePlan, type PlaceValueTradeRow, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "./place-value-trade.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+/** The card draws its cells' counts clamped (statuses no taps make never draw a negative count). */
+const placeValueTradeCell = placeValueTradeDrawnCell;
 const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 export interface PlaceValueTradeViewContext {
@@ -284,11 +286,12 @@ function draw(view: TradeView, state: PlaceValueTradeState): void {
       disks("answer", v.answer, "break");
     }
     // The cells answer taps too: adding, the rows of a column still above the line bring it down and its answer
-    // trades; subtracting, row 2 takes away and the disks above or below the line break.
+    // trades; subtracting, row 2 takes away, the disks above or below the line break, and an answer cell nothing
+    // has come down to yet says so (the rules refuse a `trade` there: nothing below the line yet).
     const hits = view.hits.get(place)!;
     const cellTap: Partial<Record<PlaceValueTradeRow, string>> = add
       ? { carry: `down:${index}`, top: `down:${index}`, second: `down:${index}`, answer: `trade:${index}` }
-      : { top: `break:${index}`, second: `down:${index}`, answer: `break:${index}` };
+      : { top: `break:${index}`, second: `down:${index}`, answer: v.down ? `break:${index}` : `trade:${index}` };
     for (const [row, rect] of Object.entries(hits) as Array<[PlaceValueTradeRow, SVGRectElement]>) {
       setTappable(rect, cellTap[row], row === "second" || row === "carry" || (add && row === "top") ? (add ? words.downAdd(name) : words.downSub(name)) : add ? words.tenAdd(u(place), u(place + 1)) : words.diskBreak(u(place)), live);
       rect.classList.toggle("place-value-trade-cell-empty", row === "answer" && !v.down);
@@ -335,6 +338,8 @@ function drawNote(view: TradeView, state: PlaceValueTradeState): void {
     const object = element("foreignObject", { x: round(box.x + 2), y: round(box.y + 2), width: round(box.width - 4), height: round(box.height - 4) }, "place-value-trade-note");
     const text = document.createElementNS(XHTML_NS, "p") as HTMLParagraphElement;
     text.className = "place-value-trade-colnote";
+    // Narrower columns (five or six) say it smaller, so it fits the cell.
+    text.style.fontSize = `${view.plan.disk <= 24 ? 11 : view.plan.disk <= 28 ? 12.5 : 13.5}px`;
     text.textContent = note.text;
     object.append(text);
     view.overlay.append(object);
@@ -397,7 +402,7 @@ function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValu
       const node = diskNode(view, anim.from, "answer", i);
       if (node) fly(node, diskPosition(view, before, anim.from, "answer", i + 10), diskPosition(view, after, anim.from, "answer", i), 300, 420);
     }
-    const target = anim.landed === "carry" ? diskNode(view, anim.to, "carry", 0) : diskNode(view, anim.to, "answer", cellAfter(anim.to).answer - 1 + (cellAfter(anim.to).answerRing ? 0 : 0));
+    const target = anim.landed === "carry" ? diskNode(view, anim.to, "carry", 0) : diskNode(view, anim.to, "answer", cellAfter(anim.to).answer - 1);
     if (target && canAnimate(target)) {
       const to = anim.landed === "carry" ? diskPosition(view, after, anim.to, "carry", 0) : diskPosition(view, after, anim.to, "answer", cellAfter(anim.to).answer - 1);
       const move = `translate(${round(mid.x - to.x)}px, ${round(mid.y - to.y)}px)`;

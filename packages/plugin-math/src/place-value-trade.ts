@@ -123,13 +123,15 @@ const readable = (value: unknown): value is number =>
   typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= PLACE_VALUE_TRADE_MAX_VALUE;
 
 /**
- * The columns a pair needs, highest first: from the lowest place either number writes up to the highest place
- * of either number or the answer (a sum that gains a place gets its column). Not checked against the limits.
+ * The columns a pair needs, highest first: from the lowest place either number writes up to the highest place of
+ * either number or the answer (a sum that gains a place gets its column). A pair below 1 (0.35 + 0.48) has no ones
+ * column, as the sketch draws it; the top place is then negative. Not checked against the limits. Places come from
+ * the values, so a written trailing zero ("2.50") adds no column: a lesson number cannot carry it.
  */
 export function placeValueTradeColumnsFor(operation: PlaceValueTradeOperation, a: number, b: number): { top_place: number; low_place: number } {
   const result = operation === "add" ? a + b : Math.max(0, a - b);
   const low = 0 - Math.min(PLACE_VALUE_TRADE_MAX_DECIMALS, Math.max(placeValueTradeDecimals(a), placeValueTradeDecimals(b)));
-  const top = Math.max(placeValueTopPlace(a), placeValueTopPlace(b), placeValueTopPlace(result), low, 0);
+  const top = Math.max(placeValueTopPlace(a), placeValueTopPlace(b), placeValueTopPlace(result), low);
   return { top_place: top, low_place: low };
 }
 
@@ -200,6 +202,11 @@ export interface PlaceValueTradeState {
   problem: PlaceValueTradeProblem;
   /** Each column's status, by place. */
   status: Record<number, number>;
+  /**
+   * A card's demonstration, columns finished (`placeValueTradeState`): above 0 the chart is the demonstration's,
+   * and the learner's taps are refused. Absent for the rules' own states.
+   */
+  finished?: number;
 }
 
 export function placeValueTradeStart(problem: PlaceValueTradeProblem): PlaceValueTradeState {
@@ -251,6 +258,18 @@ export function placeValueTradeCell(state: PlaceValueTradeState, place: number):
 }
 const cell = placeValueTradeCell;
 
+/**
+ * A cell as the card draws it: the rules' counts, never below zero nor past what a cell holds (19). Statuses no
+ * taps make (a variable between values, a restored pile) can make the rules' counts negative; they are drawn
+ * as empty, never as a negative number of disks. Reachable states draw exactly the rules' counts.
+ */
+export function placeValueTradeDrawnCell(state: PlaceValueTradeState, place: number): PlaceValueTradeCell {
+  const c = cell(state, place);
+  const clamp = (n: number) => Math.min(19, Math.max(0, n));
+  const top = clamp(c.top), answer = clamp(c.answer);
+  return { down: c.down, carry: clamp(c.carry), top, second: clamp(c.second), answer, topRing: c.topRing && top >= 10, answerRing: c.answerRing && answer >= 10 };
+}
+
 /** The value of every disk on the chart, in thousandths (rings are not disks). */
 export function placeValueTradeChartValue(state: PlaceValueTradeState): number {
   return state.problem.columns.reduce((sum, p) => {
@@ -271,7 +290,7 @@ export function placeValueTradeInvariantHolds(state: PlaceValueTradeState): bool
 
 export type PlaceValueTradeRefusal =
   | "wrong_op" | "no_place" | "already_down" | "not_down" | "not_ten" | "no_left"
-  | "already_taken" | "not_enough" | "none_to_break" | "no_right" | "not_needed";
+  | "already_taken" | "not_enough" | "none_to_break" | "no_right" | "not_needed" | "demonstrating";
 
 /** An animation the view plays for an action the rules made. */
 export type PlaceValueTradeAnim =
@@ -357,8 +376,15 @@ export function placeValueTradeDown(state: PlaceValueTradeState, place: number):
 /** One learner tap on the card: ↓ under a column, a ringed ten, or a disk to break, at a place (5 to -2). */
 export interface PlaceValueTradeTap { tap: PlaceValueTradeTapKind; place: number }
 
-/** The tap rules: ↓ brings down or takes away, `trade` trades a ringed ten (adding), `break` breaks a disk (subtracting). */
+/**
+ * The tap rules: ↓ brings down or takes away, `trade` trades a ringed ten (adding), `break` breaks a disk
+ * (subtracting). A chart showing a demonstration (columns finished above 0) takes no taps: its columns are the
+ * program's. Subtracting, a tap on an answer cell nothing has come down to yet (the view sends `trade` there) is
+ * refused as the sketch says it: nothing below the line yet.
+ */
 export function applyPlaceValueTradeTap(state: PlaceValueTradeState, tap: PlaceValueTradeTap): PlaceValueTradeResult {
+  if ((state.finished ?? 0) > 0) return refuse("demonstrating");
+  if (tap.tap === "trade" && state.problem.op === "-") return has(state, tap.place) && !isTaken(state, tap.place) ? refuse("not_down") : refuse("wrong_op");
   if (tap.tap === "down") return placeValueTradeDown(state, tap.place);
   if (tap.tap === "trade") return placeValueTradeTradeTen(state, tap.place);
   if (tap.tap === "break") return placeValueTradeBreakOne(state, tap.place);
@@ -441,6 +467,20 @@ export function placeValueTradeRoomNeeded(problem: PlaceValueTradeProblem): Plac
 }
 
 // ---------------------------------------------------------------- the lesson's variables
+
+/**
+ * Why a card cannot start a learner's task (a practice start), or undefined: the chart starts fresh, nothing
+ * demonstrated (columns finished 0) and no column worked (every status 0). A practice that opened on a
+ * demonstrated chart would open finished, the answer already in disks.
+ */
+export function placeValueTradeStartFault(state: PlaceValueTradeState): string | undefined {
+  const finished = state.finished ?? 0;
+  if (finished !== 0) return `A practice chart starts with no column demonstrated; columns finished is ${finished}`;
+  for (const place of state.problem.columns) {
+    if (state.status[place] !== 0) return `A practice chart starts fresh; the ${PLACE_VALUE_PLACE_ALIASES[place]} column's status is ${state.status[place]}`;
+  }
+  return undefined;
+}
 
 /** Two numbers, the demonstration's "columns finished", and one status per column: 3 + columns ≤ 9. */
 export const placeValueTradeVariableCount = (problem: PlaceValueTradeProblem): number => 3 + problem.columns.length;
@@ -584,15 +624,16 @@ export function validatePlaceValueTradeContent(raw: unknown, path: string, fail:
   if (pairFault) {
     fail(`${path}/${pairFault === "negative" || pairFault === "no_trade" ? "b" : pairFault === "decimals" ? ((content.a as number) % 10 ? "a" : "b") : "a"}`, placeValueTradeFaultText(pairFault, operation, content.a, content.b));
   }
-  const top = wholeNumber(content.top_place, `${path}/top_place`, 0, PLACE_VALUE_TRADE_MAX_PLACE, fail, "The top place");
+  const top = wholeNumber(content.top_place, `${path}/top_place`, PLACE_VALUE_TRADE_MIN_PLACE, PLACE_VALUE_TRADE_MAX_PLACE, fail, "The top place");
   const low = wholeNumber(content.low_place, `${path}/low_place`, PLACE_VALUE_TRADE_MIN_PLACE, 0, fail, "The low place");
+  if (top < low) fail(`${path}/top_place`, `The top place (${top}) is not below the low place (${low})`);
   const columns = placeValueTradeColumns(top, low);
   if (columns.length > PLACE_VALUE_TRADE_MAX_COLUMNS) fail(`${path}/top_place`, `The card draws at most ${PLACE_VALUE_TRADE_MAX_COLUMNS} columns; ${top} to ${low} is ${columns.length} (too_wide)`);
   const a = wholeNumber(content.a, `${path}/a`, 0, PLACE_VALUE_TRADE_MAX_VALUE, fail, "The first number (in thousandths)");
   const b = wholeNumber(content.b, `${path}/b`, 0, PLACE_VALUE_TRADE_MAX_VALUE, fail, "The second number (in thousandths)");
   for (const [name, value] of [["a", a], ["b", b]] as const) {
     if (value % 10) fail(`${path}/${name}`, `${placeValueNumeral(value)} has more than two decimals (decimals)`);
-    if (placeValueTopPlace(value) > top) fail(`${path}/${name}`, `${placeValueNumeral(value)} has a place above the card's columns`);
+    if (value > 0 && placeValueTopPlace(value) > top) fail(`${path}/${name}`, `${placeValueNumeral(value)} has a place above the card's columns`);
     if (placeValueTradeDecimals(value) > -low) fail(`${path}/${name}`, `${placeValueNumeral(value)} has a place below the card's columns`);
   }
   const finished = wholeNumber(content.finished, `${path}/finished`, 0, columns.length, fail, "The columns finished");
@@ -638,8 +679,8 @@ export function placeValueTradeState(raw: unknown): PlaceValueTradeState & { fin
   const content = (raw ?? {}) as Partial<PlaceValueTradeContent>;
   const operation: PlaceValueTradeOperation = content.operation === "subtract" ? "subtract" : "add";
   const int = (value: unknown, low: number, high: number, fallback = low) => (typeof value === "number" && Number.isFinite(value) ? Math.min(high, Math.max(low, Math.floor(value + 1e-9))) : fallback);
-  const top = int(content.top_place, 0, PLACE_VALUE_TRADE_MAX_PLACE);
   const low = int(content.low_place, PLACE_VALUE_TRADE_MIN_PLACE, 0, 0);
+  const top = Math.max(low, int(content.top_place, PLACE_VALUE_TRADE_MIN_PLACE, PLACE_VALUE_TRADE_MAX_PLACE, 0));
   const columns = placeValueTradeColumns(top, low).slice(0, PLACE_VALUE_TRADE_MAX_COLUMNS);
   const problem = placeValueTradeProblemOn(operation, Number(content.a), Number(content.b), columns);
   const places = Array.isArray(content.places) ? content.places : [];
@@ -724,6 +765,7 @@ export const PLACE_VALUE_TRADE_WORDS = {
       not_needed: (name: string, n: number, k: number) => `The ${name.toLowerCase()} have ${n}; taking away ${k} needs no more.`,
       not_needed_taken: (name: string) => `The ${name.toLowerCase()} are already taken away.`,
       already_taken: "This column's take-away is done.",
+      demonstrating: "This chart shows the demonstration's columns.",
       not_enough: (n: number, k: number) => `This column has ${n}; taking away ${k} needs more.`,
     },
     other: "That can't be done here.",
@@ -765,6 +807,7 @@ export const PLACE_VALUE_TRADE_WORDS = {
       not_needed: (name: string, n: number, k: number) => `${name}有 ${n} 个，拿走 ${k} 个已经够了。`,
       not_needed_taken: (name: string) => `${name}已经拿走了。`,
       already_taken: "这一位已经拿走了。",
+      demonstrating: "这张表是演示。",
       not_enough: (n: number, k: number) => `这一位只有 ${n} 个，拿走 ${k} 个不够。`,
     },
     other: "这里不能这样做。",
@@ -821,7 +864,7 @@ export function placeValueTradeRefusalText(state: PlaceValueTradeState, tap: Pla
     case "none_to_break": return cell(state, tap.place).top + cell(state, tap.place).answer ? r.none_to_break(placeValueTradeUnitWord(tap.place, language)) : r.empty;
     case "not_needed": return result.taken ? r.not_needed_taken(placeValueColumnName(result.right!, language)) : r.not_needed(placeValueColumnName(result.right!, language), result.have!, result.need!);
     case "not_down": return r.nothing_yet;
-    case "already_down": case "not_ten": case "no_left": case "no_right": case "already_taken": return r[result.reason];
+    case "already_down": case "not_ten": case "no_left": case "no_right": case "already_taken": case "demonstrating": return r[result.reason];
     default: return words.other;
   }
 }
@@ -917,6 +960,8 @@ const EDGE_BOTTOM = 14;
 const HEAD = 38;
 const LINE = 48;
 const DOWN_R = 20;
+/** The answer row is never lower than this, so a fact said at a column fits in its empty answer cell. */
+const NOTE_ROOM = 64;
 /** Room above a cell that may show a ringed ten, for its badge, and around the ring. */
 const RING_TOP = 22;
 const RING_EXTRA = 16;
@@ -965,7 +1010,7 @@ export function planPlaceValueTrade(raw: unknown): PlaceValueTradePlan {
   rowTop.second = y; rowHeight.second = cellHeight(room.second); y += rowHeight.second;
   const lineY = y + LINE / 2;
   y += LINE;
-  rowTop.answer = y + 6; rowHeight.answer = cellHeight(room.answer) + 4; y += 6 + rowHeight.answer + 2;
+  rowTop.answer = y + 6; rowHeight.answer = Math.max(NOTE_ROOM, cellHeight(room.answer) + 4); y += 6 + rowHeight.answer + 2;
   const height = y + EDGE_BOTTOM;
   const plans: PlaceValueTradeColumnPlan[] = columns.map((place, k) => {
     const x = xOf(k);
