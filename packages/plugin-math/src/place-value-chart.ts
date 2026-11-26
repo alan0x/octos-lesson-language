@@ -259,6 +259,13 @@ export function placeValueExpandedFactors(value: number, language: PlaceValueLan
 
 const EN_UNIT: Record<number, [string, string]> = { 6: ["million", "millions"], 5: ["hundred thousand", "hundred thousands"], 4: ["ten thousand", "ten thousands"], 3: ["thousand", "thousands"], 2: ["hundred", "hundreds"], 1: ["ten", "tens"], 0: ["one", "ones"], [-1]: ["tenth", "tenths"], [-2]: ["hundredth", "hundredths"], [-3]: ["thousandth", "thousandths"] };
 const ZH_UNIT_NAME: Record<number, string> = { 6: "百万", 5: "十万", 4: "万", 3: "千", 2: "百", 1: "十", 0: "一", [-1]: "0.1", [-2]: "0.01", [-3]: "0.001" };
+/**
+ * A place's unit as a sentence names it: "1,000", "0.1" (en, the disk's value) or 「千」「十万」「0.1」 (zh, the
+ * counting unit). Shared with the cards built on this chart (decision 0026 §6).
+ */
+export function placeValueUnitName(place: number, language: PlaceValueLanguage = "en-US"): string {
+  return short(language) === "en" ? placeValueUnitText(place, "en-US") : ZH_UNIT_NAME[place]!;
+}
 /** How many of each place (zh 「8个千、6个十和3个一」; en "8 thousands, 6 tens and 3 ones"): the non-zero places only. */
 export function placeValueCountsText(value: number, language: PlaceValueLanguage = "en-US"): string {
   const list = placeValueParts(value);
