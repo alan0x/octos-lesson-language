@@ -26,7 +26,7 @@ import {
 import {
   PLACE_VALUE_TRADE_CARD_BINDINGS, PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PROBLEM_FIELDS, PLACE_VALUE_TRADE_TAPS, PLACE_VALUE_TRADE_WORDS,
   applyPlaceValueTradeTap, placeValueTradeChanges, placeValueTradeColumns, placeValueTradeComplete, placeValueTradeDemoSteps, placeValueTradeLanguage,
-  placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeState, validatePlaceValueTradeContent,
+  placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeStartFault, placeValueTradeState, validatePlaceValueTradeContent,
   type PlaceValueTradeOperation, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "../../plugin-math/src/place-value-trade.js";
 import type { JsonObject } from "./types.js";
@@ -419,6 +419,8 @@ const TRADE_TAP_OF_REASON: Readonly<Record<string, PlaceValueTradeTapKind>> = Ob
   already_down: "down", already_taken: "down", not_enough: "down",
   not_down: "trade", not_ten: "trade", no_left: "trade",
   none_to_break: "break", no_right: "break", not_needed: "break",
+  // A chart showing a demonstration refuses every tap alike.
+  demonstrating: "down",
 });
 
 /** The trade card's content at a pile given by binding target (bound fields only). */
@@ -489,11 +491,8 @@ export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.
   contentAt: tradeContentAt,
   /** A practice chart starts fresh: no column worked, nothing demonstrated. */
   validateStart(state: PlaceValueTradeState, fail: (message: string) => never): void {
-    const finished = (state as PlaceValueTradeState & { finished?: number }).finished ?? 0;
-    if (finished !== 0) fail(`A practice chart starts with no column demonstrated; columns finished is ${finished}`);
-    for (const place of state.problem.columns) {
-      if (state.status[place] !== 0) fail(`A practice chart starts fresh; the ${PLACE_VALUE_PLACE_ALIASES[place]} column's status is ${state.status[place]}`);
-    }
+    const fault = placeValueTradeStartFault(state);
+    if (fault) fail(fault);
   },
   facts: Object.freeze({
     /**

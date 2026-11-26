@@ -787,7 +787,7 @@
       "properties": {
         "language": {"enum": ["en-US", "zh-CN"]},
         "operation": {"enum": ["add", "subtract"]},
-        "top_place": {"type": "integer", "minimum": 0, "maximum": 5},
+        "top_place": {"type": "integer", "minimum": -2, "maximum": 5},
         "low_place": {"type": "integer", "minimum": -2, "maximum": 0},
         "a": {"type": "integer", "minimum": 0, "maximum": 999999990},
         "b": {"type": "integer", "minimum": 0, "maximum": 999999990},

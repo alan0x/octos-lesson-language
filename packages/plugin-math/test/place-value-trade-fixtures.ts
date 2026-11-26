@@ -98,10 +98,12 @@ export function tradeLesson(input: TradeLessonInput): AuthoringLesson {
   const as = practice.map(([a]) => tradeValue(a)), bs = practice.map(([, b]) => tradeValue(b));
   const a = tradeValue(input.a), b = tradeValue(input.b);
   const columns = tradeColumns(input);
+  const step = 10 ** (columns.at(-1)! + 3);
   const variables: Array<Record<string, unknown>> = [
-    // Each number's range covers the lesson's and every practice pair's (a range is never one value: one more whole).
-    { as: "a", label: "a", initial: a, min: Math.min(a, ...as), max: Math.max(a + 1000, ...as) },
-    { as: "b", label: "b", initial: b, min: Math.min(b, ...bs), max: Math.max(b + 1000, ...bs) },
+    // Each number's range covers the lesson's and every practice pair's (a range is never one value: one more of
+    // the lowest column's unit, so it stays on the card's columns).
+    { as: "a", label: "a", initial: a, min: Math.min(a, ...as), max: Math.max(a + step, ...as) },
+    { as: "b", label: "b", initial: b, min: Math.min(b, ...bs), max: Math.max(b + step, ...bs) },
     ...(input.noDemo ? [] : [{ as: "finished", label: "columns finished", initial: 0, min: 0, max: columns.length }]),
     ...columns.map((place) => ({ as: tradeVariable(place), label: tradeVariable(place), initial: 0, min: 0, max: placeValueTradeMaxStatus(input.operation) })),
   ];

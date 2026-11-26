@@ -37,6 +37,8 @@ const lessons = {
   // The narrowest cards: two columns.
   narrowSub: tradeLesson({ operation: "subtract", a: "62", b: "37", practice: [["81", "45"]] }),
   narrowAdd: tradeLesson({ operation: "add", language: "zh-CN", a: "45", b: "38", practice: [["27", "56"]] }),
+  // A pair below 1: no ones column, the point before the tenths.
+  belowOne: tradeLesson({ operation: "add", a: "0.35", b: "0.48", practice: [["0.27", "0.56"]] }),
 };
 const events = Object.fromEntries(Object.entries(lessons).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, tradeHost(name))]));
 
@@ -174,6 +176,9 @@ try {
   await open(page, "sub");
   now = await read(page);
   check(now.given === "40,002 − 3,585" && now.columns[0].rings === 5, `row 2 is the take-away in dashed rings: ${JSON.stringify([now.given, now.columns[0]])}`);
+  await cell(page, 1, "answer");
+  now = await read(page);
+  check(now.colnote === "Nothing below the line here yet." && now.columns[1].top === 0 && now.columns[2].top === 0, `an empty answer cell says so and breaks nothing: ${JSON.stringify([now.colnote, now.columns])}`);
   await down(page, 0);
   now = await read(page);
   check(now.colnote === "This column has 2; taking away 5 needs more.", `a short column's fact, with its counts, at its column: ${now.colnote}`);
@@ -295,6 +300,20 @@ try {
     console.log(`${name} at 1024x768 (the teaching camera framing the card): disk ${size.disk.toFixed(1)} px, ↓ ${size.down.toFixed(1)} px, card ${(size.right - size.left).toFixed(0)} x ${(size.bottom - size.top).toFixed(0)} px`);
     if (shots) await page.screenshot({ path: `${shots}/widest-1024-${name}.png` });
   }
+  // A pair below 1: tenths and hundredths only, the point in front; added by real clicks.
+  await open(page, "belowOne");
+  now = await read(page);
+  check(JSON.stringify(Object.keys(now.columns).map(Number).sort((x, y) => y - x)) === "[-1,-2]" && JSON.stringify(now.labels) === '["0.27","+ 0.56"]',
+    `0.27 + 0.56 draws no ones column: ${JSON.stringify([Object.keys(now.columns), now.labels])}`);
+  check(await page.evaluate(() => document.querySelectorAll(".place-value-trade-point").length === 3), "the decimal point is drawn before the tenths");
+  await down(page, -2);
+  await ring(page, -2);
+  await down(page, -1);
+  now = await read(page);
+  check(now.statuses[0] === "succeeded" && now.columns[-1].answer === 8 && now.columns[-2].answer === 3, `0.27 + 0.56 complete: ${JSON.stringify([now.statuses, now.columns])}`);
+  check(await answer(page, "answer-1", ".83") === "succeeded", "0.83 typed as .83 is read");
+  if (shots) { await page.waitForTimeout(1300); await page.screenshot({ path: `${shots}/below-one-en.png` }); }
+
   // A fact said at a column fits its cell on the narrowest columns (six), in both languages.
   const noteFits = () => page.evaluate(() => {
     const object = document.querySelector(".place-value-trade-note"), note = document.querySelector(".place-value-trade-colnote");

@@ -48,6 +48,11 @@ test("the registry entry: taps by a place's index, one status per column, the pa
   assert.equal(kind.refusalText("not_enough", at(0)), "That can't be done here.", "without the card, a sentence that needs counts is not made up");
   assert.equal(kind.refusalText("no_right", at(0)), "There is no column to the right to break into.");
   assert.equal(kind.refusalText("not_down", at(0), "zh-CN"), "这一位横线下面还没有圆片。");
+  // A chart showing a demonstration takes no taps (review of #115), said in the card's words.
+  const shown = kind.state({ ...content, finished: 1 });
+  assert.deepEqual(kind.apply(shown, { kind: "down", place: at(4) }), { ok: false, reason: "demonstrating" });
+  assert.equal(kind.refusalText("demonstrating", at(4), "en-US", shown), "This chart shows the demonstration's columns.");
+  assert.equal(kind.refusalText("demonstrating", at(4)), "This chart shows the demonstration's columns.");
   const broke = kind.apply(state, { kind: "break", place: at(4) });
   assert.ok(broke.ok);
   assert.deepEqual(kind.changes(state, broke.state), [{ place: at(3), field: "status", before: 0, after: 2 }]);
@@ -96,6 +101,13 @@ test("a trade lesson with a practice pair and a typed answer: validated, normali
   validateAuthoringLesson(widest);
   assert.equal(widest.lesson.variables!.length, 9);
   validateAuthoringLesson(tradeLesson({ operation: "subtract", language: "zh-CN", a: "8.2", b: "3.75", practice: [["9.3", "4.68"]] }));
+  // A pair below 1: no ones column (review of #115); the schema takes the negative top place.
+  const below = tradeLesson({ operation: "add", a: "0.35", b: "0.48", practice: [["0.27", "0.56"]] });
+  assertAuthoringSchema(below);
+  validateAuthoringLesson(below);
+  assert.deepEqual([card(below).content.top_place, card(below).content.low_place, below.lesson.variables!.length], [-1, -2, 5]);
+  assert.throws(() => validateAuthoringLesson(tradeLesson({ operation: "add", a: "0.35", b: "0.48", practice: [["0.65", "0.48"]] })),
+    /0.65 \+ 0.48 needs the columns from ones to hundredths; the card draws tenths to hundredths/);
 });
 
 test("a trade lesson requires the card's feature, its fact and the card-level bindings: player 0.17.0, math 0.9.0", () => {
