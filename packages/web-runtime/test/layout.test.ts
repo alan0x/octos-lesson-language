@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { reduceCanonicalEvents, type SemanticBoardState } from "../../core/src/index.js";
 import { computeBoardLayout, measureSemanticNode, targetRect, type MeasuredNodeSizes } from "../src/layout.js";
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
+import { planMakeTen } from "../../plugin-math/src/make-ten.js";
 import { parseCanonicalJsonl } from "../src/runtime.js";
 
 const source = await readFile(resolve(process.cwd(), "examples/quadratic/lesson.canonical.jsonl"), "utf8");
@@ -1472,3 +1473,12 @@ test("a place-value trade card is sized from its plan at its natural size, deskt
   assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
 });
 
+test("a make-ten card is sized from its plan at its natural size, desktop only (decision 0027)", () => {
+  const content = { a: 8, b: 6, filled: 8, moved: 0 };
+  const node = { id: "frames", kind: "make_ten", content };
+  const plan = planMakeTen(content);
+  const size = measureSemanticNode(node);
+  assert.deepEqual(size, { width: Math.ceil(plan.width) + 38, height: Math.ceil(plan.height) + 34 + 96 });
+  assert.ok(size.width <= 1024, `${size.width}`);
+  assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
+});

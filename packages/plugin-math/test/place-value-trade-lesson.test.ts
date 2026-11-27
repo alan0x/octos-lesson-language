@@ -112,8 +112,9 @@ test("a trade lesson with a practice pair and a typed answer: validated, normali
 });
 
 test("a trade lesson requires the card's feature, its fact and the card-level bindings: player 0.17.0, math 0.9.0", () => {
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.9.0");
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.17.0");
+  // The make-ten card (0027) moved both on since; a trade lesson still needs only player 0.17.0 and math 0.9.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.10.0");
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.18.0");
   const events = normalizeAuthoringLesson(add(), tradeHost("pt"));
   const requirements = deriveExecutionRequirements(events);
   for (const feature of [PLACE_VALUE_TRADE_FEATURE, "student-tasks:card_fact:complete", "value-bindings:card-field", "student-tasks:numeric_answer"]) assert.ok(requirements.requiredCapabilities.includes(feature), feature);

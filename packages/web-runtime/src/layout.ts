@@ -4,6 +4,7 @@ import { planFractionModel } from "../../plugin-math/src/fraction-model.js";
 import { planBaseTenTrade } from "../../plugin-math/src/base-ten-trade.js";
 import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
+import { planMakeTen } from "../../plugin-math/src/make-ten.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -95,6 +96,8 @@ export type MeasureOptions = Pick<BoardLayoutOptions, "cardFitWidth">;
 export const CARD_FRAME = { x: 19, y: 17 } as const;
 /** A place-value trade card's lines around its chart: the problem, the line that follows it, and the notice. */
 const PLACE_VALUE_TRADE_TEXT_HEIGHT = 96;
+/** A make-ten card's lines around its frames: the problem, the line that follows them, and the notice. */
+const MAKE_TEN_TEXT_HEIGHT = 96;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -219,6 +222,12 @@ export function measureSemanticNode(node: Record<string, any>, options: MeasureO
     // A narrow card (two or three columns) keeps a second line for its instruction.
     const text = PLACE_VALUE_TRADE_TEXT_HEIGHT + (plan.width < 640 ? 22 : 0);
     return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + text };
+  }
+  // Sized from its plan at its natural size (one unit a pixel): the problem, the line that follows the frames, the
+  // frames and a notice. Desktop only (decision 0027).
+  if (kind === "make_ten") {
+    const plan = planMakeTen(content);
+    return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + MAKE_TEN_TEXT_HEIGHT };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };
