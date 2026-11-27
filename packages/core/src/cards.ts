@@ -1,7 +1,7 @@
 /**
  * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025),
- * the place-value trade card, adding and subtracting on the chart as the written method (0026), and the
- * place-value times-ten card, an amount counted in another unit (0028).
+ * the place-value trade card, adding and subtracting on the chart as the written method (0026), the make-ten
+ * card, two ten frames (0027), and the place-value times-ten card, an amount counted in another unit (0028).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -30,6 +30,11 @@ import {
   placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeStartFault, placeValueTradeState, validatePlaceValueTradeContent,
   type PlaceValueTradeOperation, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "../../plugin-math/src/place-value-trade.js";
+import {
+  MAKE_TEN_CARD_FIELDS, MAKE_TEN_KIND, MAKE_TEN_MAX_MOVED, MAKE_TEN_PLACES, MAKE_TEN_PROBLEM_FIELDS, MAKE_TEN_TAP_FIELD, MAKE_TEN_TAP_PLACES, MAKE_TEN_TAPS,
+  applyMakeTenTap, makeTenAddend, makeTenChanges, makeTenComplete, makeTenFreshCount, makeTenGiver, makeTenLanguage, makeTenProblemOf, makeTenRefusalText,
+  makeTenStartFault, makeTenState, validateMakeTenContent, type MakeTenState, type MakeTenTapKind,
+} from "../../plugin-math/src/make-ten.js";
 import {
   PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_MAX_ROWS,
   PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS, PLACE_VALUE_TIMES_TEN_ROW_FIELDS, PLACE_VALUE_TIMES_TEN_TAP_PLACES, PLACE_VALUE_TIMES_TEN_TAPS, PLACE_VALUE_TIMES_TEN_WORDS,
@@ -160,7 +165,12 @@ export interface TapCardKind<S = unknown> {
   /** Places an authoring tap's `at` may name; a tap's `place` is the index here. */
   readonly places: readonly string[];
   /** Checks content as written or revised (a starting pile). */
-  validateContent(raw: unknown, path: string, fail: Fail): void;
+  /**
+   * Checks content as written or revised. With `start` the card is one a lesson opens or a practice starts on: a
+   * kind with starting rules of its own checks them too (decision 0027: the make-ten card opens fresh). Without it,
+   * a card may hold a value a demonstration already reached (a replay, a revision).
+   */
+  validateContent(raw: unknown, path: string, fail: Fail, options?: { start?: boolean }): void;
   /** The card's state of play from its content (whole numbers). */
   state(content: unknown): S;
   /** The card's tap rules: the state a tap leaves, or the reason the card refuses it. */
@@ -618,6 +628,111 @@ export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.
   }),
 });
 
+/** The make-ten card's content at a pile given by binding target (its card-level fields, all bound by bare name). */
+const makeTenContentAt = (content: JsonObject, value: (target: string) => number | undefined): JsonObject => {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const field of [...MAKE_TEN_CARD_FIELDS, MAKE_TEN_TAP_FIELD]) {
+    const v = value(field);
+    if (v !== undefined) at[field] = v;
+  }
+  return at;
+};
+
+/**
+ * The make-ten card's demonstration (decision 0027): the count in the bigger addend's frame, forward a whole
+ * number at a time from the pair's bigger addend (8 + 6 starts at 8) up to 10. The card opens there.
+ */
+export const MAKE_TEN_DEMONSTRATION: WholeForwardDemonstration = wholeForwardDemonstration({
+  field: "filled",
+  counts: `counts the counters in the bigger addend's frame of a ${MAKE_TEN_KIND} card`,
+  tapState: "the count the learner moved",
+  shows: "(the count in the bigger addend's frame, from the bigger addend up to 10), and the program moves each counter",
+  fresh: "card",
+  opensAtStart: true,
+  start: (content: unknown) => {
+    const { problem } = makeTenState(content);
+    return makeTenFreshCount(problem.a, problem.b);
+  },
+  range: (content: unknown) => {
+    const { problem } = makeTenState(content);
+    return { min: makeTenFreshCount(problem.a, problem.b), max: MAKE_TEN_PLACES };
+  },
+  next(content: unknown, value: number): string {
+    const { problem } = makeTenState(content);
+    const k = Math.max(makeTenFreshCount(problem.a, problem.b), Math.floor(value));
+    const big = makeTenAddend(problem, problem.big), small = makeTenAddend(problem, makeTenGiver(problem));
+    return k >= MAKE_TEN_PLACES ? `the ${big}'s frame holds ten at ${MAKE_TEN_PLACES}` : `the next value, ${k + 1}, moves one of the ${small} into the ${big}'s frame`;
+  },
+});
+
+/**
+ * The make-ten card (decision 0027): two ten frames; the smaller addend's counters are tapped across to fill the
+ * bigger addend's frame. The learner's taps are `give` (a counter in its own frame crosses) and `back` (a counter
+ * that crossed goes home), at the frame tapped (0 or 1); each changes the count moved (`moved`, bound by its bare
+ * name). The pair and the demonstration's count in the bigger frame (`filled`, which starts at the pair's bigger
+ * addend) are card-level fields. The lesson never taps the card: it shows it by `filled`, and the program moves
+ * one counter at a time.
+ */
+export const MAKE_TEN_CARD: TapCardKind<MakeTenState> = Object.freeze({
+  kind: MAKE_TEN_KIND,
+  taps: MAKE_TEN_TAPS,
+  places: MAKE_TEN_TAP_PLACES,
+  cardFields: MAKE_TEN_CARD_FIELDS,
+  practiceFields: MAKE_TEN_PROBLEM_FIELDS,
+  demonstration: MAKE_TEN_DEMONSTRATION,
+  fieldsAtOnce: true,
+  validateContent: (raw: unknown, path: string, fail: Fail, options?: { start?: boolean }) => validateMakeTenContent(raw, path, fail, options?.start ? { start: true } : {}),
+  state: makeTenState,
+  apply: (state: MakeTenState, tap: CardTap): CardTapResult<MakeTenState> => {
+    const result = applyMakeTenTap(state, { tap: tap.kind as MakeTenTapKind, place: tap.place });
+    return result.ok ? { ok: true, state: result.state } : { ok: false, reason: result.reason };
+  },
+  refusalText(reason: string, _place: number, language?: string, state?: MakeTenState): string {
+    // The fact names a colour ("Red counters stay in their frame."): the card as tapped gives it.
+    return makeTenRefusalText(state ?? makeTenState({}), reason, language === "zh-CN" ? "zh-CN" : "en-US");
+  },
+  language: makeTenLanguage,
+  changes: (before: MakeTenState, after: MakeTenState): CardFieldChange[] => makeTenChanges(before, after),
+  tapFields: (): CardTapField[] => [{ place: 0, field: MAKE_TEN_TAP_FIELD, min: 0, max: MAKE_TEN_MAX_MOVED }],
+  /** The count moved is a card-level field: bound by its bare name, not `part.field`. */
+  fieldTarget: (_content: unknown, _place: number, field: string): string => field,
+  contentAt: makeTenContentAt,
+  /** A practice card starts fresh: nothing moved, nothing demonstrated. */
+  validateStart(state: MakeTenState, fail: (message: string) => never): void {
+    const fault = makeTenStartFault(state);
+    if (fault) fail(fault);
+  },
+  facts: Object.freeze({
+    /**
+     * The bigger addend's frame holds ten. Judged on each tap, so the task ends on the tap that makes the ten
+     * (there is no "done"); the row of four blanks is a task of its own after it, anchored on the card.
+     */
+    complete: {
+      keys: [],
+      judgedOnTap: true,
+      read: (_completion: CardFactCompletion, state: MakeTenState) => {
+        const actual = makeTenComplete(state) ? 1 : 0;
+        return { actual, target: 1, succeeded: actual === 1 };
+      },
+      /** The one finished card of the task's own pair, computed: the pair, nothing demonstrated, the ten made. */
+      donePile({ content, startValue }: CardDonePileContext): Record<string, number> | undefined {
+        const bound = boundTargets(content);
+        const number = (field: "a" | "b") => (bound.has(field) ? startValue(bound.get(field)) : Number(content[field]));
+        const problem = makeTenProblemOf(number("a"), number("b"));
+        const start = makeTenFreshCount(problem.a, problem.b);
+        const result: Record<string, number> = {};
+        for (const [target, alias] of bound) {
+          if (target === "a" || target === "b") result[alias] = number(target);
+          else if (target === "filled") result[alias] = start;
+          else if (target === MAKE_TEN_TAP_FIELD) result[alias] = MAKE_TEN_PLACES - start;
+        }
+        return result;
+      },
+    },
+  }),
+});
+
 /** The tap a times-ten card's refusal answers: each reason belongs to one tap. */
 const TIMES_TEN_TAP_OF_REASON: Readonly<Record<string, PlaceValueTimesTenTapKind>> = Object.freeze({
   no_thing: "move", at_target: "move", demonstrating: "move", copy_short: "copy", copy_full: "copy", not_times: "copy", smaller: "smaller",
@@ -766,6 +881,7 @@ export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.free
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
   [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_CARD as TapCardKind,
   [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_CARD as TapCardKind,
+  [MAKE_TEN_KIND]: MAKE_TEN_CARD as TapCardKind,
   [PLACE_VALUE_TIMES_TEN_KIND]: PLACE_VALUE_TIMES_TEN_CARD as TapCardKind,
 });
 

@@ -3,14 +3,15 @@ import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-an
 import type { BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
 import type { PlaceValueTap } from "../../plugin-math/src/place-value-chart.js";
 import type { PlaceValueTradeTapKind } from "../../plugin-math/src/place-value-trade.js";
+import type { MakeTenTapKind } from "../../plugin-math/src/make-ten.js";
 import type { PlaceValueTimesTenTapKind } from "../../plugin-math/src/place-value-times-ten.js";
 
 /**
- * A tap a card takes: the trading mat's (decision 0023), the place-value chart's (decision 0025) or the
- * place-value trade card's (decision 0026) or the place-value times-ten card's (decision 0028; both a learner's
- * only, never the lesson's).
+ * A tap a card takes: the trading mat's (decision 0023), the place-value chart's (decision 0025), the place-value
+ * trade card's (decision 0026), the make-ten card's (decision 0027) or the place-value times-ten card's (decision
+ * 0028; the last three a learner's only, never the lesson's).
  */
-export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind | PlaceValueTimesTenTapKind;
+export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind | MakeTenTapKind | PlaceValueTimesTenTapKind;
 /** A place an authoring tap names: the mat's, or a chart's alias (`ones`, `tenths`, `hundred-thousands`). */
 export type CardTapPlaceName = BaseTenPlaceName | "thousandths" | "hundredths" | "tenths" | "thousands" | "ten-thousands" | "hundred-thousands" | "millions";
 
@@ -280,7 +281,8 @@ export interface AuthoringCardStudentTask extends AuthoringStudentTaskBase {
      * On a place-value chart (decision 0025, player 0.16.0): `built`, the chart holds exactly its number
      * (a task to build), or `pulled_all`, every place is taken out (a task to pull apart). On a place-value
      * trade card (decision 0026, player 0.17.0): `complete`, every column is finished; judged on each tap, so the
-     * task allows only `card_tap` and ends on the tap that completes the chart (there is no "done").
+     * task allows only `card_tap` and ends on the tap that completes the chart (there is no "done"). On a make-ten
+     * card (decision 0027, player 0.18.0): `complete`, the bigger addend's frame holds ten, judged on each tap the same way.
      */
     fact: CardFact;
     /** With `count`: the place counted. */

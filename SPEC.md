@@ -240,7 +240,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 }]
 ```
 
-- `node` 必须是本课写出的 `base_ten_trade`、`place_value_chart` 或 `place_value_trade` 卡片（`place_value_trade` 的 `complete` 任务只有 `card_tap`，见下）；`allowed_operations` 是点这张卡片（`card_tap`）和说做完了（`card_submit`），还可以加上这张卡片数位上的滑块（`{"kind": "variable_change", "variable": "ones", "controls": ["slider"]}`，见下）；
+- `node` 必须是本课写出的 `base_ten_trade`、`place_value_chart`、`place_value_trade` 或 `make_ten` 卡片（`place_value_trade` 和 `make_ten` 的 `complete` 任务只有 `card_tap`，见下）；`allowed_operations` 是点这张卡片（`card_tap`）和说做完了（`card_submit`），还可以加上这张卡片数位上的滑块（`{"kind": "variable_change", "variable": "ones", "controls": ["slider"]}`，见下）；
 - 点按改变哪些数由卡片的规则决定（托盘只装十个，正好十个才换成一个高一位的，拆开放进空托盘）；一次点按可以同时改几个变量，作为一次 `card_tap` 操作记录。卡片上点按会改的每个数（每一位的个数、每个托盘）都必须绑定到它自己的课内变量，变量从 0 到卡片能画的最大值；
 - 只在这个任务开放时卡片才能点；讲解播放时、其他任务开放时都不能点，被拒绝的点按不记录；
 - 点按不算尝试；`card_submit` 才算一次尝试，卡片的事实成立就完成。`no_trade_left`：最高一位以下每一位都少于十（托盘里剩几个不满十的不影响；托盘满十时这一位已经是十个以上）；
@@ -266,7 +266,7 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 
 - 点按：摆数（`mode: "build"`）时 `add`（这一位放一个圆片，第十个被拒绝）、`remove`（拿走一个）；拆数（`mode: "apart"`）时 `take_out`（这一位的圆片都移到它下面的部分，没有圆片的一位被拒绝）。每一位的 `count` 和（拆数时）`pulled` 都绑定到自己的变量，变量从 0 到 9；
 - 事实（能力 `student-tasks:card_fact:built`、`student-tasks:card_fact:pulled_all`，播放器 0.16.0）：`built`，卡片上的圆片正好是这个数（只用于摆数）；`pulled_all`，每一位都拿出来了（只用于拆数）。都不带 `at`、`value`；
-- 练习从它自己的数开始：卡片的数 `target` 绑定到一个变量，写成没有点的目标 `{"target": "target", "expression": "number"}`（卡片级字段，能力 `value-bindings:card-field`，播放器 0.16.0；`place_value_chart` 的 `target`，以及 `place_value_trade` 的 `a`、`b`、`finished`（播放器 0.17.0，见下）；其他卡片和其他名字的无点目标被拒绝）。`start` 设这个数和每个 `count`、`pulled`；这个数不能是课里的数；
+- 练习从它自己的数开始：卡片的数 `target` 绑定到一个变量，写成没有点的目标 `{"target": "target", "expression": "number"}`（卡片级字段，能力 `value-bindings:card-field`，播放器 0.16.0；`place_value_chart` 的 `target`，以及 `place_value_trade` 的 `a`、`b`、`finished`（播放器 0.17.0，见下）和 `make_ten` 的 `a`、`b`、`filled`、`moved`（播放器 0.18.0，见下）；其他卡片和其他名字的无点目标被拒绝）。`start` 设这个数和每个 `count`、`pulled`；这个数不能是课里的数；
 - 起始的数位表：列能放下这个数；摆数时卡片是空的，拆数时这个数完整在卡片上、什么都没拿出来；按读法以外的给法会显示答案的数（展开式或拆数时只有一位不是零，「1 × 1,000」）被拒绝；已经摆好的卡片被拒绝。卡片照它的变量开始时的值检查（不只是写出来的数），每个练习的起点也检查；
 - 点按的 `place` 是这一位在 `PLACE_VALUE_TAP_PLACES` 里的序号（位加三：千分位 0，个位 3，百万位 9），著作稿的 `at` 写这一位的名字（`ones`、`tenths`、`hundred-thousands`）；
 - 做完以后，后面没有 `start` 的题（例如拆数之后的一行几个空）看到的是孩子自己摆出或拆开的那张表，和它的数；
@@ -302,7 +302,37 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - 只做桌面（约 1024 像素宽以上）：圆片按列数 34、28、24 像素，六列不超过 1024 像素宽；没有手机版面；
 - 卡片自己的操作说明 `cardHowTo("place_value_trade", content)` 按加减固定；卡片上还有一行跟着表的状态变的说明（只在能点时显示）。后面几节可用的事实：`placeValueTradeFacts`（表上的样子、做完了几列、下一个值会做完哪一列）和 `placeValueTradeStepSentences`（每一步做什么）。
 
-一个数换一个单位来数（`place_value_times_ten`，数学插件 0.10.0，特性 `plugin:math/place-value-times-ten@1`，播放器 0.18.0，决定 0028）：往右一位一个变成十个，往左一位十个合成一个。
+凑十（`make_ten`，数学插件 0.10.0，特性 `plugin:math/make-ten@1`，播放器 0.18.0，决定 0027）：两个十格框，小数那一框的圆片一个一个移过去，把大数那一框补成十。
+
+```json
+"tasks": [{
+  "as": "practice",
+  "start": {"kind": "practice", "variables": ["a", "b", "filled", "moved"], "values": {"a": 7, "b": 5, "filled": 7, "moved": 0}},
+  "prompt": "Make a ten.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "card_tap", "node": "frames"}],
+  "completion": {"kind": "card_fact", "node": "frames", "fact": "complete"},
+  "hints": ["How many more does the 7 need to make ten?"]
+}, {
+  "as": "row", "anchor": "frames", "prompt": "Write it as a number sentence.", "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "row_entry"}],
+  "completion": {"kind": "numeric_row", "parts": [{"text": "7 + 5 = 7 +"}, {"blank": {"as": "to-ten", "answer": "3", "label": "to make ten"}}, {"text": "+"},
+    {"blank": {"as": "rest", "answer": "2"}}, {"text": "= 10 +"}, {"blank": {"as": "ones", "answer": "2"}}, {"text": "="}, {"blank": {"as": "total", "answer": "12"}}]},
+  "hints": ["Read the full frame, then the other one."]
+}]
+```
+
+- 卡片的内容：两个加数 `a`、`b`（1 到 9，和大于 10），`filled`（演示：大数那一框里有几个，从大数开始，最多 10），`moved`（孩子移过去了几个，0 到 4）。补满的总是大数那一框（相等时是第一框）。四个都是卡片级字段，按名字绑定，各自一个变量；
+- 点按（只有学生点，课不点）：`give`（点一个在自己框里的圆片，它移到另一框的下一个空格；大数那一框自己的圆片被拒绝：「红色的圆片留在自己的框里。」）、`back`（点一个移过去的圆片，它回去），`place` 是点到的那一框（0 第一框，1 第二框）。每一下改 `moved`；`moved` 的变量必须是 0 到 4；
+- 事实 `complete`（能力 `student-tasks:card_fact:complete`）：大数那一框满十了。和 0026 一样在每次点按后判定，让它成立的那一下点按就完成任务，没有「做完了」，任务只有 `card_tap`。后面锚在这张卡片上的一行四个空（`numeric_row`）由程序写：`makeTenRow(a, b, language)`，挨着大数的那个空标着「to make ten」/「凑成十」（只认 8 + 2 + 4，不认 8 + 4 + 2）；它打开时看到的是这一对数补满十的那张卡片；
+- 演示的起点从这一对数来：`filled` 开始时就是大数（8 + 6 是 8），不是 0。卡片写出时、按变量开始的值、每个练习的起点都必须正好是它，`moved` 为 0（`validateMakeTenContent(…, { start: true })`，卡片的 `demonstration.opensAtStart`）；重放可以把 `filled` 设回到大数和 10 之间的整数，`moved` 只能回到 0。课只通过 `filled` 演示，只能往前走、只能是整数，程序一个一个地移圆片；拒绝时说出下一个值做什么（「the next value, 9, moves one of the 6 into the 8's frame」）。演示中的卡片不接受点按；
+- 编译器拒绝（只丢这张图）：加数不是 1 到 9（`not_one_digit`）、和小于 10（`under_ten`）、和正好是 10（`exactly_ten`，十的分与合）；`filled` 不是这一对数的起点；
+- 只做桌面：每格 64 像素，圆片 50 像素，两框并排不超过 1024 像素宽；
+- 卡片自己的操作说明 `cardHowTo("make_ten", content)` 说出会移的圆片的颜色；卡片上还有一行跟着状态变的说明（只在能点时显示），颜色词用那个颜色写。后面几节可用的事实：`makeTenFacts`、`makeTenStepSentences`。
+
+演示字段（`TapCardKind.demonstration`，决定 0027 接进 OLL 时从 0026 推广）：只通过一个卡片级字段演示的卡片自己说明这个字段——`start(content)`（新卡片的值，练习的起点必须是它）、`refuseStep(content, from, to)`（课动画到这个值时拒绝的理由）、`refuseReplay(content, value)`、`outside(content, value)`、`opensAtStart`（卡片必须从起点打开），以及拒绝里用的词。`wholeForwardDemonstration` 做出「一次一个整数、只往前」的那一种；`place_value_trade` 的 `finished` 和 `make_ten` 的 `filled` 都是它。
+
+一个数换一个单位来数（`place_value_times_ten`，数学插件 0.11.0，特性 `plugin:math/place-value-times-ten@1`，播放器 0.19.0，决定 0028）：往右一位一个变成十个，往左一位十个合成一个。
 
 ```json
 "tasks": [{
@@ -772,7 +802,7 @@ v0.1 表情 token：`neutral`、`encouraging`、`careful`、`celebrating`。表�
 {"action_id": "…", "op": "card.tap", "target": {"node_id": "…"}, "tap": {"kind": "make", "place": 0}}
 ```
 
-课程像学生一样点一张 `base_ten_trade` 卡片（演示）。`kind` 为 `gather`、`ungather`、`make` 或 `break`，`place` 是位（0 = 一）。Reducer 用卡片自己的规则算出这一下改变的所有数，一次性写入它们绑定的变量（不会出现只改了一半的中间状态）。著作稿写成 `{"do": "tap", "target": "mat", "tap": "make", "at": "ones"}`；校验器按播放顺序（重放起点，再按 before、during、after 三段）推算变量的值，卡片在那时会拒绝的点按在播放前就被拒绝，并说明卡片的理由。Web Runtime 把演示的点按画成和学生点按一样的动画。数位表（`place_value_chart`）的 `kind` 为 `add`、`remove` 或 `take_out`，`place` 是这一位的序号（位加三，3 = 个位）。在数位表上加减（`place_value_trade`，决定 0026）不能被课点按：课用它的 `finished` 演示。
+课程像学生一样点一张 `base_ten_trade` 卡片（演示）。`kind` 为 `gather`、`ungather`、`make` 或 `break`，`place` 是位（0 = 一）。Reducer 用卡片自己的规则算出这一下改变的所有数，一次性写入它们绑定的变量（不会出现只改了一半的中间状态）。著作稿写成 `{"do": "tap", "target": "mat", "tap": "make", "at": "ones"}`；校验器按播放顺序（重放起点，再按 before、during、after 三段）推算变量的值，卡片在那时会拒绝的点按在播放前就被拒绝，并说明卡片的理由。Web Runtime 把演示的点按画成和学生点按一样的动画。数位表（`place_value_chart`）的 `kind` 为 `add`、`remove` 或 `take_out`，`place` 是这一位的序号（位加三，3 = 个位）。在数位表上加减（`place_value_trade`，决定 0026）不能被课点按：课用它的 `finished` 演示；凑十（`make_ten`，决定 0027）也不能，课用它的 `filled` 演示。
 
 ### 9.10 `board.hide`（0.6，仅学生讲课课程）
 

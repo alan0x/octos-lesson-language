@@ -11,6 +11,7 @@ import { baseTenMat, type BaseTenMat, type BaseTenStep, type BaseTenTap } from "
 import { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewContext } from "../../plugin-math/src/place-value-chart-view.js";
 import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
 import { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewContext } from "../../plugin-math/src/place-value-trade-view.js";
+import { renderMakeTen, updateMakeTen, type MakeTenViewContext } from "../../plugin-math/src/make-ten-view.js";
 import { renderPlaceValueTimesTen, updatePlaceValueTimesTen, type PlaceValueTimesTenViewContext } from "../../plugin-math/src/place-value-times-ten-view.js";
 import { tapCardKind, type CardTap } from "../../core/src/cards.js";
 import { numberLineDragValue, NUMBER_LINE_ZOOM, type NumberLineContent, type NumberLineWindow } from "../../plugin-math/src/number-line.js";
@@ -1780,6 +1781,8 @@ function renderContent(
   placeValueChart?: PlaceValueChartViewContext,
   /** A place-value trade card's state of play on the board: live, and a refused tap with its notice (decision 0026). */
   placeValueTrade?: PlaceValueTradeViewContext,
+  /** A make-ten card's state of play on the board: live, the tap and counter that made it, a refused tap (decision 0027). */
+  makeTen?: MakeTenViewContext,
   /** A place-value times-ten card's state of play on the board: live, and a refused tap with its notice (decision 0028). */
   placeValueTimesTen?: PlaceValueTimesTenViewContext,
 ): void {
@@ -1810,6 +1813,11 @@ function renderContent(
   // The math plugin's place-value trade card (decision 0026): the chart as the written method; taps arrive as the chart's do.
   if (node.kind === "place_value_trade") {
     renderPlaceValueTrade(parent, content, placeValueTrade ?? { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) });
+    return;
+  }
+  // The math plugin's make-ten card (decision 0027): two ten frames; the counter tapped is the one that moves.
+  if (node.kind === "make_ten") {
+    renderMakeTen(parent, content, makeTen ?? { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) });
     return;
   }
   // The math plugin's place-value times-ten card (decision 0028): an amount counted in another unit; taps arrive as the trade card's do.
@@ -2897,7 +2905,9 @@ export class InfiniteBoardView {
         + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "")
         + (kind === "base_ten_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? ""]) : "")
         + (kind === "place_value_chart" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.placeValueBands(node.content)]) : "")
-        + (kind === "place_value_trade" || kind === "place_value_times_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "");
+        + (kind === "place_value_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "")
+        + (kind === "make_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "")
+        + (kind === "place_value_times_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
@@ -2964,6 +2974,20 @@ export class InfiniteBoardView {
         if (tradeContext) {
           try { updated = updatePlaceValueTrade(element, node.content ?? {}, tradeContext); } catch { updated = false; }
         }
+        // The make-ten card updates in place: the counter tapped moves (its piece), the demonstration one at a time.
+        let makeTenContext: MakeTenViewContext | undefined;
+        if (kind === "make_ten") {
+          const step = this.cardSteps.get(node.id);
+          this.cardSteps.delete(node.id);
+          makeTenContext = {
+            applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
+            live: this.cardTapHandler?.live(node.id) ?? false,
+            notice: this.cardNotices.get(node.id) ?? "",
+            ...(refusedTap ? { refused: { kind: refusedTap.kind, place: refusedTap.place } } : {}),
+            ...(step ? { step: { tap: { kind: step.tap.kind, place: step.tap.place }, ...(step.piece ? { piece: step.piece } : {}) } } : {}),
+          };
+          try { updated = updateMakeTen(element, node.content ?? {}, makeTenContext); } catch { updated = false; }
+        }
         // The times-ten card updates in place too, so a tap's move and the demonstration's next rows animate.
         const timesTenContext: PlaceValueTimesTenViewContext | undefined = kind === "place_value_times_ten" ? {
           applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
@@ -2992,6 +3016,7 @@ export class InfiniteBoardView {
             } : undefined,
             chartContext,
             tradeContext,
+            makeTenContext,
             timesTenContext,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));

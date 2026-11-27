@@ -14,7 +14,8 @@
 //   worked.
 // Numbers are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_TIMES_TEN_SCREENSHOTS when it is set.
 // - the program's demonstration: "counted in" 0.1 -> 0.01 -> 0.001 breaks every tenth, then every row; 700 counted in
-//   70s deals every hundred into ten whole copies; a demonstration's chart takes no taps; the moves animate.
+//   70s deals every hundred into ten whole copies; played by the session with motion, one row at a time; then the
+//   practice opens fresh on its own problem;
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 import { existsSync, mkdirSync } from "node:fs";
@@ -33,7 +34,7 @@ const lessons = {
   // The lesson's own demonstration: "counted in" 0.1 -> 0.01, then 0.001; 700 counted in hundreds, then in 70s.
   demoCount: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10), animate("thousandths", 1)] }),
   demoHalf: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10)] }),
-  demoTimes: timesTenLesson({ amount: "700", target: "70", beats: [animate("seventies", 70_000)] }),
+  demoTimes: timesTenLesson({ amount: "700", target: "70", practice: [["4000", "400"]], beats: [animate("seventies", 70_000)] }),
 };
 const events = Object.fromEntries(Object.entries(lessons).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, timesTenHost(name))]));
 
@@ -211,31 +212,47 @@ try {
   now = await read(page);
   check(now.given === "60个千分之一 = ?个百分之一" && now.columns[-3].rows === 6, `a one-place put-together in Chinese: ${JSON.stringify([now.given, now.columns])}`);
 
-  // The program's demonstration.
+  // The program's demonstration, played by the session with motion: the card plays each row's move in turn.
+  const playDemo = (name, sample, stopAt) => page.evaluate(async ({ events, name, sample, stopAt }) => {
+    document.querySelector("#board").replaceChildren();
+    localStorage.clear();
+    const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), name, { reducedMotion: false });
+    const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
+    const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+    const read = () => sample === "copy" ? String(document.querySelectorAll('.place-value-times-ten-copy[data-row="0"] .place-value-times-ten-disk').length)
+      : [...document.querySelectorAll(".place-value-times-ten-things")].map((layer) => [...layer.children].filter((child) => child.matches("[data-i]")).length).join(",");
+    const seen = [], eased = [];
+    const note = () => {
+      const now = read(); if (seen.at(-1) !== now) seen.push(now);
+      const value = session.projection.board?.variables?.counted_in?.value;
+      if (typeof value === "number" && !eased.includes(value)) eased.push(value);
+    };
+    const node = () => Object.values(session.projection.board?.nodes ?? {}).find((candidate) => candidate.kind === "place_value_times_ten");
+    // The lesson plays until "counted in" reaches the value, the narration standing still while the card works.
+    for (let i = 0; i < 600 && Number(node()?.content.counted_in) !== stopAt; i += 1) { session.advance(); mounted.view.render(session.projection.board); note(); await wait(20); }
+    for (let t = 0; t < 60; t += 1) { await wait(150); mounted.view.render(session.projection.board); note(); }
+    // The rest of the lesson, then its practice start.
+    for (let i = 0; i < 600 && session.projection.status !== "completed"; i += 1) { session.advance(); mounted.view.render(session.projection.board); await wait(20); }
+    for (let t = 0; t < 20; t += 1) { await wait(100); mounted.view.render(session.projection.board); }
+    const values = Object.fromEntries(Object.entries(session.projection.board.variables).map(([k, v]) => [k, v.value]));
+    return { seen, between: eased.filter((value) => ![100000, 70000, 100, 10, 1, 1000000].includes(value)).length, values,
+      given: document.querySelector(".place-value-times-ten-given")?.textContent, available: session.studentTasks.map((task) => task.available),
+      copies: [...document.querySelectorAll(".place-value-times-ten-things .place-value-times-ten-copy")].map((copy) => copy.querySelectorAll(".place-value-times-ten-disk").length) };
+  }, { events: events[name], name, sample, stopAt });
+  const inOrder = (seen, expected) => { let at = 0; for (const state of seen) if (state === expected[at]) at += 1; return at === expected.length; };
+  const dealt = await playDemo("demoTimes", "copy", 70_000);
+  check(inOrder(dealt.seen, ["0", "1", "2", "3", "4", "5", "6", "7"]), `700 counted in 70s deals one hundred at a time into the copies: ${JSON.stringify(dealt.seen)}`);
+  // The player sets a card's demonstration field at once (every bound field changes at once), so the card plays
+  // the moves itself; the values seen are logged, not claimed.
+  console.log(`  demoTimes: counted in values seen between its path's values: ${dealt.between}`);
+  check(dealt.given === "4,000 is ? times 400" && dealt.values.counted_in === 1_000_000 && dealt.values.moved_once === 0 && dealt.available[0] === true && dealt.copies.every((n) => n === 0),
+    `from the demonstration to a fresh practice on its own problem, at its own start unit: ${JSON.stringify([dealt.given, dealt.values, dealt.available, dealt.copies])}`);
+  const counted = await playDemo("demoCount", "things", 1);
+  check(inOrder(counted.seen, ["3,0,0", "2,1,0", "1,2,0", "0,3,0", "0,2,1", "0,1,2", "0,0,3"]), `0.3 counted in 0.01, then 0.001: one tenth, then one row, at a time: ${JSON.stringify(counted.seen)}`);
   await open(page, "demoHalf");
   now = await read(page);
-  check(now.columns[-2].rows === 3 && now.columns[-1].disks === 0 && now.values.counted_in === 10 && now.live === 0, `counted in 0.01: every tenth a row of ten hundredths, nothing to tap: ${JSON.stringify([now.columns, now.values.counted_in, now.live])}`);
-  await open(page, "demoCount");
-  now = await read(page);
-  check(now.columns[-3].squares === 3 && now.values.counted_in === 1, `counted in 0.001: three squares of a hundred thousandths: ${JSON.stringify(now.columns)}`);
-  await open(page, "demoTimes");
-  now = await read(page);
-  check(now.copies.length === 10 && now.copies.every((copy) => copy.full && copy.have === 7) && now.columns[2].disks === 0, `700 counted in 70s: ten whole copies of 70: ${JSON.stringify(now.copies.map((copy) => copy.have))}`);
-  // With motion, a demonstration step plays each row's move after another.
-  const moving = await page.evaluate(() => {
-    const { session, mounted } = window.tens;
-    const board = structuredClone(session.projection.board);
-    const variable = board.variables.counted_in;
-    const node = Object.values(board.nodes).find((candidate) => candidate.kind === "place_value_times_ten");
-    // Back to the start, drawn; then 70 again, drawn: the view queues the seven hundreds' moves.
-    variable.value = 100000; node.content.counted_in = 100000;
-    mounted.view.render(board);
-    const again = structuredClone(board);
-    again.variables.counted_in.value = 70000; Object.values(again.nodes).find((candidate) => candidate.kind === "place_value_times_ten").content.counted_in = 70000;
-    mounted.view.render(again);
-    return document.getAnimations().filter((animation) => animation.playState === "running").length;
-  });
-  check(moving > 0, `the demonstration's moves animate: ${moving} running`);
+  check(now.columns[-2].rows === 3 && now.columns[-1].disks === 0 && now.values.counted_in === 10, `counted in 0.01 at rest: every tenth a row of ten hundredths: ${JSON.stringify([now.columns, now.values.counted_in])}`);
+  if (shots) await page.screenshot({ path: `${shots}/demo-half.png` });
 
   // The largest cards fit the window and keep their height while worked.
   for (const name of ["widestCount", "widestTimes"]) {
@@ -243,8 +260,12 @@ try {
     await page.waitForTimeout(700); // the camera settles on the card
     const first = await read(page);
     const n = Object.values(first.columns).reduce((sum, column) => sum + column.disks + column.rows + column.squares, 0);
-    for (let i = 0; i < n; i += 1) await tapAt(page, `move:${i}`);
+    await tapAt(page, "move:0");
+    const mid = await read(page); // two kinds can be tapped: the instruction is two sentences
+    for (let i = 1; i < n; i += 1) await tapAt(page, `move:${i}`);
+    if (name === "widestCount") for (let i = 0; i < n; i += 1) await tapAt(page, `move:${i}`);
     const last = await read(page);
+    check(Math.abs(first.card.height - mid.card.height) <= 1 && mid.card.overflow <= 1, `${name}: with the longest instruction the card keeps its height and holds its lines: ${JSON.stringify([first.card, mid.card, mid.howto])}`);
     check(first.card.left >= 0 && first.card.right <= 1024 && first.card.overflow <= 1, `${name}: at its natural size the card fits 1,024 px: ${JSON.stringify(first.card)}`);
     check(Math.abs(first.card.height - last.card.height) <= 1, `${name}: the card keeps its height while worked: ${JSON.stringify([first.card, last.card])}`);
     console.log(`  ${name}: card ${first.card.width} x ${first.card.height} px`);
@@ -259,4 +280,4 @@ if (failures.length) {
   console.error(`place-value times-ten browser checks failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; Chinese put-together questions; the demonstration (counted in 0.1 -> 0.01 -> 0.001, 700 counted in 70s) drawn and animated, taking no taps; the largest cards fit 1,024 px and keep their height");
+console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; Chinese put-together questions; the demonstration played with motion (0.3 counted in 0.01 then 0.001, 700 counted in 70s), one row at a time, then a fresh practice; the largest cards fit 1,024 px and keep their height");

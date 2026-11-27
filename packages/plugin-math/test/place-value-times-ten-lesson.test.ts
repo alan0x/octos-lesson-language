@@ -70,7 +70,7 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.doesNotThrow(throwsStart(state));
   assert.equal(cardHowTo(PLACE_VALUE_TIMES_TEN_KIND, content), placeValueTimesTenHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_times_ten, buildPlaceValueTimesTen);
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.10.0");
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.0");
 });
 
 test("the complete fact: judged on each tap; done, the task's own problem at its own start unit, every row moved", () => {
@@ -100,10 +100,10 @@ test("a lesson with the card: schema, validation, normalization, execution requi
       assert.ok(requirements.requiredCapabilities.includes(feature), `${feature} required`);
     }
     assert.ok(!requirements.requiredCapabilities.includes("node:place_value_times_ten"));
-    assert.equal(requirements.minimumPlayerVersion, "0.18.0");
-    assert.deepEqual(requirements.requiredPlugins, { math: "0.10.0" });
+    assert.equal(requirements.minimumPlayerVersion, "0.19.0");
+    assert.deepEqual(requirements.requiredPlugins, { math: "0.11.0" });
     assert.doesNotThrow(() => assertExecutionSupported(events));
-    assert.throws(() => assertExecutionSupported(events, "0.17.0"), /0.18.0/);
+    assert.throws(() => assertExecutionSupported(events, "0.18.0"), /0.19.0/);
     // The reducer evaluates the bare bindings: a practice start puts the task's own numbers on the card.
     const board = reduceCanonicalEvents(events);
     const node = Object.values(board.nodes).find((candidate: any) => candidate.kind === PLACE_VALUE_TIMES_TEN_KIND) as any;
@@ -111,7 +111,7 @@ test("a lesson with the card: schema, validation, normalization, execution requi
     const practice = setLessonVariables(board, task(lesson).start.values);
     assert.equal(practice.nodes[node.id]!.content.amount, task(lesson).start.values.amount);
   }
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.18.0");
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.19.0");
 });
 
 test("practice: its own problem of the card's shape, counted in at its own start unit, rows fresh", () => {
@@ -193,13 +193,43 @@ test("the demonstration: counted in moves along its path, from the question's un
   assert.doesNotThrow(() => validateAuthoringLesson(replay({ counted_in: 100 })));
   assert.throws(() => validateAuthoringLesson(replay({ counted_in: 50 })), /'counted_in' is the unit .*a replay sets one of these, not 50/);
   assert.throws(() => validateAuthoringLesson(replay({ counted_in: 100, moved_once: 1 })), /'moved_once' is a set of the rows the learner moved on a place_value_times_ten card: a replay lays a fresh chart \(0\), not 1/);
-  // The card opens fresh: at its start unit, as written and as its variables start it.
+  // The card opens fresh: at its start unit, as the lesson has played when it is written (review of #122).
   const opened = count();
-  card(opened).content.counted_in = 10;
-  assert.throws(() => validateAuthoringLesson(opened), /opens fresh: its 'counted_in' starts at 100, not 10/);
+  (opened.lesson.variables as any[]).find((variable) => variable.as === "counted_in").initial = 10;
+  assert.throws(() => validateAuthoringLesson(opened), /a place_value_times_ten card opens fresh: its 'counted_in' starts at 100, not 10/);
+  // An animation before the card is written.
+  const early = count();
+  early.steps[0]!.beats.unshift(animate("early", 10));
+  assert.throws(() => validateAuthoringLesson(early), /As the lesson has played when the card is written: .*'counted_in' starts at 100, not 10/);
+  // A before-speech animation in the card's own beat (it plays before the card is written during the speech).
+  const before = count();
+  before.steps[0]!.beats[0]!.actions.unshift({ do: "animate", variable: "counted_in", value: 10, when: "before_speech" } as any);
+  assert.throws(() => validateAuthoringLesson(before), /As the lesson has played when the card is written: .*'counted_in' starts at 100, not 10/);
+  // A replay before the card.
+  const replayed = count();
+  replayed.steps[0]!.beats.unshift({ key: "set", say: "Set up.", start: { kind: "replay", variables: ["counted_in"], values: { counted_in: 10 } }, actions: [{ do: "animate", variable: "counted_in", value: 10 }] } as any);
+  assert.throws(() => validateAuthoringLesson(replayed), /As the lesson has played when the card is written: .*'counted_in' starts at 100, not 10/);
+  // A second card on the same variables, written after the first one's demonstration moved them.
+  const second = count({ beats: [animate("hundredths", 10)] });
+  second.steps[0]!.beats.push({ key: "again", say: "Another card.", actions: [{ ...card(second), as: "chart-2" }] } as any);
+  assert.throws(() => validateAuthoringLesson(second), /As the lesson has played when the card is written: .*'counted_in' starts at 100, not 10/);
   // A lesson that only demonstrates the card needs the player that plays it.
   const events = normalizeAuthoringLesson(count({ practice: [], beats: [animate("hundredths", 10)] }), timesTenHost("only"));
   assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("card:place_value_times_ten"));
+});
+
+test("a replay that sets another problem: counted in then moves along that problem's path", () => {
+  const animate = (key: string, value: number): any => ({ key, say: "Look.", actions: [{ do: "animate", variable: "counted_in", value }] });
+  // The lesson's 0.3 -> 0.001; the replay lays 5 ones -> hundredths (its numbers are in the variables' ranges).
+  const replay = (then: number[]) => count({ beats: [
+    { key: "other", say: "Another amount.", start: { kind: "replay", variables: ["amount", "target", "counted_in", "moved_once", "moved_twice"], values: { amount: 5000, target: 10, counted_in: 1000, moved_once: 0, moved_twice: 0 } }, actions: [{ do: "animate", variable: "counted_in", value: then[0] }] } as any,
+    ...then.slice(1).map((value, i) => animate(`step-${i}`, value)),
+  ] });
+  assert.doesNotThrow(() => validateAuthoringLesson(replay([100, 10])), "1 one -> 0.1 -> 0.01, on the replayed problem");
+  assert.throws(() => validateAuthoringLesson(replay([100, 1])), /'counted_in' is the unit the amount is counted in now, in thousandths: 1000 = 1 \(ones\) -> 100 = 0.1 \(tenths\) -> 10 = 0.01 \(hundredths\); 1 is not one of its values; from 100 the next values are 10/);
+  // The replay's own value is judged on the problem it lays.
+  const off = count({ beats: [{ key: "other", say: "Another.", start: { kind: "replay", variables: ["amount", "target", "counted_in"], values: { amount: 5000, target: 10, counted_in: 1 } }, actions: [{ do: "animate", variable: "counted_in", value: 1 }] } as any] });
+  assert.throws(() => validateAuthoringLesson(off), /1000 = 1 \(ones\).*a replay sets one of these, not 1/);
 });
 
 test("bound values: every field in its own range, the card drawable at each", () => {

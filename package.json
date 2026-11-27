@@ -42,6 +42,7 @@
     "check:base-ten-trade-browser": "npm run build && node scripts/check-base-ten-trade-browser.mjs",
     "check:place-value-chart-browser": "npm run build && node scripts/check-place-value-chart-browser.mjs",
     "check:place-value-trade-browser": "npm run build && node scripts/check-place-value-trade-browser.mjs",
+    "check:make-ten-browser": "npm run build && node scripts/check-make-ten-browser.mjs",
     "check:place-value-times-ten-browser": "npm run build && node scripts/check-place-value-times-ten-browser.mjs"
   },
   "devDependencies": {
