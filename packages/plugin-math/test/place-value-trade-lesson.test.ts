@@ -7,7 +7,7 @@ import {
   applyCanonicalAction, assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
   setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
 } from "../../core/src/index.js";
-import { PLACE_VALUE_TRADE_CARD, tapCardKind } from "../../core/src/cards.js";
+import { PLACE_VALUE_TRADE_CARD, PLACE_VALUE_TRADE_DEMONSTRATION, tapCardKind } from "../../core/src/cards.js";
 import { MATH_PLUGIN_MANIFEST, cardHowTo } from "../src/index.js";
 import { PLACE_VALUE_TAP_PLACES, placeValueTapIndex } from "../src/place-value-chart.js";
 import {
@@ -30,8 +30,9 @@ test("the registry entry: taps by a place's index, one status per column, the pa
   assert.deepEqual([kind.cardFields, kind.practiceFields, kind.demonstration?.field, kind.fieldsAtOnce], [["a", "b", "finished"], ["a", "b"], "finished", true]);
   const content = card(sub({ noDemo: true })).content;
   // What each next value of columns finished does on this card, for the compiler's refusals.
-  assert.deepEqual(kind.demonstration!.range(content), { min: 0, max: 5 });
-  assert.deepEqual([0, 2, 4, 5].map((k) => kind.demonstration!.next(content, k)), [
+  assert.equal(kind.demonstration, PLACE_VALUE_TRADE_DEMONSTRATION);
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.range(content), { min: 0, max: 5 });
+  assert.deepEqual([0, 2, 4, 5].map((k) => PLACE_VALUE_TRADE_DEMONSTRATION.next(content, k)), [
     "the next value, 1, finishes the ones", "the next value, 3, finishes the hundreds", "the next value, 5, finishes the ten thousands", "every column is finished at 5",
   ]);
   assert.deepEqual(kind.tapFields(content).map(({ place, field, min, max }) => `${kind.places[place]}.${field} ${min}..${max}`),

@@ -13,7 +13,8 @@
 // - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000) fit the window and keep their height while
 //   worked.
 // Numbers are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_TIMES_TEN_SCREENSHOTS when it is set.
-// The demonstration ("counted in" moving along its path) is checked once the core's demonstration hook takes it.
+// - the program's demonstration: "counted in" 0.1 -> 0.01 -> 0.001 breaks every tenth, then every row; 700 counted in
+//   70s deals every hundred into ten whole copies; a demonstration's chart takes no taps; the moves animate.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
 import { existsSync, mkdirSync } from "node:fs";
@@ -21,6 +22,7 @@ import { createServer } from "node:http";
 import { normalizeAuthoringLesson } from "../dist/packages/core/src/index.js";
 import { timesTenHost, timesTenLesson } from "../dist/packages/plugin-math/test/place-value-times-ten-fixtures.js";
 
+const animate = (key, value) => ({ key, say: "Look.", actions: [{ do: "animate", variable: "counted_in", value }] });
 const lessons = {
   count: timesTenLesson({ amount: "0.3", target: "0.001", practice: [["5", "0.01"]] }),
   times: timesTenLesson({ amount: "700", target: "70", practice: [["4000", "400"]] }),
@@ -28,6 +30,10 @@ const lessons = {
   zhOne: timesTenLesson({ language: "zh-CN", amount: "2000", target: "1000", start: "100", practice: [["0.06", "0.01"]] }),
   widestCount: timesTenLesson({ amount: "9", target: "0.01", practice: [["9000", "10"]] }),
   widestTimes: timesTenLesson({ amount: "9000000", target: "900000", practice: [["90", "9"]] }),
+  // The lesson's own demonstration: "counted in" 0.1 -> 0.01, then 0.001; 700 counted in hundreds, then in 70s.
+  demoCount: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10), animate("thousandths", 1)] }),
+  demoHalf: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10)] }),
+  demoTimes: timesTenLesson({ amount: "700", target: "70", beats: [animate("seventies", 70_000)] }),
 };
 const events = Object.fromEntries(Object.entries(lessons).map(([name, authored]) => [name, normalizeAuthoringLesson(authored, timesTenHost(name))]));
 
@@ -205,6 +211,32 @@ try {
   now = await read(page);
   check(now.given === "60个千分之一 = ?个百分之一" && now.columns[-3].rows === 6, `a one-place put-together in Chinese: ${JSON.stringify([now.given, now.columns])}`);
 
+  // The program's demonstration.
+  await open(page, "demoHalf");
+  now = await read(page);
+  check(now.columns[-2].rows === 3 && now.columns[-1].disks === 0 && now.values.counted_in === 10 && now.live === 0, `counted in 0.01: every tenth a row of ten hundredths, nothing to tap: ${JSON.stringify([now.columns, now.values.counted_in, now.live])}`);
+  await open(page, "demoCount");
+  now = await read(page);
+  check(now.columns[-3].squares === 3 && now.values.counted_in === 1, `counted in 0.001: three squares of a hundred thousandths: ${JSON.stringify(now.columns)}`);
+  await open(page, "demoTimes");
+  now = await read(page);
+  check(now.copies.length === 10 && now.copies.every((copy) => copy.full && copy.have === 7) && now.columns[2].disks === 0, `700 counted in 70s: ten whole copies of 70: ${JSON.stringify(now.copies.map((copy) => copy.have))}`);
+  // With motion, a demonstration step plays each row's move after another.
+  const moving = await page.evaluate(() => {
+    const { session, mounted } = window.tens;
+    const board = structuredClone(session.projection.board);
+    const variable = board.variables.counted_in;
+    const node = Object.values(board.nodes).find((candidate) => candidate.kind === "place_value_times_ten");
+    // Back to the start, drawn; then 70 again, drawn: the view queues the seven hundreds' moves.
+    variable.value = 100000; node.content.counted_in = 100000;
+    mounted.view.render(board);
+    const again = structuredClone(board);
+    again.variables.counted_in.value = 70000; Object.values(again.nodes).find((candidate) => candidate.kind === "place_value_times_ten").content.counted_in = 70000;
+    mounted.view.render(again);
+    return document.getAnimations().filter((animation) => animation.playState === "running").length;
+  });
+  check(moving > 0, `the demonstration's moves animate: ${moving} running`);
+
   // The largest cards fit the window and keep their height while worked.
   for (const name of ["widestCount", "widestTimes"]) {
     await open(page, name, { frame: 1 });
@@ -227,4 +259,4 @@ if (failures.length) {
   console.error(`place-value times-ten browser checks failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; Chinese put-together questions; the largest cards fit 1,024 px and keep their height");
+console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; Chinese put-together questions; the demonstration (counted in 0.1 -> 0.01 -> 0.001, 700 counted in 70s) drawn and animated, taking no taps; the largest cards fit 1,024 px and keep their height");

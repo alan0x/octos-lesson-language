@@ -8,7 +8,7 @@ import {
   applyCanonicalAction, assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
   setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
 } from "../../core/src/index.js";
-import { PLACE_VALUE_TIMES_TEN_CARD, tapCardKind } from "../../core/src/cards.js";
+import { PLACE_VALUE_TIMES_TEN_CARD, PLACE_VALUE_TIMES_TEN_DEMONSTRATION, tapCardKind } from "../../core/src/cards.js";
 import { MATH_BUILDERS, MATH_PLUGIN_MANIFEST, cardHowTo } from "../src/index.js";
 import { buildPlaceValueTimesTen } from "../src/place-value-times-ten-builder.js";
 import {
@@ -32,9 +32,17 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.deepEqual(kind.tapFields(content).map(({ field, min, max }) => `${field} ${min}..${max}`), ["moved_once 0..511", "moved_twice 0..511"]);
   assert.deepEqual(kind.tapFields(card(times()).content).map(({ field }) => field), ["moved_once"]);
   assert.equal(kind.fieldTarget(content, 0, "moved_twice"), "moved_twice");
-  assert.deepEqual(kind.demonstration!.range(content), { min: 1, max: 100 });
-  assert.equal(kind.demonstration!.next(content, 100), "the next values are 10 or 1");
-  assert.equal(kind.demonstration!.next(card(times()).content, 70000), "it has reached the target, 70000");
+  // The demonstration: "counted in" from the unit the question names, along its path, never back.
+  const demo = kind.demonstration!;
+  assert.equal(demo, PLACE_VALUE_TIMES_TEN_DEMONSTRATION);
+  assert.deepEqual([demo.start(content), demo.start(card(times()).content), demo.start(card(together()).content), demo.opensAtStart], [100, 100_000, 100_000, true]);
+  assert.equal(demo.refuseStep(content, 100, 10), undefined);
+  assert.equal(demo.refuseStep(content, 100, 1), undefined, "straight to the target: the program plays 0.01 between");
+  assert.equal(demo.refuseStep(content, 10, 10), undefined, "the same value again");
+  assert.equal(demo.refuseStep(content, 10, 100), "is the unit the amount is counted in now, in thousandths: 100 = 0.1 (tenths) -> 10 = 0.01 (hundredths) -> 1 = 0.001 (thousandths); it goes forward, not back to 100; from 10 the next values are 1");
+  assert.match(demo.refuseStep(card(times()).content, 100_000, 10_000)!, /100000 = 100 \(hundreds\) -> 70000 = 70; 10000 is not one of its values; from 100000 the next values are 70000$/);
+  assert.equal(demo.refuseReplay(content, 100), undefined);
+  assert.match(demo.refuseReplay(content, 50)!, /a replay sets one of these, not 50$/);
   // A tap names a row; the tapped thing moves, and only its row's bit changes.
   const state = kind.state(content);
   const moved = kind.apply(state, { kind: "move", place: 2 });
@@ -159,13 +167,39 @@ test("the lesson never taps the card, nor moves its row sets or its problem", ()
   const tapped = count({ beats: [{ key: "tap", say: "Watch.", actions: [{ do: "tap", target: "chart", tap: "move", at: "row-1" }] } as any] });
   assert.throws(() => validateAuthoringLesson(tapped), /not tapped by the lesson/);
   const rows = count({ beats: [{ key: "a", say: "Look.", actions: [{ do: "animate", variable: "moved_once", value: 1 }] } as any] });
-  assert.throws(() => validateAuthoringLesson(rows), /'moved_once' is a column's state on a place_value_times_ten card: only the learner's taps change it/);
+  assert.throws(() => validateAuthoringLesson(rows), /'moved_once' is a set of the rows the learner moved on a place_value_times_ten card: only the learner's taps change it/);
   const problem = count({ beats: [{ key: "a", say: "Look.", actions: [{ do: "animate", variable: "amount", value: 5000 }] } as any] });
   assert.throws(() => validateAuthoringLesson(problem), /'amount' is a number of a place_value_times_ten card's problem: the lesson does not animate it/);
   // As canonical events too: a card.tap on the card is refused by the reducer.
   const state = reduceCanonicalEvents(normalizeAuthoringLesson(count(), timesTenHost("reduce")));
   const node = Object.values(state.nodes).find((candidate: any) => candidate.kind === PLACE_VALUE_TIMES_TEN_KIND) as any;
   assert.throws(() => applyCanonicalAction(structuredClone(state), { op: "card.tap", target: { node_id: node.id }, tap: { kind: "move", place: 0 } } as any), /not tapped by a lesson/);
+});
+
+test("the demonstration: counted in moves along its path, from the question's unit, never back; replays and the card's opening", () => {
+  const animate = (key: string, value: number): any => ({ key, say: "Look.", actions: [{ do: "animate", variable: "counted_in", value }] });
+  assert.doesNotThrow(() => validateAuthoringLesson(count({ beats: [animate("hundredths", 10), animate("thousandths", 1)] })));
+  assert.doesNotThrow(() => validateAuthoringLesson(count({ beats: [animate("all", 1)] })), "straight to the target");
+  assert.doesNotThrow(() => validateAuthoringLesson(times({ beats: [animate("seventies", 70_000)] })));
+  assert.doesNotThrow(() => validateAuthoringLesson(together({ beats: [animate("thousands", 1_000_000)] })), "a put-together path goes up");
+  assert.throws(() => validateAuthoringLesson(count({ beats: [animate("half", 50)] })), /'counted_in' is the unit the amount is counted in now, in thousandths: .*; 50 is not one of its values; from 100 the next values are 10 or 1/);
+  assert.throws(() => validateAuthoringLesson(count({ beats: [animate("hundredths", 10), animate("back", 100)] })), /'counted_in' is the unit .*; it goes forward, not back to 100; from 10 the next values are 1/);
+  assert.throws(() => validateAuthoringLesson(times({ beats: [animate("between", 80_000)] })), /80000 is not one of its values; from 100000 the next values are 70000/);
+  // Outside its variable's range: the path is said.
+  assert.throws(() => validateAuthoringLesson(count({ beats: [animate("far", 100_000)] })), /'counted_in' is the unit the amount is counted in now, in thousandths: 100 = 0.1 \(tenths\).*; 100000 is outside its variable's range/);
+  // A replay sets any value of the path (back too), the rows fresh.
+  const replay = (values: Record<string, number>) => count({ beats: [animate("hundredths", 10),
+    { key: "again", say: "Once more.", start: { kind: "replay", variables: Object.keys(values), values }, actions: [{ do: "animate", variable: "counted_in", value: 10 }] } as any] });
+  assert.doesNotThrow(() => validateAuthoringLesson(replay({ counted_in: 100 })));
+  assert.throws(() => validateAuthoringLesson(replay({ counted_in: 50 })), /'counted_in' is the unit .*a replay sets one of these, not 50/);
+  assert.throws(() => validateAuthoringLesson(replay({ counted_in: 100, moved_once: 1 })), /'moved_once' is a set of the rows the learner moved on a place_value_times_ten card: a replay lays a fresh chart \(0\), not 1/);
+  // The card opens fresh: at its start unit, as written and as its variables start it.
+  const opened = count();
+  card(opened).content.counted_in = 10;
+  assert.throws(() => validateAuthoringLesson(opened), /opens fresh: its 'counted_in' starts at 100, not 10/);
+  // A lesson that only demonstrates the card needs the player that plays it.
+  const events = normalizeAuthoringLesson(count({ practice: [], beats: [animate("hundredths", 10)] }), timesTenHost("only"));
+  assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("card:place_value_times_ten"));
 });
 
 test("bound values: every field in its own range, the card drawable at each", () => {

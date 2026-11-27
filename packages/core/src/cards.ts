@@ -33,7 +33,7 @@ import {
 import {
   PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_MAX_ROWS,
   PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS, PLACE_VALUE_TIMES_TEN_ROW_FIELDS, PLACE_VALUE_TIMES_TEN_TAP_PLACES, PLACE_VALUE_TIMES_TEN_TAPS, PLACE_VALUE_TIMES_TEN_WORDS,
-  applyPlaceValueTimesTenTap, placeValueTimesTenChanges, placeValueTimesTenComplete, placeValueTimesTenContentProblem,
+  applyPlaceValueTimesTenTap, placeValueTimesTenChanges, placeValueTimesTenComplete, placeValueTimesTenContentProblem, placeValueTimesTenCountedInFault, placeValueTimesTenCountedInMeaning, placeValueTimesTenCountedInReplayFault,
   placeValueTimesTenAnswerParts, placeValueTimesTenDoneText, placeValueTimesTenLanguage, placeValueTimesTenPath, placeValueTimesTenPosition, placeValueTimesTenRefusalText, placeValueTimesTenRowFields,
   placeValueTimesTenState, placeValueTimesTenStateStartFault, validatePlaceValueTimesTenContent,
   type PlaceValueTimesTenContent, type PlaceValueTimesTenState, type PlaceValueTimesTenTapKind,
@@ -87,6 +87,71 @@ export interface CardFactKind<S> {
   donePile(context: CardDonePileContext): Record<string, number> | undefined;
 }
 
+/**
+ * How a lesson shows a card through one of its card-level fields instead of tapping it (decision 0026: "columns
+ * finished"). The card itself says which values the field takes, what the next valid value does (for a refusal),
+ * and where a fresh card starts; core applies these to every animation, replay and practice start, wherever the
+ * card is written. Each refusal is the sentence that follows the variable's name ("'finished' counts the columns
+ * …: it goes forward, not from 2 back to 1; the next value, 3, finishes the hundreds").
+ */
+export interface CardDemonstration {
+  /** The card-level field the lesson animates. */
+  readonly field: string;
+  /** What a tap field is, for a refusal: "a column's state". */
+  readonly tapState: string;
+  /** How the lesson shows the card instead, after the field's name in a refusal: "(columns finished, counting from the right), and the program plays each column". */
+  readonly shows: string;
+  /** The card a replay lays fresh, for a refusal: "chart". */
+  readonly fresh: string;
+  /**
+   * The card opens fresh: as written, and as its variables start it, the field is at `start` (a card that would
+   * open with its demonstration already played is refused). Absent: a card may open at any value it takes.
+   */
+  readonly opensAtStart?: boolean;
+  /** The field's value on a fresh card, nothing demonstrated (decision 0026: 0). A practice start sets it here. */
+  start(content: unknown): number;
+  /** Why the lesson may not animate the field from `from` to `to` on this card (a refusal), or undefined. */
+  refuseStep(content: unknown, from: number, to: number): string | undefined;
+  /** Why a replay may not set the field to `value` (a refusal; the card's own content rules follow), or undefined. */
+  refuseReplay(content: unknown, value: number): string | undefined;
+  /** The field's values on this card, for an animation outside its variable's range (a refusal). */
+  outside(content: unknown, value: number): string;
+}
+
+/**
+ * A demonstration field that counts forward a whole number at a time (decision 0026's "columns finished"): from its
+ * start, never back (the same value again changes nothing), within `range`. `counts` begins each refusal ("counts
+ * the columns a place_value_trade card has finished"); `next` says what the next value after one does.
+ */
+export interface WholeForwardDemonstration extends CardDemonstration {
+  /** The field's range on this card ("0 to 4 columns"). */
+  range(content: unknown): { min: number; max: number };
+  /** What the next value after `value` does on this card ("the next value, 3, finishes the hundreds"), or why none. */
+  next(content: unknown, value: number): string;
+}
+export function wholeForwardDemonstration(spec: {
+  field: string; counts: string; tapState: string; shows: string; fresh: string; opensAtStart?: boolean;
+  start(content: unknown): number;
+  range(content: unknown): { min: number; max: number };
+  next(content: unknown, value: number): string;
+}): WholeForwardDemonstration {
+  return Object.freeze({
+    range: spec.range, next: spec.next,
+    field: spec.field, tapState: spec.tapState, shows: spec.shows, fresh: spec.fresh, ...(spec.opensAtStart ? { opensAtStart: true } : {}),
+    start: spec.start,
+    refuseStep(content: unknown, from: number, to: number): string | undefined {
+      if (!Number.isInteger(to)) return `${spec.counts}: a whole number, not ${to}; from ${from}, ${spec.next(content, from)}`;
+      if (to < from) return `${spec.counts}: it goes forward, not from ${from} back to ${to}; ${spec.next(content, from)}`;
+      return undefined;
+    },
+    refuseReplay: (_content: unknown, value: number): string | undefined => (Number.isInteger(value) ? undefined : `${spec.counts}: a whole number, not ${value}`),
+    outside(content: unknown, value: number): string {
+      const { min, max } = spec.range(content);
+      return `${spec.counts}: ${min} to ${max}, not ${value}`;
+    },
+  });
+}
+
 /** A card kind the learner (or a demonstration) taps. */
 export interface TapCardKind<S = unknown> {
   readonly kind: string;
@@ -128,13 +193,7 @@ export interface TapCardKind<S = unknown> {
    * A card the lesson shows only through one card-level field (decision 0026: "columns finished"): the lesson
    * never taps it nor moves its tap fields, and that field's variable moves forward, a whole number at a time.
    */
-  readonly demonstration?: {
-    readonly field: string;
-    /** The field's range on this card, as a sentence for a refusal ("0 to 4 columns"). */
-    range(content: unknown): { min: number; max: number };
-    /** What the next value after `value` does on this card, for a refusal ("3 finishes the hundreds"), or why none. */
-    next(content: unknown, value: number): string;
-  };
+  readonly demonstration?: CardDemonstration;
   /** Every bound field changes at once when a task starts (a column's status is a state, not an amount to ease). */
   readonly fieldsAtOnce?: boolean;
   /**
@@ -452,6 +511,23 @@ const tradeContentAt = (content: JsonObject, value: (target: string) => number |
   return at;
 };
 
+/** The trade card's demonstration (decision 0026): "columns finished, counting from the right", 0 to the columns, forward only. */
+export const PLACE_VALUE_TRADE_DEMONSTRATION: WholeForwardDemonstration = wholeForwardDemonstration({
+  field: "finished",
+  counts: `counts the columns a ${PLACE_VALUE_TRADE_KIND} card has finished`,
+  tapState: "a column's state",
+  shows: "(columns finished, counting from the right), and the program plays each column",
+  fresh: "chart",
+  start: () => 0,
+  range: (content: unknown) => ({ min: 0, max: placeValueTradeState(content).problem.columns.length }),
+  next(content: unknown, value: number): string {
+    const columns = placeValueTradeState(content).problem.columns;
+    const k = Math.max(0, Math.floor(value));
+    const place = columns[columns.length - 1 - k];
+    return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
+  },
+});
+
 /**
  * The place-value trade card (decision 0026): add or subtract on the chart drawn as the written method. The
  * learner's taps are `down` (the arrow under a column), `trade` (a ringed ten) and `break` (a disk), at a
@@ -465,16 +541,7 @@ export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.
   places: PLACE_VALUE_TAP_PLACES,
   cardFields: PLACE_VALUE_TRADE_CARD_BINDINGS,
   practiceFields: PLACE_VALUE_TRADE_PROBLEM_FIELDS,
-  demonstration: Object.freeze({
-    field: "finished",
-    range: (content: unknown) => ({ min: 0, max: placeValueTradeState(content).problem.columns.length }),
-    next(content: unknown, value: number): string {
-      const columns = placeValueTradeState(content).problem.columns;
-      const k = Math.max(0, Math.floor(value));
-      const place = columns[columns.length - 1 - k];
-      return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
-    },
-  }),
+  demonstration: PLACE_VALUE_TRADE_DEMONSTRATION,
   fieldsAtOnce: true,
   validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueTradeContent(raw, path, fail),
   state: placeValueTradeState,
@@ -567,6 +634,43 @@ const timesTenContentAt = (content: JsonObject, value: (target: string) => numbe
   return at;
 };
 
+/** The problem a times-ten content's numbers make, or undefined when the card refuses them. */
+const timesTenProblem = (content: unknown) => {
+  const problem = placeValueTimesTenContentProblem(content);
+  return "fault" in problem ? undefined : problem;
+};
+const TIMES_TEN_NO_PROBLEM = "is a place_value_times_ten card's demonstration, but the card's numbers are not a problem it takes";
+
+/**
+ * The times-ten card's demonstration (decision 0028): "counted in", the unit the amount is counted in now, in
+ * thousandths. It starts at the unit the question names (never 0), and moves along the problem's path toward the
+ * target (0.1 -> 0.01 -> 0.001, or 100 -> 70 for a times pair), never back; a replay sets any value of the path.
+ * Each refusal names the path and the next valid values.
+ */
+export const PLACE_VALUE_TIMES_TEN_DEMONSTRATION: CardDemonstration = Object.freeze({
+  field: PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD,
+  tapState: "a set of the rows the learner moved",
+  shows: "(counted in: the unit the amount is counted in now, from the unit the question names to the target, in thousandths), and the program plays each row's move",
+  fresh: "chart",
+  opensAtStart: true,
+  start(content: unknown): number {
+    const problem = timesTenProblem(content);
+    return problem ? problem.start : Number((content as { counted_in?: unknown } | null)?.counted_in);
+  },
+  refuseStep(content: unknown, from: number, to: number): string | undefined {
+    const problem = timesTenProblem(content);
+    return problem ? placeValueTimesTenCountedInFault(problem, from, to) : TIMES_TEN_NO_PROBLEM;
+  },
+  refuseReplay(content: unknown, value: number): string | undefined {
+    const problem = timesTenProblem(content);
+    return problem ? placeValueTimesTenCountedInReplayFault(problem, value) : TIMES_TEN_NO_PROBLEM;
+  },
+  outside(content: unknown, value: number): string {
+    const problem = timesTenProblem(content);
+    return problem ? `${placeValueTimesTenCountedInMeaning(problem)}; ${value} is outside its variable's range` : TIMES_TEN_NO_PROBLEM;
+  },
+});
+
 /**
  * The place-value times-ten card (decision 0028): an amount counted in another unit, a count (3 tenths = ?
  * thousandths) or a times pair (700 is ? times 70). The learner's taps are `move` (a row's disk, row of ten or
@@ -581,21 +685,7 @@ export const PLACE_VALUE_TIMES_TEN_CARD: TapCardKind<PlaceValueTimesTenState> = 
   places: PLACE_VALUE_TIMES_TEN_TAP_PLACES,
   cardFields: PLACE_VALUE_TIMES_TEN_CARD_BINDINGS,
   practiceFields: PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS,
-  demonstration: Object.freeze({
-    field: PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD,
-    range(content: unknown) {
-      const problem = placeValueTimesTenContentProblem(content);
-      const path = "fault" in problem ? [0] : placeValueTimesTenPath(problem);
-      return { min: Math.min(...path), max: Math.max(...path) };
-    },
-    next(content: unknown, value: number): string {
-      const problem = placeValueTimesTenContentProblem(content);
-      if ("fault" in problem) return "the card's numbers are not a problem it takes";
-      const path = placeValueTimesTenPath(problem);
-      const ahead = path.slice(Math.ceil(placeValueTimesTenPosition(problem, value) - 1e-9)).filter((candidate) => candidate !== value);
-      return ahead.length ? `the next values are ${ahead.join(" or ")}` : `it has reached the target, ${problem.target}`;
-    },
-  }),
+  demonstration: PLACE_VALUE_TIMES_TEN_DEMONSTRATION,
   fieldsAtOnce: true,
   validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueTimesTenContent(raw, path, fail),
   state: placeValueTimesTenState,
