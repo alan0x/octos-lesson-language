@@ -11,10 +11,11 @@ import {
 } from "../../plugin-math/src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_FEATURE, PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PLUGIN_VERSION } from "../../plugin-math/src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_FEATURE, PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PLUGIN_VERSION } from "../../plugin-math/src/place-value-trade.js";
+import { PLACE_VALUE_TIMES_TEN_FEATURE, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION } from "../../plugin-math/src/place-value-times-ten.js";
 import type { CanonicalEvent } from "./types.js";
 
 /** Executable feature versions, independent of the npm prerelease label. */
-export const OLL_PLAYER_EXECUTION_VERSION = "0.17.0";
+export const OLL_PLAYER_EXECUTION_VERSION = "0.18.0";
 export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.freeze({
   "canonical:0.1": "0.1.0",
   ...Object.fromEntries(OLL_NODE_KINDS.map(kind => [`node:${kind}`, "0.1.0"])),
@@ -45,6 +46,9 @@ export const OLL_EXECUTION_FEATURES: Readonly<Record<string, string>> = Object.f
   // Decision 0026: the player draws and plays the place-value trade card (its demonstration by columns finished,
   // its taps); a lesson that only demonstrates it needs that player too.
   "card:place_value_trade": "0.17.0",
+  // Decision 0028: the player draws and plays the place-value times-ten card (its demonstration by "counted in",
+  // its row taps); a lesson that only demonstrates it needs that player too.
+  "card:place_value_times_ten": "0.18.0",
   // Decision 0025: a card-level field bound by its bare name (the chart's number); an older player cannot place it.
   "value-bindings:card-field": "0.16.0",
   // Decision 0023 amendment 1: a row of blanks answered in one go; an older player has no such question.
@@ -133,7 +137,7 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION, [PLACE_VALUE_CHART_FEATURE]: PLACE_VALUE_CHART_PLUGIN_VERSION, [PLACE_VALUE_TRADE_FEATURE]: PLACE_VALUE_TRADE_PLUGIN_VERSION },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION, [PLACE_VALUE_CHART_FEATURE]: PLACE_VALUE_CHART_PLUGIN_VERSION, [PLACE_VALUE_TRADE_FEATURE]: PLACE_VALUE_TRADE_PLUGIN_VERSION, [PLACE_VALUE_TIMES_TEN_FEATURE]: PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION },
     detect(content, kind, use, lesson) {
       if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
         use(NUMBER_LINE_FEATURE);
@@ -149,6 +153,7 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
       }
       if (kind === PLACE_VALUE_CHART_KIND) use(PLACE_VALUE_CHART_FEATURE);
       if (kind === PLACE_VALUE_TRADE_KIND) use(PLACE_VALUE_TRADE_FEATURE);
+      if (kind === PLACE_VALUE_TIMES_TEN_KIND) use(PLACE_VALUE_TIMES_TEN_FEATURE);
     },
   },
 ]);
@@ -157,7 +162,7 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
 const FIRST_PARTY_FEATURES: Readonly<Record<string, string>> = Object.freeze(Object.assign({}, ...FIRST_PARTY_EXTENSIONS.map((extension) => extension.features)));
 
 /** First-party plugin node kinds and the feature each requires. */
-const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE, [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_FEATURE, [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_FEATURE, [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_FEATURE });
+const PLUGIN_NODE_FEATURES: Readonly<Record<string, string>> = Object.freeze({ [NUMBER_LINE_KIND]: NUMBER_LINE_FEATURE, [FRACTION_MODEL_KIND]: FRACTION_MODEL_FEATURE, [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_FEATURE, [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_FEATURE, [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_FEATURE, [PLACE_VALUE_TIMES_TEN_KIND]: PLACE_VALUE_TIMES_TEN_FEATURE });
 
 /** The extensions a check uses: those passed, plus first-party plugins not overridden. */
 export function installedExtensions(options: ExecutionOptions = {}): readonly ExecutionExtension[] {
@@ -311,6 +316,7 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
           if (pluginFeature) add(pluginFeature, `${actionPath}/node/kind`);
           else add(`node:${String(action.node.kind)}`, `${actionPath}/node/kind`);
           if (action.node.kind === PLACE_VALUE_TRADE_KIND) add("card:place_value_trade", `${actionPath}/node/kind`);
+          if (action.node.kind === PLACE_VALUE_TIMES_TEN_KIND) add("card:place_value_times_ten", `${actionPath}/node/kind`);
           const relation = action.node.placement?.relation;
           if (relation === "annotates" || relation === "replaces" || relation === "continues") add(`placement:${relation}`, `${actionPath}/node/placement`);
           if (action.node.source !== undefined) add("write-source", `${actionPath}/node/source`);

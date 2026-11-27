@@ -333,6 +333,7 @@ import { buildFractionModel } from "./fraction-model-builder.js";
 import { buildBaseTenTrade } from "./base-ten-trade-builder.js";
 import { buildPlaceValueChart } from "./place-value-chart-builder.js";
 import { buildPlaceValueTrade } from "./place-value-trade-builder.js";
+import { buildPlaceValueTimesTen } from "./place-value-times-ten-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
 export * from "./number-line-form.js";
@@ -372,6 +373,7 @@ export const MATH_BUILDERS = {
   base_ten_trade: buildBaseTenTrade,
   place_value_chart: buildPlaceValueChart,
   place_value_trade: buildPlaceValueTrade,
+  place_value_times_ten: buildPlaceValueTimesTen,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

@@ -12,6 +12,7 @@ import { FRACTION_MODEL_PLUGIN_VERSION } from "../src/fraction-model.js";
 import { BASE_TEN_TRADE_PLUGIN_VERSION, BASE_TEN_TRADE_SLIDER_VERSION } from "../src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_PLUGIN_VERSION } from "../src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_PLUGIN_VERSION } from "../src/place-value-trade.js";
+import { PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION } from "../src/place-value-times-ten.js";
 
 const host = { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" as const };
 
@@ -57,10 +58,13 @@ test("a number line requires the math plugin's feature, not a core node feature"
   assert.ok(requirements.requiredCapabilities.includes("plugin:math/number-line@1"));
   assert.ok(!requirements.requiredCapabilities.some((feature) => feature === "node:number_line"));
   assert.deepEqual(requirements.requiredPlugins, { math: "0.2.0" });
-  // The manifest is at the newest feature's version (the place-value trade card, 0026); the place-value chart
-  // (0025), a slider on a place's count (0023 amendment 4), the base-ten trade card (0023), the fraction model
+  // The manifest is at the newest feature's version (the place-value times-ten card, 0028); the place-value trade
+  // card (0026), the place-value chart (0025), a slider on a place's count (0023 amendment 4), the base-ten trade card (0023), the fraction model
   // (0021; 0.4.1 and 0.4.2 changed only how it is drawn, so its lessons still require 0.4.0) and jump lanes came before it.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, PLACE_VALUE_TRADE_PLUGIN_VERSION);
+  assert.equal(MATH_PLUGIN_MANIFEST.version, PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION);
+  // Compared by number: "0.10.0" comes after "0.9.0".
+  const minor = (version: string) => Number(version.split(".")[1]);
+  assert.ok(minor(PLACE_VALUE_TRADE_PLUGIN_VERSION) < minor(PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION));
   assert.ok(PLACE_VALUE_CHART_PLUGIN_VERSION < PLACE_VALUE_TRADE_PLUGIN_VERSION);
   assert.ok(BASE_TEN_TRADE_SLIDER_VERSION < PLACE_VALUE_CHART_PLUGIN_VERSION);
   assert.ok(FRACTION_MODEL_PLUGIN_VERSION < BASE_TEN_TRADE_PLUGIN_VERSION);

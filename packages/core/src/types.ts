@@ -3,12 +3,14 @@ import type { NumericAnswerCompletion, NumericRowCompletion } from "./numeric-an
 import type { BaseTenPlaceName } from "../../plugin-math/src/base-ten-trade.js";
 import type { PlaceValueTap } from "../../plugin-math/src/place-value-chart.js";
 import type { PlaceValueTradeTapKind } from "../../plugin-math/src/place-value-trade.js";
+import type { PlaceValueTimesTenTapKind } from "../../plugin-math/src/place-value-times-ten.js";
 
 /**
  * A tap a card takes: the trading mat's (decision 0023), the place-value chart's (decision 0025) or the
- * place-value trade card's (decision 0026; a learner's only, never the lesson's).
+ * place-value trade card's (decision 0026) or the place-value times-ten card's (decision 0028; both a learner's
+ * only, never the lesson's).
  */
-export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind;
+export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind | PlaceValueTimesTenTapKind;
 /** A place an authoring tap names: the mat's, or a chart's alias (`ones`, `tenths`, `hundred-thousands`). */
 export type CardTapPlaceName = BaseTenPlaceName | "thousandths" | "hundredths" | "tenths" | "thousands" | "ten-thousands" | "hundred-thousands" | "millions";
 

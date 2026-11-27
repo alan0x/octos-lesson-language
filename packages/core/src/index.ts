@@ -17,6 +17,7 @@ import {
 } from "../../plugin-math/src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PART_FIELDS, validatePlaceValueChartContent } from "../../plugin-math/src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PART_FIELDS, validatePlaceValueTradeContent } from "../../plugin-math/src/place-value-trade.js";
+import { PLACE_VALUE_TIMES_TEN_KIND, validatePlaceValueTimesTenContent } from "../../plugin-math/src/place-value-times-ten.js";
 import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, lessonTapCardKindList, tapCardKind, tapCardKindList, type TapCardKind } from "./cards.js";
 import {
   bindingCapabilitiesForNodeKind,
@@ -539,6 +540,33 @@ function validateCardStudentTask(
   validateTaskFeedback(task, path);
 }
 
+/**
+ * A typed task anchored to a card, right after a task on that card, asks the card's own answers for the problem
+ * the learner just worked (decision 0028): a row's blanks are exactly the card's, in order; a single answer is one
+ * of them. Only that task: a lesson's own typed question about the card elsewhere is the lesson's.
+ */
+function requireCardAnswers(
+  task: AuthoringAnswerStudentTask | AuthoringRowStudentTask,
+  previous: { node: string; kind: TapCardKind; state: unknown; language: string } | undefined,
+  path: string,
+): void {
+  if (!previous || task.anchor !== previous.node) return;
+  const own = previous.kind.answers?.(previous.state, previous.language);
+  if (!own) return;
+  const read = (answer: unknown) => (typeof answer === "string" ? parseNumericAnswer(answer)?.value : undefined);
+  if (task.completion.kind === "numeric_answer") {
+    const value = read((task as AuthoringAnswerStudentTask).completion.answer);
+    if (value === undefined || !own.values.includes(value)) {
+      fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/answer`, `The answer after this card's task is the card's own (${own.text}): ${own.values.join(" or ")}`);
+    }
+    return;
+  }
+  const blanks = ((task as AuthoringRowStudentTask).completion.parts ?? []).flatMap((part) => ("blank" in part && part.blank ? [read(part.blank.answer)] : []));
+  if (blanks.length !== own.values.length || blanks.some((value, i) => value !== own.values[i])) {
+    fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/parts`, `The row after this card's task asks the card's own answers (${own.text}): ${own.values.length} blank${own.values.length === 1 ? "" : "s"}, ${own.values.join(" and ")}`);
+  }
+}
+
 /** A row of blanks (decision 0023 amendment 1): fixed text and one to six blanks, each a numeric answer. */
 function validateRowStudentTask(task: AuthoringRowStudentTask, path: string, registry: Registry): void {
   resolveLocal(registry, task.anchor, `${path}/anchor`, ["node"]);
@@ -753,6 +781,8 @@ function validateStudentTasks(
   // Sliders on a card's count are the trading mat's own (amendment 4).
   const matContents = matCardContents(tapCards);
   const taskAliases = new Set<string>();
+  /** The card task just before, with its practice problem: a typed task anchored to that card right after it asks the card's answers. */
+  let lastCardTask: { node: string; kind: TapCardKind; state: unknown; language: string } | undefined;
   for (const [index, task] of (document.lesson.tasks ?? []).entries()) {
     const path = `/lesson/tasks/${index}`;
     requireObject(task, path);
@@ -776,16 +806,27 @@ function validateStudentTasks(
       validateScene3dStudentTask(task as AuthoringScene3dStudentTask, path, scene3dCameras);
       continue;
     }
+    const previousCardTask = lastCardTask;
+    lastCardTask = undefined;
     if (task.completion.kind === "numeric_answer") {
       validateAnswerStudentTask(task as AuthoringAnswerStudentTask, path, registry);
+      requireCardAnswers(task as AuthoringAnswerStudentTask, previousCardTask, path);
       continue;
     }
     if ((task.completion.kind as string) === "numeric_row") {
       validateRowStudentTask(task as AuthoringRowStudentTask, path, registry);
+      requireCardAnswers(task as AuthoringRowStudentTask, previousCardTask, path);
       continue;
     }
     if (task.completion.kind === "card_fact") {
       validateCardStudentTask(task as AuthoringCardStudentTask, path, registry, tapCards, document.lesson.variables ?? [], startValues, availableControls, cardSliders);
+      const card = tapCards.get((task as AuthoringCardStudentTask).completion.node);
+      if (card?.kind.answers) {
+        const variables = cardTapVariables(card.kind, card.content, document.lesson.variables ?? [], `${path}/completion/node`);
+        const initial = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
+        const practice = cardContentAt(card.kind, card.content, variables, { ...initial, ...startValues });
+        lastCardTask = { node: (task as AuthoringCardStudentTask).completion.node, kind: card.kind, state: card.kind.state(practice), language: card.kind.language(card.content) };
+      }
       continue;
     }
     const expressionTask = task as AuthoringVariableStudentTask;
@@ -1134,6 +1175,17 @@ function checkPlaceValueTradeBoundValues(content: JsonObject, path: string, decl
   checkPluginBoundValues(content, path, declarations, PLACE_VALUE_TRADE_PART_FIELDS, validate);
   // Up to nine variables, and the corner check varies only four: each is also checked alone.
   checkEachBoundVariable(content, path, declarations, PLACE_VALUE_TRADE_PART_FIELDS, validate);
+}
+
+/**
+ * A place-value times-ten card stays drawable for every value its variables can take (decision 0028): each field
+ * in its own range. The joint rules (the problem, its shape, "counted in" on the path, the row sets the problem
+ * has) belong to a starting card: the card as its variables start it and each task's start are checked against them.
+ */
+function checkPlaceValueTimesTenBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validatePlaceValueTimesTenContent(evaluated, path, failAt, { boundValues: true });
+  checkPluginBoundValues(content, path, declarations, [], validate);
+  checkEachBoundVariable(content, path, declarations, [], validate);
 }
 
 /** Each referenced variable on its own at its minimum and maximum, the others at their start. */
@@ -2282,6 +2334,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (action.kind === BASE_TEN_TRADE_KIND) checkBaseTenTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === PLACE_VALUE_CHART_KIND) checkPlaceValueChartBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === PLACE_VALUE_TRADE_KIND) checkPlaceValueTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          if (action.kind === PLACE_VALUE_TIMES_TEN_KIND) checkPlaceValueTimesTenBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           // A card with starting rules is checked as its variables start it, not only as written (review of #111).
           if (tapCard?.validateStart && Array.isArray(action.content.bindings)) {
             const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
