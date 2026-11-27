@@ -137,3 +137,16 @@
 2. OLL：卡片（插件，先不接进播放器），然后接进播放器（演示字段由卡片说、一行几个空挂在卡片上），浏览器检查。
 3. Coach：判定器和用例，然后试用配方（默认不开）。
 4. 一次客观检查（先做一次付费的小试，看模型写的 `counted_in`）：用例跑一遍，看第 10 节的四个风险；给产品负责人看的课不超过 8 个。之后由产品负责人决定是否默认打开。
+
+## 修订
+
+- 2026-11-27, revision 1 (what was built in OLL #121 and #123, and where it differs from the text above):
+  1. **Versions.** Player 0.19.0 (`card:place_value_times_ten`) and math plugin 0.11.0. The make-ten card (0027) took 0.18.0 and 0.10.0 first.
+  2. **The learner's state is two row sets, fixed at 0 to 511.** `moved_once` and `moved_twice` each hold one bit per row. The range does not depend on the digit, so a practice of another digit binds the same variables. A practice start and a replay reset both to 0. The state reads only the problem's own rows. A row "moved twice" but not once has not moved, and the tap that moves it clears the stray bit (review of #121), so no row jumps two places.
+  3. **A refused problem is never complete.** Numbers the card refuses draw an empty chart; `complete` needs at least one row, and a practice start on such numbers is refused with their fault (review of #121).
+  4. **Two more taps on a times pair, always refused: `copy` and `smaller`.** Tapping a copy, or the smaller number, gets the fact as the card's own words ("This 70 has 3 tens; 70 is 7 tens.", "This is 70: 7 tens."). A tap's place is its row (0 to 9).
+  5. **The demonstration is the card's own (`CardDemonstration`, the hook #122 introduced).** "Counted in" starts at the unit the question names, and the card opens there (`opensAtStart`), also as the lesson has played when the card is written. It moves along the problem's path, never back; a replay may set any value of the path. Each refusal names the path and the next valid values. The core now judges a step and a replay on the card as the lesson has played it (its numbers at the played values), so a replay that lays another problem moves along that problem's path.
+  6. **The player sets "counted in" at once.** The card plays each row's move in turn (the browser check sees one row at a time); the variable is not eased between path values.
+  7. **The answer row is tied to the card (`TapCardKind.answers`).** A typed task anchored to the card, right after a task on it, asks the card's own answers: a row of blanks exactly (one for a count, two for a times pair), or one typed answer that is one of them. A model's own typed question placed there is refused and the lesson is lost, so Coach writes that row itself from `placeValueTimesTenAnswerParts`. A typed question anchored to the card anywhere else is the lesson's own.
+  8. **What Coach supplies.** The start of "counted in" for the lesson and for each practice (`placeValueTimesTenStartUnit`), the row-set variables (0 to 511), and the answer row. The model writes the amount, the target and the values "counted in" animates to; for a put-together question it also writes the unit the question names, which fixes the card's shape.
+  9. **Single-disk columns are 150 px wide (the sketch had 170).** This lets a card two places apart, with a decimal point, fit 1,024 px.
