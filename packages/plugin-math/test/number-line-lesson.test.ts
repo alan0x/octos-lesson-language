@@ -12,6 +12,7 @@ import { FRACTION_MODEL_PLUGIN_VERSION } from "../src/fraction-model.js";
 import { BASE_TEN_TRADE_PLUGIN_VERSION, BASE_TEN_TRADE_SLIDER_VERSION } from "../src/base-ten-trade.js";
 import { PLACE_VALUE_CHART_PLUGIN_VERSION } from "../src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_PLUGIN_VERSION } from "../src/place-value-trade.js";
+import { MAKE_TEN_PLUGIN_VERSION } from "../src/make-ten.js";
 
 const host = { lessonId: "l", boardId: "b", baseRevision: 0, regionIntent: "new_topic" as const };
 
@@ -60,7 +61,9 @@ test("a number line requires the math plugin's feature, not a core node feature"
   // The manifest is at the newest feature's version (the place-value trade card, 0026); the place-value chart
   // (0025), a slider on a place's count (0023 amendment 4), the base-ten trade card (0023), the fraction model
   // (0021; 0.4.1 and 0.4.2 changed only how it is drawn, so its lessons still require 0.4.0) and jump lanes came before it.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, PLACE_VALUE_TRADE_PLUGIN_VERSION);
+  // The make-ten card (0027) came after the trade card.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, MAKE_TEN_PLUGIN_VERSION);
+  assert.ok(Number(PLACE_VALUE_TRADE_PLUGIN_VERSION.split(".")[1]) < Number(MAKE_TEN_PLUGIN_VERSION.split(".")[1]));
   assert.ok(PLACE_VALUE_CHART_PLUGIN_VERSION < PLACE_VALUE_TRADE_PLUGIN_VERSION);
   assert.ok(BASE_TEN_TRADE_SLIDER_VERSION < PLACE_VALUE_CHART_PLUGIN_VERSION);
   assert.ok(FRACTION_MODEL_PLUGIN_VERSION < BASE_TEN_TRADE_PLUGIN_VERSION);

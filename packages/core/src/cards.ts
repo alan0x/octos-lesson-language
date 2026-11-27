@@ -1,6 +1,7 @@
 /**
- * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025)
- * and the place-value trade card, adding and subtracting on the chart as the written method (0026).
+ * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025),
+ * the place-value trade card, adding and subtracting on the chart as the written method (0026), and the
+ * make-ten card, two ten frames (0027).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -29,6 +30,11 @@ import {
   placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeStartFault, placeValueTradeState, validatePlaceValueTradeContent,
   type PlaceValueTradeOperation, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "../../plugin-math/src/place-value-trade.js";
+import {
+  MAKE_TEN_CARD_FIELDS, MAKE_TEN_KIND, MAKE_TEN_MAX_MOVED, MAKE_TEN_PLACES, MAKE_TEN_PROBLEM_FIELDS, MAKE_TEN_TAP_FIELD, MAKE_TEN_TAP_PLACES, MAKE_TEN_TAPS,
+  applyMakeTenTap, makeTenAddend, makeTenChanges, makeTenComplete, makeTenFreshCount, makeTenGiver, makeTenLanguage, makeTenProblemOf, makeTenRefusalText,
+  makeTenStartFault, makeTenState, validateMakeTenContent, type MakeTenState, type MakeTenTapKind,
+} from "../../plugin-math/src/make-ten.js";
 import type { JsonObject } from "./types.js";
 
 type Fail = (path: string, message: string) => never;
@@ -78,6 +84,71 @@ export interface CardFactKind<S> {
   donePile(context: CardDonePileContext): Record<string, number> | undefined;
 }
 
+/**
+ * How a lesson shows a card through one of its card-level fields instead of tapping it (decision 0026: "columns
+ * finished"). The card itself says which values the field takes, what the next valid value does (for a refusal),
+ * and where a fresh card starts; core applies these to every animation, replay and practice start, wherever the
+ * card is written. Each refusal is the sentence that follows the variable's name ("'finished' counts the columns
+ * …: it goes forward, not from 2 back to 1; the next value, 3, finishes the hundreds").
+ */
+export interface CardDemonstration {
+  /** The card-level field the lesson animates. */
+  readonly field: string;
+  /** What a tap field is, for a refusal: "a column's state". */
+  readonly tapState: string;
+  /** How the lesson shows the card instead, after the field's name in a refusal: "(columns finished, counting from the right), and the program plays each column". */
+  readonly shows: string;
+  /** The card a replay lays fresh, for a refusal: "chart". */
+  readonly fresh: string;
+  /**
+   * The card opens fresh: as written, and as its variables start it, the field is at `start` (a card that would
+   * open with its demonstration already played is refused). Absent: a card may open at any value it takes.
+   */
+  readonly opensAtStart?: boolean;
+  /** The field's value on a fresh card, nothing demonstrated (decision 0026: 0). A practice start sets it here. */
+  start(content: unknown): number;
+  /** Why the lesson may not animate the field from `from` to `to` on this card (a refusal), or undefined. */
+  refuseStep(content: unknown, from: number, to: number): string | undefined;
+  /** Why a replay may not set the field to `value` (a refusal; the card's own content rules follow), or undefined. */
+  refuseReplay(content: unknown, value: number): string | undefined;
+  /** The field's values on this card, for an animation outside its variable's range (a refusal). */
+  outside(content: unknown, value: number): string;
+}
+
+/**
+ * A demonstration field that counts forward a whole number at a time (decision 0026's "columns finished"): from its
+ * start, never back (the same value again changes nothing), within `range`. `counts` begins each refusal ("counts
+ * the columns a place_value_trade card has finished"); `next` says what the next value after one does.
+ */
+export interface WholeForwardDemonstration extends CardDemonstration {
+  /** The field's range on this card ("0 to 4 columns"). */
+  range(content: unknown): { min: number; max: number };
+  /** What the next value after `value` does on this card ("the next value, 3, finishes the hundreds"), or why none. */
+  next(content: unknown, value: number): string;
+}
+export function wholeForwardDemonstration(spec: {
+  field: string; counts: string; tapState: string; shows: string; fresh: string; opensAtStart?: boolean;
+  start(content: unknown): number;
+  range(content: unknown): { min: number; max: number };
+  next(content: unknown, value: number): string;
+}): WholeForwardDemonstration {
+  return Object.freeze({
+    range: spec.range, next: spec.next,
+    field: spec.field, tapState: spec.tapState, shows: spec.shows, fresh: spec.fresh, ...(spec.opensAtStart ? { opensAtStart: true } : {}),
+    start: spec.start,
+    refuseStep(content: unknown, from: number, to: number): string | undefined {
+      if (!Number.isInteger(to)) return `${spec.counts}: a whole number, not ${to}; from ${from}, ${spec.next(content, from)}`;
+      if (to < from) return `${spec.counts}: it goes forward, not from ${from} back to ${to}; ${spec.next(content, from)}`;
+      return undefined;
+    },
+    refuseReplay: (_content: unknown, value: number): string | undefined => (Number.isInteger(value) ? undefined : `${spec.counts}: a whole number, not ${value}`),
+    outside(content: unknown, value: number): string {
+      const { min, max } = spec.range(content);
+      return `${spec.counts}: ${min} to ${max}, not ${value}`;
+    },
+  });
+}
+
 /** A card kind the learner (or a demonstration) taps. */
 export interface TapCardKind<S = unknown> {
   readonly kind: string;
@@ -86,7 +157,12 @@ export interface TapCardKind<S = unknown> {
   /** Places an authoring tap's `at` may name; a tap's `place` is the index here. */
   readonly places: readonly string[];
   /** Checks content as written or revised (a starting pile). */
-  validateContent(raw: unknown, path: string, fail: Fail): void;
+  /**
+   * Checks content as written or revised. With `start` the card is one a lesson opens or a practice starts on: a
+   * kind with starting rules of its own checks them too (decision 0027: the make-ten card opens fresh). Without it,
+   * a card may hold a value a demonstration already reached (a replay, a revision).
+   */
+  validateContent(raw: unknown, path: string, fail: Fail, options?: { start?: boolean }): void;
   /** The card's state of play from its content (whole numbers). */
   state(content: unknown): S;
   /** The card's tap rules: the state a tap leaves, or the reason the card refuses it. */
@@ -119,13 +195,7 @@ export interface TapCardKind<S = unknown> {
    * A card the lesson shows only through one card-level field (decision 0026: "columns finished"): the lesson
    * never taps it nor moves its tap fields, and that field's variable moves forward, a whole number at a time.
    */
-  readonly demonstration?: {
-    readonly field: string;
-    /** The field's range on this card, as a sentence for a refusal ("0 to 4 columns"). */
-    range(content: unknown): { min: number; max: number };
-    /** What the next value after `value` does on this card, for a refusal ("3 finishes the hundreds"), or why none. */
-    next(content: unknown, value: number): string;
-  };
+  readonly demonstration?: CardDemonstration;
   /** Every bound field changes at once when a task starts (a column's status is a state, not an amount to ease). */
   readonly fieldsAtOnce?: boolean;
   /**
@@ -438,6 +508,23 @@ const tradeContentAt = (content: JsonObject, value: (target: string) => number |
   return at;
 };
 
+/** The trade card's demonstration (decision 0026): "columns finished, counting from the right", 0 to the columns, forward only. */
+export const PLACE_VALUE_TRADE_DEMONSTRATION: WholeForwardDemonstration = wholeForwardDemonstration({
+  field: "finished",
+  counts: `counts the columns a ${PLACE_VALUE_TRADE_KIND} card has finished`,
+  tapState: "a column's state",
+  shows: "(columns finished, counting from the right), and the program plays each column",
+  fresh: "chart",
+  start: () => 0,
+  range: (content: unknown) => ({ min: 0, max: placeValueTradeState(content).problem.columns.length }),
+  next(content: unknown, value: number): string {
+    const columns = placeValueTradeState(content).problem.columns;
+    const k = Math.max(0, Math.floor(value));
+    const place = columns[columns.length - 1 - k];
+    return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
+  },
+});
+
 /**
  * The place-value trade card (decision 0026): add or subtract on the chart drawn as the written method. The
  * learner's taps are `down` (the arrow under a column), `trade` (a ringed ten) and `break` (a disk), at a
@@ -451,16 +538,7 @@ export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.
   places: PLACE_VALUE_TAP_PLACES,
   cardFields: PLACE_VALUE_TRADE_CARD_BINDINGS,
   practiceFields: PLACE_VALUE_TRADE_PROBLEM_FIELDS,
-  demonstration: Object.freeze({
-    field: "finished",
-    range: (content: unknown) => ({ min: 0, max: placeValueTradeState(content).problem.columns.length }),
-    next(content: unknown, value: number): string {
-      const columns = placeValueTradeState(content).problem.columns;
-      const k = Math.max(0, Math.floor(value));
-      const place = columns[columns.length - 1 - k];
-      return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
-    },
-  }),
+  demonstration: PLACE_VALUE_TRADE_DEMONSTRATION,
   fieldsAtOnce: true,
   validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueTradeContent(raw, path, fail),
   state: placeValueTradeState,
@@ -537,11 +615,117 @@ export const PLACE_VALUE_TRADE_CARD: TapCardKind<PlaceValueTradeState> = Object.
   }),
 });
 
+/** The make-ten card's content at a pile given by binding target (its card-level fields, all bound by bare name). */
+const makeTenContentAt = (content: JsonObject, value: (target: string) => number | undefined): JsonObject => {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const field of [...MAKE_TEN_CARD_FIELDS, MAKE_TEN_TAP_FIELD]) {
+    const v = value(field);
+    if (v !== undefined) at[field] = v;
+  }
+  return at;
+};
+
+/**
+ * The make-ten card's demonstration (decision 0027): the count in the bigger addend's frame, forward a whole
+ * number at a time from the pair's bigger addend (8 + 6 starts at 8) up to 10. The card opens there.
+ */
+export const MAKE_TEN_DEMONSTRATION: WholeForwardDemonstration = wholeForwardDemonstration({
+  field: "filled",
+  counts: `counts the counters in the bigger addend's frame of a ${MAKE_TEN_KIND} card`,
+  tapState: "the count the learner moved",
+  shows: "(the count in the bigger addend's frame, from the bigger addend up to 10), and the program moves each counter",
+  fresh: "card",
+  opensAtStart: true,
+  start: (content: unknown) => {
+    const { problem } = makeTenState(content);
+    return makeTenFreshCount(problem.a, problem.b);
+  },
+  range: (content: unknown) => {
+    const { problem } = makeTenState(content);
+    return { min: makeTenFreshCount(problem.a, problem.b), max: MAKE_TEN_PLACES };
+  },
+  next(content: unknown, value: number): string {
+    const { problem } = makeTenState(content);
+    const k = Math.max(makeTenFreshCount(problem.a, problem.b), Math.floor(value));
+    const big = makeTenAddend(problem, problem.big), small = makeTenAddend(problem, makeTenGiver(problem));
+    return k >= MAKE_TEN_PLACES ? `the ${big}'s frame holds ten at ${MAKE_TEN_PLACES}` : `the next value, ${k + 1}, moves one of the ${small} into the ${big}'s frame`;
+  },
+});
+
+/**
+ * The make-ten card (decision 0027): two ten frames; the smaller addend's counters are tapped across to fill the
+ * bigger addend's frame. The learner's taps are `give` (a counter in its own frame crosses) and `back` (a counter
+ * that crossed goes home), at the frame tapped (0 or 1); each changes the count moved (`moved`, bound by its bare
+ * name). The pair and the demonstration's count in the bigger frame (`filled`, which starts at the pair's bigger
+ * addend) are card-level fields. The lesson never taps the card: it shows it by `filled`, and the program moves
+ * one counter at a time.
+ */
+export const MAKE_TEN_CARD: TapCardKind<MakeTenState> = Object.freeze({
+  kind: MAKE_TEN_KIND,
+  taps: MAKE_TEN_TAPS,
+  places: MAKE_TEN_TAP_PLACES,
+  cardFields: MAKE_TEN_CARD_FIELDS,
+  practiceFields: MAKE_TEN_PROBLEM_FIELDS,
+  demonstration: MAKE_TEN_DEMONSTRATION,
+  fieldsAtOnce: true,
+  validateContent: (raw: unknown, path: string, fail: Fail, options?: { start?: boolean }) => validateMakeTenContent(raw, path, fail, options?.start ? { start: true } : {}),
+  state: makeTenState,
+  apply: (state: MakeTenState, tap: CardTap): CardTapResult<MakeTenState> => {
+    const result = applyMakeTenTap(state, { tap: tap.kind as MakeTenTapKind, place: tap.place });
+    return result.ok ? { ok: true, state: result.state } : { ok: false, reason: result.reason };
+  },
+  refusalText(reason: string, _place: number, language?: string, state?: MakeTenState): string {
+    // The fact names a colour ("Red counters stay in their frame."): the card as tapped gives it.
+    return makeTenRefusalText(state ?? makeTenState({}), reason, language === "zh-CN" ? "zh-CN" : "en-US");
+  },
+  language: makeTenLanguage,
+  changes: (before: MakeTenState, after: MakeTenState): CardFieldChange[] => makeTenChanges(before, after),
+  tapFields: (): CardTapField[] => [{ place: 0, field: MAKE_TEN_TAP_FIELD, min: 0, max: MAKE_TEN_MAX_MOVED }],
+  /** The count moved is a card-level field: bound by its bare name, not `part.field`. */
+  fieldTarget: (_content: unknown, _place: number, field: string): string => field,
+  contentAt: makeTenContentAt,
+  /** A practice card starts fresh: nothing moved, nothing demonstrated. */
+  validateStart(state: MakeTenState, fail: (message: string) => never): void {
+    const fault = makeTenStartFault(state);
+    if (fault) fail(fault);
+  },
+  facts: Object.freeze({
+    /**
+     * The bigger addend's frame holds ten. Judged on each tap, so the task ends on the tap that makes the ten
+     * (there is no "done"); the row of four blanks is a task of its own after it, anchored on the card.
+     */
+    complete: {
+      keys: [],
+      judgedOnTap: true,
+      read: (_completion: CardFactCompletion, state: MakeTenState) => {
+        const actual = makeTenComplete(state) ? 1 : 0;
+        return { actual, target: 1, succeeded: actual === 1 };
+      },
+      /** The one finished card of the task's own pair, computed: the pair, nothing demonstrated, the ten made. */
+      donePile({ content, startValue }: CardDonePileContext): Record<string, number> | undefined {
+        const bound = boundTargets(content);
+        const number = (field: "a" | "b") => (bound.has(field) ? startValue(bound.get(field)) : Number(content[field]));
+        const problem = makeTenProblemOf(number("a"), number("b"));
+        const start = makeTenFreshCount(problem.a, problem.b);
+        const result: Record<string, number> = {};
+        for (const [target, alias] of bound) {
+          if (target === "a" || target === "b") result[alias] = number(target);
+          else if (target === "filled") result[alias] = start;
+          else if (target === MAKE_TEN_TAP_FIELD) result[alias] = MAKE_TEN_PLACES - start;
+        }
+        return result;
+      },
+    },
+  }),
+});
+
 /** Every card kind the learner taps, by node kind. */
 export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
   [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_CARD as TapCardKind,
   [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_CARD as TapCardKind,
+  [MAKE_TEN_KIND]: MAKE_TEN_CARD as TapCardKind,
 });
 
 /** The tap card of a node kind, or undefined when the kind is not one. */

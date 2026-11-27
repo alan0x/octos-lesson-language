@@ -414,10 +414,10 @@ test("publishes only the executable node, action, binding, control, and task cap
   assert.deepEqual(OLL_EXECUTION_CAPABILITIES, {
     version: "0.1",
     node_kinds: OLL_NODE_KINDS,
-    plugin_node_kinds: ["number_line", "fraction_model", "base_ten_trade", "place_value_chart", "place_value_trade"],
+    plugin_node_kinds: ["number_line", "fraction_model", "base_ten_trade", "place_value_chart", "place_value_trade", "make_ten"],
     action_names: OLL_ACTION_NAMES,
     value_bindings: OLL_BINDING_CAPABILITIES,
-    card_value_bindings: { place_value_chart: ["target"], place_value_trade: ["a", "b", "finished"] },
+    card_value_bindings: { place_value_chart: ["target"], place_value_trade: ["a", "b", "finished"], make_ten: ["a", "b", "filled", "moved"] },
     binding_labels: { precision: { min: 0, max: 6 }, prefix: true, suffix: true },
     bound_radius: { allow_zero: true, default: "positive" },
     variable_expressions: OLL_EXPRESSION_CAPABILITIES,

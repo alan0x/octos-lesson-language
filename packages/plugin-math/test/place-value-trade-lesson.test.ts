@@ -7,7 +7,7 @@ import {
   applyCanonicalAction, assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
   setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
 } from "../../core/src/index.js";
-import { PLACE_VALUE_TRADE_CARD, tapCardKind } from "../../core/src/cards.js";
+import { PLACE_VALUE_TRADE_CARD, PLACE_VALUE_TRADE_DEMONSTRATION, tapCardKind } from "../../core/src/cards.js";
 import { MATH_PLUGIN_MANIFEST, cardHowTo } from "../src/index.js";
 import { PLACE_VALUE_TAP_PLACES, placeValueTapIndex } from "../src/place-value-chart.js";
 import {
@@ -30,8 +30,9 @@ test("the registry entry: taps by a place's index, one status per column, the pa
   assert.deepEqual([kind.cardFields, kind.practiceFields, kind.demonstration?.field, kind.fieldsAtOnce], [["a", "b", "finished"], ["a", "b"], "finished", true]);
   const content = card(sub({ noDemo: true })).content;
   // What each next value of columns finished does on this card, for the compiler's refusals.
-  assert.deepEqual(kind.demonstration!.range(content), { min: 0, max: 5 });
-  assert.deepEqual([0, 2, 4, 5].map((k) => kind.demonstration!.next(content, k)), [
+  assert.equal(kind.demonstration, PLACE_VALUE_TRADE_DEMONSTRATION);
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.range(content), { min: 0, max: 5 });
+  assert.deepEqual([0, 2, 4, 5].map((k) => PLACE_VALUE_TRADE_DEMONSTRATION.next(content, k)), [
     "the next value, 1, finishes the ones", "the next value, 3, finishes the hundreds", "the next value, 5, finishes the ten thousands", "every column is finished at 5",
   ]);
   assert.deepEqual(kind.tapFields(content).map(({ place, field, min, max }) => `${kind.places[place]}.${field} ${min}..${max}`),
@@ -111,8 +112,9 @@ test("a trade lesson with a practice pair and a typed answer: validated, normali
 });
 
 test("a trade lesson requires the card's feature, its fact and the card-level bindings: player 0.17.0, math 0.9.0", () => {
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.9.0");
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.17.0");
+  // The make-ten card (0027) moved both on since; a trade lesson still needs only player 0.17.0 and math 0.9.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.10.0");
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.18.0");
   const events = normalizeAuthoringLesson(add(), tradeHost("pt"));
   const requirements = deriveExecutionRequirements(events);
   for (const feature of [PLACE_VALUE_TRADE_FEATURE, "student-tasks:card_fact:complete", "value-bindings:card-field", "student-tasks:numeric_answer"]) assert.ok(requirements.requiredCapabilities.includes(feature), feature);

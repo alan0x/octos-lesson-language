@@ -1,9 +1,10 @@
 // Tap cards routed by card kind: the registry and the trading mat's entry in it. Piles here are invented.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BASE_TEN_TRADE_CARD, PLACE_VALUE_CHART_CARD, PLACE_VALUE_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, tapCardKind, tapCardKindList } from "../src/cards.js";
+import { BASE_TEN_TRADE_CARD, MAKE_TEN_CARD, PLACE_VALUE_CHART_CARD, PLACE_VALUE_TRADE_CARD, PLACE_VALUE_TRADE_DEMONSTRATION, TAP_CARD_KIND_NAMES, wholeForwardDemonstration, TAP_CARD_KINDS, tapCardKind, tapCardKindList } from "../src/cards.js";
 import { PLACE_VALUE_CHART_KIND } from "../../plugin-math/src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_KIND } from "../../plugin-math/src/place-value-trade.js";
+import { MAKE_TEN_KIND } from "../../plugin-math/src/make-ten.js";
 import {
   BASE_TEN_TRADE_KIND, applyBaseTenTap, baseTenChanges, baseTenHowTo, baseTenMat, baseTenRefusalText, type BaseTenMat,
 } from "../../plugin-math/src/base-ten-trade.js";
@@ -25,20 +26,22 @@ const canonical = (ones: number, tens: number, tray = 0) => ({
   ],
 });
 
-test("the registry holds the trading mat, the place-value chart and the trade card, looked up by node kind", () => {
-  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND]);
+test("the registry holds the trading mat, the place-value chart, the trade card and the make-ten card, looked up by node kind", () => {
+  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND, MAKE_TEN_KIND]);
   assert.equal(tapCardKind(PLACE_VALUE_TRADE_KIND), PLACE_VALUE_TRADE_CARD);
-  assert.ok(Object.isFrozen(PLACE_VALUE_TRADE_CARD));
-  // Only the trade card is shown by a demonstration field, judges a fact on each tap, and sets every field at once.
-  assert.deepEqual([BASE_TEN_TRADE_CARD.demonstration, PLACE_VALUE_CHART_CARD.demonstration, PLACE_VALUE_TRADE_CARD.demonstration?.field], [undefined, undefined, "finished"]);
+  assert.equal(tapCardKind(MAKE_TEN_KIND), MAKE_TEN_CARD);
+  assert.ok(Object.isFrozen(PLACE_VALUE_TRADE_CARD) && Object.isFrozen(MAKE_TEN_CARD));
+  // Only the trade and make-ten cards are shown by a demonstration field, judge a fact on each tap, and set every field at once.
+  assert.deepEqual([BASE_TEN_TRADE_CARD.demonstration, PLACE_VALUE_CHART_CARD.demonstration, PLACE_VALUE_TRADE_CARD.demonstration?.field, MAKE_TEN_CARD.demonstration?.field], [undefined, undefined, "finished", "filled"]);
+  assert.deepEqual([PLACE_VALUE_TRADE_CARD.fieldsAtOnce, MAKE_TEN_CARD.fieldsAtOnce, MAKE_TEN_CARD.facts.complete?.judgedOnTap, MAKE_TEN_CARD.demonstration?.opensAtStart], [true, true, true, true]);
   assert.deepEqual([BASE_TEN_TRADE_CARD.fieldsAtOnce, PLACE_VALUE_CHART_CARD.fieldsAtOnce], [undefined, undefined]);
   assert.ok(Object.values({ ...BASE_TEN_TRADE_CARD.facts, ...PLACE_VALUE_CHART_CARD.facts }).every((fact) => !fact.judgedOnTap));
   assert.equal(TAP_CARD_KINDS[BASE_TEN_TRADE_KIND], BASE_TEN_TRADE_CARD);
   assert.equal(tapCardKind(BASE_TEN_TRADE_KIND), BASE_TEN_TRADE_CARD);
   assert.equal(tapCardKind(PLACE_VALUE_CHART_KIND), PLACE_VALUE_CHART_CARD);
   for (const kind of ["number_line", "fraction_model", "toString", "__proto__", "", undefined, 3]) assert.equal(tapCardKind(kind), undefined);
-  assert.equal(tapCardKindList(), "base_ten_trade, place_value_chart or place_value_trade");
-  assert.equal(tapCardKindList("and"), "base_ten_trade, place_value_chart and place_value_trade");
+  assert.equal(tapCardKindList(), "base_ten_trade, place_value_chart, place_value_trade or make_ten");
+  assert.equal(tapCardKindList("and"), "base_ten_trade, place_value_chart, place_value_trade and make_ten");
   assert.ok(Object.isFrozen(TAP_CARD_KINDS) && Object.isFrozen(BASE_TEN_TRADE_CARD) && Object.isFrozen(PLACE_VALUE_CHART_CARD));
   // The mat binds no card-level field and has no starting rules of its own: its checks are unchanged.
   assert.equal(BASE_TEN_TRADE_CARD.cardFields, undefined);
@@ -124,4 +127,24 @@ test("how to work a card is found by its kind", () => {
   assert.equal(cardHowTo(BASE_TEN_TRADE_KIND, { ...content, columns: 3, language: "zh-CN" }), baseTenHowTo({ ...content, columns: 3, language: "zh-CN" }));
   assert.equal(cardHowTo("number_line", content), undefined);
   assert.equal(cardHowTo("toString", content), undefined);
+});
+
+test("a demonstration hook: the card says its values, the next value and a fresh card's start; the trade card is one", () => {
+  const trade = PLACE_VALUE_TRADE_DEMONSTRATION;
+  const content = { operation: "add", top_place: 3, low_place: 0, a: 3_486_000, b: 2_739_000, finished: 0,
+    places: [3, 2, 1, 0].map((place) => ({ as: ["ones", "tens", "hundreds", "thousands"][place], place, status: 0 })) };
+  assert.equal(PLACE_VALUE_TRADE_CARD.demonstration, trade);
+  assert.deepEqual([trade.field, trade.start(content), trade.opensAtStart], ["finished", 0, undefined]);
+  assert.equal(trade.refuseStep(content, 0, 2), undefined);
+  assert.equal(trade.refuseStep(content, 2, 2), undefined, "the same value again changes nothing");
+  assert.equal(trade.refuseStep(content, 2, 1), "counts the columns a place_value_trade card has finished: it goes forward, not from 2 back to 1; the next value, 3, finishes the hundreds");
+  assert.equal(trade.refuseStep(content, 0, 0.5), "counts the columns a place_value_trade card has finished: a whole number, not 0.5; from 0, the next value, 1, finishes the ones");
+  assert.equal(trade.refuseReplay(content, 0), undefined, "a replay may go back");
+  assert.equal(trade.refuseReplay(content, 0.5), "counts the columns a place_value_trade card has finished: a whole number, not 0.5");
+  assert.equal(trade.outside(content, 5), "counts the columns a place_value_trade card has finished: 0 to 4, not 5");
+  // Another card's field may start anywhere the card says (decision 0027: the pair's bigger addend) and open there.
+  const fromThree = wholeForwardDemonstration({ field: "n", counts: "counts things", tapState: "a state", shows: "(n)", fresh: "card", opensAtStart: true,
+    start: () => 3, range: () => ({ min: 3, max: 10 }), next: (_content, value) => `next ${value + 1}` });
+  assert.deepEqual([fromThree.start({}), fromThree.opensAtStart, fromThree.refuseStep({}, 3, 2), fromThree.outside({}, 11)], [3, true, "counts things: it goes forward, not from 3 back to 2; next 4", "counts things: 3 to 10, not 11"]);
+  assert.ok(Object.isFrozen(trade) && Object.isFrozen(fromThree));
 });
