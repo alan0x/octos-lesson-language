@@ -117,7 +117,9 @@ The Runtime sets the card's demonstration field one action at a time
 (`CardDemonstration.stepValues`), and a lesson's own tap on the mat or the chart
 takes one such slot. The speed divides both; a host that calls `setSpeed()`
 should also call `InfiniteBoardView.setPlaybackSpeed()` with the same value, so
-the card's motion fits the slot. With `reducedMotion` the card changes at once.
+the card's motion fits the slot. With `reducedMotion` the card changes at once;
+when a host leaves the option unset, a demonstration follows the page's
+`prefers-reduced-motion`.
 
 ## Student variable operations
 

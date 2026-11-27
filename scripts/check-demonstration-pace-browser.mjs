@@ -80,17 +80,21 @@ const near = (actual, expected, slack) => Math.abs(actual - expected) <= slack;
 const measure = (page, name, { kind, speed = 1, reducedMotion = false, pauseAt, pauseFor = 0, limit = 30_000 }) => page.evaluate(async ({ events, name, kind, speed, reducedMotion, pauseAt, pauseFor, limit }) => {
   document.querySelector("#board").replaceChildren();
   localStorage.clear();
-  const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), `${name}-${speed}-${reducedMotion}-${pauseAt ?? ""}`, { reducedMotion });
+  // `reducedMotion` "page": the host does not say; the page asks for reduced motion.
+  const pageReduced = reducedMotion === "page";
+  const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), `${name}-${speed}-${reducedMotion}-${pauseAt ?? ""}`, pageReduced ? {} : { reducedMotion });
   const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
   session.setSpeed(speed);
   mounted.view.setPlaybackSpeed(speed);
   const render = () => mounted.view.render(session.projection.board, session.currentOperation);
   session.subscribe(render);
   const isDemo = () => session.activeVariableAnimation || session.currentOperation?.action?.op === "card.tap"
-    || (reducedMotion && session.currentOperation?.action?.op === "lesson.variable.animate");
+    || (reducedMotion !== false && session.currentOperation?.action?.op === "lesson.variable.animate");
   // Every operation before the demonstration at once; the demonstration's first operation applied.
   for (let i = 0; i < 400 && !isDemo(); i += 1) session.advance();
   render();
+  // Whether the demonstration's operation left anything to play (with reduced motion it changes at once).
+  const animating = Boolean(session.activeVariableAnimation);
   await new Promise((done) => setTimeout(done, 300));
   const card = () => document.querySelector(`.board-node[data-kind="${kind}"]`) ?? document.body;
   // What the card shows, counted the way its own browser check reads it.
@@ -134,7 +138,7 @@ const measure = (page, name, { kind, speed = 1, reducedMotion = false, pauseAt, 
   await new Promise((done) => setTimeout(done, 400));
   // A card's role ("main_visual") is never its heading: these cards have no title, so no heading at all.
   const board = document.querySelector("#board");
-  return { steps, next, value: session.activeVariableAnimation ? "animating" : "settled",
+  return { steps, next, animating, value: session.activeVariableAnimation ? "animating" : "settled",
     titles: [...board.querySelectorAll(".node-title")].map((title) => title.textContent), roleShown: board.textContent.includes("main_visual") };
 }, { events: lessons[name], name, kind, speed, reducedMotion, pauseAt, pauseFor, limit });
 
@@ -179,10 +183,16 @@ try {
   check(steps.length === 4 && !steps.some((step) => step.at > pause && step.at < resume), `nothing moves while paused: ${JSON.stringify(paused.steps)}`);
   check(near(steps[2].at - resume, SLOT - (pause - steps[1].at), 200), `after resuming, the rest of the slot, then the next step: ${steps[2].at - resume} ms`);
 
-  // Reduced motion: at once, and the lesson does not wait for steps.
+  // Reduced motion, as the host says or, when it does not say, as the page asks: the card's demonstration changes at
+  // once, with no steps to play (the runtime's tests time the lesson going on).
   const still = await measure(page, "trade", { kind: "place_value_trade", reducedMotion: true, limit: 3_000 });
-  report.push(`trade with reduced motion: changes ${stepsOf(still).length}, next operation at ${still.next} ms`);
-  check(still.next !== undefined && still.next < 1_000, `with reduced motion the lesson goes on at once: ${JSON.stringify(still)}`);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const pageStill = await measure(page, "trade", { kind: "place_value_trade", reducedMotion: "page", limit: 3_000 });
+  await page.emulateMedia({ reducedMotion: null });
+  for (const [label, run] of [["the host's reduced motion", still], ["the page's reduced motion", pageStill]]) {
+    report.push(`trade with ${label}: steps to play ${run.animating ? "yes" : "none"}, card changes after it ${stepsOf(run).length}`);
+    check(!run.animating && stepsOf(run).length === 0 && run.value === "settled", `with ${label} the demonstration changes at once: ${JSON.stringify(run)}`);
+  }
 
   // A learner's tap on the practice card afterwards keeps its quick motion.
   const tap = await page.evaluate(async ({ events }) => {

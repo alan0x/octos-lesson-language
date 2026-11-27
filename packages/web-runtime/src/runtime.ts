@@ -713,6 +713,11 @@ export class BrowserLessonSession {
           easing: declaration.easing,
           duration_intent: declaration.duration_intent,
         };
+        // A card's demonstration with reduced motion (the page's, when the host does not say) changes at once.
+        if (this.cardDemonstrationValues(this.variableAnimation) && this.demonstrationsAtOnce()) {
+          this.player.setVariable(declaration.variable, declaration.to);
+          this.variableAnimation = undefined;
+        }
       }
       if (phase && frame) {
         const key = `playback:${this.phaseState.epoch}:${frame.operation.action!.action_id}`;
@@ -767,6 +772,8 @@ export class BrowserLessonSession {
     if (
       this.playing &&
       this.scheduledBaseDelay === undefined &&
+      // A repeated or resumed start while a card's demonstration plays leaves it to its steps (owner, 2026-11-27).
+      !this.playingCardDemonstration() &&
       wasWaitingForStart
     ) {
       this.tick();
@@ -977,8 +984,17 @@ export class BrowserLessonSession {
    * and the lesson does not wait for it.
    */
   private frameBaseDelay(operation: PlaybackOperation): number {
-    if (!this.options.reducedMotion && operation.type === "action.apply" && operation.action?.op === "card.tap") return DEMONSTRATION_SLOT_MS;
+    if (!this.demonstrationsAtOnce() && operation.type === "action.apply" && operation.action?.op === "card.tap") return DEMONSTRATION_SLOT_MS;
     return operationBaseDelay(operation);
+  }
+
+  /**
+   * A card's demonstration changes at once, with no steps to wait for: with reduced motion, as the host says, or
+   * as the page asks when the host does not say (the card views follow the page's setting too).
+   */
+  private demonstrationsAtOnce(): boolean {
+    if (this.options.reducedMotion !== undefined) return this.options.reducedMotion;
+    try { return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
   }
 
   /**

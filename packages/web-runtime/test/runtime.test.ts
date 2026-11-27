@@ -2572,3 +2572,52 @@ test("with external narration, audio that ends early never cuts a demonstration 
   playNoting(context, session, "finished", slot + 400);
   assert.notEqual(session.projection.current_narration?.text, sentence, "after the last hold the sentence ends");
 });
+
+test("with external narration, a repeated or resumed audio start never cuts a demonstration short", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-audio-start")), new MemoryStore(), "pt-audio-start", { narrationTiming: "external" });
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  const beat = session.currentOperation!.beat_id!;
+  session.startNarration(beat);
+  session.play();
+  playNoting(context, session, "finished", slot + 400);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // The host says the audio started again (a replayed clip): the card holds its step.
+  session.startNarration(beat);
+  assert.ok(session.activeVariableAnimation);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // Paused, played again, and the audio's resume reported: the card goes on from its step.
+  session.pause();
+  session.play();
+  session.startNarration(beat);
+  assert.ok(session.activeVariableAnimation);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  assert.deepEqual(playNoting(context, session, "finished", 2 * slot).seen.map(([, value]) => value), [0.75, 1]);
+});
+
+test("a host that does not say reduced motion gets the page's: a demonstration and a lesson tap change at once", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const original = (globalThis as { matchMedia?: unknown }).matchMedia;
+  (globalThis as { matchMedia?: unknown }).matchMedia = (query: string) => ({ matches: query.includes("prefers-reduced-motion: reduce") });
+  try {
+    const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-page-still")), new MemoryStore(), "pt-page-still");
+    let frame;
+    do { frame = session.advance(); } while (frame && frame.operation.action?.op !== "lesson.variable.animate");
+    assert.ok(frame);
+    assert.equal(session.activeVariableAnimation, undefined, "no steps to wait for");
+    assert.equal(session.projection.board!.variables!.finished!.value, 1);
+    // An explicit option still decides.
+    const moving = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-page-moving")), new MemoryStore(), "pt-page-moving", { reducedMotion: false });
+    while (!moving.activeVariableAnimation) assert.ok(moving.advance());
+    // The mat's lesson taps do not wait a slot either.
+    const mat = new BrowserLessonSession(sliderLesson([]), new MemoryStore(), "mat-page-still");
+    while (mat.currentOperation?.action?.op !== "card.tap") assert.ok(mat.advance());
+    mat.play();
+    const id = mat.currentOperation?.action?.action_id;
+    context.mock.timers.tick(1_000);
+    assert.notEqual(mat.currentOperation?.action?.action_id, id, "the next tap comes without a step's slot");
+  } finally {
+    (globalThis as { matchMedia?: unknown }).matchMedia = original;
+  }
+});
