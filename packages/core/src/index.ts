@@ -19,6 +19,7 @@ import { PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PART_FIELDS, validatePlaceVal
 import { PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PART_FIELDS, validatePlaceValueTradeContent } from "../../plugin-math/src/place-value-trade.js";
 import { MAKE_TEN_KIND, MAKE_TEN_PART_FIELDS, validateMakeTenContent } from "../../plugin-math/src/make-ten.js";
 import { PLACE_VALUE_TIMES_TEN_KIND, validatePlaceValueTimesTenContent } from "../../plugin-math/src/place-value-times-ten.js";
+import { PLACE_VALUE_COMPARE_KIND, validatePlaceValueCompareContent } from "../../plugin-math/src/place-value-compare.js";
 import { BASE_TEN_TRADE_CARD, TAP_CARD_KIND_NAMES, TAP_CARD_KINDS, lessonTapCardKindList, tapCardKind, tapCardKindList, type TapCardKind } from "./cards.js";
 import {
   bindingCapabilitiesForNodeKind,
@@ -1212,6 +1213,18 @@ function checkMakeTenBoundValues(content: JsonObject, path: string, declarations
  */
 function checkPlaceValueTimesTenBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
   const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validatePlaceValueTimesTenContent(evaluated, path, failAt, { boundValues: true });
+  checkPluginBoundValues(content, path, declarations, [], validate);
+  checkEachBoundVariable(content, path, declarations, [], validate);
+}
+
+/**
+ * A place-value compare card stays drawable for every value its variables can take (decision 0029): each field in
+ * its own range. The joint rules (the pair, its written decimals, a judged count and a sign the pair allows,
+ * "compared" on an unjudged chart) belong to a starting card: the card as its variables start it and each task's
+ * start are checked against them.
+ */
+function checkPlaceValueCompareBoundValues(content: JsonObject, path: string, declarations: readonly { as: string; initial: number; min: number; max: number }[]): void {
+  const validate = (evaluated: JsonObject, failAt: (failPath: string, message: string) => never) => validatePlaceValueCompareContent(evaluated, path, failAt, { boundValues: true });
   checkPluginBoundValues(content, path, declarations, [], validate);
   checkEachBoundVariable(content, path, declarations, [], validate);
 }
@@ -2411,6 +2424,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (action.kind === PLACE_VALUE_TRADE_KIND) checkPlaceValueTradeBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === MAKE_TEN_KIND) checkMakeTenBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           if (action.kind === PLACE_VALUE_TIMES_TEN_KIND) checkPlaceValueTimesTenBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
+          if (action.kind === PLACE_VALUE_COMPARE_KIND) checkPlaceValueCompareBoundValues(action.content, `${actionPath}/content`, document.lesson.variables ?? []);
           // A card with starting rules is checked as its variables start it, not only as written (review of #111).
           if (tapCard?.validateStart && Array.isArray(action.content.bindings)) {
             const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));

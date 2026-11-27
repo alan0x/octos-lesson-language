@@ -335,6 +335,7 @@ import { buildPlaceValueChart } from "./place-value-chart-builder.js";
 import { buildPlaceValueTrade } from "./place-value-trade-builder.js";
 import { buildMakeTen } from "./make-ten-builder.js";
 import { buildPlaceValueTimesTen } from "./place-value-times-ten-builder.js";
+import { buildPlaceValueCompare } from "./place-value-compare-builder.js";
 export { buildNumberLine, type BuilderValue, type BuiltNumberLine, type DrivenValue, type NumberLineInput } from "./number-line-builder.js";
 export * from "./number-line.js";
 export * from "./number-line-form.js";
@@ -384,6 +385,7 @@ export const MATH_BUILDERS = {
   place_value_trade: buildPlaceValueTrade,
   make_ten: buildMakeTen,
   place_value_times_ten: buildPlaceValueTimesTen,
+  place_value_compare: buildPlaceValueCompare,
   circle_and_arc: buildCircleAndArc,
   coordinate_circle: buildCoordinateCircle,
   rectangle_unit_square_array: buildUnitSquareArray,

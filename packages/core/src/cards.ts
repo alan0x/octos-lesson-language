@@ -1,7 +1,8 @@
 /**
  * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025),
  * the place-value trade card, adding and subtracting on the chart as the written method (0026), the make-ten
- * card, two ten frames (0027), and the place-value times-ten card, an amount counted in another unit (0028).
+ * card, two ten frames (0027), the place-value times-ten card, an amount counted in another unit (0028), and the
+ * place-value compare card, two numbers compared by place (0029).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -43,6 +44,13 @@ import {
   placeValueTimesTenState, placeValueTimesTenStateStartFault, validatePlaceValueTimesTenContent,
   type PlaceValueTimesTenContent, type PlaceValueTimesTenState, type PlaceValueTimesTenTapKind,
 } from "../../plugin-math/src/place-value-times-ten.js";
+import {
+  PLACE_VALUE_COMPARE_BINDINGS, PLACE_VALUE_COMPARE_CARD_BINDINGS, PLACE_VALUE_COMPARE_DEMONSTRATION_FIELD, PLACE_VALUE_COMPARE_KIND, PLACE_VALUE_COMPARE_MAX_COLUMNS,
+  PLACE_VALUE_COMPARE_PROBLEM_FIELDS, PLACE_VALUE_COMPARE_TAP_PLACES, PLACE_VALUE_COMPARE_TAPS, PLACE_VALUE_COMPARE_WORDS, applyPlaceValueCompareTap,
+  placeValueCompareChanges, placeValueCompareComparedMeaning, placeValueCompareComparedNext, placeValueCompareComplete, placeValueCompareContentPair,
+  placeValueCompareDemoEnd, placeValueCompareDemoSteps, placeValueCompareLanguage, placeValueCompareRefusalText, placeValueCompareStartFault,
+  placeValueCompareState, validatePlaceValueCompareContent, type PlaceValueCompareState, type PlaceValueCompareTapKind,
+} from "../../plugin-math/src/place-value-compare.js";
 import type { JsonObject } from "./types.js";
 
 type Fail = (path: string, message: string) => never;
@@ -881,6 +889,150 @@ export const PLACE_VALUE_TIMES_TEN_CARD: TapCardKind<PlaceValueTimesTenState> = 
   }),
 });
 
+/** The compare card's content at a pile given by binding target (bound fields only; every field is card-level). */
+const compareContentAt = (content: JsonObject, value: (target: string) => number | undefined): JsonObject => {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const field of PLACE_VALUE_COMPARE_BINDINGS) {
+    const v = value(field);
+    if (v !== undefined) at[field] = v;
+  }
+  return at;
+};
+
+/** The pair a compare content's numbers make, or undefined when the card refuses them. */
+const comparePair = (content: unknown) => {
+  const pair = placeValueCompareContentPair(content);
+  return "fault" in pair ? undefined : pair;
+};
+const COMPARE_NO_PAIR = `is a ${PLACE_VALUE_COMPARE_KIND} card's demonstration, but the card's numbers are not a pair it takes`;
+const COMPARE_FORWARD: WholeForwardDemonstration = wholeForwardDemonstration({
+  field: PLACE_VALUE_COMPARE_DEMONSTRATION_FIELD,
+  counts: `counts the columns a ${PLACE_VALUE_COMPARE_KIND} card's demonstration has judged from the left, then one more for the sign`,
+  tapState: "the learner's judgements or sign",
+  shows: "(compared: the columns judged from the left, then one more for the sign), and the program judges each column and chooses the sign",
+  fresh: "chart",
+  opensAtStart: true,
+  start: () => 0,
+  range: (content: unknown) => {
+    const pair = comparePair(content);
+    return { min: 0, max: pair ? placeValueCompareDemoEnd(pair) : PLACE_VALUE_COMPARE_MAX_COLUMNS + 1 };
+  },
+  next(content: unknown, value: number): string {
+    const pair = comparePair(content);
+    return pair ? placeValueCompareComparedNext(pair, value) : COMPARE_NO_PAIR;
+  },
+});
+
+/**
+ * The compare card's demonstration (decision 0029): "compared", the columns the program has judged from the left
+ * (each "Same", the deciding one "Different"), then one more for the sign: 0 to the deciding column plus two,
+ * forward a whole number at a time, never past its last value. The card opens at 0.
+ */
+export const PLACE_VALUE_COMPARE_DEMONSTRATION: WholeForwardDemonstration = Object.freeze({
+  ...COMPARE_FORWARD,
+  refuseStep(content: unknown, from: number, to: number): string | undefined {
+    const pair = comparePair(content);
+    if (!pair) return COMPARE_NO_PAIR;
+    const refusal = COMPARE_FORWARD.refuseStep(content, from, to);
+    if (refusal !== undefined) return refusal;
+    const end = placeValueCompareDemoEnd(pair);
+    return to > end ? `${placeValueCompareComparedMeaning(pair)}, not ${to}; ${placeValueCompareComparedNext(pair, from)}` : undefined;
+  },
+  refuseReplay(content: unknown, value: number): string | undefined {
+    const pair = comparePair(content);
+    if (!pair) return COMPARE_NO_PAIR;
+    const refusal = COMPARE_FORWARD.refuseReplay(content, value);
+    if (refusal !== undefined) return refusal;
+    return value < 0 || value > placeValueCompareDemoEnd(pair) ? `${placeValueCompareComparedMeaning(pair)}, not ${value}` : undefined;
+  },
+  outside(content: unknown, value: number): string {
+    const pair = comparePair(content);
+    return pair ? `${placeValueCompareComparedMeaning(pair)}, not ${value}` : COMPARE_NO_PAIR;
+  },
+});
+
+/**
+ * The place-value compare card (decision 0029): two numbers on one chart, compared by place from the largest down.
+ * The learner's taps are `same` and `different` under a column (at a chart place's index, the place plus three),
+ * `sign` (at 10 to 12: >, =, <), and `column` (a decided chart's column, always refused with its fact: the deciding
+ * place, or a later place that doesn't matter); judgements go from the left, one column at a time, and only a true one is
+ * accepted; the sign opens once the chart is decided and only the true one is accepted. The learner's state is
+ * `marked` (0 to 7) and `signed` (0 or 1), bound by their bare names like the pair, its written decimals and the
+ * demonstration's "compared". The lesson never taps the card: it shows it by "compared", and the program plays each step.
+ */
+export const PLACE_VALUE_COMPARE_CARD: TapCardKind<PlaceValueCompareState> = Object.freeze({
+  kind: PLACE_VALUE_COMPARE_KIND,
+  taps: PLACE_VALUE_COMPARE_TAPS,
+  places: PLACE_VALUE_COMPARE_TAP_PLACES,
+  cardFields: PLACE_VALUE_COMPARE_CARD_BINDINGS,
+  practiceFields: PLACE_VALUE_COMPARE_PROBLEM_FIELDS,
+  demonstration: PLACE_VALUE_COMPARE_DEMONSTRATION,
+  fieldsAtOnce: true,
+  validateContent: (raw: unknown, path: string, fail: Fail, options?: { start?: boolean }) => validatePlaceValueCompareContent(raw, path, fail, options?.start ? { start: true } : {}),
+  state: placeValueCompareState,
+  apply: (state: PlaceValueCompareState, tap: CardTap): CardTapResult<PlaceValueCompareState> => {
+    const result = applyPlaceValueCompareTap(state, { tap: tap.kind as PlaceValueCompareTapKind, place: tap.place });
+    return result.ok ? { ok: true, state: result.state } : { ok: false, reason: result.reason };
+  },
+  refusalText(reason: string, place: number, language?: string, state?: PlaceValueCompareState): string {
+    const lang = language === "zh-CN" ? "zh-CN" : "en-US";
+    const words = PLACE_VALUE_COMPARE_WORDS[lang];
+    if (reason === "demonstrating") return words.refusal.demonstrating;
+    if (!state) return reason === "not_decided" ? words.lock : words.other;
+    // The tap the reason answers: a sign at 10 to 12, else a judgement (either reads the column's digits).
+    const tap = place >= 10 ? "sign" : reason === "not_same" ? "same" : reason === "no_judgement" ? "column" : "different";
+    return placeValueCompareRefusalText(state, { tap, place }, lang) || words.other;
+  },
+  language: placeValueCompareLanguage,
+  // The learner's fields are card-level: a change is named by the field, at the card's first place.
+  changes: (before: PlaceValueCompareState, after: PlaceValueCompareState): CardFieldChange[] =>
+    placeValueCompareChanges(before, after).map(({ field, before: from, after: to }) => ({ place: 0, field, before: from, after: to })),
+  tapFields: (): CardTapField[] => [{ place: 0, field: "marked", min: 0, max: PLACE_VALUE_COMPARE_MAX_COLUMNS }, { place: 0, field: "signed", min: 0, max: 1 }],
+  fieldTarget: (_content: unknown, _place: number, field: string) => field,
+  contentAt: compareContentAt,
+  /** A practice chart starts fresh: a pair the card takes, nothing compared, judged or signed. */
+  validateStart(state: PlaceValueCompareState, fail: (message: string) => never): void {
+    const fault = placeValueCompareStartFault(state);
+    if (fault) fail(fault);
+  },
+  facts: Object.freeze({
+    /**
+     * The true sign is chosen (the chart decided first). Judged on each tap, so the task ends on the tap that
+     * chooses it; there is no "done".
+     */
+    complete: {
+      keys: [],
+      judgedOnTap: true,
+      read: (_completion: CardFactCompletion, state: PlaceValueCompareState) => {
+        const actual = placeValueCompareComplete(state) ? 1 : 0;
+        return { actual, target: 1, succeeded: actual === 1 };
+      },
+      /**
+       * The one finished card of the task's own pair (every tap order ends on it), computed, never read from a
+       * logged pile: the task's numbers, nothing demonstrated, every column to the deciding one judged, the sign chosen.
+       */
+      donePile({ content, startValue }: CardDonePileContext): Record<string, number> | undefined {
+        const bound = boundTargets(content);
+        const number = (field: string) => (bound.has(field) ? startValue(bound.get(field)) : (content[field] as number | undefined));
+        const own: Record<string, unknown> = { ...content };
+        for (const field of PLACE_VALUE_COMPARE_CARD_BINDINGS) { const v = number(field); if (v === undefined) delete own[field]; else own[field] = v; }
+        const pair = comparePair(own);
+        if (!pair) return undefined;
+        const final = placeValueCompareDemoSteps(pair).final;
+        const result: Record<string, number> = {};
+        for (const [target, alias] of bound) {
+          if (target === "compared") result[alias] = 0;
+          else if (target === "marked") result[alias] = final.marked;
+          else if (target === "signed") result[alias] = 1;
+          else result[alias] = number(target)!;
+        }
+        return result;
+      },
+    },
+  }),
+});
+
 /** Every card kind the learner taps, by node kind. */
 export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
@@ -888,6 +1040,7 @@ export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.free
   [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_CARD as TapCardKind,
   [MAKE_TEN_KIND]: MAKE_TEN_CARD as TapCardKind,
   [PLACE_VALUE_TIMES_TEN_KIND]: PLACE_VALUE_TIMES_TEN_CARD as TapCardKind,
+  [PLACE_VALUE_COMPARE_KIND]: PLACE_VALUE_COMPARE_CARD as TapCardKind,
 });
 
 /** The tap card of a node kind, or undefined when the kind is not one. */

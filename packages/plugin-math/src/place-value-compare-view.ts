@@ -6,7 +6,8 @@
  * names the larger number before the true sign is chosen, and never shows a title of its own.
  *
  * Every element a learner can tap carries `data-oll-tap`: `same:<place>` and `different:<place>` (the place is an
- * index into the card's tap places, the chart's place plus three) and `sign:<10..12>`. A refused judgement's button
+ * index into the card's tap places, the chart's place plus three), `sign:<10..12>`, and once the chart is decided
+ * `column:<place>` on each column, whose refusal is that column's fact (the later places don't matter). A refused judgement's button
  * shakes and stays grey and dashed until the next tap; on a column with an unjudged column to its left that column
  * also dims and the leftmost unjudged column is lightly ringed. A learner's accepted judgement pulses the column's
  * disks with their partners. A demonstration moving "compared" forward plays one step at a time, each held for
@@ -15,8 +16,8 @@
 import type { PlaceValueLanguage } from "./place-value-chart.js";
 import {
   PLACE_VALUE_COMPARE_JUDGEMENTS, PLACE_VALUE_COMPARE_WORDS, applyPlaceValueCompareTap, placeValueCompareColumn,
-  placeValueCompareColumnTapIndex, placeValueCompareComplete, placeValueCompareDecided, placeValueCompareDemonstrating, placeValueCompareDiskAt,
-  placeValueCompareFactText, placeValueCompareInstruction, placeValueCompareLanguage, placeValueCompareProblemText, placeValueCompareSignIndex,
+  placeValueCompareColumnTapIndex, placeValueCompareDecided, placeValueCompareDemonstrating, placeValueCompareDiskAt,
+  placeValueCompareFactText, placeValueCompareInstruction, placeValueCompareLanguage, placeValueCompareProblemText, placeValueCompareSignIndex, placeValueCompareSigned,
   placeValueCompareState, placeValueCompareTapColumn, placeValueCompareTextWidth, planPlaceValueCompare,
   type PlaceValueComparePlan, type PlaceValueCompareRefusal, type PlaceValueCompareState, type PlaceValueCompareTapKind,
 } from "./place-value-compare.js";
@@ -134,7 +135,10 @@ function disk(plan: PlaceValueComparePlan, k: number, x: number, y: number): SVG
   const group = element("g", {}, "place-value-compare-disk");
   group.dataset.place = String(column.place);
   group.append(element("circle", { cx: round(x), cy: round(y), r: plan.disk / 2, fill: column.fill }));
-  group.append(text(x, y, column.diskLabel, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": column.diskFont, "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none" }));
+  // A wide place value (100,000; 1,000,000) is squeezed to the disk, so it is read whole inside it (as decision 0028's).
+  const room = plan.disk - 5;
+  const squeeze: Record<string, string | number> = placeValueCompareTextWidth(column.diskLabel, column.diskFont) * 1.2 > room ? { textLength: round(room), lengthAdjust: "spacingAndGlyphs" } : {};
+  group.append(text(x, y, column.diskLabel, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": column.diskFont, "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none", ...squeeze }));
   return group;
 }
 
@@ -242,6 +246,9 @@ function drawChart(view: View, state: PlaceValueCompareState, live: boolean): vo
       mark.append(text(cx, cy, v.status === "same" ? "=" : "≠", { "text-anchor": "middle", "dominant-baseline": "central", "font-size": 26, "font-weight": 700, fill: v.status === "same" ? COLORS.same : "#ffffff", "pointer-events": "none" }));
       group.append(mark);
     }
+    // Once the chart is decided, a tap on a column states its fact (the sketch's): the deciding column, a column the
+    // same, or one after it that doesn't matter.
+    if (decided) setTappable(group, `column:${placeValueCompareColumnTapIndex(place)}`, column.head.join(" "), live);
     chart.append(group);
   });
   // The columns after the deciding one: one caption across them, "Doesn't matter".
@@ -249,7 +256,7 @@ function drawChart(view: View, state: PlaceValueCompareState, live: boolean): vo
     const first = plan.columns[pair.stop + 1]!, last = plan.columns.at(-1)!;
     const cx = (first.x + last.x + last.width) / 2, cy = plan.mid.y + plan.mid.height / 2;
     const width = Math.min(last.x + last.width - first.x - 8, placeValueCompareTextWidth(words.caption, 13.5) + 28);
-    const caption = element("g", {}, "place-value-compare-caption");
+    const caption = element("g", { "pointer-events": "none" }, "place-value-compare-caption");
     caption.append(element("rect", { x: round(cx - width / 2), y: round(cy - 15), width: round(width), height: 30, rx: 15, fill: COLORS.column, stroke: COLORS.slot, "stroke-dasharray": "4 3" }));
     caption.append(text(cx, cy, words.caption, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": 13.5, "font-weight": 600, fill: COLORS.muted }));
     chart.append(caption);
@@ -270,7 +277,7 @@ function drawSentence(view: View, state: PlaceValueCompareState, live: boolean):
   svg.replaceChildren();
   if (state.fault) return;
   const decided = placeValueCompareDecided(state);
-  const complete = placeValueCompareComplete(state);
+  const complete = placeValueCompareSigned(state);
   const line = element("g", { opacity: decided ? 1 : 0.45 }, "place-value-compare-line");
   const common = { "font-size": sp.font, "font-weight": 600, fill: COLORS.ink, "font-variant-numeric": "tabular-nums" };
   line.append(text(sp.a.x, sp.baseline, sp.a.text, common, "place-value-compare-a"));
@@ -314,7 +321,7 @@ function draw(view: View, state: PlaceValueCompareState): void {
   // A refusal says its fact; else the chart's own fact (not while the demonstration shows: the lesson narrates it).
   const fact = view.refused ? view.refused.text : placeValueCompareDemonstrating(state) ? "" : placeValueCompareFactText(state, view.language);
   view.notice.textContent = fact;
-  view.notice.classList.toggle("place-value-compare-done", !view.refused && placeValueCompareComplete(state) && !placeValueCompareDemonstrating(state));
+  view.notice.classList.toggle("place-value-compare-done", !view.refused && placeValueCompareSigned(state) && !placeValueCompareDemonstrating(state));
   view.shown = state;
   view.drawnContext = JSON.stringify([context.live === true, view.refused?.key ?? null, view.focus ?? null]);
 }

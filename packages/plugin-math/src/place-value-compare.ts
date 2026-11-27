@@ -71,8 +71,11 @@ export const PLACE_VALUE_COMPARE_TAP_PLACES: readonly string[] = Object.freeze([
 export const placeValueCompareSignIndex = (sign: PlaceValueCompareSign): number => PLACE_VALUE_TAP_PLACES.length + PLACE_VALUE_COMPARE_SIGNS.indexOf(sign);
 export const placeValueCompareSignAt = (index: number): PlaceValueCompareSign | undefined =>
   Number.isInteger(index) && index >= PLACE_VALUE_TAP_PLACES.length ? PLACE_VALUE_COMPARE_SIGNS[index - PLACE_VALUE_TAP_PLACES.length] : undefined;
-/** The taps a learner makes: "Same" or "Different" under a column, and a sign between the numbers. */
-export const PLACE_VALUE_COMPARE_TAPS = ["same", "different", "sign"] as const;
+/**
+ * The taps a learner makes: "Same" or "Different" under a column, a sign between the numbers, and once the chart is
+ * decided a tap on a column, which states its fact ("The tens decide; the ones come after and don't matter.").
+ */
+export const PLACE_VALUE_COMPARE_TAPS = ["same", "different", "sign", "column"] as const;
 export type PlaceValueCompareTapKind = typeof PLACE_VALUE_COMPARE_TAPS[number];
 export const PLACE_VALUE_COMPARE_JUDGEMENTS = ["same", "different"] as const;
 export type PlaceValueCompareJudgement = typeof PLACE_VALUE_COMPARE_JUDGEMENTS[number];
@@ -212,10 +215,15 @@ export interface PlaceValueCompareState {
 export const placeValueCompareStart = (pair: PlaceValueComparePair): PlaceValueCompareState => ({ pair, marked: 0, signed: false, compared: 0 });
 /** The comparing is done: the deciding column is found, or every column matched. The sentence opens. */
 export const placeValueCompareDecided = (state: PlaceValueCompareState): boolean => !state.fault && state.pair.columns.length > 0 && state.marked === state.pair.stop + 1;
-/** The card is complete: the true sign is chosen (a refused pair never is). */
-export const placeValueCompareComplete = (state: PlaceValueCompareState): boolean => placeValueCompareDecided(state) && state.signed;
 /** A demonstration shows. */
 export const placeValueCompareDemonstrating = (state: PlaceValueCompareState): boolean => state.compared > 0;
+/** The chart shows the true sign chosen: the learner's, or the demonstration's at its end (what is drawn). */
+export const placeValueCompareSigned = (state: PlaceValueCompareState): boolean => placeValueCompareDecided(state) && state.signed;
+/**
+ * The learner's card is complete: the learner chose the true sign (a refused pair never is). Never while a
+ * demonstration shows: the demonstration's chart at its end is the program's, not the learner's (review of #128).
+ */
+export const placeValueCompareComplete = (state: PlaceValueCompareState): boolean => !placeValueCompareDemonstrating(state) && placeValueCompareSigned(state);
 /** The last value of the demonstration: every column to the deciding one judged, and the sign chosen. */
 export const placeValueCompareDemoEnd = (pair: PlaceValueComparePair): number => pair.stop + 2;
 
@@ -245,15 +253,18 @@ export function placeValueCompareColumn(state: PlaceValueCompareState, index: nu
 
 // ---------------------------------------------------------------- taps
 
-/** One learner tap: a judgement under the column at `index` (an index into the pair's columns), or a sign. */
-export type PlaceValueCompareMove = { tap: PlaceValueCompareJudgement; index: number } | { tap: "sign"; sign: PlaceValueCompareSign };
+/**
+ * One learner tap: a judgement under the column at `index` (an index into the pair's columns), a tap on that column
+ * with no judgement (`column`, the sketch's tap on a decided chart), or a sign.
+ */
+export type PlaceValueCompareMove = { tap: PlaceValueCompareJudgement | "column"; index: number } | { tap: "sign"; sign: PlaceValueCompareSign };
 
 /**
  * Refusals are facts. A judgement: `left_unjudged` (a column to the left is not judged yet), `not_same` /
  * `not_different` (the judgement is not true), `already_same` / `already_decides` (judged already), `after_decided`
  * (after the deciding column). A sign: `not_decided` (the sentence is not open yet), `not_true`, `already_signed`.
  * `demonstrating` (the chart shows the demonstration), `no_place` (no such column), `no_sign` (no such sign),
- * `no_judgement` (a column tap that is neither "Same" nor "Different").
+ * `no_judgement` (a tap on a column, not on its "Same" or "Different", before the chart is decided).
  */
 export type PlaceValueCompareRefusal =
   | "left_unjudged" | "not_same" | "not_different" | "already_same" | "already_decides" | "after_decided"
@@ -277,10 +288,12 @@ export function placeValueCompareMove(state: PlaceValueCompareState, move: Place
     if (move.sign !== pair.relation) return { ok: false, reason: "not_true" };
     return { ok: true, state: { ...state, signed: true }, anim: { kind: "sign", sign: move.sign } };
   }
-  if (move.tap !== "same" && move.tap !== "different") return { ok: false, reason: "no_judgement" };
+  if (move.tap !== "same" && move.tap !== "different" && move.tap !== "column") return { ok: false, reason: "no_judgement" };
   const k = move.index;
   if (state.fault || !Number.isInteger(k) || k < 0 || k >= pair.columns.length) return { ok: false, reason: "no_place" };
   if (placeValueCompareDecided(state)) return { ok: false, reason: k > pair.stop ? "after_decided" : k === pair.stop && !pair.equal ? "already_decides" : "already_same" };
+  // A tap on a column is a judgement only through its buttons: before the decision it states the column's digits.
+  if (move.tap === "column") return { ok: false, reason: "no_judgement" };
   if (k < state.marked) return { ok: false, reason: "already_same" };
   if (k > state.marked) return { ok: false, reason: "left_unjudged" };
   const a = pair.da[k]!, b = pair.db[k]!;
@@ -300,7 +313,7 @@ export function applyPlaceValueCompareTap(state: PlaceValueCompareState, tap: Pl
     const sign = placeValueCompareSignAt(tap.place);
     return sign ? placeValueCompareMove(state, { tap: "sign", sign }) : { ok: false, reason: "no_sign" };
   }
-  if (tap.tap !== "same" && tap.tap !== "different") return { ok: false, reason: "no_place" };
+  if (tap.tap !== "same" && tap.tap !== "different" && tap.tap !== "column") return { ok: false, reason: "no_place" };
   if (!Number.isInteger(tap.place) || tap.place < 0 || tap.place >= PLACE_VALUE_TAP_PLACES.length) return { ok: false, reason: "no_place" };
   const index = state.pair.columns.indexOf(placeValueTapPlace(tap.place));
   return index < 0 ? { ok: false, reason: "no_place" } : placeValueCompareMove(state, { tap: tap.tap, index });
@@ -530,26 +543,31 @@ export interface PlaceValueCompareFacts {
   digits: [number, number] | null;
   /** The true sign: >, = or <. */
   relation: PlaceValueCompareRelation;
-  /** Columns judged from the left so far, and the next place to judge (null once decided). */
+  /** The learner's columns judged from the left so far, and the next place to judge (null once decided). */
   judged: number;
   next: number | null;
-  /** The comparing is done (the sentence opens), and the true sign is chosen. */
+  /** The learner's comparing is done (the sentence opens), and the learner chose the true sign. */
   decided: boolean;
   complete: boolean;
+  /** The demonstration's "compared" (0 when none shows). While it shows, the learner's facts are a fresh chart's. */
+  compared: number;
 }
 
 /** Facts a task reads, and what a lesson's later sections are told about the card. */
 export function placeValueCompareFacts(state: PlaceValueCompareState): PlaceValueCompareFacts {
-  const { pair } = state, decided = placeValueCompareDecided(state);
+  // A demonstration's chart is the program's: the learner's own facts stay a fresh chart's (review of #128).
+  const own = placeValueCompareDemonstrating(state) ? { ...state, marked: 0, signed: false, compared: 0 } : state;
+  const { pair } = own, decided = placeValueCompareDecided(own);
   return {
     columns: [...pair.columns],
     deciding: pair.equal || state.fault ? null : pair.place,
     digits: pair.equal || state.fault ? null : [pair.da[pair.stop]!, pair.db[pair.stop]!],
     relation: pair.relation,
-    judged: state.marked,
-    next: decided || state.fault ? null : pair.columns[state.marked] ?? null,
+    judged: own.marked,
+    next: decided || state.fault ? null : pair.columns[own.marked] ?? null,
     decided,
-    complete: placeValueCompareComplete(state),
+    complete: placeValueCompareComplete(own),
+    compared: state.compared,
   };
 }
 
@@ -659,9 +677,10 @@ export function placeValueCompareHowTo(raw: unknown): string {
   return wordsOf(placeValueCompareLanguage(raw)).fixedHowTo;
 }
 
-/** The one-line instruction on the card (only while the learner can tap): judge the places, then choose the sign. */
+/** The one-line instruction on the card (only while the learner can tap): judge the places, then choose the sign; nothing while a demonstration shows. */
 export function placeValueCompareInstruction(state: PlaceValueCompareState, language: PlaceValueLanguage = "en-US"): string {
-  if (state.fault || placeValueCompareComplete(state)) return "";
+  // Nothing to do while a demonstration shows (every tap is refused) or once the sign is chosen (review of #128).
+  if (state.fault || placeValueCompareDemonstrating(state) || placeValueCompareSigned(state)) return "";
   const words = wordsOf(language);
   return placeValueCompareDecided(state) ? words.howtoSign : words.howto;
 }
@@ -675,7 +694,7 @@ export function placeValueCompareInstruction(state: PlaceValueCompareState, lang
 export function placeValueCompareFactText(state: PlaceValueCompareState, language: PlaceValueLanguage = "en-US"): string {
   if (state.fault || state.marked === 0) return "";
   const { pair } = state, words = wordsOf(language);
-  if (placeValueCompareComplete(state)) return placeValueCompareDoneText(pair, language);
+  if (placeValueCompareSigned(state)) return placeValueCompareDoneText(pair, language);
   const k = state.marked - 1, place = pair.columns[k]!, a = pair.da[k]!, b = pair.db[k]!;
   if (k === pair.stop && !pair.equal) {
     const [x, y] = placeValueCompareNumerals(pair, language);
@@ -708,7 +727,7 @@ export function placeValueCompareRefusalText(state: PlaceValueCompareState, tap:
   const name = nameOf(pair.columns[k]!, language), a = pair.da[k]!, b = pair.db[k]!;
   switch (reason) {
     case "left_unjudged": return words.refusal.left_unjudged(name, a, b, nameOf(pair.columns[state.marked]!, language));
-    case "not_same": case "not_different": return words.refusal.not_judged(name, a, b);
+    case "not_same": case "not_different": case "no_judgement": return words.refusal.not_judged(name, a, b);
     case "after_decided": return words.refusal.after_decided(nameOf(pair.place, language), name);
     case "already_decides": return words.refusal.already_decides(name, a, b);
     case "already_same": return words.refusal.already_same(name, a, b);

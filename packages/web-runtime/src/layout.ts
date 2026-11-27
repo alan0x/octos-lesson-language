@@ -6,6 +6,7 @@ import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js"
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
 import { planMakeTen } from "../../plugin-math/src/make-ten.js";
 import { planPlaceValueTimesTen } from "../../plugin-math/src/place-value-times-ten.js";
+import { planPlaceValueCompare } from "../../plugin-math/src/place-value-compare.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -101,6 +102,8 @@ const PLACE_VALUE_TRADE_TEXT_HEIGHT = 96;
 const MAKE_TEN_TEXT_HEIGHT = 96;
 /** A place-value times-ten card's lines around its chart: the problem, its instruction (one or two lines), the notice. */
 const PLACE_VALUE_TIMES_TEN_TEXT_HEIGHT = 118;
+/** A place-value compare card's lines around its chart and sentence: the problem, its instruction, the line under the chart (up to two lines). */
+const PLACE_VALUE_COMPARE_TEXT_HEIGHT = 136;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -236,6 +239,12 @@ export function measureSemanticNode(node: Record<string, any>, options: MeasureO
   if (kind === "place_value_times_ten") {
     const plan = planPlaceValueTimesTen(content);
     return { width: Math.max(Math.ceil(plan.width), 520) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + PLACE_VALUE_TIMES_TEN_TEXT_HEIGHT };
+  }
+  // Sized from its plan at its natural size: the chart, room kept for the most disks the pair has, and the sentence
+  // under it (decision 0029). Desktop only.
+  if (kind === "place_value_compare") {
+    const plan = planPlaceValueCompare(content);
+    return { width: Math.max(Math.ceil(plan.width), Math.ceil(plan.sentence.width), 520) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height + plan.sentence.height) + 2 * CARD_FRAME.y + PLACE_VALUE_COMPARE_TEXT_HEIGHT };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };

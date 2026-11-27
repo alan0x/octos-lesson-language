@@ -111,7 +111,9 @@ export interface StudentCardTapOperation {
    * (0 = ones); on a place-value chart add, remove or take_out (the place plus three, 3 = ones; decision 0025); on
    * a place-value trade card down, trade or break, at the same index (decision 0026); on a make-ten card give or
    * back, at the frame tapped (0 or 1; decision 0027); on a place-value times-ten card move, copy or smaller, at a
-   * row (0 = the first row; decision 0028).
+   * row (0 = the first row; decision 0028); on a place-value compare card same or different, at a chart place
+   * (the place plus three), sign, at 10 to 12 (>, =, <), or column, a
+   * decided chart's column at its chart place (decision 0029).
    */
   tap: { kind: CardTapKind; place: number };
   /** Every variable the tap changed, in one step. */
