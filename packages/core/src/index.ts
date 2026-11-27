@@ -521,6 +521,11 @@ function validateCardStudentTask(
     const practice = cardContentAt(kind, content, variables, { ...initial, ...startValues });
     kind.validateContent(practice, "$", failAt("The practice pile is not a starting pile", `${path}/start/values`));
     kind.validateStart?.(kind.state(practice), (message) => fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The practice pile is not a starting pile: ${message}`));
+    // A practice starts with nothing demonstrated: the demonstration field where the card says a fresh card starts.
+    const demonstration = kind.demonstration;
+    if (demonstration && Number(practice[demonstration.field]) !== demonstration.start(practice)) {
+      fail("OLL_INVALID_PHASE_START", `${path}/start/values`, `The practice pile is not a starting pile: its '${demonstration.field}' starts at ${demonstration.start(practice)} on a fresh ${demonstration.fresh}, not ${String(practice[demonstration.field])}`);
+    }
     // The task's problem is its own: never the number the lesson showed (decision 0025 §4), nor the pair (0026 §5).
     const own = kind.practiceFields ?? kind.cardFields ?? [];
     for (const field of own) {
@@ -1181,13 +1186,13 @@ function checkDemonstrationAnimate(
     if (!kind.demonstration) continue;
     const bound = bareBindings(content);
     if (bound.get(kind.demonstration.field) === variable) {
-      const from = before ?? 0;
-      if (!Number.isInteger(value)) fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' counts the columns a ${kind.kind} card has finished: a whole number, not ${value}; from ${from}, ${kind.demonstration.next(content, from)}`);
-      if (value < from) fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' counts the columns a ${kind.kind} card has finished: it goes forward, not from ${from} back to ${value}; ${kind.demonstration.next(content, from)}`);
+      const from = before ?? kind.demonstration.start(content);
+      const refusal = kind.demonstration.refuseStep(content, from, value);
+      if (refusal !== undefined) fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' ${refusal}`);
     }
     for (const { place, field } of kind.tapFields(content)) {
       if (bound.get(kind.fieldTarget(content, place, field)) === variable) {
-        fail("OLL_INVALID_VARIABLE", `${path}/variable`, `'${variable}' is a column's state on a ${kind.kind} card: only the learner's taps change it; the lesson animates '${bound.get(kind.demonstration.field) ?? kind.demonstration.field}'`);
+        fail("OLL_INVALID_VARIABLE", `${path}/variable`, `'${variable}' is ${kind.demonstration.tapState} on a ${kind.kind} card: only the learner's taps change it; the lesson animates '${bound.get(kind.demonstration.field) ?? kind.demonstration.field}'`);
       }
     }
     // The card's problem changes only at a start (a replay or a task's), where the pair is checked whole: an
@@ -1244,15 +1249,14 @@ function checkDemonstrationReplay(cards: ReadonlyMap<string, LessonTapCard>, val
     if (!kind.demonstration) continue;
     const bound = bareBindings(content);
     const field = bound.get(kind.demonstration.field);
-    if (field !== undefined && Object.hasOwn(values, field) && !Number.isInteger(values[field])) {
-      fail("OLL_INVALID_PHASE_START", `${path}/values/${field}`, `'${field}' counts the columns a ${kind.kind} card has finished: a whole number, not ${values[field]}`);
-    }
+    const refusal = field !== undefined && Object.hasOwn(values, field) ? kind.demonstration.refuseReplay(content, values[field]!) : undefined;
+    if (refusal !== undefined) fail("OLL_INVALID_PHASE_START", `${path}/values/${field}`, `'${field}' ${refusal}`);
     let touched = field !== undefined && Object.hasOwn(values, field);
     for (const { place, field: tapField } of kind.tapFields(content)) {
       const alias = bound.get(kind.fieldTarget(content, place, tapField));
       if (alias === undefined || !Object.hasOwn(values, alias)) continue;
       touched = true;
-      if (values[alias] !== 0) fail("OLL_INVALID_PHASE_START", `${path}/values/${alias}`, `'${alias}' is a column's state on a ${kind.kind} card: a replay lays a fresh chart (0), not ${values[alias]}`);
+      if (values[alias] !== 0) fail("OLL_INVALID_PHASE_START", `${path}/values/${alias}`, `'${alias}' is ${kind.demonstration.tapState} on a ${kind.kind} card: a replay lays a fresh ${kind.demonstration.fresh} (0), not ${values[alias]}`);
     }
     for (const cardField of kind.practiceFields ?? []) if (bound.get(cardField) !== undefined && Object.hasOwn(values, bound.get(cardField)!)) touched = true;
     if (!touched) continue;
@@ -2288,6 +2292,15 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             tapCard.validateContent(cardContentAt(tapCard, action.content, bareBindings(action.content), initials), `${actionPath}/content`,
               (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, `As its variables start it: ${message}`));
           }
+          // A card that opens fresh (its demonstration not yet played), as written and as its variables start it.
+          if (tapCard?.demonstration?.opensAtStart) {
+            const demonstration = tapCard.demonstration;
+            const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
+            for (const [opening, prefix] of [[action.content, ""], [cardContentAt(tapCard, action.content, bareBindings(action.content), initials), "As its variables start it: "]] as const) {
+              const value = Number(opening[demonstration.field]), start = demonstration.start(opening);
+              if (value !== start) fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/content/${demonstration.field}`, `${prefix}A ${tapCard.kind} card opens fresh: its '${demonstration.field}' starts at ${start}, not ${value}`);
+            }
+          }
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
@@ -2298,7 +2311,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           if (!card || target.fragment) fail("OLL_INVALID_REFERENCE", `${actionPath}/target`, `A tap acts on a whole ${lessonTapCardKindList()} card of this lesson`);
           // The model never names a control (decision 0026): such a card is shown by its demonstration field.
           if (card.kind.demonstration) {
-            fail("OLL_INVALID_OPERATION", `${actionPath}/do`, `A ${card.kind.kind} card is not tapped by the lesson: animate the variable bound to its '${card.kind.demonstration.field}' (columns finished, counting from the right), and the program plays each column`);
+            fail("OLL_INVALID_OPERATION", `${actionPath}/do`, `A ${card.kind.kind} card is not tapped by the lesson: animate the variable bound to its '${card.kind.demonstration.field}' ${card.kind.demonstration.shows}`);
           }
           requireVisible(action.target, `${actionPath}/target`);
           // The tap and place the shape check let through are this card's own (always so with one kind of tap card).
@@ -2316,8 +2329,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             // A card's demonstration field says its own range (decision 0026: columns finished, 0 to the columns).
             const shown = [...shownCards.values()].find(({ kind, content }) => kind.demonstration && bareBindings(content).get(kind.demonstration.field) === action.variable);
             if (shown?.kind.demonstration) {
-              const { min, max } = shown.kind.demonstration.range(shown.content);
-              fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `'${action.variable}' counts the columns a ${shown.kind.kind} card has finished: ${min} to ${max}, not ${action.value}`);
+              fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `'${action.variable}' ${shown.kind.demonstration.outside(shown.content, action.value)}`);
             }
             fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `Animation target for '${action.variable}' is outside its range`);
           }
