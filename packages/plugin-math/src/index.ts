@@ -360,6 +360,10 @@ export { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewC
 export * from "./place-value-trade.js";
 export { buildPlaceValueTrade, type BuiltPlaceValueTrade, type PlaceValueTradeInput } from "./place-value-trade-builder.js";
 export { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewContext } from "./place-value-trade-view.js";
+// Ten of one place make one of the next: an amount counted in another unit (decision 0028).
+export * from "./place-value-times-ten.js";
+export { buildPlaceValueTimesTen, type BuiltPlaceValueTimesTen, type PlaceValueTimesTenInput } from "./place-value-times-ten-builder.js";
+export { renderPlaceValueTimesTen, updatePlaceValueTimesTen, type PlaceValueTimesTenViewContext } from "./place-value-times-ten-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,

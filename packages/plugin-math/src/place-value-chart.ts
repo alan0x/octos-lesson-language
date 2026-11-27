@@ -266,6 +266,10 @@ const ZH_UNIT_NAME: Record<number, string> = { 6: "百万", 5: "十万", 4: "万
 export function placeValueUnitName(place: number, language: PlaceValueLanguage = "en-US"): string {
   return short(language) === "en" ? placeValueUnitText(place, "en-US") : ZH_UNIT_NAME[place]!;
 }
+/** A place's unit as an English word, one or many: "tenth" / "tenths", "hundred thousand" (shared with 0028). */
+export function placeValueEnUnitWord(place: number, plural: boolean): string {
+  return EN_UNIT[place]![plural ? 1 : 0];
+}
 /** How many of each place (zh 「8个千、6个十和3个一」; en "8 thousands, 6 tens and 3 ones"): the non-zero places only. */
 export function placeValueCountsText(value: number, language: PlaceValueLanguage = "en-US"): string {
   const list = placeValueParts(value);
