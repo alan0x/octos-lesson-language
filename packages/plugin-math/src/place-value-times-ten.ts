@@ -210,7 +210,12 @@ export function placeValueTimesTenStartUnit(shape: PlaceValueTimesTenShape, amou
 /** The problem a shape and its numbers make, or the fault (the shape's start, then the sketch's rules, then the shape). */
 export function placeValueTimesTenProblemOfShape(shape: PlaceValueTimesTenShape, amount: number, target: number): PlaceValueTimesTenProblem | { fault: PlaceValueTimesTenFault | "not_same_shape" } {
   const start = placeValueTimesTenStartUnit(shape, amount, target);
-  if (start === undefined) return { fault: shape.question === "times" ? "not_one_digit" : "start_not_unit" };
+  if (start === undefined) {
+    // Numbers that make a problem of another shape (a times pair's on a count card) say so, not the start they lack.
+    const other = placeValueTimesTenProblem(amount, target);
+    if (!isFault(other)) return { fault: "not_same_shape" };
+    return { fault: shape.question === "times" ? other.fault : "start_not_unit" };
+  }
   const p = placeValueTimesTenProblem(amount, target, shape.question === "times" ? undefined : start);
   if (isFault(p)) return p;
   const own = placeValueTimesTenShapeOf(p);
@@ -235,6 +240,8 @@ export interface PlaceValueTimesTenState {
   problem: PlaceValueTimesTenProblem;
   /** Each lineage's stage (0 to g). */
   stages: number[];
+  /** The row sets as the content holds them (stray bits included), so a tap's changes are against what is written. */
+  rows?: Record<PlaceValueTimesTenRowField, number>;
   /**
    * Above 0, the chart is the demonstration's (a position along the "counted in" path, possibly between two of its
    * values while a variable eases) and the learner's taps are refused. Absent or 0 for the learner's own chart.
@@ -243,7 +250,7 @@ export interface PlaceValueTimesTenState {
 }
 
 export const placeValueTimesTenStart = (problem: PlaceValueTimesTenProblem): PlaceValueTimesTenState => ({ problem, stages: Array(problem.n).fill(0) });
-const withStage = (s: PlaceValueTimesTenState, i: number, k: number): PlaceValueTimesTenState => ({ problem: s.problem, stages: s.stages.map((v, j) => (j === i ? k : v)) });
+const withStage = (s: PlaceValueTimesTenState, i: number, k: number): PlaceValueTimesTenState => ({ problem: s.problem, stages: s.stages.map((v, j) => (j === i ? k : v)), ...(s.rows ? { rows: s.rows } : {}) });
 
 /** Where a lineage at stage k sits (its place), and the size of its thing (1 disk, a row of 10, a square of 100). */
 export const placeValueTimesTenPlaceAt = (p: PlaceValueTimesTenProblem, k: number): number => p.s + p.dir * k;
@@ -311,8 +318,11 @@ export function applyPlaceValueTimesTenTap(state: PlaceValueTimesTenState, tap: 
   return refuse("no_tap");
 }
 
-/** Every lineage at the target: a count's chart holds the amount in the target unit; a times pair's copies are whole. */
-export const placeValueTimesTenComplete = (state: PlaceValueTimesTenState): boolean => state.stages.every((k) => k === state.problem.g);
+/**
+ * Every lineage at the target: a count's chart holds the amount in the target unit; a times pair's copies are whole.
+ * A card with no problem (numbers the card refuses draw an empty chart) is never complete.
+ */
+export const placeValueTimesTenComplete = (state: PlaceValueTimesTenState): boolean => state.problem.n > 0 && state.stages.every((k) => k === state.problem.g);
 
 /** Every action the card allows from this state (the view's `move` taps reach exactly these). */
 export function placeValueTimesTenMoves(state: PlaceValueTimesTenState): Array<Extract<PlaceValueTimesTenResult, { ok: true }>> {
@@ -554,7 +564,8 @@ export function placeValueTimesTenState(raw: unknown): PlaceValueTimesTenState &
     const once = bits(content.moved_once, i);
     return Math.min(problem.g, once + (once && problem.g === 2 ? bits(content.moved_twice, i) : 0));
   });
-  return { problem, stages, demo: 0 };
+  const written = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : 0);
+  return { problem, stages, demo: 0, rows: { moved_once: written(content.moved_once), moved_twice: written(content.moved_twice) } };
 }
 
 /** The row-set fields a problem's shape binds: one place apart, `moved_once`; two, also `moved_twice`. */
@@ -565,9 +576,13 @@ export function placeValueTimesTenRowSets(state: PlaceValueTimesTenState): Recor
   const mask = (bits: boolean[]) => bits.reduce((sum, on, i) => sum + (on ? 2 ** i : 0), 0);
   return { moved_once: mask(state.stages.map((k) => k >= 1)), moved_twice: mask(state.stages.map((k) => k >= 2)) };
 }
-/** The fields one tap changes, as content values: each row set that differs. */
+/**
+ * The fields one tap changes, as content values: each row set that differs from what the content holds. The new
+ * values are the state's own, so a stray bit (a row "moved twice" but not once) is cleared, never left to make a
+ * row jump two places.
+ */
 export function placeValueTimesTenChanges(before: PlaceValueTimesTenState, after: PlaceValueTimesTenState): Array<{ field: PlaceValueTimesTenRowField; before: number; after: number }> {
-  const a = placeValueTimesTenRowSets(before), b = placeValueTimesTenRowSets(after);
+  const a = before.rows ?? placeValueTimesTenRowSets(before), b = placeValueTimesTenRowSets(after);
   return placeValueTimesTenRowFields(after.problem.g).filter((field) => a[field] !== b[field]).map((field) => ({ field, before: a[field], after: b[field] }));
 }
 
@@ -578,7 +593,7 @@ export function placeValueTimesTenChanges(before: PlaceValueTimesTenState, after
 export function placeValueTimesTenStartFault(raw: unknown): string | undefined {
   const content = (raw ?? {}) as Partial<PlaceValueTimesTenContent>;
   const problem = placeValueTimesTenContentProblem(content);
-  if (isFault(problem)) return undefined; // the content check says it
+  if (isFault(problem)) return placeValueTimesTenFaultText(problem.fault, content.amount, content.target);
   if (content.counted_in !== problem.start) {
     return `A practice chart starts fresh: 'counted_in' is its own start unit, ${problem.start} (${countedInText(problem, problem.start)}), not ${content.counted_in}`;
   }
@@ -639,6 +654,8 @@ export function placeValueTimesTenUnitWord(place: number, language: PlaceValueLa
 const one = (place: number) => placeValueEnUnitWord(place, false);
 const an = (place: number) => `${/^[aeiou]/u.test(one(place)) && place !== 0 ? "an" : "a"} ${one(place)}`;
 const plural = (place: number) => placeValueEnUnitWord(place, true);
+/** "a 70", "an 8", "an 80", "an 800", "an 8,000" (a number said with "eight" first takes "an"). */
+const aNumber = (written: string) => `${/^(8|11|18)(\D|$)|^8\d/u.test(written) ? "an" : "a"} ${written}`;
 
 /** The card's own words, whole sentences per language: never a word put into another language's sentence. */
 export const PLACE_VALUE_TIMES_TEN_WORDS = {
@@ -657,7 +674,7 @@ export const PLACE_VALUE_TIMES_TEN_WORDS = {
       deal: (from: number, to: number, B: string) => `Tap ${an(from)} to break it into ten ${plural(to)}, one into each ${B}.`,
       doneCount: "Type how many below.", doneTimes: "Type the answers below.",
     },
-    locked: { count: (t: number) => `Opens when everything is in ${plural(t)}.`, times: (B: string) => `Opens when every row is a ${B}.` },
+    locked: { count: (t: number) => `Opens when everything is in ${plural(t)}.`, times: (B: string) => `Opens when every row is ${aNumber(B)}.` },
     refusal: {
       at_target: (t: number) => `These are ${plural(t)} already.`,
       copy_short: (have: number, d: number, t: number, B: string) => `This ${B} has ${placeValueTimesTenCountOf(have, t, "en-US")}; ${B} is ${placeValueTimesTenCountOf(d, t, "en-US")}.`,
