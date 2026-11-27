@@ -14,10 +14,10 @@
 // - an equal pair (2.50 and 2.5, written decimals bound): "Same" all the way, then "=";
 // - the widest cards (1,000,000 and 999,999; 3,456.789 and 3,456.798), each a practice card: seven columns fit
 //   1,024 px with no horizontal scroll, every disk label inside its disk, the card's height kept while it is worked;
-// - the program's demonstration: "compared" played by the session with motion, the columns judged one at a time,
-//   then the sign; then the practice opens fresh on its own pair.
-// What it does not show: how long a step holds (the player's slot; `npm run check:demonstration-pace-browser` measures
-// pace); it checks the order of the steps, not their timing.
+// - the program's demonstration: "compared" played by the session in real time at double speed, a tap handler set:
+//   the player sets it one step at a time, each a slot apart (1,300 ms), the column judged ringed in turn, then the
+//   sign; the card's line says nothing over it and nothing is tappable (no task is open); then the practice opens
+//   fresh and tappable on its own pair. The motion of each step is measured by `check:demonstration-pace-browser`.
 // Pairs are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_COMPARE_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -267,41 +267,62 @@ try {
     if (shots) await page.screenshot({ path: `${shots}/${name}.png` });
   }
 
-  // The program's demonstration, played by the session with motion: one column at a time, then the sign.
+  // The program's demonstration, played by the session in real time at double speed (the board told the speed), with a
+  // card tap handler set: the player sets "compared" one step a slot apart (0026 revision 2), the card draws each step.
   const played = await page.evaluate(async ({ events }) => {
     document.querySelector("#board").replaceChildren();
     localStorage.clear();
     const session = new window.BrowserLessonSession(events, new window.LocalPlaybackStore(), "demo", { reducedMotion: false });
     const mounted = window.mountInfiniteBoard(document.querySelector("#board"));
-    const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+    session.setSpeed(2);
+    mounted.view.setPlaybackSpeed(2);
+    mounted.view.setCardTapHandler({
+      live: (id) => session.studentCardLive(id),
+      tap: (id, tap, input) => { const result = session.tapStudentCard(id, tap, input); mounted.view.render(session.projection.board, session.currentOperation); return result; },
+    });
+    const render = () => mounted.view.render(session.projection.board, session.currentOperation);
+    session.subscribe(render);
+    for (let i = 0; i < 400 && !session.activeVariableAnimation; i += 1) session.advance();
+    render();
     const read = () => {
       const marks = [...document.querySelectorAll(".place-value-compare-mark")].map((mark) => mark.textContent).join("");
       return `${marks}${document.querySelector(".place-value-compare-chosen")?.textContent ?? ""}`;
     };
-    const seen = [], focused = [];
-    const note = () => {
-      const now = read(); if (seen.at(-1) !== now) seen.push(now);
+    const steps = [], focused = [], notices = new Set(), values = [];
+    let live = 0, last = read();
+    const t0 = performance.now();
+    session.play();
+    while (performance.now() - t0 < 12_000 && session.activeVariableAnimation) {
+      await new Promise((done) => requestAnimationFrame(done));
+      const now = read();
+      if (now !== last) { steps.push({ at: Math.round(performance.now() - t0), state: now }); last = now; }
       const focus = document.querySelector(".place-value-compare-focus")?.closest(".place-value-compare-column")?.dataset.index;
       if (focus !== undefined && focused.at(-1) !== focus) focused.push(focus);
-    };
-    const node = () => Object.values(session.projection.board?.nodes ?? {}).find((candidate) => candidate.kind === "place_value_compare");
-    for (let i = 0; i < 600 && Number(node()?.content.compared) !== 4; i += 1) { session.advance(); mounted.view.render(session.projection.board); note(); await wait(20); }
-    const notices = [];
-    for (let t = 0; t < 70; t += 1) { await wait(150); mounted.view.render(session.projection.board); note(); notices.push(document.querySelector(".place-value-compare-notice")?.textContent ?? ""); }
-    const live = document.querySelectorAll(".place-value-compare [data-oll-tap]").length;
-    for (let i = 0; i < 600 && session.projection.status !== "completed"; i += 1) { session.advance(); mounted.view.render(session.projection.board); await wait(20); }
-    for (let t = 0; t < 20; t += 1) { await wait(100); mounted.view.render(session.projection.board); }
-    const values = Object.fromEntries(Object.entries(session.projection.board.variables).map(([k, v]) => [k, v.value]));
-    return { seen, focused, notices: [...new Set(notices)], live, values, given: document.querySelector(".place-value-compare-given")?.textContent,
-      available: session.studentTasks.map((task) => task.available), marks: document.querySelectorAll(".place-value-compare-mark").length };
+      notices.add(document.querySelector(".place-value-compare-notice")?.textContent ?? "");
+      live = Math.max(live, document.querySelectorAll(".place-value-compare [data-oll-tap]").length);
+      const value = session.projection.board?.variables?.compared?.value;
+      if (values.at(-1) !== value) values.push(value);
+    }
+    session.pause();
+    while (session.projection.status !== "completed") session.advance();
+    render();
+    await new Promise((done) => setTimeout(done, 300));
+    const board = Object.fromEntries(Object.entries(session.projection.board.variables).map(([k, v]) => [k, v.value]));
+    return { steps, focused, values, notices: [...notices], live, board, given: document.querySelector(".place-value-compare-given")?.textContent,
+      available: session.studentTasks.map((task) => task.available), marks: document.querySelectorAll(".place-value-compare-mark").length,
+      practiceLive: document.querySelectorAll(".place-value-compare [data-oll-tap]").length };
   }, { events: events.demo });
-  const inOrder = (seen, expected) => { let k = 0; for (const state of seen) if (state === expected[k]) k += 1; return k === expected.length; };
-  check(inOrder(played.seen, ["", "=", "==", "==≠", "==≠>"]) && played.seen.at(-1) === "==≠>", `the demonstration judges one column at a time, then the sign: ${JSON.stringify(played.seen)}`);
-  check(inOrder(played.focused, ["0", "1", "2"]), `the column being judged is ringed in turn: ${JSON.stringify(played.focused)}`);
-  check(played.notices.every((text) => text === ""), `the card narrates nothing while the demonstration shows (the lesson does): ${JSON.stringify(played.notices)}`);
-  check(played.live === 0, "nothing to tap while the demonstration shows");
-  check(played.given === "Compare 6,281 and 6,218." && played.values.compared === 0 && played.values.marked === 0 && played.values.signed === 0 && played.available[0] === true && played.marks === 0,
-    `from the demonstration to a fresh practice on its own pair: ${JSON.stringify([played.given, played.values, played.available, played.marks])}`);
+  const half = 1300; // a step's slot (2,000 ms + 600 ms) at double speed
+  const gaps = played.steps.slice(1).map((step, i) => step.at - played.steps[i].at);
+  check(JSON.stringify(played.steps.map((step) => step.state)) === '["=","==","==≠","==≠>"]', `the demonstration judges one column a step, then the sign: ${JSON.stringify(played.steps)}`);
+  check(JSON.stringify(played.values) === "[0,1,2,3,4]", `the player sets "compared" one step at a time, never jumping: ${JSON.stringify(played.values)}`);
+  check(gaps.length === 3 && gaps.every((gap) => Math.abs(gap - half) <= 200), `each step a slot after the last (${half} ms at double speed): ${JSON.stringify(gaps)}`);
+  check(JSON.stringify(played.focused) === '["0","1","2"]', `the column being judged is ringed in turn: ${JSON.stringify(played.focused)}`);
+  check(played.notices.every((text) => text === ""), `the card's own line says nothing while the demonstration plays (the lesson narrates): ${JSON.stringify(played.notices)}`);
+  check(played.live === 0, "with a tap handler set, nothing on the card is tappable while the lesson plays its demonstration (no task is open)");
+  check(played.given === "Compare 6,281 and 6,218." && played.board.compared === 0 && played.board.marked === 0 && played.board.signed === 0 && played.available[0] === true && played.marks === 0 && played.practiceLive > 0,
+    `from the demonstration to a fresh, tappable practice on its own pair: ${JSON.stringify([played.given, played.board, played.available, played.marks, played.practiceLive])}`);
+  console.log(`  demonstration at double speed: steps at ${played.steps.map((step) => step.at).join(", ")} ms (gaps ${gaps.join(", ")})`);
 
   check(errors.length === 0, `page errors: ${errors.join("; ")}`);
 } finally {
@@ -313,4 +334,4 @@ if (failures.length) {
   console.error(`place-value compare browser checks failed (${failures.length} of ${checks}):\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log(`place-value compare browser checks passed (${checks}): 6,281 and 6,218 by real clicks (the instruction under the problem, "Same" and "Different" under every column, the sentence locked with its fact, nothing focused; no title and never its role; refusals as facts with the refused button marked, the right column dimmed and the leftmost unjudged one ringed; "=", the deciding "≠" with its pairs faded and its extra disks ringed, "Doesn't matter" after it, a decided column's tap stating its fact; no conclusion before the sign; a wrong sign a fact; the true sign ending the task with no done; Enter); Chinese decimals with their points lined up and a faint 0 in every empty cell; an equal pair with its written decimals, "Same" all the way then "="; the widest cards (seven columns) fitting 1,024 px and keeping their size; the demonstration played one column at a time then the sign, the card saying nothing over it, then a fresh practice. Not checked: how long a step holds.`);
+console.log(`place-value compare browser checks passed (${checks}): 6,281 and 6,218 by real clicks (the instruction under the problem, "Same" and "Different" under every column, the sentence locked with its fact, nothing focused; no title and never its role; refusals as facts with the refused button marked, the right column dimmed and the leftmost unjudged one ringed; "=", the deciding "≠" with its pairs faded and its extra disks ringed, "Doesn't matter" after it, a decided column's tap stating its fact; no conclusion before the sign; a wrong sign a fact; the true sign ending the task with no done; Enter); Chinese decimals with their points lined up and a faint 0 in every empty cell; an equal pair with its written decimals, "Same" all the way then "="; the widest cards (seven columns) fitting 1,024 px and keeping their size; the demonstration played in real time a step a slot apart, one column then the sign, the card saying nothing over it, then a fresh practice.`);

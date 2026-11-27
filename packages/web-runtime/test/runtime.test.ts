@@ -1957,7 +1957,7 @@ test("retrying a card slider task lays its whole practice pile again, not only t
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
   session.changeStudentVariable("ones", 4, { control: "slider", input: "mouse" });
   assert.deepEqual(sessionValues(session), { ones: 4, tray_ones: 0, tens: 4 });
-  assert.notEqual(session.studentTasks[0]!.status, "succeeded", "a wrong sign does not end the task");
+  assert.equal(session.studentTasks[0]!.status, "in_progress");
   session.retryStudentTask("slide");
   assert.deepEqual(sessionValues(session), { ones: 14, tray_ones: 0, tens: 3 });
 });

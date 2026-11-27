@@ -357,6 +357,14 @@ function pulse(view: View, k: number, pace?: number): void {
   }
 }
 
+/** A mark or the chosen sign arrives: it grows in over `ms` (a demonstration step's motion). */
+function arrive(node: Element | null, ms: number): void {
+  if (!node || !canAnimate(node)) return;
+  (node as SVGElement).style.transformBox = "fill-box";
+  (node as SVGElement).style.transformOrigin = "center";
+  node.animate([{ transform: "scale(.4)", opacity: 0 }, { transform: "scale(1.12)", opacity: 1, offset: 0.6 }, { transform: "scale(1)", opacity: 1 }], { duration: ms, easing: "ease-out" });
+}
+
 /** A refused button shakes. */
 function shake(view: View): void {
   const node = view.svg.querySelector(".place-value-compare-refused") ?? view.sentence.querySelector(".place-value-compare-refused");
@@ -371,7 +379,16 @@ function play(view: View): void {
   const next = step.state;
   view.focus = next.marked > 0 && next.marked <= next.pair.stop + 1 && !next.signed ? next.marked - 1 : undefined;
   draw(view, next);
-  if (view.focus !== undefined && !reduced(view)) { try { pulse(view, view.focus, step.pace); } catch { /* drawing goes on */ } }
+  if (!reduced(view)) {
+    try {
+      // The step's own motion, over its pace: the column's mark arrives and its disks pulse with their partners; the
+      // last step's sign arrives in the sentence.
+      if (view.focus !== undefined) {
+        pulse(view, view.focus, step.pace);
+        arrive(view.chart.querySelector(`.place-value-compare-column[data-index="${view.focus}"] .place-value-compare-mark`), step.pace);
+      } else if (next.signed) arrive(view.sentence.querySelector(".place-value-compare-chosen"), step.pace);
+    } catch { /* drawing goes on */ }
+  }
   view.timer = setTimeout(() => {
     view.timer = undefined;
     if (!view.svg.isConnected) { view.queue = []; return; }
