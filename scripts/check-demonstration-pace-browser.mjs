@@ -8,7 +8,8 @@
 // - the times-ten card: 0.2 counted in thousandths (two rows, each two places along), one row's move a step;
 // - the make-ten card: 8 + 6, `filled` 8 -> 10, one counter a step;
 // - the trading mat (default-on): the lesson's own taps, one a step; the place-value chart's own take-outs too;
-// - reduced motion: the card changes at once and the lesson does not wait.
+// - reduced motion: the card changes at once and the lesson does not wait;
+// - a card without a title shows no heading: its role ("main_visual") is never drawn as one.
 // The times measured are printed. Each run serves its own page on a free port.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -131,10 +132,14 @@ const measure = (page, name, { kind, speed = 1, reducedMotion = false, pauseAt, 
   }
   // Let the last motion end, then a learner's tap on a practice card (when the lesson has one).
   await new Promise((done) => setTimeout(done, 400));
-  return { steps, next, value: session.activeVariableAnimation ? "animating" : "settled" };
+  // A card's role ("main_visual") is never its heading: these cards have no title, so no heading at all.
+  const board = document.querySelector("#board");
+  return { steps, next, value: session.activeVariableAnimation ? "animating" : "settled",
+    titles: [...board.querySelectorAll(".node-title")].map((title) => title.textContent), roleShown: board.textContent.includes("main_visual") };
 }, { events: lessons[name], name, kind, speed, reducedMotion, pauseAt, pauseFor, limit });
 
 const report = [];
+const untitled = (name, run) => check(run.titles.length === 0 && !run.roleShown, `${name}: a card without a title shows no heading, never its role: ${JSON.stringify(run.titles)}`);
 const stepsOf = (run) => run.steps.filter((each) => each.at !== undefined);
 const gaps = (steps) => steps.slice(1).map((step, i) => step.at - steps[i].at);
 const summarize = (label, run) => {
@@ -154,6 +159,7 @@ try {
   // The trade card's cascade, 3,000 − 1,468: four actions, a slot apart; the lesson waits for the last hold.
   const trade = await measure(page, "trade", { kind: "place_value_trade" });
   let steps = summarize("trade 3,000 − 1,468, finished 0 -> 1", trade);
+  untitled("trade", trade);
   check(steps.length === 4, `four actions (three breaks, the take-away): ${JSON.stringify(trade.steps)}`);
   check(gaps(steps).every((gap) => near(gap, SLOT, 150)), `each action a slot (${SLOT} ms) after the last: ${gaps(steps)}`);
   check(steps.every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each action moves for about a step (${DEMONSTRATION_STEP_MS} ms): ${steps.map((step) => step.motion)}`);
@@ -215,6 +221,7 @@ try {
   // The times-ten card: 0.2 counted in thousandths, two rows each two places along: four moves.
   const timesTen = await measure(page, "timesTen", { kind: "place_value_times_ten" });
   steps = summarize("times-ten 0.2 counted in thousandths (two rows, two places)", timesTen);
+  untitled("times-ten", timesTen);
   check(steps.length === 4 && gaps(steps).every((gap) => near(gap, SLOT, 150)), `one row's move a slot: ${JSON.stringify(timesTen.steps)}`);
   check(steps.every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each move lasts about a step: ${steps.map((step) => step.motion)}`);
   check(timesTen.next >= steps[0].at + 4 * SLOT - 50, `the next operation waits: ${timesTen.next} ms`);
@@ -222,6 +229,7 @@ try {
   // The make-ten card: 8 + 6, two counters.
   const makeTen = await measure(page, "makeTen", { kind: "make_ten" });
   steps = summarize("make-ten 8 + 6, filled 8 -> 10", makeTen);
+  untitled("make-ten", makeTen);
   check(steps.length === 2 && near(gaps(steps)[0], SLOT, 150), `one counter a slot: ${JSON.stringify(makeTen.steps)}`);
   check(steps.every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each counter moves for about a step: ${steps.map((step) => step.motion)}`);
   check(makeTen.next >= steps[0].at + 2 * SLOT - 50, `the next operation waits: ${makeTen.next} ms`);
@@ -229,12 +237,14 @@ try {
   // The mat: the lesson's own taps, three into the tray and the make, one a slot.
   const mat = await measure(page, "mat", { kind: "base_ten_trade" });
   steps = summarize("mat: the lesson's taps (gather, gather, gather, make)", mat);
+  untitled("mat", mat);
   check(steps.length >= 3 && gaps(steps).every((gap) => near(gap, SLOT, 200)), `one lesson tap a slot: ${JSON.stringify(mat.steps)}`);
   check(steps.slice(1).every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.5 && step.motion <= DEMONSTRATION_STEP_MS + 600), `each tap moves for about a step: ${steps.map((step) => step.motion)}`);
 
   // The chart: the lesson's own take-outs, one a slot; its new disks pop in over a step.
   const chart = await measure(page, "chart", { kind: "place_value_chart" });
   steps = summarize("place-value chart 347 pulled apart by the lesson's taps (hundreds, tens, ones)", chart);
+  untitled("chart", chart);
   check(steps.length >= 2 && gaps(steps).every((gap) => near(gap, SLOT, 200)), `one lesson tap a slot: ${JSON.stringify(chart.steps)}`);
   check(steps.slice(1).every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each take-out pops in over about a step: ${steps.map((step) => step.motion)}`);
 
@@ -248,4 +258,4 @@ if (failures.length) {
   console.error(`demonstration pace browser checks failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log(`demonstration pace browser checks passed: a step's slot is ${SLOT} ms (${DEMONSTRATION_STEP_MS} ms of motion, ${DEMONSTRATION_HOLD_MS} ms held) on the trade card's cascade, the times-ten card's rows, the make-ten card's counters, the mat's and the chart's lesson taps; the lesson waits for the last; double speed halves it; a pause holds it; reduced motion changes at once; a learner's tap stays quick`);
+console.log(`demonstration pace browser checks passed: a step's slot is ${SLOT} ms (${DEMONSTRATION_STEP_MS} ms of motion, ${DEMONSTRATION_HOLD_MS} ms held) on the trade card's cascade, the times-ten card's rows, the make-ten card's counters, the mat's and the chart's lesson taps; the lesson waits for the last; double speed halves it; a pause holds it; reduced motion changes at once; a learner's tap stays quick; no card shows its role as a heading`);

@@ -1559,6 +1559,16 @@ export interface CardTapHandler {
 
 const matKey = (mat: BaseTenMat): string => `${mat.columns}:${mat.counts.join(",")}/${mat.trays.join(",")}`;
 
+/**
+ * A card's heading: its own title or label, as the lesson wrote it. A role ("main_visual") is the lesson's internal
+ * name for the card's part in it and is never shown (owner, 2026-11-27); a card without a title has no heading.
+ * Learner ink speaks for itself.
+ */
+export function cardHeading(node: { kind?: unknown; content?: Record<string, unknown> | null }): string {
+  const content = node.content ?? {};
+  return node.kind === "ink" ? "" : text(content.title || content.label || "");
+}
+
 export function angleControlValue(
   rawAngle: number,
   currentValue: number,
@@ -1788,8 +1798,7 @@ function renderContent(
   placeValueTimesTen?: PlaceValueTimesTenViewContext,
 ): void {
   const content = node.content ?? {};
-  // Learner ink speaks for itself; its role is not a card title.
-  const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
+  const title = cardHeading(node);
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   // The math plugin's number line (decision 0013); it marks its own parts for emphasis.

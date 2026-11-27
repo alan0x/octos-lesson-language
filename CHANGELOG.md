@@ -13,6 +13,10 @@
   - **Every tap card.** This covers the trade card, the make-ten card, the times-ten card, the trading mat (default-on) and the place-value chart's lesson taps. A chart count animated from 0 to a digit (disks one at a time) is an ordinary animation and keeps its duration intent.
   - **Tests and checks.** The trade card's values between columns; each card's step values; the runtime's slots, the next operation's wait, pause, a checkpoint mid-demonstration, speed, a skip and reduced motion; the mat's lesson taps. `npm run check:demonstration-pace-browser` measures each in Chromium: 3,000 − 1,468 four actions about 2,600 ms apart with about 2,150 ms of motion each and the next operation at about 10,600 ms; at double speed about 1,300 ms apart; paused 3 s; reduced motion at once; a learner's tap afterwards about 900 ms; the times-ten card's two rows (four moves), the make-ten card's two counters, the mat's and the chart's lesson taps, each about 2,600 ms apart.
 
+### Fixed
+
+- **A card's role is never its heading.** A card without a title showed its role in the lesson (`main_visual`) as its heading, for example on a place-value chart. Roles are internal. A card's heading is its `title` or `label` as written, and a card without one has no heading. This applies to every card kind (`cardHeading`); explicit titles are unchanged. The board's layout already measured the title this way. Tests: `cardHeading` per kind; `npm run check:demonstration-pace-browser` finds no heading and no role on untitled cards of five kinds.
+
 ### Added
 
 - **An amount counted in another unit: ten of one place make one of the next** (math plugin 0.11.0, feature `plugin:math/place-value-times-ten@1`; player 0.19.0; decision 0028, need 35P-04). A `place_value_times_ten` card. It has two shapes: a count ("3 tenths = ? thousandths", "30 tens = ? hundreds") and a times pair ("700 is ? times 70").
