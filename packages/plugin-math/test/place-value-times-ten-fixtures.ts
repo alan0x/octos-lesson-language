@@ -1,6 +1,15 @@
 // Problems for the place-value times-ten card's tests (decision 0028): the accepted sketch's list (35P-04 sketch,
 // model.mjs PROBLEMS), each shown problem with its practice of the same shape, written as a learner writes them.
-// The start is given only where the question names a unit the amount is not in (a put-together question).
+// The start is given only where the question names a unit the amount is not in (a put-together question). And
+// lessons: the card built by the recipe builder, every field bound to its own variable, practice tasks on their own
+// problem, each followed by the card's answer row anchored to it.
+import type { AuthoringLesson } from "../../core/src/index.js";
+import type { PlaceValueLanguage } from "../src/place-value-chart.js";
+import { buildPlaceValueTimesTen } from "../src/place-value-times-ten-builder.js";
+import {
+  placeValueTimesTenAnswerParts, placeValueTimesTenParse, placeValueTimesTenPath, placeValueTimesTenPracticeProblem, placeValueTimesTenProblem,
+  placeValueTimesTenRowFields, type PlaceValueTimesTenProblem,
+} from "../src/place-value-times-ten.js";
 
 export interface TimesTenProblemText {
   amount: string;
@@ -58,3 +67,95 @@ export const TIMES_TEN_DEV_CASES: Array<{ id: string; ask: "count" | "times"; am
   { id: "PF-14", ask: "times", amount: "3", target: "0.3", result: "10", renamed: "30" },
   { id: "PF-15", ask: "times", amount: "0.4", target: "0.04", result: "10", renamed: "40" },
 ];
+
+// ---------------------------------------------------------------- lessons
+
+
+/** A written number in thousandths ("0.3" -> 300). */
+export const timesTenValue = (text: string): number => placeValueTimesTenParse(text)!;
+
+export interface TimesTenLessonInput {
+  language?: PlaceValueLanguage;
+  /** The lesson's problem, written ("0.3", "0.001"; a put-together question's own start). */
+  amount: string;
+  target: string;
+  start?: string;
+  /** Each practice task's numbers: a card task, then the card's answer row anchored to it. */
+  practice?: Array<[string, string]>;
+  beats?: AuthoringLesson["steps"][number]["beats"];
+  /** Tasks besides the practice ones (appended after them). */
+  extraTasks?: unknown[];
+}
+
+export function timesTenProblemOf(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">): PlaceValueTimesTenProblem {
+  const p = placeValueTimesTenProblem(timesTenValue(input.amount), timesTenValue(input.target), input.start === undefined ? undefined : timesTenValue(input.start));
+  if ("fault" in p) throw new Error(`fixture problem refused: ${p.fault}`);
+  return p;
+}
+export function timesTenPracticeOf(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">, amount: string, target: string): PlaceValueTimesTenProblem {
+  const p = placeValueTimesTenPracticeProblem(timesTenProblemOf(input), timesTenValue(amount), timesTenValue(target));
+  if ("fault" in p) throw new Error(`fixture practice refused: ${p.fault}`);
+  return p;
+}
+
+/** A practice start: the task's own numbers, "counted in" at its own start unit (the program's), every row unmoved. */
+export function timesTenStart(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">, amount: string, target: string) {
+  const p = timesTenPracticeOf(input, amount, target);
+  const values: Record<string, number> = { amount: p.amount, target: p.target, counted_in: p.start };
+  for (const field of placeValueTimesTenRowFields(p.g)) values[field] = 0;
+  return { kind: "practice" as const, variables: Object.keys(values), values };
+}
+
+/** The card's answer row for a problem, as a numeric_row's parts (answers as a learner writes them). */
+export function timesTenRow(p: PlaceValueTimesTenProblem, language: PlaceValueLanguage = "en-US") {
+  return placeValueTimesTenAnswerParts(p, language).map((part) => ("blank" in part ? { blank: { as: part.blank.as, answer: String(part.blank.answer) } } : part));
+}
+
+export function timesTenLesson(input: TimesTenLessonInput): AuthoringLesson {
+  const p = timesTenProblemOf(input);
+  const practices = (input.practice ?? []).map(([amount, target]) => timesTenPracticeOf(input, amount, target));
+  const all = [p, ...practices];
+  const span = (values: number[]) => ({ min: Math.min(...values), max: Math.max(...values) + (Math.min(...values) === Math.max(...values) ? 1 : 0) });
+  const counted = all.flatMap((q) => placeValueTimesTenPath(q));
+  const variables: Array<Record<string, unknown>> = [
+    { as: "amount", label: "amount", initial: p.amount, ...span(all.map((q) => q.amount)) },
+    { as: "target", label: "target", initial: p.target, ...span(all.map((q) => q.target)) },
+    { as: "counted_in", label: "counted in", initial: p.start, ...span(counted) },
+    ...placeValueTimesTenRowFields(p.g).map((field) => ({ as: field, label: field, initial: 0, min: 0, max: 511 })),
+  ];
+  const built = buildPlaceValueTimesTen({
+    as: "chart", role: "main_visual", place: { relation: "new_region" },
+    ...(input.language ? { language: input.language } : {}),
+    amount: { expression: "amount", initial: p.amount }, target: { expression: "target", initial: p.target },
+    ...(input.start !== undefined ? { start: timesTenValue(input.start) } : {}),
+    counted_in: { expression: "counted_in", initial: p.start },
+    moved_once: { expression: "moved_once", initial: 0 },
+    ...(p.g === 2 ? { moved_twice: { expression: "moved_twice", initial: 0 } } : {}),
+  });
+  const tasks = (input.practice ?? []).flatMap(([amount, target], i) => [
+    {
+      as: `practice-${i + 1}`, prompt: "Move every disk to the target column.", availability: { kind: "after_lesson" },
+      start: timesTenStart(input, amount, target),
+      allowed_operations: [{ kind: "card_tap", node: "chart" }],
+      completion: { kind: "card_fact", node: "chart", fact: "complete" },
+      hints: ["Tap any disk."],
+    },
+    {
+      as: `answer-${i + 1}`, anchor: "chart", prompt: "How many?", availability: { kind: "after_lesson" },
+      allowed_operations: [{ kind: "row_entry" }],
+      completion: { kind: "numeric_row", parts: timesTenRow(practices[i]!, input.language) },
+      hints: ["Count the target column."],
+    },
+  ]);
+  return {
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language: input.language ?? "en-US", title: "Ten of one place", goals: ["Count an amount in another unit"],
+      variables, tasks: [...tasks, ...(input.extraTasks ?? [])],
+    },
+    steps: [{ key: "show", purpose: "See the problem", beats: [{ key: "draw", say: "Here is the amount.", actions: built.actions }, ...(input.beats ?? [])] }],
+    close: { summary: "Ten of one place make one of the next.", focus: [built.whole] },
+  } as unknown as AuthoringLesson;
+}
+
+export const timesTenHost = (lessonId: string) => ({ lessonId, boardId: "b", baseRevision: 0, regionIntent: "new_topic" as const });

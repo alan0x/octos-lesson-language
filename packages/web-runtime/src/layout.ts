@@ -5,6 +5,7 @@ import { planBaseTenTrade } from "../../plugin-math/src/base-ten-trade.js";
 import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
 import { planMakeTen } from "../../plugin-math/src/make-ten.js";
+import { planPlaceValueTimesTen } from "../../plugin-math/src/place-value-times-ten.js";
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface BoardLayout {
@@ -98,6 +99,8 @@ export const CARD_FRAME = { x: 19, y: 17 } as const;
 const PLACE_VALUE_TRADE_TEXT_HEIGHT = 96;
 /** A make-ten card's lines around its frames: the problem, the line that follows them, and the notice. */
 const MAKE_TEN_TEXT_HEIGHT = 96;
+/** A place-value times-ten card's lines around its chart: the problem, its instruction (one or two lines), the notice. */
+const PLACE_VALUE_TIMES_TEN_TEXT_HEIGHT = 118;
 
 const GAP = { compact: 28, normal: 54, spacious: 88 } as const;
 const TOPIC_GUTTER = 180;
@@ -228,6 +231,11 @@ export function measureSemanticNode(node: Record<string, any>, options: MeasureO
   if (kind === "make_ten") {
     const plan = planMakeTen(content);
     return { width: Math.ceil(plan.width) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + MAKE_TEN_TEXT_HEIGHT };
+  }
+  // Sized from its plan at its natural size, room kept for the most its rows can hold (decision 0028). Desktop only.
+  if (kind === "place_value_times_ten") {
+    const plan = planPlaceValueTimesTen(content);
+    return { width: Math.max(Math.ceil(plan.width), 520) + 2 * CARD_FRAME.x, height: Math.ceil(plan.height) + 2 * CARD_FRAME.y + PLACE_VALUE_TIMES_TEN_TEXT_HEIGHT };
   }
   if (kind === "plot") return { width: 440, height: 390 };
   if (kind === "image") return { width: 340, height: 230 };

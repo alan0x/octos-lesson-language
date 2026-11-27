@@ -416,22 +416,33 @@ function countedInText(problem: PlaceValueTimesTenProblem, value: number, langua
   return short(language) === "en" ? `${placeValueNumeral(value)} (${placeValueEnUnitWord(place, true)})` : `${placeValueNumeral(value, language)}（${ZH_UNIT[place]}）`;
 }
 
+/** What "counted in" is on this problem, for a refusal: "is the unit the amount is counted in now, in thousandths: 100 = 0.1 (tenths) -> …". */
+export function placeValueTimesTenCountedInMeaning(problem: PlaceValueTimesTenProblem): string {
+  return `is the unit the amount is counted in now, in thousandths: ${placeValueTimesTenPath(problem).map((value) => `${value} = ${countedInText(problem, value)}`).join(" -> ")}`;
+}
+/** The values "counted in" may take next from `from` ("from 100 the next values are 10 or 1"). */
+function countedInNext(problem: PlaceValueTimesTenProblem, from: number): string {
+  const path = placeValueTimesTenPath(problem);
+  const at = placeValueTimesTenPosition(problem, from);
+  const next = path.filter((value, k) => k >= Math.ceil(at - 1e-9) && value !== from);
+  return next.length ? `from ${from} the next values are ${next.join(" or ")}` : `from ${from} it has reached the target, ${problem.target}`;
+}
+
 /**
  * Why the lesson cannot move "counted in" from `from` to `to`, or undefined when it can: `to` must be a value of
- * the path at or after `from`'s position (the same value again leaves the chart as it is). The sentence names the
- * next valid values, in thousandths and as written, for the compiler's refusal.
+ * the path at or after `from`'s position (the same value again leaves the chart as it is). The sentence follows the
+ * variable's name ("'counted_in' is the unit …") and names the next valid values, in thousandths and as written.
  */
 export function placeValueTimesTenCountedInFault(problem: PlaceValueTimesTenProblem, from: number, to: number): string | undefined {
   const path = placeValueTimesTenPath(problem);
-  const at = placeValueTimesTenPosition(problem, from);
-  const ahead = path.filter((_, k) => k >= Math.ceil(at - 1e-9));
   const index = path.indexOf(to);
-  if (index >= 0 && index + 1e-9 >= at) return undefined;
-  const route = path.map((value) => `${value} = ${countedInText(problem, value)}`).join(" -> ");
-  const next = ahead.filter((value) => value !== from);
-  const said = next.length ? `from ${from} the next values are ${next.join(" or ")}` : `from ${from} it has reached the target, ${problem.target}`;
+  if (index >= 0 && index + 1e-9 >= placeValueTimesTenPosition(problem, from)) return undefined;
   const why = index < 0 ? `${to} is not one of its values` : `it goes forward, not back to ${to}`;
-  return `'counted_in' is the unit the amount is counted in now, in thousandths: ${route}; ${why}; ${said}`;
+  return `${placeValueTimesTenCountedInMeaning(problem)}; ${why}; ${countedInNext(problem, from)}`;
+}
+/** Why a replay cannot set "counted in" to `value` (it may go back, to any value of the path), or undefined. */
+export function placeValueTimesTenCountedInReplayFault(problem: PlaceValueTimesTenProblem, value: number): string | undefined {
+  return placeValueTimesTenPath(problem).includes(value) ? undefined : `${placeValueTimesTenCountedInMeaning(problem)}; a replay sets one of these, not ${value}`;
 }
 
 // ---------------------------------------------------------------- content
@@ -516,9 +527,11 @@ export function validatePlaceValueTimesTenContent(raw: unknown, path: string, fa
   if (!PLACE_VALUE_TIMES_TEN_TOWARD.includes(content.toward as PlaceValueTimesTenToward)) fail(`${path}/toward`, "The card moves toward the 'right' (breaking) or the 'left' (putting together)");
   if (content.apart !== 1 && content.apart !== 2) fail(`${path}/apart`, "The two units are 1 or 2 places apart");
   if (content.question === "times" && (content.toward !== "right" || content.apart !== 1)) fail(`${path}/apart`, "A times pair breaks toward the right, one place apart");
-  const amount = wholeNumber(content.amount, `${path}/amount`, 1, MAX_VALUE, fail, "The amount (in thousandths)");
-  const target = wholeNumber(content.target, `${path}/target`, 1, MAX_VALUE, fail, "The target (in thousandths)");
-  const countedIn = wholeNumber(content.counted_in, `${path}/counted_in`, 1, MAX_VALUE, fail, "Counted in (in thousandths)");
+  // A variable may pass 0 (its range is the lesson's); a starting card's numbers are at least one thousandth.
+  const low = options.boundValues ? 0 : 1;
+  const amount = wholeNumber(content.amount, `${path}/amount`, low, MAX_VALUE, fail, "The amount (in thousandths)");
+  const target = wholeNumber(content.target, `${path}/target`, low, MAX_VALUE, fail, "The target (in thousandths)");
+  const countedIn = wholeNumber(content.counted_in, `${path}/counted_in`, low, MAX_VALUE, fail, "Counted in (in thousandths)");
   const once = wholeNumber(content.moved_once, `${path}/moved_once`, 0, PLACE_VALUE_TIMES_TEN_MAX_ROWS, fail, "The rows moved once");
   if (content.apart === 2) {
     if (content.moved_twice === undefined) fail(`${path}/moved_twice`, "Two places apart, the card has the rows moved twice");
@@ -534,7 +547,7 @@ export function validatePlaceValueTimesTenContent(raw: unknown, path: string, fa
   if ((twice & ~once) !== 0) fail(`${path}/moved_twice`, "A row moves twice only after it has moved once");
   const pathValues = placeValueTimesTenPath(p);
   if (!pathValues.includes(countedIn)) {
-    fail(`${path}/counted_in`, placeValueTimesTenCountedInFault(p, p.start, countedIn) ?? `'counted_in' is one of ${pathValues.join(", ")}`);
+    fail(`${path}/counted_in`, `'counted_in' ${placeValueTimesTenCountedInFault(p, p.start, countedIn) ?? `is one of ${pathValues.join(", ")}`}`);
   }
   if (countedIn !== p.start && (once !== 0 || twice !== 0)) {
     fail(`${path}/counted_in`, "A demonstration (counted in past its start) plays on a fresh chart: no row moved");
@@ -598,6 +611,14 @@ export function placeValueTimesTenStartFault(raw: unknown): string | undefined {
     return `A practice chart starts fresh: 'counted_in' is its own start unit, ${problem.start} (${countedInText(problem, problem.start)}), not ${content.counted_in}`;
   }
   if (content.moved_once || content.moved_twice) return "A practice chart starts fresh: no row moved (moved_once and moved_twice are 0)";
+  return undefined;
+}
+
+/** The same, for a state (the core checks a practice pile as the card's state): its demonstration or a moved row. */
+export function placeValueTimesTenStateStartFault(state: PlaceValueTimesTenState): string | undefined {
+  const p = state.problem;
+  if ((state.demo ?? 0) > 0) return `A practice chart starts fresh: 'counted_in' is its own start unit, ${p.start} (${countedInText(p, p.start)}), not a value the demonstration reaches`;
+  if (state.stages.some((k) => k > 0)) return "A practice chart starts fresh: no row moved (moved_once and moved_twice are 0)";
   return undefined;
 }
 

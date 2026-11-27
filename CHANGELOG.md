@@ -4,6 +4,21 @@
 
 ### Added
 
+- **An amount counted in another unit: ten of one place make one of the next** (math plugin 0.11.0, feature `plugin:math/place-value-times-ten@1`; player 0.19.0; decision 0028, need 35P-04). A `place_value_times_ten` card. It has two shapes: a count ("3 tenths = ? thousandths", "30 tens = ? hundreds") and a times pair ("700 is ? times 70").
+  - **Recipe.** `MATH_BUILDERS.place_value_times_ten` (`buildPlaceValueTimesTen`), registered as `PLACE_VALUE_TIMES_TEN_CARD`.
+  - **Taps.** The learner's taps are `move` (a row's disk, row of ten or square moves one place toward the target), and on a times pair `copy` and `smaller`. `copy` and `smaller` are always refused, with the fact they ask about. A tap's `place` is its row, 0 to 9.
+  - **The learner's state.** Every field is card-level and bound by its bare name: `amount`, `target`, `counted_in`, `moved_once` and `moved_twice`. The state is one or two row sets, `moved_once` and `moved_twice`, where bit i is row i and the range is 0 to 511. The piece tapped is the piece that moves, and a practice of another digit binds the same range. A practice start and a replay reset both row sets to 0.
+  - **Demonstration.** The demonstration is `counted_in`, the unit the amount is counted in now, in thousandths. It is the card's `CardDemonstration` (`PLACE_VALUE_TIMES_TEN_DEMONSTRATION`):
+    - It starts at the unit the question names (the card computes it; never 0) and the card opens there, with no row moved (`moved_once` and `moved_twice` 0, as written and as the variables start it).
+    - It moves along the problem's path, never back. A refusal names the path and the next valid values.
+    - A replay may set any value of the path.
+  - **No "done".** The `complete` fact is judged on each tap. Each practice starts on its own problem, at its own start unit, with no row moved.
+  - **No learner control on the card's fields.** A variable bound to any tap card's field (the card's numbers, its demonstration field, its tap fields) cannot have its own control, with or without a card task, so a learner never drags a demonstration. A count slider that trades on its own base-ten card (amendment 4) is unchanged. This applies to `make_ten` and `place_value_trade` too.
+  - **Out of range.** An animation of the demonstration field outside its variable's range is said on the card as the lesson has played it (a replay may have set another problem), like the step and replay refusals.
+  - **Answers tied to the card.** A typed task anchored to the card right after a task on it asks the card's own answers (`TapCardKind.answers`). A row of blanks must match exactly: one blank for a count, two for a times pair. A single answer must be one of them.
+  - **Board.** The card is drawn and updated in place. Each move is animated: a disk flying apart into ten, ten gathering into one, a times pair dealing one disk into each copy. A copy's fact is said beside that copy. The instruction line stays in one place. Desktop only.
+  - **Tests and checks.** 15,946 ported sketch model checks, plus tests of the registry, the fact, lessons, the demonstration and the answer tie. `npm run check:place-value-times-ten-browser` covers a count, a times pair, Chinese put-together questions and the demonstration by real clicks, and checks that the largest cards, worked as practice cards, fit 1,024 px.
+
 - **Making ten to add on two ten frames** (math plugin 0.10.0, feature `plugin:math/make-ten@1`; player 0.18.0; decision 0027, need K2N-19). A `make_ten` card draws two ten frames. The smaller addend's counters are tapped across to fill the bigger addend's frame, so 8 + 6 becomes 10 + 4.
   - **Recipe.** `MATH_BUILDERS.make_ten` (`buildMakeTen`), registered as `MAKE_TEN_CARD`.
   - **Taps.** The learner's taps are `give` and `back`; a tap's `place` is the frame tapped. Each tap changes `moved`.

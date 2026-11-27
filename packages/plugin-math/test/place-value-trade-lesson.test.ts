@@ -113,8 +113,8 @@ test("a trade lesson with a practice pair and a typed answer: validated, normali
 
 test("a trade lesson requires the card's feature, its fact and the card-level bindings: player 0.17.0, math 0.9.0", () => {
   // The make-ten card (0027) moved both on since; a trade lesson still needs only player 0.17.0 and math 0.9.0.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.10.0");
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.18.0");
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.0");
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.19.0");
   const events = normalizeAuthoringLesson(add(), tradeHost("pt"));
   const requirements = deriveExecutionRequirements(events);
   for (const feature of [PLACE_VALUE_TRADE_FEATURE, "student-tasks:card_fact:complete", "value-bindings:card-field", "student-tasks:numeric_answer"]) assert.ok(requirements.requiredCapabilities.includes(feature), feature);
@@ -263,4 +263,16 @@ test("a lesson that only demonstrates the card needs the player that draws it (0
   const board = reduceCanonicalEvents(events);
   assert.throws(() => applyCanonicalAction(board, { action_id: "x", op: "card.tap", target: { node_id: "only:node:sum" }, tap: { kind: "down", place: 3 } } as any),
     /A place_value_trade card is not tapped by a lesson: it is shown by its 'finished'/);
+});
+
+test("no field bound to the card takes a learner's slider, task or no task (review of #123)", () => {
+  const variable = (lesson: AuthoringLesson, as: string) => (lesson.lesson.variables as any[]).find((candidate) => candidate.as === as);
+  for (const [as, field] of [["a", "a"], ["b", "b"], ["finished", "finished"], [tradeVariable(0), "places.0.status"]] as const) {
+    const lesson = add({ practice: [] });
+    variable(lesson, as).control = { kind: "slider", step: 1 };
+    assert.throws(() => validateAuthoringLesson(lesson), new RegExp(`Variable '${as}' is bound to a place_value_trade card's '[^']+': the card changes it, so it cannot have its own control`), field);
+  }
+  const other = add({ practice: [] });
+  (other.lesson.variables as any[]).push({ as: "other", label: "other", initial: 0, min: 0, max: 5, control: { kind: "slider", step: 1 } });
+  assert.doesNotThrow(() => validateAuthoringLesson(other));
 });

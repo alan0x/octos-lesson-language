@@ -332,6 +332,35 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 
 演示字段（`TapCardKind.demonstration`，决定 0027 接进 OLL 时从 0026 推广）：只通过一个卡片级字段演示的卡片自己说明这个字段——`start(content)`（新卡片的值，练习的起点必须是它）、`refuseStep(content, from, to)`（课动画到这个值时拒绝的理由）、`refuseReplay(content, value)`、`outside(content, value)`、`opensAtStart`（卡片必须从起点打开），以及拒绝里用的词。`wholeForwardDemonstration` 做出「一次一个整数、只往前」的那一种；`place_value_trade` 的 `finished` 和 `make_ten` 的 `filled` 都是它。
 
+一个数换一个单位来数（`place_value_times_ten`，数学插件 0.11.0，特性 `plugin:math/place-value-times-ten@1`，播放器 0.19.0，决定 0028）：往右一位一个变成十个，往左一位十个合成一个。
+
+```json
+"tasks": [{
+  "as": "practice",
+  "start": {"kind": "practice", "variables": ["amount", "target", "counted_in", "moved_once", "moved_twice"],
+            "values": {"amount": 5000, "target": 10, "counted_in": 1000, "moved_once": 0, "moved_twice": 0}},
+  "prompt": "Move every disk to the hundredths.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "card_tap", "node": "chart"}],
+  "completion": {"kind": "card_fact", "node": "chart", "fact": "complete"},
+  "hints": ["Tap any disk."]
+}, {
+  "as": "count", "anchor": "chart", "prompt": "How many hundredths?", "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "row_entry"}],
+  "completion": {"kind": "numeric_row", "parts": [{"text": "5 ones ="}, {"blank": {"as": "count", "answer": "500"}}, {"text": "hundredths"}]},
+  "hints": ["Count the squares."]
+}]
+```
+
+- 卡片的内容：固定的形状 `question`（`count` 数单位，或 `times` 倍数）、`toward`（`right` 拆开，`left` 合起来；倍数是 `right`）、`apart`（1 或 2；倍数是 1）；`amount`、`target`（整千分之一，0.3 写 300；倍数题大的在 `amount`）；`counted_in`（演示：现在用什么单位在数，整千分之一）；孩子的状态 `moved_once`，隔两位时还有 `moved_twice`（一组行，第 i 位是第 i 行，0 到 511）。列从数算出来（不是固定字段），所以练习可以换位置，但形状一样；
+- 每个字段都是卡片级字段，按名字绑定（`amount`、`target`、`counted_in`、`moved_once`、`moved_twice`，能力 `value-bindings:card-field`），一个变量只绑定一个字段，绑定直接写变量名；`moved_once`、`moved_twice` 的变量从 0 到 511；
+- 点按（只有学生点，课不点）：`move`（第几行的东西往目标走一位：一个圆片拆成右边一列的一排十个，一排十个拆成一块一百个；或者反过来合起来），倍数还有 `copy`（第几个小的数）和 `smaller`（下面那个小的数），这两种总被拒绝，拒绝的话就是那个事实（「This 70 has 3 tens; 70 is 7 tens.」）。点按的 `place` 是行号，0 到 9（`row-1` 到 `row-10`）；
+- 演示：课只通过 `counted_in` 演示。它从题目说的单位开始（卡片按自己的形状和数算出起点，`placeValueTimesTenStartUnit`，不是 0），沿着路径往目标走：0.1 → 0.01 → 0.001 写成 100 → 10 → 1；倍数 700 和 70 写成 100000 → 70000。可以一次写到后面的值（程序一个一个演出中间的拆开），不能往回，不能写路径上没有的值；拒绝时说出路径和下一个可以写的值。课上写出的卡片从起点开始；重放起点可以把它设成路径上任何一个值，两组行都回到 0；
+- 练习的起点：自己的 `amount`、`target`（不能和课里的一样），`counted_in` 是这道练习自己的起点单位，两组行是 0。事实 `complete`（每一行都到了目标列；倍数是十个小的数都满了）在每次点按后判定，同 0026；做完以后的那张表按这道练习自己的数算；
+- 挂在卡片上、紧跟在这张卡片的任务后面的填数（`numeric_answer`）或一行几个空（`numeric_row`）问的是卡片自己的答案：一行几个空就是卡片的那几个（数单位一个，倍数两个：「7 hundreds = __ tens; 700 is __ times 70」），一个空是其中一个。别处挂在卡片上的问题不受这个限制；
+- 编译器拒绝（只丢这张图）：`amount` 不是一位上一个数字（`not_one_digit`），两个单位隔三位以上或倍数不在相邻两位（`too_far`），大的单位超过 9 个（`too_many`），数不成整数（`not_whole`），形状不对（`not_same_shape`），超出百万位到千分位；
+- 只做桌面（约 1024 像素宽以上）；卡片一开始就按最多的时候留好地方，做的时候不会长高。卡片自己的操作说明 `cardHowTo("place_value_times_ten", content)`；卡片上还有一行跟着表的状态变的说明（每一种能点的东西各一句），位置固定。后面几节可用的事实：`placeValueTimesTenFacts` 和 `placeValueTimesTenStepSentences`；锁着时的那句话 `placeValueTimesTenLockedText`、一行几个空 `placeValueTimesTenAnswerParts`、全对以后的那句话 `placeValueTimesTenDoneText`（倍数在这里说「1/10」）。
+
 数位上的滑块（数学插件 0.7.0，特性 `plugin:math/base-ten-trade-slider@1`，决定 0023 修订 4）：
 
 - 有托盘的那一位（个位；三列时也可以是十位）的个数变量可以写 `control: {"kind": "slider", "step": 10}`；步长必须正好是 10。托盘、最高一位不能有滑块，这些变量也不能有其他控件。卡片上每一位的个数和每个托盘都必须绑定到它自己的变量，范围和点按一样；

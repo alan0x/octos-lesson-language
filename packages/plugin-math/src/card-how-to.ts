@@ -8,12 +8,14 @@ import { BASE_TEN_TRADE_KIND, baseTenHowTo } from "./base-ten-trade.js";
 import { PLACE_VALUE_CHART_KIND, placeValueHowTo } from "./place-value-chart.js";
 import { PLACE_VALUE_TRADE_KIND, placeValueTradeHowTo } from "./place-value-trade.js";
 import { MAKE_TEN_KIND, makeTenHowTo } from "./make-ten.js";
+import { PLACE_VALUE_TIMES_TEN_KIND, placeValueTimesTenHowTo } from "./place-value-times-ten.js";
 
 const HOW_TO: Readonly<Record<string, (content: unknown) => string>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: baseTenHowTo,
   [PLACE_VALUE_CHART_KIND]: placeValueHowTo,
   [PLACE_VALUE_TRADE_KIND]: placeValueTradeHowTo,
   [MAKE_TEN_KIND]: makeTenHowTo,
+  [PLACE_VALUE_TIMES_TEN_KIND]: placeValueTimesTenHowTo,
 });
 
 /** The card's how-to text in its language, or undefined for a kind that has none. */

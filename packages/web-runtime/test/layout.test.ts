@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { reduceCanonicalEvents, type SemanticBoardState } from "../../core/src/index.js";
 import { computeBoardLayout, measureSemanticNode, targetRect, type MeasuredNodeSizes } from "../src/layout.js";
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
+import { planPlaceValueTimesTen } from "../../plugin-math/src/place-value-times-ten.js";
 import { planMakeTen } from "../../plugin-math/src/make-ten.js";
 import { parseCanonicalJsonl } from "../src/runtime.js";
 
@@ -1481,4 +1482,20 @@ test("a make-ten card is sized from its plan at its natural size, desktop only (
   assert.deepEqual(size, { width: Math.ceil(plan.width) + 38, height: Math.ceil(plan.height) + 34 + 96 });
   assert.ok(size.width <= 1024, `${size.width}`);
   assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
+});
+
+test("a place-value times-ten card is sized from its plan at its natural size, desktop only (decision 0028)", () => {
+  // The widest: 9 ones -> hundredths, two places apart, with the decimal point.
+  const content = { question: "count", toward: "right", apart: 2, amount: 9000, target: 10, counted_in: 1000, moved_once: 0, moved_twice: 0 };
+  const node = { id: "chart", kind: "place_value_times_ten", content };
+  const plan = planPlaceValueTimesTen(content);
+  const size = measureSemanticNode(node);
+  assert.deepEqual(size, { width: Math.ceil(plan.width) + 38, height: Math.ceil(plan.height) + 34 + 118 });
+  assert.ok(size.width <= 1024, `${size.width}`);
+  // Moving every row changes nothing about the card's size; nor does a narrow screen.
+  assert.deepEqual(measureSemanticNode({ ...node, content: { ...content, moved_once: 511, moved_twice: 511 } }), size);
+  assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
+  // A small card keeps a width its lines fit.
+  const small = measureSemanticNode({ id: "c", kind: "place_value_times_ten", content: { question: "count", toward: "right", apart: 1, amount: 1000, target: 100, counted_in: 1000, moved_once: 0 } });
+  assert.ok(small.width >= 520 + 38, `${small.width}`);
 });

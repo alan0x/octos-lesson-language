@@ -1,7 +1,7 @@
 /**
  * Cards the learner taps, routed by card kind: the trading mat (decision 0023), the place-value chart (0025),
- * the place-value trade card, adding and subtracting on the chart as the written method (0026), and the
- * make-ten card, two ten frames (0027).
+ * the place-value trade card, adding and subtracting on the chart as the written method (0026), the make-ten
+ * card, two ten frames (0027), and the place-value times-ten card, an amount counted in another unit (0028).
  *
  * A tap card is a plugin card whose own program decides what a tap does: it refuses a tap it cannot make
  * (with a reason and a sentence for the learner), and otherwise changes some of its fields, each bound to
@@ -35,6 +35,14 @@ import {
   applyMakeTenTap, makeTenAddend, makeTenChanges, makeTenComplete, makeTenFreshCount, makeTenGiver, makeTenLanguage, makeTenProblemOf, makeTenRefusalText,
   makeTenStartFault, makeTenState, validateMakeTenContent, type MakeTenState, type MakeTenTapKind,
 } from "../../plugin-math/src/make-ten.js";
+import {
+  PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_MAX_ROWS,
+  PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS, PLACE_VALUE_TIMES_TEN_ROW_FIELDS, PLACE_VALUE_TIMES_TEN_TAP_PLACES, PLACE_VALUE_TIMES_TEN_TAPS, PLACE_VALUE_TIMES_TEN_WORDS,
+  applyPlaceValueTimesTenTap, placeValueTimesTenChanges, placeValueTimesTenComplete, placeValueTimesTenContentProblem, placeValueTimesTenCountedInFault, placeValueTimesTenCountedInMeaning, placeValueTimesTenCountedInReplayFault,
+  placeValueTimesTenAnswerParts, placeValueTimesTenDoneText, placeValueTimesTenLanguage, placeValueTimesTenPath, placeValueTimesTenPosition, placeValueTimesTenRefusalText, placeValueTimesTenRowFields,
+  placeValueTimesTenState, placeValueTimesTenStateStartFault, validatePlaceValueTimesTenContent,
+  type PlaceValueTimesTenContent, type PlaceValueTimesTenState, type PlaceValueTimesTenTapKind,
+} from "../../plugin-math/src/place-value-times-ten.js";
 import type { JsonObject } from "./types.js";
 
 type Fail = (path: string, message: string) => never;
@@ -210,6 +218,11 @@ export interface TapCardKind<S = unknown> {
   validateStart?(state: S, fail: (message: string) => never): void;
   /** The facts a `card_fact` task may read, by name. */
   readonly facts: Readonly<Record<string, CardFactKind<S>>>;
+  /**
+   * The typed answers the card's own problem has, in order, with the sentence that states them (decision 0028):
+   * a typed task anchored to the card right after a task on it asks these, so its answers are the card's.
+   */
+  answers?(state: S, language?: string): { values: number[]; text: string } | undefined;
 }
 
 /** The place's name in content: its canonical `id` on the board, its `as` in authoring content. */
@@ -720,12 +733,161 @@ export const MAKE_TEN_CARD: TapCardKind<MakeTenState> = Object.freeze({
   }),
 });
 
+/** The tap a times-ten card's refusal answers: each reason belongs to one tap. */
+const TIMES_TEN_TAP_OF_REASON: Readonly<Record<string, PlaceValueTimesTenTapKind>> = Object.freeze({
+  no_thing: "move", at_target: "move", demonstrating: "move", copy_short: "copy", copy_full: "copy", not_times: "copy", smaller: "smaller",
+});
+
+/** The times-ten card's content at a pile given by binding target (bound fields only; every field is card-level). */
+const timesTenContentAt = (content: JsonObject, value: (target: string) => number | undefined): JsonObject => {
+  const at = structuredClone(content);
+  delete at.bindings;
+  for (const field of [...PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, ...PLACE_VALUE_TIMES_TEN_ROW_FIELDS]) {
+    const v = value(field);
+    if (v !== undefined && (field !== "moved_twice" || at.apart === 2)) at[field] = v;
+  }
+  return at;
+};
+
+/** The problem a times-ten content's numbers make, or undefined when the card refuses them. */
+const timesTenProblem = (content: unknown) => {
+  const problem = placeValueTimesTenContentProblem(content);
+  return "fault" in problem ? undefined : problem;
+};
+const TIMES_TEN_NO_PROBLEM = "is a place_value_times_ten card's demonstration, but the card's numbers are not a problem it takes";
+
+/**
+ * The times-ten card's demonstration (decision 0028): "counted in", the unit the amount is counted in now, in
+ * thousandths. It starts at the unit the question names (never 0), and moves along the problem's path toward the
+ * target (0.1 -> 0.01 -> 0.001, or 100 -> 70 for a times pair), never back; a replay sets any value of the path.
+ * Each refusal names the path and the next valid values.
+ */
+export const PLACE_VALUE_TIMES_TEN_DEMONSTRATION: CardDemonstration = Object.freeze({
+  field: PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD,
+  tapState: "a set of the rows the learner moved",
+  shows: "(counted in: the unit the amount is counted in now, from the unit the question names to the target, in thousandths), and the program plays each row's move",
+  fresh: "chart",
+  opensAtStart: true,
+  start(content: unknown): number {
+    const problem = timesTenProblem(content);
+    return problem ? problem.start : Number((content as { counted_in?: unknown } | null)?.counted_in);
+  },
+  refuseStep(content: unknown, from: number, to: number): string | undefined {
+    const problem = timesTenProblem(content);
+    return problem ? placeValueTimesTenCountedInFault(problem, from, to) : TIMES_TEN_NO_PROBLEM;
+  },
+  refuseReplay(content: unknown, value: number): string | undefined {
+    const problem = timesTenProblem(content);
+    return problem ? placeValueTimesTenCountedInReplayFault(problem, value) : TIMES_TEN_NO_PROBLEM;
+  },
+  outside(content: unknown, value: number): string {
+    const problem = timesTenProblem(content);
+    return problem ? `${placeValueTimesTenCountedInMeaning(problem)}; ${value} is outside its variable's range` : TIMES_TEN_NO_PROBLEM;
+  },
+});
+
+/**
+ * The place-value times-ten card (decision 0028): an amount counted in another unit, a count (3 tenths = ?
+ * thousandths) or a times pair (700 is ? times 70). The learner's taps are `move` (a row's disk, row of ten or
+ * square moves one place toward the target), and on a times pair `copy` and `smaller`, always refused with the
+ * fact they ask about; a tap's place is its row (`row-1` to `row-10`). The learner's state is one or two row sets
+ * (`moved_once`, `moved_twice`, 0 to 511, bit i = row i), bound by their bare names like the card's numbers. The
+ * lesson never taps the card: it shows it by "counted in", and the program plays each row's move.
+ */
+export const PLACE_VALUE_TIMES_TEN_CARD: TapCardKind<PlaceValueTimesTenState> = Object.freeze({
+  kind: PLACE_VALUE_TIMES_TEN_KIND,
+  taps: PLACE_VALUE_TIMES_TEN_TAPS,
+  places: PLACE_VALUE_TIMES_TEN_TAP_PLACES,
+  cardFields: PLACE_VALUE_TIMES_TEN_CARD_BINDINGS,
+  practiceFields: PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS,
+  demonstration: PLACE_VALUE_TIMES_TEN_DEMONSTRATION,
+  fieldsAtOnce: true,
+  validateContent: (raw: unknown, path: string, fail: Fail, options?: { start?: boolean }) => {
+    validatePlaceValueTimesTenContent(raw, path, fail);
+    // A card opens fresh (review of #123): no row moved, as written and as its variables start it.
+    const rows = raw as { moved_once?: unknown; moved_twice?: unknown };
+    if (options?.start && (rows.moved_once || rows.moved_twice)) fail(`${path}/${rows.moved_once ? "moved_once" : "moved_twice"}`, "A card opens fresh: no row moved (moved_once and moved_twice are 0)");
+  },
+  state: placeValueTimesTenState,
+  apply: (state: PlaceValueTimesTenState, tap: CardTap): CardTapResult<PlaceValueTimesTenState> => {
+    const result = applyPlaceValueTimesTenTap(state, { tap: tap.kind as PlaceValueTimesTenTapKind, row: tap.place });
+    return result.ok ? { ok: true, state: result.state } : { ok: false, reason: result.reason };
+  },
+  refusalText(reason: string, place: number, language?: string, state?: PlaceValueTimesTenState): string {
+    const lang = language === "zh-CN" ? "zh-CN" : "en-US";
+    const tap = TIMES_TEN_TAP_OF_REASON[reason];
+    if (state && tap) {
+      const text = placeValueTimesTenRefusalText(state, { tap, row: place }, lang);
+      if (text) return text;
+    }
+    const words = PLACE_VALUE_TIMES_TEN_WORDS[lang];
+    return reason === "demonstrating" ? words.refusal.demonstrating : words.other;
+  },
+  language: placeValueTimesTenLanguage,
+  // A row set is a card-level field: its change is named by the field, at the card's first place.
+  changes: (before: PlaceValueTimesTenState, after: PlaceValueTimesTenState): CardFieldChange[] =>
+    placeValueTimesTenChanges(before, after).map(({ field, before: from, after: to }) => ({ place: 0, field, before: from, after: to })),
+  tapFields(content: unknown): CardTapField[] {
+    const apart = (content as { apart?: unknown } | null)?.apart === 2 ? 2 : 1;
+    return placeValueTimesTenRowFields(apart).map((field) => ({ place: 0, field, min: 0, max: PLACE_VALUE_TIMES_TEN_MAX_ROWS }));
+  },
+  fieldTarget: (_content: unknown, _place: number, field: string) => field,
+  contentAt: timesTenContentAt,
+  /** A practice chart starts fresh: counted in at its own start unit, no row moved. */
+  validateStart(state: PlaceValueTimesTenState, fail: (message: string) => never): void {
+    const fault = placeValueTimesTenStateStartFault(state);
+    if (fault) fail(fault);
+  },
+  answers(state: PlaceValueTimesTenState, language?: string) {
+    const p = state.problem;
+    if (!p.n) return undefined;
+    const lang = language === "zh-CN" ? "zh-CN" : "en-US";
+    const values = placeValueTimesTenAnswerParts(p, lang).flatMap((part) => ("blank" in part ? [part.blank.answer] : []));
+    return { values, text: placeValueTimesTenDoneText(p, lang).replace(/^✓ /u, "") };
+  },
+  facts: Object.freeze({
+    /**
+     * Every row has reached the target: the chart holds the amount in the target unit (a times pair: ten whole
+     * copies). Judged on each tap, so the task ends on the tap that completes the chart; the typed answer is a
+     * task of its own after it.
+     */
+    complete: {
+      keys: [],
+      judgedOnTap: true,
+      read: (_completion: CardFactCompletion, state: PlaceValueTimesTenState) => {
+        const actual = placeValueTimesTenComplete(state) ? 1 : 0;
+        return { actual, target: 1, succeeded: actual === 1 };
+      },
+      /**
+       * The one finished chart of the task's own problem (every tap order ends on it), computed, never read from a
+       * logged pile: the task's numbers, "counted in" at the task's own start unit, every row moved.
+       */
+      donePile({ content, startValue }: CardDonePileContext): Record<string, number> | undefined {
+        const bound = boundTargets(content);
+        const number = (field: string) => (bound.has(field) ? startValue(bound.get(field)) : Number(content[field]));
+        const own = { ...content, amount: number("amount"), target: number("target") } as Partial<PlaceValueTimesTenContent>;
+        const problem = placeValueTimesTenContentProblem(own);
+        if ("fault" in problem) return undefined;
+        const rows = 2 ** problem.n - 1;
+        const result: Record<string, number> = {};
+        for (const [target, alias] of bound) {
+          if (target === "amount" || target === "target") result[alias] = number(target);
+          else if (target === "counted_in") result[alias] = problem.start;
+          else if (target === "moved_once" || target === "moved_twice") result[alias] = rows;
+        }
+        return result;
+      },
+    },
+  }),
+});
+
 /** Every card kind the learner taps, by node kind. */
 export const TAP_CARD_KINDS: Readonly<Record<string, TapCardKind>> = Object.freeze({
   [BASE_TEN_TRADE_KIND]: BASE_TEN_TRADE_CARD as TapCardKind,
   [PLACE_VALUE_CHART_KIND]: PLACE_VALUE_CHART_CARD as TapCardKind,
   [PLACE_VALUE_TRADE_KIND]: PLACE_VALUE_TRADE_CARD as TapCardKind,
   [MAKE_TEN_KIND]: MAKE_TEN_CARD as TapCardKind,
+  [PLACE_VALUE_TIMES_TEN_KIND]: PLACE_VALUE_TIMES_TEN_CARD as TapCardKind,
 });
 
 /** The tap card of a node kind, or undefined when the kind is not one. */

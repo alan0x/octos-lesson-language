@@ -27,7 +27,7 @@ const canonical = (ones: number, tens: number, tray = 0) => ({
 });
 
 test("the registry holds the trading mat, the place-value chart, the trade card and the make-ten card, looked up by node kind", () => {
-  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND, MAKE_TEN_KIND]);
+  assert.deepEqual(TAP_CARD_KIND_NAMES, [BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND, MAKE_TEN_KIND, "place_value_times_ten"]);
   assert.equal(tapCardKind(PLACE_VALUE_TRADE_KIND), PLACE_VALUE_TRADE_CARD);
   assert.equal(tapCardKind(MAKE_TEN_KIND), MAKE_TEN_CARD);
   assert.ok(Object.isFrozen(PLACE_VALUE_TRADE_CARD) && Object.isFrozen(MAKE_TEN_CARD));
@@ -40,8 +40,8 @@ test("the registry holds the trading mat, the place-value chart, the trade card 
   assert.equal(tapCardKind(BASE_TEN_TRADE_KIND), BASE_TEN_TRADE_CARD);
   assert.equal(tapCardKind(PLACE_VALUE_CHART_KIND), PLACE_VALUE_CHART_CARD);
   for (const kind of ["number_line", "fraction_model", "toString", "__proto__", "", undefined, 3]) assert.equal(tapCardKind(kind), undefined);
-  assert.equal(tapCardKindList(), "base_ten_trade, place_value_chart, place_value_trade or make_ten");
-  assert.equal(tapCardKindList("and"), "base_ten_trade, place_value_chart, place_value_trade and make_ten");
+  assert.equal(tapCardKindList(), "base_ten_trade, place_value_chart, place_value_trade, make_ten or place_value_times_ten");
+  assert.equal(tapCardKindList("and"), "base_ten_trade, place_value_chart, place_value_trade, make_ten and place_value_times_ten");
   assert.ok(Object.isFrozen(TAP_CARD_KINDS) && Object.isFrozen(BASE_TEN_TRADE_CARD) && Object.isFrozen(PLACE_VALUE_CHART_CARD));
   // The mat binds no card-level field and has no starting rules of its own: its checks are unchanged.
   assert.equal(BASE_TEN_TRADE_CARD.cardFields, undefined);

@@ -102,8 +102,9 @@ test("a make-ten lesson with a practice pair and the row anchored on the card: v
 });
 
 test("a make-ten lesson requires the card's feature, its fact, the card-level bindings and the row: player 0.18.0, math 0.10.0", () => {
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.10.0");
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.18.0");
+  // The times-ten card (0028) moved both on since; a make-ten lesson still needs only player 0.18.0 and math 0.10.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.0");
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.19.0");
   const events = normalizeAuthoringLesson(lesson86(), makeTenHost("mt"));
   const requirements = deriveExecutionRequirements(events);
   for (const feature of [MAKE_TEN_FEATURE, "card:make_ten", "student-tasks:card_fact:complete", "value-bindings:card-field", "student-tasks:numeric_row"]) {
@@ -260,4 +261,16 @@ test("the demonstration's rules cannot be bypassed: plain bindings, beats before
   const board = reduceCanonicalEvents(events);
   assert.throws(() => applyCanonicalAction(board, { action_id: "x", op: "card.tap", target: { node_id: "only:node:frames" }, tap: { kind: "give", place: 1 } } as any),
     /A make_ten card is not tapped by a lesson: it is shown by its 'filled'/);
+});
+
+test("no field bound to the card takes a learner's slider, task or no task (review of #123)", () => {
+  for (const as of ["a", "b", "filled", "moved"]) {
+    const lesson = lesson86({ practice: [] });
+    variable(lesson, as).control = { kind: "slider", step: 1 };
+    assert.throws(() => validateAuthoringLesson(lesson), new RegExp(`Variable '${as}' is bound to a make_ten card's '${as}': the card changes it, so it cannot have its own control`));
+  }
+  // A slider on a variable the card does not bind is the lesson's own.
+  const other = lesson86({ practice: [] });
+  (other.lesson.variables as any[]).push({ as: "other", label: "other", initial: 0, min: 0, max: 5, control: { kind: "slider", step: 1 } });
+  assert.doesNotThrow(() => validateAuthoringLesson(other));
 });
