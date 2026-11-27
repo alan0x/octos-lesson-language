@@ -347,7 +347,8 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueTim
     view.note = context.notice ? { ...(context.refused?.kind === "copy" ? { row: context.refused.place } : {}), text: context.notice } : undefined;
   }
   const shown = view.target ?? view.shown;
-  if (shown && sameProblem(shown, state) && placeValueTimesTenStateKey(shown) === placeValueTimesTenStateKey(state) && (shown.demo ?? 0) === (state.demo ?? 0)) {
+  // An eased "counted in" between two rows' moves changes nothing drawn: compare the rows, and only whether it demonstrates.
+  if (shown && sameProblem(shown, state) && placeValueTimesTenStateKey(shown) === placeValueTimesTenStateKey(state) && ((shown.demo ?? 0) > 0) === ((state.demo ?? 0) > 0)) {
     const key = JSON.stringify([context.live === true, view.note ?? null]);
     if (!view.queue.length && view.timer === undefined && key !== view.drawnContext) draw(view, view.shown ?? state);
     return;

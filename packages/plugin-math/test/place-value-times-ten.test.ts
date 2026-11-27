@@ -268,7 +268,8 @@ test("content: a starting card, its shape, its row sets and counted in", () => {
 test("state: total, the row sets read for the problem's rows, counted in shows the demonstration", () => {
   const a = prob("0.3", "0.001"), b = prob("700", "70");
   const fresh = contentOf(m.placeValueTimesTenStart(a));
-  eq(m.placeValueTimesTenState({ ...fresh, moved_once: 511, moved_twice: 511 }).stages, [2, 2, 2], "bits past the rows ignored");
+  eq(m.placeValueTimesTenState({ ...fresh, moved_once: 8 }).stages, [0, 0, 0], "a bit past the problem's rows is ignored (row 4 of 3)");
+  eq(m.placeValueTimesTenState({ ...fresh, moved_once: 511, moved_twice: 511 }).stages, [2, 2, 2], "only the problem's rows are read");
   eq(m.placeValueTimesTenState({ ...fresh, moved_once: 0, moved_twice: 7 }).stages, [0, 0, 0], "twice without once has not moved");
   eq(m.placeValueTimesTenState({ ...fresh, moved_once: 5, moved_twice: 1 }).stages, [2, 0, 1], "rows 1 and 3 once, row 1 twice");
   eq(m.placeValueTimesTenState({ amount: "x" }).problem.n, 0, "a content the card refuses: an empty chart");
@@ -293,6 +294,26 @@ test("state: total, the row sets read for the problem's rows, counted in shows t
   const up = contentOf(m.placeValueTimesTenStart(d));
   eq(m.placeValueTimesTenPath(d), [1, 10, 100], "500 thousandths counted in 0.001, 0.01, 0.1");
   eq(m.placeValueTimesTenState({ ...up, counted_in: 10 }).stages, Array(5).fill(1), "at 0.01 every square is a row of ten");
+});
+
+test("review of #121: a refused problem is never complete, a stray bit never moves a row twice, a times pair on a count card", () => {
+  const refused = { question: "count", toward: "right", apart: 2, amount: 2500, target: 1, counted_in: 100, moved_once: 0, moved_twice: 0 };
+  ok(!m.placeValueTimesTenComplete(m.placeValueTimesTenState(refused)), "a card the problem refuses is not complete");
+  ok(m.placeValueTimesTenStartFault(refused)?.includes("not_one_digit"), "nor a practice start");
+  const a = prob("0.3", "0.001");
+  const stray = m.placeValueTimesTenState({ ...contentOf(m.placeValueTimesTenStart(a)), moved_once: 0, moved_twice: 1 });
+  const tapped = m.placeValueTimesTenMove(stray, 0);
+  ok(tapped.ok, "the row moves");
+  if (tapped.ok) {
+    eq(m.placeValueTimesTenChanges(stray, tapped.state), [{ field: "moved_once", before: 0, after: 1 }, { field: "moved_twice", before: 1, after: 0 }], "the stray bit is cleared as the row moves once");
+    eq(m.placeValueTimesTenState({ ...contentOf(m.placeValueTimesTenStart(a)), moved_once: 1, moved_twice: 0 }).stages, [1, 0, 0], "one place, not two");
+  }
+  const b = prob("700", "70");
+  ok(failure({ ...contentOf(m.placeValueTimesTenStart(a)), amount: b.amount, target: b.target })?.includes("not_same_shape"), "a times pair on a count card names the real cause");
+  eq(m.placeValueTimesTenLockedText(prob("8000", "800"), "en-US"), "Opens when every row is an 800.", "an 800");
+  eq(m.placeValueTimesTenLockedText(prob("8", "0.8"), "en-US"), "Opens when every row is a 0.8.", "a 0.8");
+  eq(m.placeValueTimesTenLockedText(prob("80", "8"), "en-US"), "Opens when every row is an 8.", "an 8");
+  eq(m.placeValueTimesTenLockedText(prob("80000", "8000"), "en-US"), "Opens when every row is an 8,000.", "an 8,000");
 });
 
 test("taps: move, copy and smaller; a demonstration takes none", () => {
@@ -361,8 +382,24 @@ test("plan: desktop sizes, room kept from the start", () => {
     const content = contentOf(m.placeValueTimesTenStart(p));
     const plan = m.planPlaceValueTimesTen(content);
     ok(plan.width <= 958, `${p.amount}/${p.target}: fits a 1024 px window (${Math.round(plan.width)} px)`);
-    const done = contentOf(m.placeValueTimesTenStart(p), { counted_in: p.target });
-    eq(m.planPlaceValueTimesTen(done).height, plan.height, `${p.amount}/${p.target}: the card keeps its height while worked`);
+    // The room kept from the start holds every thing in every reachable state (the drawing's own geometry).
+    const G = m.PLACE_VALUE_TIMES_TEN_GEOMETRY;
+    let deepest = 0, widest = 0;
+    for (const st of m.placeValueTimesTenReachable(p)) {
+      st.stages.forEach((k, i) => {
+        const size = m.placeValueTimesTenSizeAt(p, k);
+        const bottom = size === 100 ? G.CP / 2 + Math.floor(i / 3) * (G.SQ + G.SG) + G.SQ : m.placeValueTimesTenSlotTop(p.question === "times" && k === 0 ? 0 : i) + G.D + 2 * G.RP;
+        // A times pair's broken disk is a slot in every copy (a copy of n slots, its number beside it).
+        const right = p.question === "times" ? (k === 1 ? G.CP + m.placeValueTimesTenRowWidth(p.n) + 8 + 26 : G.CP + m.placeValueTimesTenRowWidth(i + 1))
+          : size === 100 ? G.CP + (i % 3 + 1) * (G.SQ + G.SG) - G.SG : size === 10 ? G.CP + m.placeValueTimesTenRowWidth(10) : 0;
+        deepest = Math.max(deepest, bottom);
+        const column = plan.columns.find((candidate) => candidate.place === m.placeValueTimesTenPlaceAt(p, k))!;
+        widest = Math.max(widest, right - column.width);
+      });
+    }
+    if (p.question === "times") deepest = Math.max(deepest, m.placeValueTimesTenSlotTop(m.PLACE_VALUE_TIMES_TEN_COPIES - 1) + G.D + 2 * G.RP);
+    ok(deepest <= plan.columns[0]!.cell.height, `${p.amount}/${p.target}: room for the deepest state (${deepest} <= ${plan.columns[0]!.cell.height})`);
+    ok(widest <= 0, `${p.amount}/${p.target}: every thing inside its column (${widest})`);
   }
   const times = m.planPlaceValueTimesTen(contentOf(m.placeValueTimesTenStart(prob("700", "70"))));
   eq(times.labels.map((label) => label.text), ["700", "70"], "a times pair's row labels");
