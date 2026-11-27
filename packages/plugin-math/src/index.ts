@@ -360,6 +360,10 @@ export { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewC
 export * from "./place-value-trade.js";
 export { buildPlaceValueTrade, type BuiltPlaceValueTrade, type PlaceValueTradeInput } from "./place-value-trade-builder.js";
 export { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewContext } from "./place-value-trade-view.js";
+// Making ten to add on two ten frames (decision 0027).
+export * from "./make-ten.js";
+export { buildMakeTen, type BuiltMakeTen, type MakeTenInput } from "./make-ten-builder.js";
+export { renderMakeTen, updateMakeTen, type MakeTenViewContext } from "./make-ten-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
