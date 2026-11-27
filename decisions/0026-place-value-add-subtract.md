@@ -97,3 +97,10 @@
 ## 修订
 
 - 2026-11-26：按草图第二版改写（竖式版面、点 ↓ 合起来、按状态变的说明、去掉「我换完了」和托盘、每列一个状态数、只做桌面）；产品负责人接受。
+- 2026-11-27, revision 1 (what was built, and where it differs from the text above):
+  1. **The answer box belongs to the host.** The answer is a separate typed-answer task tied to the card (`numeric_answer`); the card does not draw a box itself. Learn shows it greyed from the start and makes it usable once the chart is done. At its real size the card fills a 1024×768 window, so the answer box sits below the card. The product owner chose (2026-11-26) to scroll it into view automatically when the chart is done, rather than shrink the card.
+  2. **No "I'm done".** OLL card tasks used to finish only when the learner pressed "done". A new capability, `student-tasks:card_fact:complete` (player 0.17.0), lets the tap that finishes the chart submit the task. The task snapshot carries `auto_submit: true`, and Learn hides "done". Hints cannot be reached yet on such tasks (a follow-up).
+  3. **Values are stored in thousandths,** as on the place-value chart (0025). A thousandths digit counts as "more than two decimal places".
+  4. **The practice pair needs the same columns as the lesson's pair.** The card's columns are fixed: `top_place` and `low_place` can't be bound. A pair below 1 has no ones column.
+  5. **The program supplies "columns finished"** (Coach #181). The first objective check found that 3 of 15 outlines left the card's numbers out, because "columns finished" starts at 0 and doesn't look like a teaching number. When the outline declares the other four numbers, the program adds the fifth. If the declared numbers still fall short, the card is withdrawn straight away instead of retried. This adds no new model call.
+  6. **The lesson cannot change the pair while the lesson runs.** Animating `a` or `b` is refused; only a replay or a task's start may set them. Each card field must be bound to its own plain variable.
