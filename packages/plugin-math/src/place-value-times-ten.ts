@@ -29,7 +29,7 @@ import {
 export const PLACE_VALUE_TIMES_TEN_KIND = "place_value_times_ten";
 export const PLACE_VALUE_TIMES_TEN_FEATURE = "plugin:math/place-value-times-ten@1";
 /** The math plugin version that introduced the card. */
-export const PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION = "0.10.0";
+export const PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION = "0.11.0";
 /** The languages the card speaks: the chart's. A card without `language` speaks US English. */
 export const PLACE_VALUE_TIMES_TEN_LANGUAGES = PLACE_VALUE_CHART_LANGUAGES;
 
