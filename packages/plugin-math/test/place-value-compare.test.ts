@@ -352,7 +352,6 @@ test("facts and words: the card never names the larger number before the sign", 
   eq(m.placeValueCompareDoneText(eqp, "en-US"), "✓ 0.7 = 0.70: every place is the same.", "an equal pair's sentence");
   eq(m.placeValueCompareFacts(all).deciding, null, "no place decides an equal pair");
   eq(m.placeValueCompareHowTo({ a: 1, b: 2, compared: 0, marked: 0, signed: 0, language: "zh-CN" }), "从左边起，一位一位点它下面的「一样」或「不一样」，直到有一位不一样；然后在两个数中间选 >、= 或 <。", "the fixed how-to, the card's own");
-  ok(!m.placeValueCompareHowTo({}).includes("main_visual"), "never a role");
 });
 
 test("plan: desktop sizes; room kept from the start; the numerals lined up on their points", () => {

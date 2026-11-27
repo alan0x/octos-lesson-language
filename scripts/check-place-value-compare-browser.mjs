@@ -4,11 +4,12 @@
 //   clicks: the first screen (the instruction right under the problem, "Same" and "Different" under every column,
 //   the sentence greyed with its lock and fact, nothing focused); a column right of an unjudged one refused with a
 //   fact (both buttons), that column dimmed and the leftmost unjudged column ringed; a judgement that is not true
-//   refused with the column's digits only, its button grey and dashed; a locked sign refused; judged from the left;
+//   refused with the column's digits only, its button grey and dashed; a locked sign has nothing to tap; judged from the left;
 //   the deciding column "≠" with its paired disks faded and the extra ones ringed, the columns after it "Doesn't
 //   matter", and a tap on a decided chart's column states its fact (a later one doesn't matter); no conclusion said
 //   before the sign; a wrong sign refused as a fact with the signs still there; the true
-//   sign ends the task with no "done"; a tap on the chart after it changes nothing; Enter on a focused button;
+//   sign ends the task with no "done"; a tap on the chart after it changes nothing; Enter on a focused button judges
+//   once; the card has no title, and its role ("main_visual") is never shown;
 // - Chinese decimals (0.625 and 0.7): the points lined up, a faint 0 in every empty cell, the facts in Chinese;
 // - an equal pair (2.50 and 2.5, written decimals bound): "Same" all the way, then "=";
 // - the widest cards (1,000,000 and 999,999; 3,456.789 and 3,456.798), each a practice card: seven columns fit
@@ -142,6 +143,8 @@ try {
   check(JSON.stringify(now.columns.map((column) => [column.a, column.b])) === "[[6,6],[2,2],[8,1],[1,8]]", `the disks of both rows: ${JSON.stringify(now.columns.map((column) => [column.a, column.b]))}`);
   check(now.greyed && now.lock === "Opens when a place differs, or every place is the same." && now.signs.length === 3 && now.signs.every((s) => !s.live), `the sentence greyed, locked, its fact: ${JSON.stringify([now.greyed, now.lock, now.signs])}`);
   check(!now.focused && now.notice === "", "nothing focused on load; nothing said yet");
+  const title = await page.evaluate(() => { const card = document.querySelector(".place-value-compare").closest(".board-node"); return { titles: card.querySelectorAll(".node-title").length, role: card.textContent.includes("main_visual") }; });
+  check(title.titles === 0 && !title.role, `no title, and the role is never shown: ${JSON.stringify(title)}`);
   if (shots) await page.screenshot({ path: `${shots}/whole-first.png` });
   for (const judgement of ["same", "different"]) {
     await judge(page, judgement, 0);
@@ -153,7 +156,7 @@ try {
   if (shots) await page.screenshot({ path: `${shots}/whole-refused.png` });
   await sign(page, ">").catch(() => {}); // locked: no tap target
   now = await read(page);
-  check(now.values.signed === 0 && now.chosen === "", "a locked sign cannot be chosen");
+  check(now.values.signed === 0 && now.chosen === "" && now.signs.every((s) => !s.live), "a locked sign has nothing to tap");
   await judge(page, "different", 3);
   now = await read(page);
   check(now.notice === "Thousands: 6 and 6." && now.columns[0].refused.join() === "different" && now.columns.every((c) => !c.dimmed), `Different on the thousands: just its digits, the button marked: ${JSON.stringify([now.notice, now.columns[0].refused])}`);
@@ -197,7 +200,7 @@ try {
   await page.focus(`[data-oll-tap="same:${at(3)}"]`);
   await page.keyboard.press("Enter");
   now = await read(page);
-  check(now.values.marked === 1 && now.columns[0].mark === "=", `Enter judges the focused button: ${now.values.marked}`);
+  check(now.values.marked === 1 && now.columns[0].mark === "=" && now.notice === "Thousands: 6 and 6, the same.", `Enter judges the focused button once (a second judgement would be refused): ${JSON.stringify([now.values.marked, now.notice])}`);
 
   // Chinese decimals: 0.625 and 0.7.
   await open(page, "zh");
@@ -309,4 +312,4 @@ if (failures.length) {
   console.error(`place-value compare browser checks failed (${failures.length} of ${checks}):\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log(`place-value compare browser checks passed (${checks}): 6,281 and 6,218 by real clicks (the instruction under the problem, "Same" and "Different" under every column, the sentence locked with its fact, nothing focused; refusals as facts with the refused button marked, the right column dimmed and the leftmost unjudged one ringed; "=", the deciding "≠" with its pairs faded and its extra disks ringed, "Doesn't matter" after it, a decided column's tap stating its fact; no conclusion before the sign; a wrong sign a fact; the true sign ending the task with no done; Enter); Chinese decimals with their points lined up and a faint 0 in every empty cell; an equal pair with its written decimals, "Same" all the way then "="; the widest cards (seven columns) fitting 1,024 px and keeping their size; the demonstration played one column at a time then the sign, the card saying nothing over it, then a fresh practice. Not checked: how long a step holds.`);
+console.log(`place-value compare browser checks passed (${checks}): 6,281 and 6,218 by real clicks (the instruction under the problem, "Same" and "Different" under every column, the sentence locked with its fact, nothing focused; no title and never its role; refusals as facts with the refused button marked, the right column dimmed and the leftmost unjudged one ringed; "=", the deciding "≠" with its pairs faded and its extra disks ringed, "Doesn't matter" after it, a decided column's tap stating its fact; no conclusion before the sign; a wrong sign a fact; the true sign ending the task with no done; Enter); Chinese decimals with their points lined up and a faint 0 in every empty cell; an equal pair with its written decimals, "Same" all the way then "="; the widest cards (seven columns) fitting 1,024 px and keeping their size; the demonstration played one column at a time then the sign, the card saying nothing over it, then a fresh practice. Not checked: how long a step holds.`);

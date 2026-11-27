@@ -57,6 +57,8 @@ interface View {
   shown?: PlaceValueCompareState;
   target?: PlaceValueCompareState;
   refused?: { kind: PlaceValueCompareTapKind; place: number; reason: PlaceValueCompareRefusal; text: string; key: string };
+  /** A refusal the card has moved on from (its state changed); a host that keeps passing it is not heard again. */
+  dropped?: string;
   /** The column the demonstration is judging now (ringed while its step shows). */
   focus?: number;
   drawnContext?: string;
@@ -391,7 +393,8 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueCom
   // The refused tap the notice answers, with its reason on the card as it stands (a refusal never changes the card).
   const refusedKey = context.refused && context.notice ? `${context.refused.kind}:${context.refused.place}:${context.notice}` : undefined;
   let refusedNow = false;
-  if (refusedKey !== view.refused?.key) {
+  if (refusedKey === undefined) view.dropped = undefined;
+  if (refusedKey !== view.refused?.key && refusedKey !== view.dropped) {
     view.refused = undefined;
     if (refusedKey && context.refused) {
       const tap = { tap: context.refused.kind as PlaceValueCompareTapKind, place: context.refused.place };
@@ -406,6 +409,8 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueCom
     if (refusedNow && !reduced(view)) { try { shake(view); } catch { /* drawing goes on */ } }
     return;
   }
+  // The card changed: an old refusal no longer answers it (a restart or a replay may leave the host's notice behind).
+  if (!refusedNow && view.refused) view.dropped = view.refused.key;
   view.refused = refusedNow ? view.refused : undefined;
   const steps = shown ? stepsBetween(shown, state) : undefined;
   view.target = state;
