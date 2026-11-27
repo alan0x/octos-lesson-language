@@ -3195,7 +3195,7 @@ export class InfiniteBoardView {
       if (arrivingFocus?.has(group.id)) element.classList.add("focus-arrive");
       setRect(element, rect);
       const label = element.querySelector<HTMLElement>(".group-label");
-      if (label) bindUi(this.viewport,label,"text",()=>{label.textContent=text(group.title||group.role||ui(this.viewport,"知识组"));});
+      if (label) bindUi(this.viewport,label,"text",()=>{label.textContent=text(group.title||ui(this.viewport,"知识组"));});
     }
   }
 

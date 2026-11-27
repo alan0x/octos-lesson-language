@@ -15,7 +15,7 @@
 
 ### Fixed
 
-- **A card's role is never its heading.** A card without a title showed its role in the lesson (`main_visual`) as its heading, for example on a place-value chart. Roles are internal. A card's heading is its `title` or `label` as written, and a card without one has no heading. This applies to every card kind (`cardHeading`); explicit titles are unchanged. The board's layout already measured the title this way. Tests: `cardHeading` per kind; `npm run check:demonstration-pace-browser` finds no heading and no role on untitled cards of five kinds.
+- **A card's role is never its heading.** A card without a title showed its role in the lesson (`main_visual`) as its heading, for example on a place-value chart. Roles are internal. A card's heading is its `title` or `label` as written, and a card without one has no heading. This applies to every card kind (`cardHeading`); explicit titles are unchanged. A board group without a title is labelled with the board's own word for a group, never its role. The board's layout already measured the title this way. Tests: `cardHeading` per kind; `npm run check:demonstration-pace-browser` finds no heading and no role on untitled cards of five kinds.
 
 ### Added
 
