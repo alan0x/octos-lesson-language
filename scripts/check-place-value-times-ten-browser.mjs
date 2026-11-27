@@ -10,8 +10,8 @@
 //   number's fact; ten whole copies; the row of two blanks;
 // - Chinese: put-together questions (300 ones = ? hundreds: squares of a hundred into rows of ten, rows into one;
 //   60 thousandths = ? hundredths), the card's words in Chinese;
-// - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000) fit the window and keep their height while
-//   worked.
+// - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000), each a lesson's practice card (the card the
+//   learner works), fit the window and keep their height while worked.
 // Numbers are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_TIMES_TEN_SCREENSHOTS when it is set.
 // - the program's demonstration: "counted in" 0.1 -> 0.01 -> 0.001 breaks every tenth, then every row; 700 counted in
 //   70s deals every hundred into ten whole copies; played by the session with motion, one row at a time; then the
@@ -29,8 +29,9 @@ const lessons = {
   times: timesTenLesson({ amount: "700", target: "70", practice: [["4000", "400"]] }),
   zh: timesTenLesson({ language: "zh-CN", amount: "0.8", target: "0.1", start: "0.001", practice: [["300", "100"]] }),
   zhOne: timesTenLesson({ language: "zh-CN", amount: "2000", target: "1000", start: "100", practice: [["0.06", "0.01"]] }),
-  widestCount: timesTenLesson({ amount: "9", target: "0.01", practice: [["9000", "10"]] }),
-  widestTimes: timesTenLesson({ amount: "9000000", target: "900000", practice: [["90", "9"]] }),
+  // The largest problems are the practice cards: those are the cards worked (opened at frame 1).
+  widestCount: timesTenLesson({ amount: "9000", target: "10", practice: [["9", "0.01"]] }),
+  widestTimes: timesTenLesson({ amount: "90", target: "9", practice: [["9000000", "900000"]] }),
   // The lesson's own demonstration: "counted in" 0.1 -> 0.01, then 0.001; 700 counted in hundreds, then in 70s.
   demoCount: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10), animate("thousandths", 1)] }),
   demoHalf: timesTenLesson({ amount: "0.3", target: "0.001", beats: [animate("hundredths", 10)] }),
@@ -259,6 +260,9 @@ try {
     await open(page, name, { frame: 1 });
     await page.waitForTimeout(700); // the camera settles on the card
     const first = await read(page);
+    // The card measured is the practice's: its own amount (9 ones; 9,000,000), not the lesson's.
+    const practiceAmount = name === "widestCount" ? 9000 : 9_000_000_000;
+    check(first.values.amount === practiceAmount, `${name}: the card measured is the practice card (amount ${practiceAmount}), not ${first.values.amount}`);
     const n = Object.values(first.columns).reduce((sum, column) => sum + column.disks + column.rows + column.squares, 0);
     await tapAt(page, "move:0");
     const mid = await read(page); // two kinds can be tapped: the instruction is two sentences

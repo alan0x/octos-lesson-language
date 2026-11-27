@@ -218,6 +218,31 @@ test("the demonstration: counted in moves along its path, from the question's un
   assert.ok(deriveExecutionRequirements(events).requiredCapabilities.includes("card:place_value_times_ten"));
 });
 
+test("the card opens with no row moved: as its variables start it and as written (review of #123)", () => {
+  const animate = (key: string, value: number): any => ({ key, say: "Look.", actions: [{ do: "animate", variable: "counted_in", value }] });
+  const initial = (lesson: AuthoringLesson, values: Record<string, number>) => {
+    for (const [as, value] of Object.entries(values)) (lesson.lesson.variables as any[]).find((variable) => variable.as === as).initial = value;
+    return lesson;
+  };
+  const fresh = /A card opens fresh: no row moved \(moved_once and moved_twice are 0\)/;
+  // Every row moved twice on 0.3 -> 0.001: the chart would open complete.
+  assert.throws(() => validateAuthoringLesson(initial(count(), { moved_once: 7, moved_twice: 7 })), fresh);
+  // A times pair with rows already moved.
+  assert.throws(() => validateAuthoringLesson(initial(times(), { moved_once: 127 })), fresh);
+  // Rows moved at the start, then the demonstration moves counted in.
+  assert.throws(() => validateAuthoringLesson(initial(count({ beats: [animate("hundredths", 10)] }), { moved_once: 3 })), fresh);
+  // Rows written on the card itself, not bound.
+  const written = count();
+  const content = card(written).content;
+  content.bindings = content.bindings.filter((binding: any) => !["moved_once", "moved_twice"].includes(binding.target));
+  content.moved_once = 7;
+  content.moved_twice = 7;
+  written.lesson.variables = (written.lesson.variables as any[]).filter((variable) => !["moved_once", "moved_twice"].includes(variable.as));
+  assert.throws(() => validateAuthoringLesson(written), fresh);
+  // The fresh card itself is still accepted.
+  assert.doesNotThrow(() => validateAuthoringLesson(count({ beats: [animate("hundredths", 10)] })));
+});
+
 test("a replay that sets another problem: counted in then moves along that problem's path", () => {
   const animate = (key: string, value: number): any => ({ key, say: "Look.", actions: [{ do: "animate", variable: "counted_in", value }] });
   // The lesson's 0.3 -> 0.001; the replay lays 5 ones -> hundredths (its numbers are in the variables' ranges).
@@ -230,6 +255,9 @@ test("a replay that sets another problem: counted in then moves along that probl
   // The replay's own value is judged on the problem it lays.
   const off = count({ beats: [{ key: "other", say: "Another.", start: { kind: "replay", variables: ["amount", "target", "counted_in"], values: { amount: 5000, target: 10, counted_in: 1 } }, actions: [{ do: "animate", variable: "counted_in", value: 1 }] } as any] });
   assert.throws(() => validateAuthoringLesson(off), /1000 = 1 \(ones\).*a replay sets one of these, not 1/);
+  // Outside counted in's range after the replay: said on the replayed card's path (review of #123).
+  const far = count({ beats: [{ key: "other", say: "Another amount.", start: { kind: "replay", variables: ["amount", "target", "counted_in"], values: { amount: 5000, target: 10, counted_in: 1000 } }, actions: [{ do: "animate", variable: "counted_in", value: 100_000 }] } as any] });
+  assert.throws(() => validateAuthoringLesson(far), /'counted_in' is the unit the amount is counted in now, in thousandths: 1000 = 1 \(ones\) -> 100 = 0.1 \(tenths\) -> 10 = 0.01 \(hundredths\); 100000 is outside its variable's range/);
 });
 
 test("bound values: every field in its own range, the card drawable at each", () => {
@@ -240,4 +268,15 @@ test("bound values: every field in its own range, the card drawable at each", ()
   const rows = count();
   (rows.lesson.variables as any[]).find((variable) => variable.as === "moved_once").max = 1023;
   assert.throws(() => validateAuthoringLesson(rows), /0 to 511/, "a row set's variable runs 0 to 511");
+});
+
+test("no field bound to the card takes a learner's slider, task or no task (review of #123)", () => {
+  for (const as of ["amount", "target", "counted_in", "moved_once", "moved_twice"]) {
+    const lesson = count({ practice: [] });
+    (lesson.lesson.variables as any[]).find((variable) => variable.as === as).control = { kind: "slider", step: 1 };
+    assert.throws(() => validateAuthoringLesson(lesson), new RegExp(`Variable '${as}' is bound to a place_value_times_ten card's '${as}': the card changes it, so it cannot have its own control`));
+  }
+  const other = count({ practice: [] });
+  (other.lesson.variables as any[]).push({ as: "other", label: "other", initial: 0, min: 0, max: 5, control: { kind: "slider", step: 1 } });
+  assert.doesNotThrow(() => validateAuthoringLesson(other));
 });

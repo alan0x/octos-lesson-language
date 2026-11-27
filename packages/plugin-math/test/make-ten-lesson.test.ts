@@ -262,3 +262,15 @@ test("the demonstration's rules cannot be bypassed: plain bindings, beats before
   assert.throws(() => applyCanonicalAction(board, { action_id: "x", op: "card.tap", target: { node_id: "only:node:frames" }, tap: { kind: "give", place: 1 } } as any),
     /A make_ten card is not tapped by a lesson: it is shown by its 'filled'/);
 });
+
+test("no field bound to the card takes a learner's slider, task or no task (review of #123)", () => {
+  for (const as of ["a", "b", "filled", "moved"]) {
+    const lesson = lesson86({ practice: [] });
+    variable(lesson, as).control = { kind: "slider", step: 1 };
+    assert.throws(() => validateAuthoringLesson(lesson), new RegExp(`Variable '${as}' is bound to a make_ten card's '${as}': the card changes it, so it cannot have its own control`));
+  }
+  // A slider on a variable the card does not bind is the lesson's own.
+  const other = lesson86({ practice: [] });
+  (other.lesson.variables as any[]).push({ as: "other", label: "other", initial: 0, min: 0, max: 5, control: { kind: "slider", step: 1 } });
+  assert.doesNotThrow(() => validateAuthoringLesson(other));
+});

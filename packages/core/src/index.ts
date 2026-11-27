@@ -1348,6 +1348,31 @@ function checkDemonstrationReplay(cards: ReadonlyMap<string, LessonTapCard>, val
   }
 }
 
+/** The card whose demonstration field `variable` is bound to, if any. */
+function demonstrationCardOf(cards: ReadonlyMap<string, LessonTapCard>, variable: string): LessonTapCard | undefined {
+  return [...cards.values()].find(({ kind, content }) => kind.demonstration && bareBindings(content).get(kind.demonstration.field) === variable);
+}
+
+/**
+ * An animation of a card's demonstration field outside its variable's range: the card says its own range
+ * (decision 0026: columns finished, 0 to the columns), on the card as the lesson has played it (a replay may have
+ * set its problem), the same as the step and replay refusals (review of #123).
+ */
+function checkDemonstrationRange(
+  cards: ReadonlyMap<string, LessonTapCard>,
+  variables: readonly AuthoringVariable[],
+  variable: string,
+  value: number,
+  path: string,
+  played: Readonly<Record<string, number>>,
+): void {
+  const declared = variables.find((candidate) => candidate.as === variable);
+  const shown = demonstrationCardOf(cards, variable);
+  if (!declared || !shown?.kind.demonstration || (value >= declared.min && value <= declared.max)) return;
+  const at = cardContentAt(shown.kind, shown.content, bareBindings(shown.content), played);
+  fail("OLL_INVALID_VARIABLE", `${path}/value`, `'${variable}' ${shown.kind.demonstration.outside(at, value)}`);
+}
+
 /**
  * A card that opens fresh (`demonstration.opensAtStart`, decision 0027), checked as the lesson has played when it
  * is written: its bound fields at the played values. The card's own starting rules say why when it has them
@@ -2416,12 +2441,8 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
         if (action.do === "animate") {
           const variable = document.lesson.variables?.find((candidate) => candidate.as === action.variable);
           if (!variable) fail("OLL_REFERENCE_NOT_FOUND", `${actionPath}/variable`, `Variable '${action.variable}' is not declared`);
-          if (action.value < variable.min || action.value > variable.max) {
-            // A card's demonstration field says its own range (decision 0026: columns finished, 0 to the columns).
-            const shown = [...shownCards.values()].find(({ kind, content }) => kind.demonstration && bareBindings(content).get(kind.demonstration.field) === action.variable);
-            if (shown?.kind.demonstration) {
-              fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `'${action.variable}' ${shown.kind.demonstration.outside(shown.content, action.value)}`);
-            }
+          // A card's demonstration field says its own range on the card as played, in the playback pass below.
+          if ((action.value < variable.min || action.value > variable.max) && !demonstrationCardOf(shownCards, action.variable)) {
             fail("OLL_INVALID_VARIABLE", `${actionPath}/value`, `Animation target for '${action.variable}' is outside its range`);
           }
           return;
@@ -2546,6 +2567,7 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
           // have moved its demonstration field (review of #122).
           if (action.do === "write") checkOpensFresh(action, playedValues, `${beatPath}/actions/${actionIndex}`);
           if (action.do === "animate") {
+            checkDemonstrationRange(shownCards, document.lesson.variables ?? [], action.variable, action.value, `${beatPath}/actions/${actionIndex}`, playedValues);
             checkDemonstrationAnimate(shownCards, action.variable, action.value, playedValues[action.variable], `${beatPath}/actions/${actionIndex}`, playedValues);
             playedValues[action.variable] = action.value;
           }
@@ -2583,6 +2605,17 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       if (cardSliders.get(variable)?.card === alias) continue;
       if ((document.lesson.variables ?? []).find((declaration) => declaration.as === variable)?.control || availableStudentControls.get(variable)?.size) {
         fail("OLL_INVALID_VARIABLE", "/lesson/variables", `Variable '${variable}' is changed only by tapping the card; it cannot have its own control`);
+      }
+    }
+  }
+  // Every field bound to a tap card changes only as the card says (its taps, its demonstration, a start), never by a
+  // learner's own control, task or no task: a slider on "counted in" would let the learner drag the demonstration
+  // (review of #123). A count slider that trades on its card (amendment 4) is the card's own.
+  for (const [alias, card] of tapCards) {
+    for (const [field, variable] of bareBindings(card.content)) {
+      if (cardSliders.get(variable)?.card === alias) continue;
+      if ((document.lesson.variables ?? []).find((declaration) => declaration.as === variable)?.control || availableStudentControls.get(variable)?.size) {
+        fail("OLL_INVALID_VARIABLE", "/lesson/variables", `Variable '${variable}' is bound to a ${card.kind.kind} card's '${field}': the card changes it, so it cannot have its own control`);
       }
     }
   }

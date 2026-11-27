@@ -802,7 +802,12 @@ export const PLACE_VALUE_TIMES_TEN_CARD: TapCardKind<PlaceValueTimesTenState> = 
   practiceFields: PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS,
   demonstration: PLACE_VALUE_TIMES_TEN_DEMONSTRATION,
   fieldsAtOnce: true,
-  validateContent: (raw: unknown, path: string, fail: Fail) => validatePlaceValueTimesTenContent(raw, path, fail),
+  validateContent: (raw: unknown, path: string, fail: Fail, options?: { start?: boolean }) => {
+    validatePlaceValueTimesTenContent(raw, path, fail);
+    // A card opens fresh (review of #123): no row moved, as written and as its variables start it.
+    const rows = raw as { moved_once?: unknown; moved_twice?: unknown };
+    if (options?.start && (rows.moved_once || rows.moved_twice)) fail(`${path}/${rows.moved_once ? "moved_once" : "moved_twice"}`, "A card opens fresh: no row moved (moved_once and moved_twice are 0)");
+  },
   state: placeValueTimesTenState,
   apply: (state: PlaceValueTimesTenState, tap: CardTap): CardTapResult<PlaceValueTimesTenState> => {
     const result = applyPlaceValueTimesTenTap(state, { tap: tap.kind as PlaceValueTimesTenTapKind, row: tap.place });
