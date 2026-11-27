@@ -12,13 +12,19 @@ import {
 } from "../src/make-ten.js";
 import { buildMakeTen } from "../src/make-ten-builder.js";
 import * as math from "../src/index.js";
+import { assertAuthoringSchema, validateAuthoringLesson, type AuthoringLesson } from "../../core/src/index.js";
 import { MAKE_TEN_PROBLEMS, MAKE_TEN_REFUSED } from "./make-ten-fixtures.js";
 
 // ---------------------------------------------------------------- the sketch's model checks (test-model.mjs)
 
+// `ported` counts only the checks that are the sketch's own, one for one (its test-model.mjs counted 469: 9 for
+// its typed reader and 5 for its typed row are the player's, so 455 are ported). Checks the sketch did not have
+// use `eqNew` / `okNew`, and the exhaustive walk's per-state checks are plain asserts, as in the sketch.
 let ported = 0;
 const eq = (actual: unknown, expected: unknown, what: string) => { assert.deepEqual(actual, expected, what); ported += 1; };
 const ok = (cond: boolean, what: string) => { assert.ok(cond, what); ported += 1; };
+const eqNew = (actual: unknown, expected: unknown, what: string) => assert.deepEqual(actual, expected, what);
+const okNew = (cond: boolean, what: string) => assert.ok(cond, what);
 const prob = (a: number, b: number) => m.makeTenMakeProblem(a, b) as MakeTenProblem & { fault?: m.MakeTenFault };
 const P = (a: number, b: number): MakeTenProblem => m.makeTenProblemOf(a, b);
 const reason = (r: m.MakeTenResult) => (r.ok ? undefined : r.reason);
@@ -79,7 +85,7 @@ test("sketch: taps", () => {
   const undo = tap(s, 0, "visitor");
   eq(undo.ok && m.makeTenComplete(undo.state), false, "taking one back undoes the ten");
   eq([m.makeTenFilling(s.problem), m.makeTenGiver(s.problem)], [0, 1], "the filling frame and the giver are fixed by the problem");
-  eq(reason(applyMakeTenTap(s, { tap: "give", place: 2 })), "none", "no third frame");
+  eqNew(reason(applyMakeTenTap(s, { tap: "give", place: 2 })), "none", "no third frame");
 });
 
 test("sketch: the chain", () => {
@@ -89,8 +95,8 @@ test("sketch: the chain", () => {
   eq(m.makeTenBlanks(m.makeTenChain(P(8, 6))).map((b) => [b.part, b.value, b.giver]), [["moved", 2, 1], ["left", 4, 1], ["left", 4, 1], ["total", 14, null]], "four blanks: the 6 split, the ones left, the total");
   // The sketch's typed-row checks (right, full-width digits, the split swapped, 10 + 6 = 16, an empty blank) are the
   // player's numeric_row; here the row's answers and order are checked instead.
-  eq(makeTenRow(8, 6).filter((part) => "blank" in part).map((part) => ("blank" in part ? part.blank.answer : "")), ["2", "4", "4", "14"], "the row's answers, in order: the split swapped is wrong");
-  ok(!makeTenRow(8, 6).some((part) => "blank" in part && part.blank.answer === "16"), "10 + 6 = 16 is not an answer");
+  eqNew(makeTenRow(8, 6).filter((part) => "blank" in part).map((part) => ("blank" in part ? part.blank.answer : "")), ["2", "4", "4", "14"], "the row's answers, in order: the split swapped is wrong");
+  okNew(!makeTenRow(8, 6).some((part) => "blank" in part && part.blank.answer === "16"), "10 + 6 = 16 is not an answer");
 });
 
 test("sketch: the demonstration's count (filled), from the bigger addend", () => {
@@ -139,7 +145,6 @@ test("sketch: exhaustive, every pair, every reachable state", () => {
       }
       assert.ok(m.makeTenComplete(go), `${a}+${b}: a ten can still be made from moved ${st.moved}`);
       assert.equal(m.makeTenDemoState(p, m.makeTenCount(st)).moved, st.moved, `${a}+${b}: the count in the bigger frame maps back to the state`);
-      ported += 7;
     }
     eq(ends, [p.big === 0 ? 10 - a : -(10 - b)], `${a}+${b}: exactly one finished state: the bigger addend's frame holds ten`);
     eq(seen.length, 10 - Math.max(a, b) + 1, `${a}+${b}: ${10 - Math.max(a, b) + 1} reachable states, one way only`);
@@ -152,10 +157,10 @@ test("sketch: exhaustive, every pair, every reachable state", () => {
     ok(nextTo.n === Math.max(a, b) && nextTo.n + movedValue === 10, `${a}+${b}: the moved blank sits next to ${Math.max(a, b)} and makes ten with it`);
     const demo = m.makeTenDemoTaps(p, Math.max(a, b), 10);
     ok(m.makeTenFullFrame(m.makeTenDemoState(p, 10)) === p.big && demo.length === 10 - Math.max(a, b), `${a}+${b}: the demonstration fills the bigger frame in ${10 - Math.max(a, b)} taps`);
-    ok(m.makeTenToTen(p) <= m.MAKE_TEN_MAX_MOVED, `${a}+${b}: at most ${m.MAKE_TEN_MAX_MOVED} cross`);
+    okNew(m.makeTenToTen(p) <= m.MAKE_TEN_MAX_MOVED, `${a}+${b}: at most ${m.MAKE_TEN_MAX_MOVED} cross`);
   }
   eq(pairs, 36, "36 pairs fit the card (two numbers 1–9, sum over ten)");
-  ok(states === 106, `106 reachable states walked (${states})`);
+  okNew(states === 106, `106 reachable states walked (${states})`);
 });
 
 test("sketch: the picker's problems and their practice pairs", () => {
@@ -168,7 +173,7 @@ test("sketch: the picker's problems and their practice pairs", () => {
 
 test("the sketch's model checks are all ported", () => {
   // test-model.mjs ran 469 checks; its 9 typed-reader checks and 5 typed-row checks are the player's.
-  assert.ok(ported >= 469 - 14, `ported ${ported}`);
+  assert.equal(ported, 469 - 14);
 });
 
 // ---------------------------------------------------------------- the card
@@ -178,13 +183,19 @@ function contentOf(state: MakeTenState, filled?: number): MakeTenContent {
   return { a: state.problem.a, b: state.problem.b, filled: filled ?? m.makeTenFreshCount(state.problem.a, state.problem.b), moved: state.moved };
 }
 const failer = (path: string, message: string): never => { throw new Error(`${path}: ${message}`); };
-const refusedWith = (raw: unknown, pattern: RegExp, options?: { boundValues?: boolean }) => assert.throws(() => validateMakeTenContent(raw, "$", failer, options), pattern);
+const refusedWith = (raw: unknown, pattern: RegExp, options?: { boundValues?: boolean; start?: boolean }) => assert.throws(() => validateMakeTenContent(raw, "$", failer, options), pattern);
 
 test("content: the pair, the demonstration's count from the pair, and the count moved", () => {
   validateMakeTenContent({ a: 8, b: 6, filled: 8, moved: 0 }, "$", failer);
   validateMakeTenContent({ a: 8, b: 6, filled: 8, moved: 2, language: "zh-CN" }, "$", failer);
+  // A value the demonstration already reached (a replay may set it), not a card that opens.
   validateMakeTenContent({ a: 8, b: 6, filled: 10, moved: 0 }, "$", failer);
   validateMakeTenContent({ a: 3, b: 8, filled: 9, moved: 0 }, "$", failer);
+  // A card that opens (or a practice start) is fresh: the ten not made, nothing moved (review of #119).
+  validateMakeTenContent({ a: 8, b: 6, filled: 8, moved: 0 }, "$", failer, { start: true });
+  refusedWith({ a: 8, b: 6, filled: 10, moved: 0 }, /\$\/filled: A card opens fresh: for 8 \+ 6 'filled' starts at 8, the bigger addend, not 10/u, { start: true });
+  refusedWith({ a: 3, b: 8, filled: 9, moved: 0 }, /for 3 \+ 8 'filled' starts at 8, the bigger addend, not 9/u, { start: true });
+  refusedWith({ a: 8, b: 6, filled: 8, moved: 1 }, /\$\/moved: A card opens fresh: nothing moved, not 1/u, { start: true });
   refusedWith({ a: 6, b: 3, filled: 6, moved: 0 }, /\$\/b: 6 \+ 3 is less than ten.*\(under_ten\)/u);
   refusedWith({ a: 7, b: 3, filled: 7, moved: 0 }, /exactly ten.*\(exactly_ten\)/u);
   refusedWith({ a: 12, b: 5, filled: 9, moved: 0 }, /\$\/a: The first number is a whole number from 1 to 9/u);
@@ -241,27 +252,51 @@ test("words: en and zh, whole sentences, the colour word named and drawn in its 
   for (const language of ["en-US", "zh-CN"] as const) {
     const words = MAKE_TEN_WORDS[language];
     ok(Object.keys(words.refusal).join() === "stays,full,demonstrating,none", `${language}: the same refusals`);
-    ok(!Object.values(words.refusal).some((text) => /\b(please|try|must)\b|请|试试/u.test(text)), `${language}: refusals state facts, never instructions`);
+    // Never an instruction: no request, and no sentence that opens with a verb telling the child what to do.
+    okNew(!Object.values(words.refusal).some((text) => /\b(please|try|must)\b|请|试试/iu.test(text) || /^(tap|move|put|take|fill|keep|click|点|移|放|拿|把|再)/iu.test(text)), `${language}: refusals state facts, never instructions`);
   }
 });
 
 test("row: the four blanks the anchored task asks, written by the program", () => {
   eq(makeTenRow(8, 6), [
-    { text: "8 + 6 = 8 +" }, { blank: { as: "to_ten", answer: "2", label: "to make ten" } }, { text: "+" }, { blank: { as: "rest", answer: "4" } },
+    { text: "8 + 6 = 8 +" }, { blank: { as: "to-ten", answer: "2", label: "to make ten" } }, { text: "+" }, { blank: { as: "rest", answer: "4" } },
     { text: "= 10 +" }, { blank: { as: "ones", answer: "4" } }, { text: "=" }, { blank: { as: "total", answer: "14" } },
   ], "8 + 6: the blank beside the 8 makes ten with it");
   eq(makeTenRow(4, 9, "zh-CN"), [
-    { text: "4 + 9 =" }, { blank: { as: "rest", answer: "3" } }, { text: "+" }, { blank: { as: "to_ten", answer: "1", label: "凑成十" } },
+    { text: "4 + 9 =" }, { blank: { as: "rest", answer: "3" } }, { text: "+" }, { blank: { as: "to-ten", answer: "1", label: "凑成十" } },
     { text: "+ 9 =" }, { blank: { as: "ones", answer: "3" } }, { text: "+ 10 =" }, { blank: { as: "total", answer: "13" } },
   ], "4 + 9: the blank beside the 9");
+  // Each row, in both languages, as core's validator takes a numeric_row task anchored on a card (every pair).
+  const rowLesson = (a: number, b: number, language: m.MakeTenLanguage) => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: {
+      mode: "explain", language, title: "Making ten", goals: ["Write it as a number sentence"],
+      tasks: [{ as: "row", anchor: "card", prompt: "Write it.", availability: { kind: "after_lesson" }, allowed_operations: [{ kind: "row_entry" }],
+        completion: { kind: "numeric_row", parts: makeTenRow(a, b, language) }, hints: ["Read the full frame."] }],
+    },
+    steps: [{ key: "s", purpose: "See", beats: [{ key: "b", say: "Look.", actions: [{ do: "write", as: "card", kind: "text", role: "note", content: { text: `${a} + ${b}` }, place: { relation: "new_region" } }] }] }],
+    close: { summary: "Done.", focus: ["card"] },
+  }) as unknown as AuthoringLesson;
+  let rows = 0;
   for (let a = 1; a <= 9; a += 1) for (let b = 1; b <= 9; b += 1) {
-    if (m.makeTenFault(a, b)) continue;
+    if (m.makeTenFault(a, b)) {
+      assert.throws(() => makeTenRow(a, b), /\((under_ten|exactly_ten)\)/u, `${a}+${b}: a pair the card refuses has no row`);
+      continue;
+    }
+    for (const language of ["en-US", "zh-CN"] as const) {
+      assertAuthoringSchema(rowLesson(a, b, language));
+      validateAuthoringLesson(rowLesson(a, b, language));
+      rows += 1;
+    }
     const row = makeTenRow(a, b);
     const blanks = row.flatMap((part) => ("blank" in part ? [part.blank] : []));
     assert.ok(row.length <= 12 && blanks.length === 4 && new Set(blanks.map((x) => x.as)).size === 4, `${a}+${b}: a numeric_row (≤ 12 parts, 4 named blanks)`);
     assert.ok(row.every((part) => !("text" in part) || part.text.length <= 80), `${a}+${b}: each text ≤ 80`);
     assert.ok(blanks.every((x) => x.label === undefined || !/\d/u.test(x.label)), `${a}+${b}: a label is never the number`);
   }
+  assert.equal(rows, 72, "36 pairs, en and zh, each taken by core's validator");
+  assert.throws(() => makeTenRow(5, 5), /5 \+ 5 is exactly ten/u);
+  assert.throws(() => makeTenRow(12, 5), /\(not_one_digit\)/u);
 });
 
 test("plan: two frames side by side at desktop size, under 1024 px", () => {

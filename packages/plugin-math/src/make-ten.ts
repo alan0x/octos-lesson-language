@@ -265,15 +265,17 @@ export function makeTenChainSides(problem: MakeTenProblem): number[] {
 /** A part of a `numeric_row` (the player's row of blanks): text, or a blank with its answer and a label under it. */
 export type MakeTenRowPart = { text: string } | { blank: { as: string; answer: string; label?: string } };
 
-const BLANK_NAMES: Record<string, string> = { moved: "to_ten", total: "total" };
+const BLANK_NAMES: Record<string, string> = { moved: "to-ten", total: "total" };
 
 /**
  * The row of four blanks a task anchored on the card asks, for the pair (decision 0027 §4): the program writes
  * it, never a model. The blank beside the bigger addend is labelled "to make ten" (the owner chose this order,
- * 2026-11-27): only 8 + 2 + 4 is right, not 8 + 4 + 2. Blanks: `to_ten`, `rest` (the ones left of the giver),
- * `ones` (the ones after the ten), `total`.
+ * 2026-11-27): only 8 + 2 + 4 is right, not 8 + 4 + 2. Blanks (local aliases, no underscore): `to-ten`, `rest`
+ * (the ones left of the giver), `ones` (the ones after the ten), `total`. A pair the card refuses has no row: it throws.
  */
 export function makeTenRow(a: number, b: number, language: MakeTenLanguage = "en-US"): MakeTenRowPart[] {
+  const fault = makeTenFault(a, b);
+  if (fault) throw new Error(makeTenFaultText(fault, a, b));
   const problem = makeTenProblemOf(a, b);
   const words = MAKE_TEN_WORDS[language] ?? MAKE_TEN_WORDS["en-US"];
   const parts: MakeTenRowPart[] = [];
@@ -363,10 +365,13 @@ export function makeTenFaultText(fault: MakeTenFault, a: unknown, b: unknown): s
 
 /**
  * Checks a card's content. With `boundValues` (the core checking the card at a value a variable can take) only
- * each field's own range is checked: the joint rules (the pair the card refuses, `filled` starting at the pair's
- * bigger addend, a demonstration on fresh frames, a count the pair allows) belong to a starting card.
+ * each field's own range is checked: the joint rules (the pair the card refuses, `filled` never below the pair's
+ * bigger addend, a demonstration on fresh frames, a count the pair allows) belong to a card the lesson shows.
+ * With `start` (the card as a lesson opens it, or a practice start) the card is fresh: `filled` is exactly the
+ * bigger addend and nothing is moved. Without it, `filled` may be above the start: a replay may set a value the
+ * demonstration already reached.
  */
-export function validateMakeTenContent(raw: unknown, path: string, fail: Fail, options: { boundValues?: boolean } = {}): void {
+export function validateMakeTenContent(raw: unknown, path: string, fail: Fail, options: { boundValues?: boolean; start?: boolean } = {}): void {
   const content = record(raw, path, fail);
   for (const key of Object.keys(content)) {
     if (!["language", "a", "b", "filled", "moved", "bindings"].includes(key)) fail(`${path}/${key}`, `Unknown make-ten field '${key}'`);
@@ -393,6 +398,11 @@ export function validateMakeTenContent(raw: unknown, path: string, fail: Fail, o
   if (filled > start && moved !== 0) {
     fail(`${path}/filled`, "A demonstration (filled above the bigger addend) plays on fresh frames: moved is 0");
   }
+  // A card opens fresh: the ten not made, nothing moved (review of #119).
+  if (options.start && filled !== start) {
+    fail(`${path}/filled`, `A card opens fresh: for ${makeTenProblemText(problem)} 'filled' starts at ${start}, the bigger addend, not ${filled}`);
+  }
+  if (options.start && moved !== 0) fail(`${path}/moved`, `A card opens fresh: nothing moved, not ${moved}`);
 }
 
 /** The card's language from its content (read as the mat reads it): Chinese when it says so, else US English. */

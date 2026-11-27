@@ -5,8 +5,8 @@
  * the card and binds it, so a learner's tap, the demonstration or a practice task's start can change it.
  *
  * `filled` starts at the pair's bigger addend (taken from the pair: 8 + 6 starts at 8), never 0; when it is left
- * out the builder writes that value. A driven `filled` must give it as its starting value; the core refuses one
- * that does not.
+ * out the builder writes that value. A driven `filled` must give it as its starting value: a card that opens with
+ * any other value (or with counters moved) is refused by `validateMakeTenContent(…, { start: true })`.
  */
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
 import type { DrivenValue } from "./number-line-builder.js";
