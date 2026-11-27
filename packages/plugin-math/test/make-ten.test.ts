@@ -238,7 +238,9 @@ test("words: en and zh, whole sentences, the colour word named and drawn in its 
   eq(makeTenPlain(makeTenInstruction(p86, "en-US")), "Make a ten: tap a blue counter to fill the empty places.", "en start names the giver's colour");
   eq(makeTenInstruction(p86, "en-US").filter((x) => typeof x !== "string"), [{ word: "blue", frame: 1 }], "the colour word is the second addend's");
   eq(makeTenPlain(makeTenInstruction(p49, "zh-CN")), "凑成十：点红色的圆片，把空位填满。", "zh start: 4 + 9 gives red");
-  eq(makeTenPlain(makeTenInstruction(makeTenState({ a: 8, b: 6, filled: 8, moved: 1 }), "en-US")), "Keep tapping blue counters until the frame is full.", "en going");
+  eq(makeTenPlain(makeTenInstruction(makeTenState({ a: 8, b: 6, filled: 8, moved: 1 }), "en-US")), "Keep tapping blue counters until the frame is full. A counter that crossed goes back when tapped.", "en going: it can go back (Learn #259)");
+  eqNew(makeTenPlain(makeTenInstruction(makeTenState({ a: 3, b: 8, filled: 8, moved: 1 }), "zh-CN")), "接着点红色的圆片，直到框满了。移过去的圆片，点一下就回去。", "zh going");
+  eqNew(makeTenPlain(makeTenInstruction(makeTenState({ a: 8, b: 6, filled: 8, moved: 0 }), "en-US")).includes("goes back"), false, "before any counter crosses, nothing to bring back");
   eq(makeTenPlain(makeTenInstruction(makeTenState({ a: 8, b: 6, filled: 8, moved: 2 }), "zh-CN")), "框满十了。在下面填空。", "zh done");
   eq(makeTenRefusalText(p86, "stays", "en-US"), "Red counters stay in their frame.", "the refusal is a fact a child reads");
   eq(makeTenRefusalText(p49, "stays", "zh-CN"), "蓝色的圆片留在自己的框里。", "zh refusal names the filling frame's colour");

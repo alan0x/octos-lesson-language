@@ -454,7 +454,9 @@ export const MAKE_TEN_WORDS = {
     cardLabel: "Making ten on two ten frames",
     howto: {
       start: "Make a ten: tap a {c} counter to fill the empty places.",
-      going: "Keep tapping {c} counters until the frame is full.",
+      // Once a counter has crossed, the line also says it can go back: hosts that draw the card's own line skip the
+      // fixed how-to, which said so (Learn #259).
+      going: "Keep tapping {c} counters until the frame is full. A counter that crossed goes back when tapped.",
       done: "The frame is a ten. Fill in the blanks.",
       shown: "The frame is a ten.",
     },
@@ -480,7 +482,7 @@ export const MAKE_TEN_WORDS = {
     cardLabel: "两个十格框凑十",
     howto: {
       start: "凑成十：点{c}的圆片，把空位填满。",
-      going: "接着点{c}的圆片，直到框满了。",
+      going: "接着点{c}的圆片，直到框满了。移过去的圆片，点一下就回去。",
       done: "框满十了。在下面填空。",
       shown: "框满十了。",
     },
