@@ -109,6 +109,7 @@ function create(parent: HTMLElement, raw: Record<string, unknown>, context: Make
   const captions: SVGTextElement[] = [];
   const frames: SVGGElement[] = [];
   for (const frame of plan.frames) {
+    // `.make-ten-caption` with `data-frame` is a stable hook: hosts anchor the row of blanks to these live counts (Learn).
     const caption = element("text", { x: round(frame.caption.x), y: round(frame.caption.y), "text-anchor": "middle", "dominant-baseline": "central", "font-size": 34, "font-weight": 600, fill: COLORS.ink, "font-variant-numeric": "tabular-nums" }, "make-ten-caption");
     caption.dataset.frame = String(frame.frame);
     svg.append(caption);

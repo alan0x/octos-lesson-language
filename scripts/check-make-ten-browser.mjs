@@ -123,6 +123,8 @@ try {
   let now = await read(page);
   check(now.given === "7 + 5" && now.values.a === 7 && now.values.filled === 7, `the task shows its own pair, fresh: ${JSON.stringify([now.given, now.values])}`);
   check(now.frames[0].caption === "7" && now.frames[1].caption === "5" && now.frames[0].red === 7 && now.frames[1].blue === 5, `each frame its addend, apart: ${JSON.stringify(now.frames)}`);
+  // The live counts are the hook a host anchors the row of blanks to: one `.make-ten-caption` per frame, by `data-frame`.
+  check(await page.evaluate(() => [...document.querySelectorAll("svg.make-ten .make-ten-caption")].map((caption) => caption.dataset.frame).join()) === "0,1", "one .make-ten-caption per frame (data-frame 0 and 1), the host's answer anchor");
   check(now.howto === "Make a ten: tap a blue counter to fill the empty places." && JSON.stringify(now.howtoColour) === '["blue:1"]', `the line names the giving colour, in that colour: ${JSON.stringify([now.howto, now.howtoColour])}`);
   check(now.frames[1].movable === 5 && now.frames[0].movable === 0 && now.frames[0].landing === 3 && now.frames[1].landing === 0 && now.arrow === "0",
     `the blue counters marked, dashed places only in the 7's frame, an arrow toward them: ${JSON.stringify([now.frames, now.arrow])}`);
@@ -139,7 +141,7 @@ try {
   await click(page, counter(1, 1, 2));
   now = await read(page);
   check(now.frames[0].pieces.at(-1) === blue && now.frames[1].blue === 4 && now.note === "" && now.refused.length === 0, `the blue counter clicked crossed into the 7's frame; the fact cleared: ${JSON.stringify(now.frames)}`);
-  check(now.frames[0].caption === "8" && now.frames[1].caption === "4" && now.arrow === null && now.howto === "Keep tapping blue counters until the frame is full.", `the counts follow, 8 and 4; the arrow is gone: ${JSON.stringify([now.frames.map((f) => f.caption), now.arrow, now.howto])}`);
+  check(now.frames[0].caption === "8" && now.frames[1].caption === "4" && now.arrow === null && now.howto === "Keep tapping blue counters until the frame is full. A counter that crossed goes back when tapped.", `the counts follow, 8 and 4; the arrow is gone: ${JSON.stringify([now.frames.map((f) => f.caption), now.arrow, now.howto])}`);
   check(now.values.moved === 1 && JSON.stringify(now.statuses) === '["not_started","not_started"]', `taps are not attempts: ${JSON.stringify([now.values.moved, now.statuses])}`);
   // The crossed counter clicked goes home.
   await click(page, `.make-ten-counter[data-piece="${blue}"]`);
