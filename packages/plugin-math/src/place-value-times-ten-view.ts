@@ -16,7 +16,7 @@
 import { placeValueNumeral, type PlaceValueLanguage } from "./place-value-chart.js";
 import {
   PLACE_VALUE_TIMES_TEN_COPIES, PLACE_VALUE_TIMES_TEN_GEOMETRY as GEO, PLACE_VALUE_TIMES_TEN_WORDS, placeValueTimesTenColumn,
-  placeValueTimesTenCopies, placeValueTimesTenDiskFont, placeValueTimesTenInstruction, placeValueTimesTenLanguage,
+  placeValueTimesTenCopies, placeValueTimesTenDiskFont, placeValueTimesTenDiskLabelWidth, placeValueTimesTenInstruction, placeValueTimesTenLanguage,
   placeValueTimesTenProblemText, placeValueTimesTenRowWidth, placeValueTimesTenSlotTop, placeValueTimesTenState,
   placeValueTimesTenStateKey, placeValueTimesTenStepSentence, planPlaceValueTimesTen,
   type PlaceValueTimesTenPlan, type PlaceValueTimesTenProblem, type PlaceValueTimesTenState,
@@ -92,7 +92,12 @@ function disk(plan: PlaceValueTimesTenPlan, place: number, x: number, y: number)
   const group = element("g", {}, "place-value-times-ten-disk");
   group.dataset.place = String(place);
   group.append(element("circle", { cx: round(x), cy: round(y), r: GEO.D / 2, fill: column.fill }));
-  const label = element("text", { x: round(x), y: round(y), "text-anchor": "middle", "dominant-baseline": "central", "font-size": round(placeValueTimesTenDiskFont(column.diskLabel)), "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none" });
+  // A wide place value (100,000; 1,000,000) is squeezed to the disk, so it never runs under the next disk.
+  const squeeze = placeValueTimesTenDiskLabelWidth(column.diskLabel);
+  const label = element("text", {
+    x: round(x), y: round(y), "text-anchor": "middle", "dominant-baseline": "central", "font-size": round(placeValueTimesTenDiskFont(column.diskLabel)), "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none",
+    ...(squeeze !== undefined ? { textLength: round(squeeze), lengthAdjust: "spacingAndGlyphs" } : {}),
+  });
   label.textContent = column.diskLabel;
   group.append(label);
   return group;
@@ -139,6 +144,9 @@ function create(parent: HTMLElement, raw: Record<string, unknown>, context: Plac
     svg.append(text);
   }
   for (const point of plan.points) svg.append(element("circle", { cx: round(point.x), cy: round(point.y), r: 4, fill: COLORS.ink, "aria-label": words.point }, "place-value-times-ten-point"));
+  // Where the answer is read: a stable element a player frames when the answer row opens (nothing drawn).
+  const { answer } = plan;
+  svg.append(element("rect", { x: round(answer.x), y: round(answer.y), width: round(answer.width), height: round(answer.height), fill: "none", "pointer-events": "none", "aria-hidden": "true" }, "place-value-times-ten-answer"));
   const overlay = element("g", { "pointer-events": "none" }, "place-value-times-ten-overlay");
   svg.append(overlay);
   const notice = document.createElement("div");

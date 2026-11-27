@@ -866,6 +866,11 @@ export interface PlaceValueTimesTenPlan {
   labels: Array<{ row: 1 | 2; text: string; x: number; y: number }>;
   /** The decimal point's dots, between the ones and the tenths. */
   points: Array<{ x: number; y: number }>;
+  /**
+   * Where the answer is read (drawn as `.place-value-times-ten-answer`, for a player to frame when the answer row
+   * opens): a count's target column; a times pair's column of copy numbers (1 to 10), beside its copies.
+   */
+  answer: PlaceValueTimesTenBox;
 }
 
 /** The sketch's geometry (px): disks of 30, rows of 42, squares of 106. */
@@ -927,10 +932,27 @@ export function planPlaceValueTimesTen(raw: unknown): PlaceValueTimesTenPlan {
     { row: 1, text: placeValueNumeral(p.amount, language), x: GEO.EDGE + labelWidth - 10, y: top + h1 / 2 },
     { row: 2, text: placeValueNumeral(p.target, language), x: GEO.EDGE + labelWidth - 10, y: top + h1 + 8 + h2 / 2 },
   ] : [];
-  return { width, height, disk: GEO.D, gap: GEO.G, columns, labels, points };
+  const asked = columns.find((column) => column.place === p.t)!;
+  const numbers = asked.cell.x + GEO.CP + placeValueTimesTenRowWidth(p.n) + 2;
+  const answer = times
+    ? { x: numbers, y: asked.cell.y + placeValueTimesTenSlotTop(0), width: asked.cell.x + asked.cell.width - numbers, height: placeValueTimesTenSlotTop(PLACE_VALUE_TIMES_TEN_COPIES - 1) - placeValueTimesTenSlotTop(0) + GEO.D + 2 * GEO.RP }
+    : { ...asked.cell };
+  return { width, height, disk: GEO.D, gap: GEO.G, columns, labels, points, answer };
 }
 
 /** The font size a disk label fits at, by the label's length. */
 export function placeValueTimesTenDiskFont(label: string, disk: number = GEO.D): number {
-  return label.length >= 5 ? disk * 0.29 : label.length >= 4 ? disk * 0.35 : disk * 0.4;
+  return label.length >= 7 ? disk * 0.26 : label.length >= 5 ? disk * 0.29 : label.length >= 4 ? disk * 0.35 : disk * 0.4;
+}
+
+/**
+ * The width a disk label is drawn to when at its font it would run past the disk (a wide place value: 100,000 and
+ * 1,000,000 on disks of 30 px), or undefined when it fits as it is. Estimated from bold digits (0.6 em) and
+ * separators (0.3 em); the label is then squeezed to the disk's inner width, so it is read whole on its own disk.
+ */
+export function placeValueTimesTenDiskLabelWidth(label: string, disk: number = GEO.D): number | undefined {
+  const font = placeValueTimesTenDiskFont(label, disk);
+  const natural = [...label].reduce((sum, char) => sum + (/[0-9]/u.test(char) ? 0.6 : /[,.]/u.test(char) ? 0.3 : 1) * font, 0);
+  const inner = disk - 6;
+  return natural > inner ? inner : undefined;
 }
