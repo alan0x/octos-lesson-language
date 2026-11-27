@@ -364,6 +364,10 @@ export { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewC
 export * from "./make-ten.js";
 export { buildMakeTen, type BuiltMakeTen, type MakeTenInput } from "./make-ten-builder.js";
 export { renderMakeTen, updateMakeTen, type MakeTenViewContext } from "./make-ten-view.js";
+// Ten of one place make one of the next: an amount counted in another unit (decision 0028).
+export * from "./place-value-times-ten.js";
+export { buildPlaceValueTimesTen, type BuiltPlaceValueTimesTen, type PlaceValueTimesTenInput } from "./place-value-times-ten-builder.js";
+export { renderPlaceValueTimesTen, updatePlaceValueTimesTen, type PlaceValueTimesTenViewContext } from "./place-value-times-ten-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
