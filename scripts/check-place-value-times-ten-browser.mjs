@@ -11,7 +11,9 @@
 // - Chinese: put-together questions (300 ones = ? hundreds: squares of a hundred into rows of ten, rows into one;
 //   60 thousandths = ? hundredths), the card's words in Chinese;
 // - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000), each a lesson's practice card (the card the
-//   learner works), fit the window and keep their height while worked.
+//   learner works), fit the window and keep their height while worked; every disk's label fits its disk (a wide
+//   place value, 1,000,000, squeezed to it); the answer's element (`.place-value-times-ten-answer`) is a count's
+//   target column and a times pair's copy numbers.
 // Numbers are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_TIMES_TEN_SCREENSHOTS when it is set.
 // - the program's demonstration: "counted in" 0.1 -> 0.01 -> 0.001 breaks every tenth, then every row; 700 counted in
 //   70s deals every hundred into ten whole copies; played by the session with motion, one row at a time; then the
@@ -263,6 +265,28 @@ try {
     // The card measured is the practice's: its own amount (9 ones; 9,000,000), not the lesson's.
     const practiceAmount = name === "widestCount" ? 9000 : 9_000_000_000;
     check(first.values.amount === practiceAmount, `${name}: the card measured is the practice card (amount ${practiceAmount}), not ${first.values.amount}`);
+    // Every disk's label is read whole on its own disk (a wide place value, 1,000,000, is squeezed to fit), and
+    // the answer's element is where the answer is read: a count's target column, a times pair's copy numbers.
+    const fit = await page.evaluate(() => {
+      const svg = document.querySelector(".place-value-times-ten");
+      const labels = [...svg.querySelectorAll(".place-value-times-ten-disk")].map((disk) => {
+        const circle = disk.querySelector("circle"), text = disk.querySelector("text");
+        return { label: text.textContent, width: text.getBBox().width, disk: 2 * Number(circle.getAttribute("r")) };
+      });
+      const answer = svg.querySelectorAll(".place-value-times-ten-answer");
+      const box = (node) => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
+      const at = answer.length === 1 ? box(answer[0]) : null;
+      const numbers = [...svg.querySelectorAll(".place-value-times-ten-number")].map(box);
+      const target = [...svg.querySelectorAll(".place-value-times-ten-cell")].find((cell) => cell.getAttribute("stroke-dasharray"));
+      return { over: labels.filter((each) => each.width > each.disk - 2).slice(0, 3), labels: labels.length, count: answer.length, at, numbers, target: target ? box(target) : null };
+    });
+    check(fit.labels > 0 && fit.over.length === 0, `${name}: every disk label fits its disk: ${JSON.stringify(fit.over)}`);
+    const inside = (outer, inner) => inner.left >= outer.left - 1 && inner.right <= outer.right + 1 && inner.top >= outer.top - 1 && inner.bottom <= outer.bottom + 1;
+    if (name === "widestTimes") {
+      check(fit.count === 1 && fit.numbers.length >= 10 && fit.numbers.slice(0, 10).every((number) => inside(fit.at, number)), `${name}: one answer element holds the copy numbers 1 to 10: ${JSON.stringify([fit.at, fit.numbers.slice(0, 10)])}`);
+    } else {
+      check(fit.count === 1 && fit.target && inside(fit.at, fit.target) && inside(fit.target, fit.at), `${name}: the answer element is the target column: ${JSON.stringify([fit.at, fit.target])}`);
+    }
     const n = Object.values(first.columns).reduce((sum, column) => sum + column.disks + column.rows + column.squares, 0);
     await tapAt(page, "move:0");
     const mid = await read(page); // two kinds can be tapped: the instruction is two sentences
@@ -274,6 +298,11 @@ try {
     check(Math.abs(first.card.height - last.card.height) <= 1, `${name}: the card keeps its height while worked: ${JSON.stringify([first.card, last.card])}`);
     console.log(`  ${name}: card ${first.card.width} x ${first.card.height} px`);
     if (shots) await page.screenshot({ path: `${shots}/${name}.png` });
+    if (shots && name === "widestTimes") {
+      await open(page, name, { frame: 1 });
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: `${shots}/${name}-start.png` });
+    }
   }
   check(errors.length === 0, `no page errors: ${errors.join("; ")}`);
 } finally {

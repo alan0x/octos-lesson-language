@@ -412,6 +412,25 @@ test("plan: desktop sizes, room kept from the start", () => {
   ok(count.columns[0]!.width < count.columns[1]!.width, "a column of single disks is narrow");
 });
 
+test("plan: where the answer is read (a count's target column; a times pair's copy numbers), and disk labels that fit", () => {
+  const G = m.PLACE_VALUE_TIMES_TEN_GEOMETRY;
+  for (const p of all) {
+    const plan = m.planPlaceValueTimesTen(contentOf(m.placeValueTimesTenStart(p)));
+    const column = plan.columns.find((candidate) => candidate.place === p.t)!;
+    if (p.question === "count") {
+      eq(plan.answer, column.cell, `${p.amount}/${p.target}: the target column`);
+      continue;
+    }
+    // Beside the copies, across all ten of them, inside the column.
+    ok(plan.answer.x > column.cell.x + G.CP + m.placeValueTimesTenRowWidth(p.n), `${p.amount}/${p.target}: right of the copies`);
+    ok(plan.answer.x + plan.answer.width <= column.cell.x + column.cell.width + 1e-9 && plan.answer.width >= 24, `${p.amount}/${p.target}: inside the column, room for "10"`);
+    eq([plan.answer.y, plan.answer.y + plan.answer.height], [column.cell.y + m.placeValueTimesTenSlotTop(0), column.cell.y + m.placeValueTimesTenSlotTop(9) + G.D + 2 * G.RP], `${p.amount}/${p.target}: copies 1 to 10`);
+  }
+  // A wide place value is squeezed to its disk; a short one is drawn as it is.
+  for (const label of ["100,000", "1,000,000", "10,000"]) ok((m.placeValueTimesTenDiskLabelWidth(label) ?? 99) <= G.D - 6, `${label} fits its disk`);
+  for (const label of ["1", "10", "100", "0.1", "0.01", "0.001", "1万"]) eq(m.placeValueTimesTenDiskLabelWidth(label), undefined, `${label} is drawn as it is`);
+});
+
 test("builder: the program supplies counted in; a pair written smaller first; bindings", () => {
   const built = buildPlaceValueTimesTen({ as: "chart", role: "concept", place: { region_intent: "new_topic" }, amount: { expression: "amount", initial: 300 }, target: { expression: "target", initial: 1 } });
   const content = (built.actions[0] as unknown as { content: m.PlaceValueTimesTenContent }).content;
