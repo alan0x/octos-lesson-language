@@ -9,7 +9,9 @@
  * The frame (columns, rows, labels) is drawn once; each update redraws the disks from the state. A change the
  * rules made (a learner's tap, or the demonstration's next columns) is animated one action at a time: a column
  * coming down, ten disks gathering into one of the next place, disks taken onto their rings, one disk breaking
- * into ten. With reduced motion the chart changes at once.
+ * into ten. A demonstration's action, which the player sets one at a time, is drawn at the demonstration's slower
+ * pace (`demonstrationMs`; owner, 2026-11-27); a learner's tap keeps its quick one. With reduced motion the chart
+ * changes at once.
  *
  * Every element a learner can tap carries `data-oll-tap`, the tap and its place's index (the place plus three,
  * as on the chart: "down:3" is ↓ under the ones, "trade:4" the tens' ringed ten, "break:5" a hundred); the board
@@ -19,7 +21,7 @@
  */
 import { PLACE_VALUE_PLACE_ALIASES, placeValueColumnName, placeValueDiskLabel, placeValueTapIndex, placeValueTapPlace, type PlaceValueLanguage } from "./place-value-chart.js";
 import {
-  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeDemoSteps, placeValueTradeDiskAt, placeValueTradeDrawnCell,
+  PLACE_VALUE_TRADE_WORDS, applyPlaceValueTradeTap, placeValueTradeBreakSource, placeValueTradeDemoAt, placeValueTradeDemoSteps, placeValueTradeDiskAt, placeValueTradeDrawnCell,
   placeValueTradeDiskFont, placeValueTradeInstruction, placeValueTradeLanguage, placeValueTradeProblemText, placeValueTradeRefusalPlace,
   placeValueTradeStart, placeValueTradeState, placeValueTradeStateKey, placeValueTradeUnitWord, planPlaceValueTrade,
   type PlaceValueTradeAnim, type PlaceValueTradePlan, type PlaceValueTradeRow, type PlaceValueTradeState, type PlaceValueTradeTapKind,
@@ -41,6 +43,12 @@ export interface PlaceValueTradeViewContext {
   refused?: { kind: string; place: number };
   /** Draw changes at once (also when the page asks for reduced motion). */
   reducedMotion?: boolean;
+  /**
+   * How long one step of the lesson's demonstration animates (`DEMONSTRATION_STEP_MS` at the playback speed; owner,
+   * 2026-11-27). The player moves "columns finished" one action at a time; that one action is drawn this slowly.
+   * A learner's tap keeps its quick pace, and a jump of several actions (a seek, a restore) plays at the tap pace.
+   */
+  demonstrationMs?: number;
 }
 
 interface TradeView {
@@ -70,7 +78,8 @@ interface TradeView {
   /** What the context drew last (live, the note, the short column). */
   drawnContext?: string;
   timer?: ReturnType<typeof setTimeout>;
-  queue: Array<{ state: PlaceValueTradeState; anim?: PlaceValueTradeAnim }>;
+  /** Actions still to draw; `scale` stretches one's animation (a demonstration step). */
+  queue: Array<{ state: PlaceValueTradeState; anim?: PlaceValueTradeAnim; scale?: number }>;
 }
 
 const views = new WeakMap<HTMLElement, TradeView>();
@@ -378,8 +387,12 @@ const diskNode = (view: TradeView, place: number, row: PlaceValueTradeRow, index
 /** The milliseconds an action's animation takes before the next may start. */
 const ACTION_MS: Record<PlaceValueTradeAnim["kind"], number> = { down: 700, trade: 1300, take: 1000, break: 850 };
 
-/** Animates one action from the state drawn before it (`before`) to the one drawn now. */
-function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValueTradeState, anim: PlaceValueTradeAnim): void {
+/**
+ * Animates one action from the state drawn before it (`before`) to the one drawn now. `scale` stretches every
+ * duration and delay: 1 at a tap's pace, more for a demonstration step.
+ */
+function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValueTradeState, anim: PlaceValueTradeAnim, scale = 1): void {
+  const t = (ms: number) => ms * scale;
   const cellBefore = (place: number) => placeValueTradeCell(before, place);
   const cellAfter = (place: number) => placeValueTradeCell(after, place);
   if (anim.kind === "down") {
@@ -391,33 +404,33 @@ function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValu
     ];
     for (let i = 0; i < cellAfter(anim.place).answer; i += 1) {
       const node = diskNode(view, anim.place, "answer", i);
-      if (node && sources[i]) fly(node, sources[i]!, diskPosition(view, after, anim.place, "answer", i), i * 22, 520);
+      if (node && sources[i]) fly(node, sources[i]!, diskPosition(view, after, anim.place, "answer", i), t(i * 22), t(520));
     }
   } else if (anim.kind === "trade") {
     const ten = Array.from({ length: 10 }, (_, i) => diskPosition(view, before, anim.from, "answer", i));
     const mid = { x: ten.reduce((sum, p) => sum + p.x, 0) / 10, y: ten.reduce((sum, p) => sum + p.y, 0) / 10 };
-    ten.forEach((at, i) => ghost(view, anim.from, at, mid, i * 15, 620, 0.3));
+    ten.forEach((at, i) => ghost(view, anim.from, at, mid, t(i * 15), t(620), 0.3));
     // The rest of the column close up under where the ring was.
     for (let i = 0; i < cellAfter(anim.from).answer; i += 1) {
       const node = diskNode(view, anim.from, "answer", i);
-      if (node) fly(node, diskPosition(view, before, anim.from, "answer", i + 10), diskPosition(view, after, anim.from, "answer", i), 300, 420);
+      if (node) fly(node, diskPosition(view, before, anim.from, "answer", i + 10), diskPosition(view, after, anim.from, "answer", i), t(300), t(420));
     }
     const target = anim.landed === "carry" ? diskNode(view, anim.to, "carry", 0) : diskNode(view, anim.to, "answer", cellAfter(anim.to).answer - 1);
     if (target && canAnimate(target)) {
       const to = anim.landed === "carry" ? diskPosition(view, after, anim.to, "carry", 0) : diskPosition(view, after, anim.to, "answer", cellAfter(anim.to).answer - 1);
       const move = `translate(${round(mid.x - to.x)}px, ${round(mid.y - to.y)}px)`;
-      target.animate([{ transform: `${move} scale(.3)`, opacity: 0 }, { transform: `${move} scale(1.3)`, opacity: 1, offset: 0.35 }, { transform: "none" }], { duration: 900, delay: 560, easing: "ease-in-out", fill: "backwards" });
+      target.animate([{ transform: `${move} scale(.3)`, opacity: 0 }, { transform: `${move} scale(1.3)`, opacity: 1, offset: 0.35 }, { transform: "none" }], { duration: t(900), delay: t(560), easing: "ease-in-out", fill: "backwards" });
     }
   } else if (anim.kind === "take") {
     const v = cellBefore(anim.place);
     const stay = v.top - anim.n;
     for (let i = 0; i < anim.n; i += 1) {
       const at = diskPosition(view, before, anim.place, "top", stay + i);
-      ghost(view, anim.place, at, placeValueTradeDiskAt(view.plan, anim.place, "second", i, false, cellBefore(anim.place).second), i * 30, 820, 0.5);
+      ghost(view, anim.place, at, placeValueTradeDiskAt(view.plan, anim.place, "second", i, false, cellBefore(anim.place).second), t(i * 30), t(820), 0.5);
     }
     for (let i = 0; i < cellAfter(anim.place).answer; i += 1) {
       const node = diskNode(view, anim.place, "answer", i);
-      if (node && i < stay) fly(node, diskPosition(view, before, anim.place, "top", i), diskPosition(view, after, anim.place, "answer", i), 300 + i * 22, 520);
+      if (node && i < stay) fly(node, diskPosition(view, before, anim.place, "top", i), diskPosition(view, after, anim.place, "answer", i), t(300 + i * 22), t(520));
     }
   } else {
     const fromRow: PlaceValueTradeRow = cellBefore(anim.from).down ? "answer" : "top";
@@ -431,8 +444,8 @@ function animate(view: TradeView, before: PlaceValueTradeState, after: PlaceValu
       if (!node) continue;
       const at = diskPosition(view, after, anim.to, toRow, i);
       // The ten new disks (drawn first, ringed) come from the broken disk; the ones already there close up behind them.
-      if (ringed ? i < 10 : i >= had) fly(node, from, at, i * 35, 600);
-      else fly(node, diskPosition(view, before, anim.to, toRow, ringed ? i - 10 : i), at, 0, 400);
+      if (ringed ? i < 10 : i >= had) fly(node, from, at, t(i * 35), t(600));
+      else fly(node, diskPosition(view, before, anim.to, toRow, ringed ? i - 10 : i), at, 0, t(400));
     }
   }
 }
@@ -445,14 +458,14 @@ function play(view: TradeView): void {
   const before = view.shown;
   draw(view, next.state);
   if (before && next.anim && !reduced(view)) {
-    try { animate(view, before, next.state, next.anim); } catch { /* drawing goes on without the animation */ }
+    try { animate(view, before, next.state, next.anim, next.scale); } catch { /* drawing goes on without the animation */ }
   }
   if (!view.queue.length) return;
   view.timer = setTimeout(() => {
     view.timer = undefined;
     if (!view.svg.isConnected) { view.queue = []; return; }
     play(view);
-  }, next.anim ? ACTION_MS[next.anim.kind] : 0);
+  }, next.anim ? ACTION_MS[next.anim.kind] * (next.scale ?? 1) : 0);
 }
 
 const sameProblem = (x: PlaceValueTradeState | undefined, y: PlaceValueTradeState): boolean =>
@@ -460,28 +473,27 @@ const sameProblem = (x: PlaceValueTradeState | undefined, y: PlaceValueTradeStat
 
 /**
  * The actions from the state drawn to a new one, when the rules make it in a few known actions: the learner's
- * one tap (one column's status changed), or the demonstration's next columns (columns finished went up).
- * Undefined when the change is anything else (a practice start, a done pile): it is drawn at once.
+ * one tap (one column's status changed), or the demonstration's next actions (columns finished went up; the
+ * player moves it one action at a time, `placeValueTradeDemoAt`), with `demo` set. Undefined when the change is
+ * anything else (a practice start, a done pile): it is drawn at once.
  */
-function actionsBetween(from: PlaceValueTradeState & { finished?: number }, to: PlaceValueTradeState & { finished?: number }): Array<{ state: PlaceValueTradeState; anim: PlaceValueTradeAnim }> | undefined {
+function actionsBetween(from: PlaceValueTradeState & { finished?: number }, to: PlaceValueTradeState & { finished?: number }): { demo: boolean; actions: Array<{ state: PlaceValueTradeState; anim: PlaceValueTradeAnim }> } | undefined {
   if (!sameProblem(from, to)) return undefined;
   const k0 = from.finished ?? 0, k1 = to.finished ?? 0;
   if (k1 > k0) {
-    // Only from the demonstration's own chart at k0 columns: a fresh one, or one it left.
-    const expected = k0 === 0 ? placeValueTradeStart(from.problem) : placeValueTradeDemoSteps(from.problem).steps[k0 - 1]!.after;
+    const at0 = placeValueTradeDemoAt(from.problem, k0), at1 = placeValueTradeDemoAt(from.problem, k1);
+    const flat = placeValueTradeDemoSteps(from.problem).steps.flatMap((step) => step.actions.map((action, i) => ({ action, before: step.states[i]!, after: step.states[i + 1]! })));
+    // Only from the demonstration's own chart where it stands: a fresh one, or one it left.
+    const expected = at0.index === 0 ? placeValueTradeStart(from.problem) : flat[at0.index - 1]!.after;
     if (placeValueTradeStateKey(from) !== placeValueTradeStateKey(expected)) return undefined;
-    const out: Array<{ state: PlaceValueTradeState; anim: PlaceValueTradeAnim }> = [];
-    for (const step of placeValueTradeDemoSteps(from.problem).steps.slice(k0, k1)) {
-      step.actions.forEach((action, i) => {
-        const before = step.states[i]!, after = step.states[i + 1]!;
-        const anim: PlaceValueTradeAnim = action.kind === "down" ? { kind: "down", place: action.place }
-          : action.kind === "trade" ? { kind: "trade", from: action.place, to: action.place + 1, landed: placeValueTradeCell(before, action.place + 1).down ? "answer" : "carry" }
-            : action.kind === "take" ? { kind: "take", place: action.place, n: before.problem.db[action.place]! }
-              : { kind: "break", from: action.place, to: action.place - 1, landed: placeValueTradeCell(before, action.place - 1).down ? "answer" : "top" };
-        out.push({ state: after, anim });
-      });
-    }
-    return out;
+    const actions = flat.slice(at0.index, at1.index).map(({ action, before, after }) => {
+      const anim: PlaceValueTradeAnim = action.kind === "down" ? { kind: "down", place: action.place }
+        : action.kind === "trade" ? { kind: "trade", from: action.place, to: action.place + 1, landed: placeValueTradeCell(before, action.place + 1).down ? "answer" : "carry" }
+          : action.kind === "take" ? { kind: "take", place: action.place, n: before.problem.db[action.place]! }
+            : { kind: "break", from: action.place, to: action.place - 1, landed: placeValueTradeCell(before, action.place - 1).down ? "answer" : "top" };
+      return { state: after, anim };
+    });
+    return { demo: true, actions };
   }
   if (k1 < k0) return undefined;
   const changed = from.problem.columns.filter((place) => from.status[place] !== to.status[place]);
@@ -489,7 +501,7 @@ function actionsBetween(from: PlaceValueTradeState & { finished?: number }, to: 
   for (const tap of ["down", "trade", "break"] as const) {
     for (const place of [changed[0]!, changed[0]! + 1]) {
       const result = applyPlaceValueTradeTap(from, { tap, place });
-      if (result.ok && placeValueTradeStateKey(result.state) === placeValueTradeStateKey(to)) return [{ state: to, anim: result.anim }];
+      if (result.ok && placeValueTradeStateKey(result.state) === placeValueTradeStateKey(to)) return { demo: false, actions: [{ state: to, anim: result.anim }] };
     }
   }
   return undefined;
@@ -533,15 +545,18 @@ function update(view: TradeView, raw: Record<string, unknown>, context: PlaceVal
     if (!view.queue.length && view.timer === undefined && key !== view.drawnContext) draw(view, view.shown ?? state);
     return;
   }
-  const actions = shown ? actionsBetween(shown as PlaceValueTradeState & { finished?: number }, target) : undefined;
+  const between = shown ? actionsBetween(shown as PlaceValueTradeState & { finished?: number }, target) : undefined;
   view.target = target;
-  if (!actions || !actions.length || reduced(view)) {
+  if (!between || !between.actions.length || reduced(view)) {
     if (view.timer !== undefined) { clearTimeout(view.timer); view.timer = undefined; }
     view.queue = [];
     draw(view, state);
     return;
   }
-  view.queue.push(...actions);
+  // One action of the demonstration is a step at its own pace; a learner's tap, or a jump of several, at the tap's.
+  const only = between.actions.length === 1 ? between.actions[0]! : undefined;
+  const scale = between.demo && only && context.demonstrationMs ? Math.max(1, context.demonstrationMs / ACTION_MS[only.anim.kind]) : undefined;
+  view.queue.push(...between.actions.map((action) => (scale ? { ...action, scale } : action)));
   play(view);
 }
 

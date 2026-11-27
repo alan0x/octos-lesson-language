@@ -9,8 +9,9 @@ export const MATH_PLUGIN_MANIFEST = {
   // 0.8.0: the place-value chart, the `place_value_chart` card (decision 0025). 0.9.0: adding and subtracting
   // on the chart as the written method, the `place_value_trade` card (decision 0026). 0.10.0: making ten to add
   // on two ten frames, the `make_ten` card (decision 0027). 0.11.0: an amount counted in another unit, the
-  // `place_value_times_ten` card (decision 0028).
-  version: "0.11.0",
+  // `place_value_times_ten` card (decision 0028). 0.11.1: a lesson's demonstration on a tap card plays one action
+  // at a time, a step's slot each (owner, 2026-11-27; 0026 revision 2); lessons still require 0.11.0.
+  version: "0.11.1",
   // Every subject plugin depends on the shared tools (decision 0012).
   depends: { shared: "0.1.0" },
   ollCore: ">=0.10.0",

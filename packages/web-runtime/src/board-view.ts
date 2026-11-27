@@ -7,6 +7,7 @@ import { visibleBoard } from "./visible-board.js";
 import { numberLineZoomControl, renderNumberLine, type NumberLineViewContext, type NumberLineZoomControl } from "../../plugin-math/src/number-line-view.js";
 import { renderFractionModel } from "../../plugin-math/src/fraction-model-view.js";
 import { baseTenStepDelay, baseTenStepFrames, renderBaseTenTrade, updateBaseTenTrade, type BaseTenTradeViewContext } from "../../plugin-math/src/base-ten-trade-view.js";
+import { demonstrationStepMs } from "../../plugin-math/src/demonstration-pace.js";
 import { baseTenMat, type BaseTenMat, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import { renderPlaceValueChart, updatePlaceValueChart, type PlaceValueChartViewContext } from "../../plugin-math/src/place-value-chart-view.js";
 import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js";
@@ -1558,6 +1559,16 @@ export interface CardTapHandler {
 
 const matKey = (mat: BaseTenMat): string => `${mat.columns}:${mat.counts.join(",")}/${mat.trays.join(",")}`;
 
+/**
+ * A card's heading: its own title or label, as the lesson wrote it. A role ("main_visual") is the lesson's internal
+ * name for the card's part in it and is never shown (owner, 2026-11-27); a card without a title has no heading.
+ * Learner ink speaks for itself.
+ */
+export function cardHeading(node: { kind?: unknown; content?: Record<string, unknown> | null }): string {
+  const content = node.content ?? {};
+  return node.kind === "ink" ? "" : text(content.title || content.label || "");
+}
+
 export function angleControlValue(
   rawAngle: number,
   currentValue: number,
@@ -1787,8 +1798,7 @@ function renderContent(
   placeValueTimesTen?: PlaceValueTimesTenViewContext,
 ): void {
   const content = node.content ?? {};
-  // Learner ink speaks for itself; its role is not a card title.
-  const title = node.kind === "ink" ? "" : text(content.title || content.label || (node.role && node.kind !== "math" && node.role !== node.kind ? node.role : ""));
+  const title = cardHeading(node);
   if (title) appendText(parent, title, "node-title");
   if (node.kind === "geometry") { renderGeometryExplorer(parent, node, drawGeometry); return; }
   // The math plugin's number line (decision 0013); it marks its own parts for emphasis.
@@ -1981,6 +1991,8 @@ export class InfiniteBoardView {
   }>();
   /** The lesson tap (a demonstration's `card.tap`) each card last animated, so a redraw does not repeat it. */
   private readonly cardLessonTaps = new Map<string, string>();
+  /** The session's playback speed (`setPlaybackSpeed`): a card's demonstration step animates `DEMONSTRATION_STEP_MS` over it. */
+  private playbackSpeed = 1;
   /** What a card draws besides its counts (title, caption, columns); a change redraws it in full (review of #88). */
   private readonly cardFrames = new Map<string, string>();
   /** The rows each place-value chart was last drawn in, so a resize that changes them redraws it. */
@@ -2523,6 +2535,15 @@ export class InfiniteBoardView {
     this.variableInputHandler = handler;
   }
 
+  /**
+   * The session's playback speed (`BrowserLessonSession.setSpeed`). A tap card's demonstration step animates over
+   * `DEMONSTRATION_STEP_MS` divided by it, as long as the session gives the step (owner, 2026-11-27). A host that
+   * changes the speed tells the board too; without it the board takes speed 1.
+   */
+  setPlaybackSpeed(speed: number): void {
+    this.playbackSpeed = Number.isFinite(speed) && speed > 0 ? speed : 1;
+  }
+
   setCardTapHandler(handler: CardTapHandler | undefined): void {
     this.cardTapHandler = handler;
     this.cardNotices.clear();
@@ -2930,9 +2951,11 @@ export class InfiniteBoardView {
         if (cardContext && this.cardFrames.get(node.id) === cardFrame) {
           let step = this.cardSteps.get(node.id);
           this.cardSteps.delete(node.id);
-          // A demonstration tap animates like a learner's, once per lesson action.
+          // A demonstration tap animates like a learner's, once per lesson action, at a demonstration step's pace.
+          let lessonTap = false;
           if (!step && action?.op === "card.tap" && action.tap && action.target?.node_id === node.id && this.cardLessonTaps.get(node.id) !== action.action_id) {
             step = { tap: action.tap as BaseTenTap };
+            lessonTap = true;
             this.cardLessonTaps.set(node.id, action.action_id);
           }
           // A slider's trades (amendment 4) animate one tap after another, as the taps do.
@@ -2949,7 +2972,8 @@ export class InfiniteBoardView {
             updated = true;
           } else {
             this.stopCardSteps(node.id);
-            try { updated = updateBaseTenTrade(element, content, { ...cardContext, ...(step ? { step } : {}) }); } catch { updated = false; }
+            const pace = lessonTap ? { demonstrationMs: demonstrationStepMs(this.playbackSpeed) } : {};
+            try { updated = updateBaseTenTrade(element, content, { ...cardContext, ...(step ? { step } : {}), ...pace }); } catch { updated = false; }
           }
         }
         // The place-value chart updates in place too, so a disk drawn stays and a new one pops in.
@@ -2958,6 +2982,8 @@ export class InfiniteBoardView {
           live: this.cardTapHandler?.live(node.id) ?? false,
           notice: this.cardNotices.get(node.id) ?? "",
           ...(this.cardFitWidth() !== undefined ? { fitWidth: this.cardFitWidth()! } : {}),
+          // The lesson's own tap on the chart (a take-out) is a demonstration step.
+          ...(action?.op === "card.tap" && action.target?.node_id === node.id ? { demonstrationMs: demonstrationStepMs(this.playbackSpeed) } : {}),
         } : undefined;
         if (chartContext) {
           this.renderedPlaceValueBands.set(node.id, this.placeValueBands(node.content));
@@ -2969,6 +2995,7 @@ export class InfiniteBoardView {
           applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
           live: this.cardTapHandler?.live(node.id) ?? false,
           notice: this.cardNotices.get(node.id) ?? "",
+          demonstrationMs: demonstrationStepMs(this.playbackSpeed),
           ...(refusedTap ? { refused: { kind: refusedTap.kind, place: refusedTap.place } } : {}),
         } : undefined;
         if (tradeContext) {
@@ -2983,6 +3010,7 @@ export class InfiniteBoardView {
             applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
             live: this.cardTapHandler?.live(node.id) ?? false,
             notice: this.cardNotices.get(node.id) ?? "",
+            demonstrationMs: demonstrationStepMs(this.playbackSpeed),
             ...(refusedTap ? { refused: { kind: refusedTap.kind, place: refusedTap.place } } : {}),
             ...(step ? { step: { tap: { kind: step.tap.kind, place: step.tap.place }, ...(step.piece ? { piece: step.piece } : {}) } } : {}),
           };
@@ -2993,6 +3021,7 @@ export class InfiniteBoardView {
           applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
           live: this.cardTapHandler?.live(node.id) ?? false,
           notice: this.cardNotices.get(node.id) ?? "",
+          demonstrationMs: demonstrationStepMs(this.playbackSpeed),
           ...(refusedTap ? { refused: { kind: refusedTap.kind, place: refusedTap.place } } : {}),
         } : undefined;
         if (timesTenContext) {
@@ -3166,7 +3195,7 @@ export class InfiniteBoardView {
       if (arrivingFocus?.has(group.id)) element.classList.add("focus-arrive");
       setRect(element, rect);
       const label = element.querySelector<HTMLElement>(".group-label");
-      if (label) bindUi(this.viewport,label,"text",()=>{label.textContent=text(group.title||group.role||ui(this.viewport,"知识组"));});
+      if (label) bindUi(this.viewport,label,"text",()=>{label.textContent=text(group.title||ui(this.viewport,"知识组"));});
     }
   }
 

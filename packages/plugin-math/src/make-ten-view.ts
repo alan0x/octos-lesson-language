@@ -35,6 +35,12 @@ export interface MakeTenViewContext {
   step?: { tap: { kind: string; place: number }; piece?: string };
   /** Draw changes at once (also when the page asks for reduced motion). */
   reducedMotion?: boolean;
+  /**
+   * How long one step of the lesson's demonstration animates (`DEMONSTRATION_STEP_MS` at the playback speed; owner,
+   * 2026-11-27). The player moves `filled` one counter at a time; that one counter's move is drawn this slowly. A
+   * learner's tap keeps its quick pace, and a jump of several counters (a seek, a restore) plays at the tap pace.
+   */
+  demonstrationMs?: number;
 }
 
 interface MakeTenView {
@@ -62,7 +68,8 @@ interface MakeTenView {
   refusedPiece?: string;
   pointingUntil: number;
   timer?: ReturnType<typeof setTimeout>;
-  queue: Array<{ state: MakeTenState; piece?: string }>;
+  /** Moves still to draw; `scale` stretches one's animation (a demonstration step). */
+  queue: Array<{ state: MakeTenState; piece?: string; scale?: number }>;
 }
 
 const views = new WeakMap<HTMLElement, MakeTenView>();
@@ -189,7 +196,7 @@ function positions(view: MakeTenView): Map<string, { x: number; y: number }> {
 }
 
 /** Draws one state: counters, dashed places, the full frame's ring, captions, the arrow, the note and the instruction. */
-function draw(view: MakeTenView, state: MakeTenState, before?: Map<string, { x: number; y: number }>): void {
+function draw(view: MakeTenView, state: MakeTenState, before?: Map<string, { x: number; y: number }>, scale = 1): void {
   const { plan, context } = view;
   const live = context.live === true && view.queue.length === 0 && !makeTenDemonstrating(state);
   const words = MAKE_TEN_WORDS[view.language];
@@ -261,7 +268,7 @@ function draw(view: MakeTenView, state: MakeTenState, before?: Map<string, { x: 
   drawNote(view);
   if (live) richInto(view.howto, makeTenInstruction(state, view.language)); else view.howto.textContent = "";
   view.shown = state;
-  if (before) animateFrom(view, before);
+  if (before) animateFrom(view, before, scale);
 }
 
 /** A refused tap's fact is said under the frame tapped. */
@@ -286,8 +293,11 @@ const reduced = (view: MakeTenView): boolean => view.context.reducedMotion === t
   || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 const canAnimate = (node: Element): boolean => typeof (node as Element & { animate?: unknown }).animate === "function";
 
-/** Every counter that changed place glides from where it was: the one that crossed far, the ones closing up near. */
-function animateFrom(view: MakeTenView, before: Map<string, { x: number; y: number }>): void {
+/**
+ * Every counter that changed place glides from where it was: the one that crossed far, the ones closing up near.
+ * `scale` stretches the glide: 1 at a tap's pace, more for a demonstration step.
+ */
+function animateFrom(view: MakeTenView, before: Map<string, { x: number; y: number }>, scale = 1): void {
   if (reduced(view)) return;
   const now = positions(view);
   for (const counter of view.counters.querySelectorAll<SVGGElement>(".make-ten-counter")) {
@@ -295,7 +305,7 @@ function animateFrom(view: MakeTenView, before: Map<string, { x: number; y: numb
     const from = before.get(id), to = now.get(id);
     if (!from || !to || (from.x === to.x && from.y === to.y) || !canAnimate(counter)) continue;
     const far = Math.abs(from.x - to.x) > view.plan.unit * 2;
-    counter.animate([{ transform: `translate(${round(from.x - to.x)}px, ${round(from.y - to.y)}px)` }, { transform: "none" }], { duration: far ? 620 : 260, easing: "cubic-bezier(.3,.7,.3,1)", fill: "backwards" });
+    counter.animate([{ transform: `translate(${round(from.x - to.x)}px, ${round(from.y - to.y)}px)` }, { transform: "none" }], { duration: (far ? 620 : 260) * scale, easing: "cubic-bezier(.3,.7,.3,1)", fill: "backwards" });
   }
 }
 
@@ -314,13 +324,13 @@ function play(view: MakeTenView): void {
   if (!next) return;
   const before = positions(view);
   reconcile(view, next.state, next.piece);
-  draw(view, next.state, before);
+  draw(view, next.state, before, next.scale);
   if (!view.queue.length) return;
   view.timer = setTimeout(() => {
     view.timer = undefined;
     if (!view.svg.isConnected) { view.queue = []; return; }
     play(view);
-  }, MOVE_MS);
+  }, MOVE_MS * (next.scale ?? 1));
 }
 
 function update(view: MakeTenView, raw: Record<string, unknown>, context: MakeTenViewContext): void {
@@ -365,7 +375,9 @@ function update(view: MakeTenView, raw: Record<string, unknown>, context: MakeTe
     const from = (last ?? shown);
     const k0 = from.filled ?? 0, k1 = state.filled;
     if (k1 > k0 && makeTenDemonstrating(state)) {
-      for (let k = k0 + 1; k <= k1; k += 1) view.queue.push({ state: { problem: state.problem, moved: k - makeTenAddend(state.problem, state.problem.big), filled: k } });
+      // One counter of the demonstration is a step at its own pace; a jump of several plays at the tap's.
+      const scale = k1 - k0 === 1 && context.demonstrationMs ? Math.max(1, context.demonstrationMs / MOVE_MS) : undefined;
+      for (let k = k0 + 1; k <= k1; k += 1) view.queue.push({ state: { problem: state.problem, moved: k - makeTenAddend(state.problem, state.problem.big), filled: k }, ...(scale ? { scale } : {}) });
       play(view);
       return;
     }

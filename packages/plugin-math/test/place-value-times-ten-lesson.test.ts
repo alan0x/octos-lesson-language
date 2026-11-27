@@ -70,7 +70,7 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.doesNotThrow(throwsStart(state));
   assert.equal(cardHowTo(PLACE_VALUE_TIMES_TEN_KIND, content), placeValueTimesTenHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_times_ten, buildPlaceValueTimesTen);
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.0");
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.1");
 });
 
 test("the complete fact: judged on each tap; done, the task's own problem at its own start unit, every row moved", () => {

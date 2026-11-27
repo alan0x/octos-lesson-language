@@ -25,6 +25,7 @@ import { chartHost, chartLesson, chartVariable } from "../../plugin-math/test/pl
 import { tradeHost, tradeLesson, tradeVariable } from "../../plugin-math/test/place-value-trade-fixtures.js";
 import { timesTenHost, timesTenLesson } from "../../plugin-math/test/place-value-times-ten-fixtures.js";
 import { makeTenHost, makeTenLesson } from "../../plugin-math/test/make-ten-fixtures.js";
+import { DEMONSTRATION_HOLD_MS, DEMONSTRATION_STEP_MS } from "../../plugin-math/src/demonstration-pace.js";
 
 class MemoryStore implements PlaybackStore {
   values = new Map<string, PlaybackCheckpoint>();
@@ -2414,4 +2415,209 @@ test("the student log keeps a times-ten card's row taps and a pile up to the mil
   const submit = { profile: "octos.student.operation", version: "0.1", id: "l:card-submit:1", sequence: 1, lesson_id: "l", kind: "card_submit",
     target: { kind: "student_task", task_id: "t" }, input: "mouse", pile: { amount: 9_000_000_000, target: 900_000_000, counted_in: 900_000_000, moved_once: 511 } };
   assert.equal(parseStudentOperationLog(log(submit), "l")?.operations.length, 1, "9,000,000 in thousandths, every row moved");
+});
+
+// ---------------------------------------------------------------- a demonstration's pace (owner, 2026-11-27)
+
+/** Plays the session `ms` milliseconds in 16 ms ticks, noting each change of `alias` (its time and value) and when the animation ended. */
+function playNoting(context: TestContext, session: BrowserLessonSession, alias: string, ms: number) {
+  const seen: Array<[number, number]> = [];
+  let ended: number | undefined;
+  let last = session.projection.board?.variables?.[alias]?.value;
+  for (let t = 0; t < ms; t += 16) {
+    context.mock.timers.tick(16);
+    const value = session.projection.board?.variables?.[alias]?.value;
+    if (value !== last) { seen.push([Date.now(), value!]); last = value; }
+    if (ended === undefined && !session.activeVariableAnimation) ended = Date.now();
+  }
+  return { seen, ended };
+}
+const near = (actual: number, expected: number, what: string, slack = 40) => assert.ok(Math.abs(actual - expected) <= slack, `${what}: ${actual} ms, expected about ${expected} ms`);
+const ptPaceLesson = () => tradeLesson({ operation: "subtract", a: "3000", b: "1468", beats: [{ key: "ones", say: "The ones.", actions: [{ do: "animate", variable: "finished", value: 1 }] } as any] });
+
+test("a trade card's demonstration plays one action a step's slot apart, and the lesson waits for the last (owner, 2026-11-27)", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-pace")), new MemoryStore(), "pt-pace");
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  const animate = session.currentOperation?.action?.action_id;
+  assert.equal(session.projection.board?.variables?.finished?.value, 0);
+  session.play();
+  // 3,000 − 1,468 finishes the ones in four actions: three breaks from the thousands down, then the take-away.
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  let moved: number | undefined;
+  const seen: Array<[number, number]> = [];
+  let last = 0;
+  for (let t = 0; t < 5 * slot; t += 16) {
+    context.mock.timers.tick(16);
+    const value = session.projection.board!.variables!.finished!.value;
+    if (value !== last) { seen.push([Date.now(), value]); last = value; }
+    if (moved === undefined && session.currentOperation?.action?.action_id !== animate) moved = Date.now();
+  }
+  assert.deepEqual(seen.map(([, value]) => value), [0.25, 0.5, 0.75, 1]);
+  seen.forEach(([at], i) => near(at, i * slot, `step ${i + 1} starts`));
+  // The lesson goes on only after the last step's hold (and the usual short pause after an animation).
+  assert.ok(moved !== undefined && moved >= 4 * slot, `the next operation came at ${moved} ms, before the demonstration's ${4 * slot} ms`);
+  near(moved!, 4 * slot + 180, "the next operation", 60);
+});
+
+test("a demonstration's steps pause, resume from a checkpoint, follow the speed, end at once on a skip, and change at once with reduced motion", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const events = normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-pace-2"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pt-pace-2");
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  session.play();
+  playNoting(context, session, "finished", slot + 400);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // Paused: the card holds its step, however long.
+  session.pause();
+  assert.deepEqual(playNoting(context, session, "finished", 3 * slot).seen, []);
+  // A checkpoint taken mid-demonstration restores the same step and plays on from it, a step's slot at a time.
+  const restored = new BrowserLessonSession(events, store, "pt-pace-2");
+  assert.ok(restored.activeVariableAnimation);
+  assert.equal(restored.projection.board!.variables!.finished!.value, 0.5);
+  const start = Date.now();
+  restored.play();
+  const resumed = playNoting(context, restored, "finished", slot);
+  assert.deepEqual(resumed.seen.map(([, value]) => value), [0.75]);
+  near(resumed.seen[0]![0] - start, slot - 400, "the next step after resuming");
+  // At double speed what is left of the slot, and the next slot, take half as long.
+  const switched = Date.now();
+  restored.setSpeed(2);
+  const fast = playNoting(context, restored, "finished", slot);
+  assert.deepEqual(fast.seen.map(([, value]) => value), [1]);
+  near(fast.seen[0]![0] - switched, (slot - (switched - resumed.seen[0]![0])) / 2, "the last step at double speed");
+  near(fast.ended! - fast.seen[0]![0], slot / 2, "the last step's slot at double speed");
+
+  // A skip (advance) ends the demonstration at once, at its value.
+  const skipped = new BrowserLessonSession(events, new MemoryStore(), "pt-pace-skip");
+  while (!skipped.activeVariableAnimation) assert.ok(skipped.advance());
+  skipped.play();
+  playNoting(context, skipped, "finished", 100);
+  assert.equal(skipped.projection.board!.variables!.finished!.value, 0.25);
+  skipped.pause();
+  skipped.advance();
+  assert.equal(skipped.activeVariableAnimation, undefined);
+  assert.equal(skipped.projection.board!.variables!.finished!.value, 1);
+
+  // Reduced motion: the card changes at once and the lesson does not wait for steps.
+  const still = new BrowserLessonSession(events, new MemoryStore(), "pt-pace-still", { reducedMotion: true });
+  let frame;
+  do { frame = still.advance(); } while (frame && frame.operation.action?.op !== "lesson.variable.animate");
+  assert.ok(frame);
+  assert.equal(still.activeVariableAnimation, undefined);
+  assert.equal(still.projection.board!.variables!.finished!.value, 1);
+});
+
+test("every demonstration card steps one action at a time: the make-ten card a counter, the times-ten card a row", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const cases = [
+    { name: "make ten 8 + 6", alias: "filled", events: normalizeAuthoringLesson(makeTenLesson({ a: 8, b: 6, beats: [{ key: "fill", say: "Two move across.", actions: [{ do: "animate", variable: "filled", value: 10 }] } as any] }), makeTenHost("mt-pace")), values: [9, 10] },
+    // 0.3 counted in thousandths: three tenths disks, each moving two places (tenths to hundredths to thousandths), one row at a time.
+    { name: "times ten 0.3 → thousandths", alias: "counted_in", events: normalizeAuthoringLesson(timesTenLesson({ amount: "0.3", target: "0.001", beats: [{ key: "move", say: "Each row moves twice.", actions: [{ do: "animate", variable: "counted_in", value: 1 }] } as any] }), timesTenHost("tt-pace")), values: [70, 40, 10, 7, 4, 1] },
+  ];
+  for (const each of cases) {
+    const session = new BrowserLessonSession(each.events, new MemoryStore(), `${each.name}`);
+    while (!session.activeVariableAnimation) assert.ok(session.advance(), each.name);
+    session.play();
+    const played = playNoting(context, session, each.alias, 12 * slot);
+    if (each.values) assert.deepEqual(played.seen.map(([, value]) => value), each.values, each.name);
+    assert.ok(played.seen.length >= 2, `${each.name}: ${JSON.stringify(played.seen)}`);
+    played.seen.forEach(([at], i) => near(at - played.seen[0]![0], i * slot, `${each.name} step ${i + 1}`));
+    near(played.ended! - played.seen[0]![0], played.seen.length * slot, `${each.name} ends after its last hold`);
+  }
+});
+
+test("the lesson's own tap on the mat is a demonstration step: a step's slot before the next, at once with reduced motion", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const times = (options: { reducedMotion?: boolean }) => {
+    const session = new BrowserLessonSession(sliderLesson([]), new MemoryStore(), `mat-pace-${options.reducedMotion ? "still" : "moving"}`, options);
+    while (session.currentOperation?.action?.op !== "card.tap") assert.ok(session.advance());
+    session.play();
+    const taps: number[] = [Date.now()];
+    let id = session.currentOperation?.action?.action_id;
+    for (let t = 0; t < 12 * slot && taps.length < 4; t += 16) {
+      context.mock.timers.tick(16);
+      const action = session.currentOperation?.action;
+      if (action?.op === "card.tap" && action.action_id !== id) { taps.push(Date.now()); id = action.action_id; }
+    }
+    return taps.slice(1).map((at, i) => at - taps[i]!);
+  };
+  for (const gap of times({})) near(gap, slot, "a lesson tap's slot");
+  for (const gap of times({ reducedMotion: true })) assert.ok(gap < 1_000, `with reduced motion a lesson tap does not wait a step: ${gap} ms`);
+});
+
+test("with external narration, audio that ends early never cuts a demonstration short: the sentence ends after the last step", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-audio")), new MemoryStore(), "pt-audio", { narrationTiming: "external" });
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  const beat = session.currentOperation!.beat_id!;
+  const sentence = session.projection.current_narration?.text;
+  assert.ok(sentence);
+  session.startNarration(beat);
+  session.play();
+  playNoting(context, session, "finished", slot + 400);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // The audio ends here, two actions in: the card goes on, one action a slot, and the sentence waits for it.
+  session.completeNarration(beat);
+  assert.ok(session.activeVariableAnimation, "the demonstration is not cut short");
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  const third = playNoting(context, session, "finished", 2 * slot - 400);
+  assert.deepEqual(third.seen.map(([, value]) => value), [0.75, 1]);
+  assert.equal(session.projection.current_narration?.text, sentence, "the sentence is still on during the last step");
+  playNoting(context, session, "finished", slot + 400);
+  assert.notEqual(session.projection.current_narration?.text, sentence, "after the last hold the sentence ends");
+});
+
+test("with external narration, a repeated or resumed audio start never cuts a demonstration short", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-audio-start")), new MemoryStore(), "pt-audio-start", { narrationTiming: "external" });
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  const beat = session.currentOperation!.beat_id!;
+  session.startNarration(beat);
+  session.play();
+  playNoting(context, session, "finished", slot + 400);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // The host says the audio started again (a replayed clip): the card holds its step.
+  session.startNarration(beat);
+  assert.ok(session.activeVariableAnimation);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // Paused, played again, and the audio's resume reported: the card goes on from its step.
+  session.pause();
+  session.play();
+  session.startNarration(beat);
+  assert.ok(session.activeVariableAnimation);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  assert.deepEqual(playNoting(context, session, "finished", 2 * slot).seen.map(([, value]) => value), [0.75, 1]);
+});
+
+test("a host that does not say reduced motion gets the page's: a demonstration and a lesson tap change at once", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const original = (globalThis as { matchMedia?: unknown }).matchMedia;
+  (globalThis as { matchMedia?: unknown }).matchMedia = (query: string) => ({ matches: query.includes("prefers-reduced-motion: reduce") });
+  try {
+    const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-page-still")), new MemoryStore(), "pt-page-still");
+    let frame;
+    do { frame = session.advance(); } while (frame && frame.operation.action?.op !== "lesson.variable.animate");
+    assert.ok(frame);
+    assert.equal(session.activeVariableAnimation, undefined, "no steps to wait for");
+    assert.equal(session.projection.board!.variables!.finished!.value, 1);
+    // An explicit option still decides.
+    const moving = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-page-moving")), new MemoryStore(), "pt-page-moving", { reducedMotion: false });
+    while (!moving.activeVariableAnimation) assert.ok(moving.advance());
+    // The mat's lesson taps do not wait a slot either.
+    const mat = new BrowserLessonSession(sliderLesson([]), new MemoryStore(), "mat-page-still");
+    while (mat.currentOperation?.action?.op !== "card.tap") assert.ok(mat.advance());
+    mat.play();
+    const id = mat.currentOperation?.action?.action_id;
+    context.mock.timers.tick(1_000);
+    assert.notEqual(mat.currentOperation?.action?.action_id, id, "the next tap comes without a step's slot");
+  } finally {
+    (globalThis as { matchMedia?: unknown }).matchMedia = original;
+  }
 });

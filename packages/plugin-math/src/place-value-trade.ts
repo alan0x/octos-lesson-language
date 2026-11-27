@@ -204,7 +204,8 @@ export interface PlaceValueTradeState {
   status: Record<number, number>;
   /**
    * A card's demonstration, columns finished (`placeValueTradeState`): above 0 the chart is the demonstration's,
-   * and the learner's taps are refused. Absent for the rules' own states.
+   * and the learner's taps are refused. Between two whole numbers, partway through the next column, one action at
+   * a time (`placeValueTradeDemoAt`). Absent for the rules' own states.
    */
   finished?: number;
 }
@@ -549,6 +550,48 @@ export function placeValueTradeDemoState(problem: PlaceValueTradeProblem, k: num
   return k === 0 ? placeValueTradeStart(problem) : placeValueTradeDemoSteps(problem).steps[k - 1]!.after;
 }
 
+/**
+ * Where a value of "columns finished" stands in the demonstration, one action at a time (owner, 2026-11-27: a
+ * demonstration plays each action at its own pace). The player passes a column of m actions through k + 1/m,
+ * k + 2/m, …, k + 1, so a value between two whole numbers is the chart after that many of the next column's
+ * actions. Returns the whole columns `k`, the actions `j` of the next column (0 at a whole value), the value as
+ * the chart shows it (`k + j/m`), and `index`, the actions played from the start. Values are taken into 0..n.
+ */
+export function placeValueTradeDemoAt(problem: PlaceValueTradeProblem, finished: number): { k: number; j: number; value: number; index: number } {
+  const steps = placeValueTradeDemoSteps(problem).steps;
+  const n = problem.columns.length;
+  const v = Number.isFinite(finished) ? Math.min(n, Math.max(0, finished)) : 0;
+  const k = Math.min(n, Math.floor(v + 1e-9));
+  const before = steps.slice(0, k).reduce((sum, step) => sum + step.actions.length, 0);
+  if (k >= n) return { k, j: 0, value: k, index: before };
+  const m = steps[k]!.actions.length;
+  const j = Math.min(m - 1, Math.max(0, Math.floor((v - k) * m + 1e-6)));
+  return { k, j, value: j === 0 ? k : k + j / m, index: before + j };
+}
+
+/**
+ * The values of "columns finished" the player sets from `from` to `to`, one per action of the demonstration, in
+ * order (the last is `to`). Empty when `to` is not past `from`.
+ */
+export function placeValueTradeDemoValues(problem: PlaceValueTradeProblem, from: number, to: number): number[] {
+  const steps = placeValueTradeDemoSteps(problem).steps;
+  const start = placeValueTradeDemoAt(problem, from), end = placeValueTradeDemoAt(problem, to);
+  const values: number[] = [];
+  for (let k = start.k; k < Math.min(end.k + (end.j > 0 ? 1 : 0), steps.length); k += 1) {
+    const m = steps[k]!.actions.length;
+    for (let j = k === start.k ? start.j + 1 : 1; j <= m; j += 1) {
+      if (k === end.k && j > end.j) break;
+      values.push(j === m ? k + 1 : k + j / m);
+    }
+  }
+  return values;
+}
+
+/** The chart at a demonstration's place (`placeValueTradeDemoAt`): after `j` actions of column `k`. */
+function placeValueTradeDemoStateAt(problem: PlaceValueTradeProblem, at: { k: number; j: number }): PlaceValueTradeState {
+  return at.j === 0 ? placeValueTradeDemoState(problem, at.k) : placeValueTradeDemoSteps(problem).steps[at.k]!.states[at.j]!;
+}
+
 // ---------------------------------------------------------------- content
 
 export interface PlaceValueTradePlace {
@@ -672,8 +715,9 @@ export const placeValueTradeLanguage = (raw: unknown): PlaceValueLanguage => pla
 /**
  * The card a content describes, as the rules hold it (what it draws and taps act on). Total: any content gives a
  * state. Numbers are taken to whole hundredths in range, statuses to whole numbers in range, and "columns
- * finished" to a whole number of columns reached so far (a demonstration animating 0 -> 2 shows each column in
- * turn). When it is above 0 the chart is the demonstration's at that many columns (the statuses are then all 0).
+ * finished" to the demonstration's place: a whole number of columns, or between two, that many actions of the next
+ * column (`placeValueTradeDemoAt`; the player sets these one action at a time). When it is above 0 the chart is the
+ * demonstration's there (the statuses are then all 0).
  */
 export function placeValueTradeState(raw: unknown): PlaceValueTradeState & { finished: number } {
   const content = (raw ?? {}) as Partial<PlaceValueTradeContent>;
@@ -686,11 +730,14 @@ export function placeValueTradeState(raw: unknown): PlaceValueTradeState & { fin
   const places = Array.isArray(content.places) ? content.places : [];
   const max = placeValueTradeMaxStatus(operation);
   const status = Object.fromEntries(columns.map((place) => [place, Math.min(max, Math.max(0, Math.round(Number(places.find((item) => item?.place === place)?.status) || 0)))]));
-  const finished = int(content.finished, 0, columns.length);
-  if (finished > 0) {
-    try { return { ...placeValueTradeDemoState(problem, finished), finished }; } catch { /* a pair the card refuses: its statuses */ }
+  const asked = typeof content.finished === "number" && Number.isFinite(content.finished) ? Math.min(columns.length, Math.max(0, content.finished)) : 0;
+  if (asked > 0) {
+    try {
+      const at = placeValueTradeDemoAt(problem, asked);
+      if (at.value > 0) return { ...placeValueTradeDemoStateAt(problem, at), finished: at.value };
+    } catch { /* a pair the card refuses: its statuses */ }
   }
-  return { problem, status, finished };
+  return { problem, status, finished: Math.floor(asked + 1e-9) };
 }
 
 /** The fields one tap changes, as content values: each column (place) to its new status. */

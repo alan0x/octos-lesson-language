@@ -63,8 +63,10 @@ test("a number line requires the math plugin's feature, not a core node feature"
   // (0025), a slider on a place's count (0023 amendment 4), the base-ten trade card (0023), the fraction model
   // (0021; 0.4.1 and 0.4.2 changed only how it is drawn, so its lessons still require 0.4.0) and jump lanes came before it.
   // The make-ten card (0027) came after the trade card.
-  // The times-ten card (0028) came after the make-ten card.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION);
+  // The times-ten card (0028) came after the make-ten card. 0.11.1 changed only how a demonstration is paced
+  // (0026 revision 2), so its lessons still require 0.11.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.1");
+  assert.equal(PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION, "0.11.0");
   assert.ok(Number(MAKE_TEN_PLUGIN_VERSION.split(".")[1]) < Number(PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION.split(".")[1]));
   assert.ok(Number(PLACE_VALUE_TRADE_PLUGIN_VERSION.split(".")[1]) < Number(MAKE_TEN_PLUGIN_VERSION.split(".")[1]));
   assert.ok(PLACE_VALUE_CHART_PLUGIN_VERSION < PLACE_VALUE_TRADE_PLUGIN_VERSION);

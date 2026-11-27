@@ -29,6 +29,11 @@ export interface BaseTenTradeViewContext {
   notice?: string;
   /** The tap that made this state, and the unit tapped; it animates. Absent: place units directly. */
   step?: { tap: BaseTenTap; piece?: string };
+  /**
+   * The step is the lesson's own tap, a demonstration step, and animates this long (`DEMONSTRATION_STEP_MS` at the
+   * playback speed; owner, 2026-11-27). Absent: a learner's tap, at its quick pace.
+   */
+  demonstrationMs?: number;
 }
 
 interface MatView {
@@ -68,12 +73,16 @@ let moves = 0;
  * on a moving unit to the settled unit of the same place under it, or nowhere. With reduced motion a unit
  * arrives at once, so it is never marked.
  */
-function moving(unit: SVGGElement): void {
+function moving(unit: SVGGElement, scale = 1): void {
   if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const token = String(++moves);
   unit.dataset.move = token;
   unit.classList.add("base-ten-moving");
-  setTimeout(() => { if (unit.dataset.move === token) unit.classList.remove("base-ten-moving"); }, MOVE_MS);
+  setTimeout(() => { if (unit.dataset.move === token) unit.classList.remove("base-ten-moving"); }, MOVE_MS * scale);
+}
+/** The stylesheet's move and fade (.38s, .45s), stretched by `scale` on a unit (a demonstration step), or as written. */
+function pace(unit: SVGGElement, scale: number): void {
+  unit.style.transitionDuration = scale === 1 ? "" : `${round(0.38 * scale)}s, ${round(0.45 * scale)}s`;
 }
 /** How long a fuse or a split takes; matches the stylesheet's opacity transition. */
 const FUSE_MS = 450;
@@ -246,6 +255,9 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
   view.svg.classList.toggle("base-ten-mat-live", live);
   for (const target of view.buttons) setTappable(target, target.dataset.ollTap, target.dataset.label ?? "", live);
   const { spawn, fading } = reconcile(view, mat, context.step);
+  // A lesson's tap is a demonstration step: its moves and fades stretch to the step's time; a learner's keep theirs.
+  const scale = context.step && context.demonstrationMs ? Math.max(1, context.demonstrationMs / baseTenStepDelay(context.step.tap)) : 1;
+  const fuseMs = FUSE_MS * scale;
   const places = Array.isArray(raw.places) ? raw.places as unknown[] : [];
   const wanted = new Set<string>();
   for (let p = 0; p < view.columns; p += 1) {
@@ -273,6 +285,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
         group.append(unit);
       }
       const wasInTray = unit.classList.contains("base-ten-in-tray");
+      pace(unit, scale);
       unit.classList.toggle("base-ten-in-tray", inTray);
       const tap = inTray ? `ungather:${p}` : hasTray(view.columns, p) ? `gather:${p}` : undefined;
       setTappable(unit, tap, (inTray ? view.words.take : view.words.put)[p]!, live);
@@ -283,12 +296,12 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
           unit.classList.add("base-ten-appearing");
           placeAt(unit, from);
           requestAnimationFrame(() => unit!.classList.remove("base-ten-appearing"));
-          setTimeout(() => { if (current()) place(unit!, at); }, FUSE_MS);
+          setTimeout(() => { if (current()) place(unit!, at); }, fuseMs);
         } else if (context.step?.tap.kind === "break" && inTray) {
           // Ten units from a break appear in the tray where the broken unit lies.
           unit.classList.add("base-ten-appearing");
           placeAt(unit, at);
-          setTimeout(() => unit!.classList.remove("base-ten-appearing"), FUSE_MS / 2);
+          setTimeout(() => unit!.classList.remove("base-ten-appearing"), fuseMs / 2);
         } else {
           placeAt(unit, at);
         }
@@ -296,7 +309,7 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
         place(unit, at);
         // A unit moving into or out of a tray is not tapped until it arrives: a quick second tap where the next
         // unit now lies hit the one still on its way and took it back (Learn on CI, 2026-11-22).
-        if (wasInTray !== inTray) moving(unit);
+        if (wasInTray !== inTray) moving(unit, scale);
       } else {
         placeAt(unit, at);
       }
@@ -308,10 +321,11 @@ function update(view: MatView, raw: Record<string, unknown>, context: BaseTenTra
     const to = spawn.get(id);
     if (context.step && fading.includes(id)) {
       // Ten in a tray fade where they lie; a broken unit first moves onto the tray below.
+      pace(unit, scale);
       if (to) place(unit, to);
       unit.classList.add("base-ten-leaving");
       setTappable(unit, undefined, "", false);
-      setTimeout(() => unit.remove(), FUSE_MS + (to ? FUSE_MS : 0));
+      setTimeout(() => unit.remove(), fuseMs + (to ? fuseMs : 0));
     } else {
       unit.remove();
     }

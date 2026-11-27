@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { boundaryPoint, computeConnectionRoute, routePath, stackConnectionLabel } from "../src/connection-layout.js";
-import { angleControlValue, cameraFocusTargets, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
+import { angleControlValue, cameraFocusTargets, cardHeading, connectionDisplayLabel, diagramConnectionGeometry, diagramLayout, emphasisClassName, fitMathScale, focusTargetsInRegion, geometryArcPath, geometryViewport, inlineMathSegments, isPlainTextMathContent, mathCardWidth, mathDisplayLines, mathSource, supportingVisualFocusTargets, variableAnimationFocusTargets, wrapDiagramLabel } from "../src/board-view.js";
 import { normalizeScene3dView, projectScene3dPoint, roundSolidFacets, scene3dSectionIntersections } from "../src/scene3d.js";
 import { boardToViewportPoint, HOLD_CENTER_SHARE_NEW, holdsTeachingFrame, planFocusCamera, planRevealCamera, TeachingCameraAuthority, viewportToBoardPoint } from "../src/camera.js";
 import {
@@ -1171,4 +1171,16 @@ test("focusing a formula keeps a plugin visual (the number line) in frame, as it
     bounds: { x: 0, y: 0, width: 1200, height: 900 },
   };
   assert.deepEqual(supportingVisualFocusTargets(["formula"], board, layout), ["line"]);
+});
+
+test("a card's heading is its title or label, never its role (owner, 2026-11-27)", () => {
+  // A place-value chart written with a role and no title has no heading (it showed "main_visual").
+  assert.equal(cardHeading({ kind: "place_value_chart", role: "main_visual", content: { mode: "apart" } } as never), "");
+  for (const kind of ["base_ten_trade", "place_value_trade", "make_ten", "place_value_times_ten", "number_line", "plot", "diagram", "text", "table"]) {
+    assert.equal(cardHeading({ kind, role: "supporting_visual", content: {} } as never), "", kind);
+  }
+  // A title or label the lesson wrote stays.
+  assert.equal(cardHeading({ kind: "number_line", role: "main_visual", content: { title: "Round 347 to the nearest ten" } } as never), "Round 347 to the nearest ten");
+  assert.equal(cardHeading({ kind: "diagram", role: "main_visual", content: { label: "The water cycle" } } as never), "The water cycle");
+  assert.equal(cardHeading({ kind: "ink", role: "learner_ink", content: { title: "Mine" } } as never), "", "learner ink speaks for itself");
 });

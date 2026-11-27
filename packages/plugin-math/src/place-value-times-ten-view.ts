@@ -36,6 +36,12 @@ export interface PlaceValueTimesTenViewContext {
   refused?: { kind: string; place: number };
   /** Draw changes at once (also when the page asks for reduced motion). */
   reducedMotion?: boolean;
+  /**
+   * How long one step of the lesson's demonstration animates (`DEMONSTRATION_STEP_MS` at the playback speed; owner,
+   * 2026-11-27). The player moves "counted in" one row at a time; that one row's move is drawn this slowly. A
+   * learner's tap keeps its quick pace, and a jump of several moves (a seek, a restore) plays at the tap pace.
+   */
+  demonstrationMs?: number;
 }
 
 interface View {
@@ -56,7 +62,8 @@ interface View {
   refusedKey?: string;
   drawnContext?: string;
   timer?: ReturnType<typeof setTimeout>;
-  queue: Array<{ state: PlaceValueTimesTenState; moved?: number }>;
+  /** Moves still to draw; `pace` is a demonstration step's time, which one's animation is stretched to. */
+  queue: Array<{ state: PlaceValueTimesTenState; moved?: number; pace?: number }>;
 }
 
 const views = new WeakMap<HTMLElement, View>();
@@ -280,21 +287,29 @@ function fly(node: Element, from: { x: number; y: number }, to: { x: number; y: 
   node.animate([{ transform: `translate(${round(from.x - to.x)}px, ${round(from.y - to.y)}px) scale(.6)`, opacity: 0.3 }, { transform: "none", opacity: 1 }], { duration, delay, easing: "cubic-bezier(.3,.7,.3,1)", fill: "backwards" });
 }
 
-/** Animates lineage i's move: a break flies out of the thing it came from; a put-together grows where its ten met. */
-function animateMove(view: View, before: Map<string, { x: number; y: number }>, i: number, state: PlaceValueTimesTenState): void {
+/**
+ * Animates lineage i's move: a break flies out of the thing it came from; a put-together grows where its ten met.
+ * With `pace` (a demonstration step's time) the whole move, its staggered starts included, is stretched to it.
+ */
+function animateMove(view: View, before: Map<string, { x: number; y: number }>, i: number, state: PlaceValueTimesTenState, pace?: number): void {
   const from = before.get(`i${i}`);
   if (!from) return;
   const p = state.problem;
+  const stretch = (natural: number) => (ms: number) => ms * (pace ? Math.max(1, pace / natural) : 1);
   if (p.question === "times") {
     const layer = view.layers.get(p.t)!;
-    [...layer.querySelectorAll(`.place-value-times-ten-disk[data-slot="${i}"]`)].forEach((node, r) => { const at = centre(node); if (at) fly(node, from, at, r * 55, 520); });
+    const dealt = [...layer.querySelectorAll(`.place-value-times-ten-disk[data-slot="${i}"]`)];
+    const t = stretch((dealt.length - 1) * 55 + 520);
+    dealt.forEach((node, r) => { const at = centre(node); if (at) fly(node, from, at, t(r * 55), t(520)); });
     return;
   }
   const node = [...view.layers.values()].map((layer) => layer.querySelector(`[data-i="${i}"]`)).find(Boolean);
   if (!node) return;
   const parts = [...node.querySelectorAll(".place-value-times-ten-disk, .place-value-times-ten-dot")];
-  if (p.dir < 0) parts.forEach((part, k) => { const at = centre(part); if (at) fly(part, from, at, Math.floor(k / 10) * 25 + (k % 10) * 30 / (parts.length > 10 ? 4 : 1), 560); });
-  else { const at = centre(node); if (at && canAnimate(node)) node.animate([{ transform: `translate(${round(from.x - at.x)}px, ${round(from.y - at.y)}px) scale(.3)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 800, easing: "ease-in-out", fill: "backwards" }); }
+  const delay = (k: number) => Math.floor(k / 10) * 25 + (k % 10) * 30 / (parts.length > 10 ? 4 : 1);
+  const t = stretch(p.dir < 0 ? Math.max(0, ...parts.map((_, k) => delay(k))) + 560 : 800);
+  if (p.dir < 0) parts.forEach((part, k) => { const at = centre(part); if (at) fly(part, from, at, t(delay(k)), t(560)); });
+  else { const at = centre(node); if (at && canAnimate(node)) node.animate([{ transform: `translate(${round(from.x - at.x)}px, ${round(from.y - at.y)}px) scale(.3)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: t(800), easing: "ease-in-out", fill: "backwards" }); }
 }
 function centres(view: View): Map<string, { x: number; y: number }> {
   const out = new Map<string, { x: number; y: number }>();
@@ -309,13 +324,13 @@ function play(view: View): void {
   if (!next) return;
   const before = centres(view);
   draw(view, next.state);
-  if (next.moved !== undefined && !reduced(view)) { try { animateMove(view, before, next.moved, next.state); } catch { /* drawing goes on */ } }
+  if (next.moved !== undefined && !reduced(view)) { try { animateMove(view, before, next.moved, next.state, next.pace); } catch { /* drawing goes on */ } }
   if (!view.queue.length) return;
   view.timer = setTimeout(() => {
     view.timer = undefined;
     if (!view.svg.isConnected) { view.queue = []; return; }
     play(view);
-  }, next.moved !== undefined ? MOVE_MS : 0);
+  }, next.moved !== undefined ? Math.max(MOVE_MS, next.pace ?? 0) : 0);
 }
 
 const sameProblem = (x: PlaceValueTimesTenState | undefined, y: PlaceValueTimesTenState): boolean =>
@@ -371,7 +386,10 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueTim
   }
   // The last queued state is the full one (its demonstration position, its notes).
   moves[moves.length - 1] = { state, moved: moves[moves.length - 1]!.moved };
-  view.queue.push(...moves);
+  // One row's move of the demonstration is a step at its own pace; a learner's tap, or a jump of several, at the tap's.
+  const demo = (state.demo ?? 0) > (shown?.demo ?? 0);
+  const pace = demo && moves.length === 1 && context.demonstrationMs ? context.demonstrationMs : undefined;
+  view.queue.push(...moves.map((move) => (pace ? { ...move, pace } : move)));
   play(view);
 }
 

@@ -8,6 +8,8 @@
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
 
 export { MATH_PLUGIN_MANIFEST } from "./manifest.js";
+// How fast a lesson's demonstration plays on a tap card, one action at a time (owner, 2026-11-27).
+export { DEMONSTRATION_HOLD_MS, DEMONSTRATION_SLOT_MS, DEMONSTRATION_STEP_MS, demonstrationStepMs } from "./demonstration-pace.js";
 
 /** The plugin's choice in the Jev subject question, per language. */
 export const MATH_SUBJECT_DESCRIPTION = {
