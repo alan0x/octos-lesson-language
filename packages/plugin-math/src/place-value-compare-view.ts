@@ -6,25 +6,28 @@
  * names the larger number before the true sign is chosen, and never shows a title of its own.
  *
  * Every element a learner can tap carries `data-oll-tap`: `same:<place>` and `different:<place>` (the place is an
- * index into the card's tap places, the chart's place plus three) and `sign:<10..12>`. A refused judgement's button
+ * index into the card's tap places, the chart's place plus three), `sign:<10..12>`, and once the chart is decided
+ * `column:<place>` on each column, whose refusal is that column's fact (the later places don't matter). A refused judgement's button
  * shakes and stays grey and dashed until the next tap; on a column with an unjudged column to its left that column
  * also dims and the leftmost unjudged column is lightly ringed. A learner's accepted judgement pulses the column's
- * disks with their partners. A demonstration moving "compared" forward plays one step at a time, each held for
- * `stepMs` (one source, so a player's pacing plugs in there); with reduced motion the chart changes at once.
+ * disks with their partners. A demonstration moving "compared" forward plays one step at a time, the column being
+ * judged ringed: the player sets "compared" one step a slot apart (0026 revision 2), and each step is drawn over the
+ * context's `demonstrationMs` (`DEMONSTRATION_STEP_MS` at the playback speed). A jump of several steps (a seek, a
+ * restore, an older player) plays at a quick pace. With reduced motion the chart changes at once.
  */
 import type { PlaceValueLanguage } from "./place-value-chart.js";
 import {
   PLACE_VALUE_COMPARE_JUDGEMENTS, PLACE_VALUE_COMPARE_WORDS, applyPlaceValueCompareTap, placeValueCompareColumn,
-  placeValueCompareColumnTapIndex, placeValueCompareComplete, placeValueCompareDecided, placeValueCompareDemonstrating, placeValueCompareDiskAt,
-  placeValueCompareFactText, placeValueCompareInstruction, placeValueCompareLanguage, placeValueCompareProblemText, placeValueCompareSignIndex,
+  placeValueCompareColumnTapIndex, placeValueCompareDecided, placeValueCompareDemonstrating, placeValueCompareDiskAt,
+  placeValueCompareFactText, placeValueCompareInstruction, placeValueCompareLanguage, placeValueCompareProblemText, placeValueCompareSignIndex, placeValueCompareSigned,
   placeValueCompareState, placeValueCompareTapColumn, placeValueCompareTextWidth, planPlaceValueCompare,
   type PlaceValueComparePlan, type PlaceValueCompareRefusal, type PlaceValueCompareState, type PlaceValueCompareTapKind,
 } from "./place-value-compare.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 
-/** How long one demonstration step shows before the next, in milliseconds (decision 0029: one column at a time). */
-export const PLACE_VALUE_COMPARE_STEP_MS = 2000;
+/** How long each step of a jump of several (a seek, a restore) shows before the next, in milliseconds. */
+export const PLACE_VALUE_COMPARE_QUICK_MS = 700;
 
 export interface PlaceValueCompareViewContext {
   /** Applies the latest emphasis of a part (`data-id`) to its element. */
@@ -37,8 +40,12 @@ export interface PlaceValueCompareViewContext {
   refused?: { kind: string; place: number };
   /** Draw changes at once (also when the page asks for reduced motion). */
   reducedMotion?: boolean;
-  /** How long one demonstration step shows before the next (default `PLACE_VALUE_COMPARE_STEP_MS`). */
-  stepMs?: number;
+  /**
+   * How long one step of the lesson's demonstration animates (`DEMONSTRATION_STEP_MS` at the playback speed; owner,
+   * 2026-11-27). The player moves "compared" one step at a time; that step is drawn this slowly. A learner's tap keeps
+   * its quick pace, and a jump of several steps plays at `PLACE_VALUE_COMPARE_QUICK_MS` a step.
+   */
+  demonstrationMs?: number;
 }
 
 interface View {
@@ -56,11 +63,14 @@ interface View {
   shown?: PlaceValueCompareState;
   target?: PlaceValueCompareState;
   refused?: { kind: PlaceValueCompareTapKind; place: number; reason: PlaceValueCompareRefusal; text: string; key: string };
+  /** A refusal the card has moved on from (its state changed); a host that keeps passing it is not heard again. */
+  dropped?: string;
   /** The column the demonstration is judging now (ringed while its step shows). */
   focus?: number;
   drawnContext?: string;
   timer?: ReturnType<typeof setTimeout>;
-  queue: PlaceValueCompareState[];
+  /** Demonstration steps still to draw, each with how long it shows. */
+  queue: Array<{ state: PlaceValueCompareState; pace: number }>;
 }
 
 const views = new WeakMap<HTMLElement, View>();
@@ -134,7 +144,10 @@ function disk(plan: PlaceValueComparePlan, k: number, x: number, y: number): SVG
   const group = element("g", {}, "place-value-compare-disk");
   group.dataset.place = String(column.place);
   group.append(element("circle", { cx: round(x), cy: round(y), r: plan.disk / 2, fill: column.fill }));
-  group.append(text(x, y, column.diskLabel, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": column.diskFont, "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none" }));
+  // A wide place value (100,000; 1,000,000) is squeezed to the disk, so it is read whole inside it (as decision 0028's).
+  const room = plan.disk - 5;
+  const squeeze: Record<string, string | number> = placeValueCompareTextWidth(column.diskLabel, column.diskFont) * 1.2 > room ? { textLength: round(room), lengthAdjust: "spacingAndGlyphs" } : {};
+  group.append(text(x, y, column.diskLabel, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": column.diskFont, "font-weight": 700, fill: COLORS.diskInk, "pointer-events": "none", ...squeeze }));
   return group;
 }
 
@@ -242,6 +255,9 @@ function drawChart(view: View, state: PlaceValueCompareState, live: boolean): vo
       mark.append(text(cx, cy, v.status === "same" ? "=" : "≠", { "text-anchor": "middle", "dominant-baseline": "central", "font-size": 26, "font-weight": 700, fill: v.status === "same" ? COLORS.same : "#ffffff", "pointer-events": "none" }));
       group.append(mark);
     }
+    // Once the chart is decided, a tap on a column states its fact (the sketch's): the deciding column, a column the
+    // same, or one after it that doesn't matter.
+    if (decided) setTappable(group, `column:${placeValueCompareColumnTapIndex(place)}`, column.head.join(" "), live);
     chart.append(group);
   });
   // The columns after the deciding one: one caption across them, "Doesn't matter".
@@ -249,7 +265,7 @@ function drawChart(view: View, state: PlaceValueCompareState, live: boolean): vo
     const first = plan.columns[pair.stop + 1]!, last = plan.columns.at(-1)!;
     const cx = (first.x + last.x + last.width) / 2, cy = plan.mid.y + plan.mid.height / 2;
     const width = Math.min(last.x + last.width - first.x - 8, placeValueCompareTextWidth(words.caption, 13.5) + 28);
-    const caption = element("g", {}, "place-value-compare-caption");
+    const caption = element("g", { "pointer-events": "none" }, "place-value-compare-caption");
     caption.append(element("rect", { x: round(cx - width / 2), y: round(cy - 15), width: round(width), height: 30, rx: 15, fill: COLORS.column, stroke: COLORS.slot, "stroke-dasharray": "4 3" }));
     caption.append(text(cx, cy, words.caption, { "text-anchor": "middle", "dominant-baseline": "central", "font-size": 13.5, "font-weight": 600, fill: COLORS.muted }));
     chart.append(caption);
@@ -270,7 +286,7 @@ function drawSentence(view: View, state: PlaceValueCompareState, live: boolean):
   svg.replaceChildren();
   if (state.fault) return;
   const decided = placeValueCompareDecided(state);
-  const complete = placeValueCompareComplete(state);
+  const complete = placeValueCompareSigned(state);
   const line = element("g", { opacity: decided ? 1 : 0.45 }, "place-value-compare-line");
   const common = { "font-size": sp.font, "font-weight": 600, fill: COLORS.ink, "font-variant-numeric": "tabular-nums" };
   line.append(text(sp.a.x, sp.baseline, sp.a.text, common, "place-value-compare-a"));
@@ -314,7 +330,7 @@ function draw(view: View, state: PlaceValueCompareState): void {
   // A refusal says its fact; else the chart's own fact (not while the demonstration shows: the lesson narrates it).
   const fact = view.refused ? view.refused.text : placeValueCompareDemonstrating(state) ? "" : placeValueCompareFactText(state, view.language);
   view.notice.textContent = fact;
-  view.notice.classList.toggle("place-value-compare-done", !view.refused && placeValueCompareComplete(state) && !placeValueCompareDemonstrating(state));
+  view.notice.classList.toggle("place-value-compare-done", !view.refused && placeValueCompareSigned(state) && !placeValueCompareDemonstrating(state));
   view.shown = state;
   view.drawnContext = JSON.stringify([context.live === true, view.refused?.key ?? null, view.focus ?? null]);
 }
@@ -324,19 +340,29 @@ function draw(view: View, state: PlaceValueCompareState): void {
 const reduced = (view: View): boolean => view.context.reducedMotion === true || (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches);
 const canAnimate = (node: Element): boolean => typeof (node as Element & { animate?: unknown }).animate === "function";
 
-/** The column just judged: each disk pulses together with its partner in the other row. */
-function pulse(view: View, k: number): void {
+/** The column just judged: each disk pulses together with its partner in the other row; with `pace`, over that long. */
+function pulse(view: View, k: number, pace?: number): void {
   const group = view.chart.querySelector(`.place-value-compare-column[data-index="${k}"]`);
   if (!group) return;
   for (const row of ["a", "b"]) {
     for (const node of group.querySelectorAll(`.place-value-compare-cell[data-row="${row}"] .place-value-compare-disk`)) {
       if (!canAnimate(node)) continue;
       const i = Number((node as SVGElement).dataset.i);
+      const n = group.querySelectorAll(`.place-value-compare-cell[data-row="${row}"] .place-value-compare-disk`).length;
+      const stretch = pace ? Math.max(1, pace / (380 + Math.max(0, n - 1) * 70)) : 1;
       (node as SVGGElement).style.transformBox = "fill-box";
       (node as SVGGElement).style.transformOrigin = "center";
-      node.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 380, delay: i * 70 });
+      node.animate([{ transform: "scale(1)" }, { transform: "scale(1.18)" }, { transform: "scale(1)" }], { duration: 380 * stretch, delay: i * 70 * stretch });
     }
   }
+}
+
+/** A mark or the chosen sign arrives: it grows in over `ms` (a demonstration step's motion). */
+function arrive(node: Element | null, ms: number): void {
+  if (!node || !canAnimate(node)) return;
+  (node as SVGElement).style.transformBox = "fill-box";
+  (node as SVGElement).style.transformOrigin = "center";
+  node.animate([{ transform: "scale(.4)", opacity: 0 }, { transform: "scale(1.12)", opacity: 1, offset: 0.6 }, { transform: "scale(1)", opacity: 1 }], { duration: ms, easing: "ease-out" });
 }
 
 /** A refused button shakes. */
@@ -345,21 +371,29 @@ function shake(view: View): void {
   if (node && canAnimate(node)) node.animate([{ transform: "translateX(0)" }, { transform: "translateX(-6px)" }, { transform: "translateX(6px)" }, { transform: "translateX(-4px)" }, { transform: "translateX(4px)" }, { transform: "translateX(0)" }], { duration: 380 });
 }
 
-const stepMs = (view: View): number => Math.max(0, view.context.stepMs ?? PLACE_VALUE_COMPARE_STEP_MS);
-
 /** Plays the demonstration's queued steps, one at a time: the column being judged is ringed while its step shows. */
 function play(view: View): void {
   if (view.timer !== undefined) return;
-  const next = view.queue.shift();
-  if (!next) { view.focus = undefined; if (view.shown) draw(view, view.shown); return; }
+  const step = view.queue.shift();
+  if (!step) { view.focus = undefined; if (view.shown) draw(view, view.shown); return; }
+  const next = step.state;
   view.focus = next.marked > 0 && next.marked <= next.pair.stop + 1 && !next.signed ? next.marked - 1 : undefined;
   draw(view, next);
-  if (view.focus !== undefined && !reduced(view)) { try { pulse(view, view.focus); } catch { /* drawing goes on */ } }
+  if (!reduced(view)) {
+    try {
+      // The step's own motion, over its pace: the column's mark arrives and its disks pulse with their partners; the
+      // last step's sign arrives in the sentence.
+      if (view.focus !== undefined) {
+        pulse(view, view.focus, step.pace);
+        arrive(view.chart.querySelector(`.place-value-compare-column[data-index="${view.focus}"] .place-value-compare-mark`), step.pace);
+      } else if (next.signed) arrive(view.sentence.querySelector(".place-value-compare-chosen"), step.pace);
+    } catch { /* drawing goes on */ }
+  }
   view.timer = setTimeout(() => {
     view.timer = undefined;
     if (!view.svg.isConnected) { view.queue = []; return; }
     play(view);
-  }, stepMs(view));
+  }, step.pace);
 }
 
 const samePair = (x: PlaceValueCompareState | undefined, y: PlaceValueCompareState): boolean =>
@@ -384,7 +418,8 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueCom
   // The refused tap the notice answers, with its reason on the card as it stands (a refusal never changes the card).
   const refusedKey = context.refused && context.notice ? `${context.refused.kind}:${context.refused.place}:${context.notice}` : undefined;
   let refusedNow = false;
-  if (refusedKey !== view.refused?.key) {
+  if (refusedKey === undefined) view.dropped = undefined;
+  if (refusedKey !== view.refused?.key && refusedKey !== view.dropped) {
     view.refused = undefined;
     if (refusedKey && context.refused) {
       const tap = { tap: context.refused.kind as PlaceValueCompareTapKind, place: context.refused.place };
@@ -399,11 +434,15 @@ function update(view: View, raw: Record<string, unknown>, context: PlaceValueCom
     if (refusedNow && !reduced(view)) { try { shake(view); } catch { /* drawing goes on */ } }
     return;
   }
+  // The card changed: an old refusal no longer answers it (a restart or a replay may leave the host's notice behind).
+  if (!refusedNow && view.refused) view.dropped = view.refused.key;
   view.refused = refusedNow ? view.refused : undefined;
   const steps = shown ? stepsBetween(shown, state) : undefined;
   view.target = state;
   if (steps && steps.length && !reduced(view)) {
-    view.queue.push(...steps);
+    // One step of the demonstration at its own pace (the player sets "compared" a step at a time); a jump of several quickly.
+    const pace = steps.length === 1 && context.demonstrationMs ? context.demonstrationMs : PLACE_VALUE_COMPARE_QUICK_MS;
+    view.queue.push(...steps.map((state) => ({ state, pace })));
     play(view);
     return;
   }

@@ -6,6 +6,7 @@ import { reduceCanonicalEvents, type SemanticBoardState } from "../../core/src/i
 import { computeBoardLayout, measureSemanticNode, targetRect, type MeasuredNodeSizes } from "../src/layout.js";
 import { planPlaceValueTrade } from "../../plugin-math/src/place-value-trade.js";
 import { planPlaceValueTimesTen } from "../../plugin-math/src/place-value-times-ten.js";
+import { planPlaceValueCompare } from "../../plugin-math/src/place-value-compare.js";
 import { planMakeTen } from "../../plugin-math/src/make-ten.js";
 import { parseCanonicalJsonl } from "../src/runtime.js";
 
@@ -1498,4 +1499,19 @@ test("a place-value times-ten card is sized from its plan at its natural size, d
   // A small card keeps a width its lines fit.
   const small = measureSemanticNode({ id: "c", kind: "place_value_times_ten", content: { question: "count", toward: "right", apart: 1, amount: 1000, target: 100, counted_in: 1000, moved_once: 0 } });
   assert.ok(small.width >= 520 + 38, `${small.width}`);
+});
+
+test("a place-value compare card is sized from its plan: the chart and its sentence, desktop only (decision 0029)", () => {
+  // The widest: seven columns with the decimal point.
+  const content = { a: 3456789, b: 3456798, compared: 0, marked: 0, signed: 0 };
+  const node = { id: "chart", kind: "place_value_compare", content };
+  const plan = planPlaceValueCompare(content);
+  const size = measureSemanticNode(node);
+  assert.deepEqual(size, { width: Math.max(Math.ceil(plan.width), Math.ceil(plan.sentence.width), 520) + 38, height: Math.ceil(plan.height + plan.sentence.height) + 34 + 136 });
+  assert.ok(size.width <= 1024, `${size.width}`);
+  // Judging, signing or the demonstration changes nothing about the card's size; nor does a narrow screen.
+  for (const state of [{ marked: 6 }, { marked: 6, signed: 1 }, { compared: 8 }]) assert.deepEqual(measureSemanticNode({ ...node, content: { ...content, ...state } }), size);
+  assert.deepEqual(measureSemanticNode(node, { cardFitWidth: 375 - 2 * 24 - 2 * 19 }), size);
+  // 1,000,000 and 999,999: seven columns too.
+  assert.ok(measureSemanticNode({ id: "c", kind: "place_value_compare", content: { a: 1_000_000_000, b: 999_999_000, compared: 0, marked: 0, signed: 0 } }).width <= 1024);
 });

@@ -24,6 +24,7 @@ import { variableControlModels } from "../src/variable-controls.js";
 import { chartHost, chartLesson, chartVariable } from "../../plugin-math/test/place-value-chart-fixtures.js";
 import { tradeHost, tradeLesson, tradeVariable } from "../../plugin-math/test/place-value-trade-fixtures.js";
 import { timesTenHost, timesTenLesson } from "../../plugin-math/test/place-value-times-ten-fixtures.js";
+import { compareHost, compareLesson } from "../../plugin-math/test/place-value-compare-fixtures.js";
 import { makeTenHost, makeTenLesson } from "../../plugin-math/test/make-ten-fixtures.js";
 import { DEMONSTRATION_HOLD_MS, DEMONSTRATION_STEP_MS } from "../../plugin-math/src/demonstration-pace.js";
 
@@ -2417,6 +2418,79 @@ test("the student log keeps a times-ten card's row taps and a pile up to the mil
   assert.equal(parseStudentOperationLog(log(submit), "l")?.operations.length, 1, "9,000,000 in thousandths, every row moved");
 });
 
+// ---------------------------------------------------------------- the place-value compare card (decision 0029)
+
+test("a compare task: its own pair, fresh; judgements from the left, then the true sign ends it with no done", () => {
+  const events = normalizeAuthoringLesson(compareLesson({ a: "4530", b: "4503", practice: [["0.625", "0.7"]] }), compareHost("pc"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pc", { reducedMotion: true });
+  const card = "pc:node:chart";
+  while (session.projection.status !== "completed") session.advance();
+  assert.equal(session.studentCardLive(card), true);
+  const start = chartValues(session);
+  assert.deepEqual([start.a, start.b, start.compared, start.marked, start.signed], [625, 700, 0, 0, 0], "0.625 and 0.7, nothing judged");
+  // A column with an unjudged one to its left, a judgement that is not true, a sign before the comparing: facts.
+  assert.deepEqual(session.tapStudentCard(card, { kind: "same", place: 2 }), { refused: "left_unjudged", message: "Tenths: 6 and 7. The ones haven't been compared yet." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "different", place: 3 }), { refused: "not_different", message: "Ones: 0 and 0." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "sign", place: 12 }), { refused: "not_decided", message: "Opens when a place differs, or every place is the same." });
+  const same = session.tapStudentCard(card, { kind: "same", place: 3 }, "mouse");
+  assert.ok("operation" in same);
+  assert.deepEqual(same.operation.changes, [{ alias: "marked", before: 0, after: 1 }]);
+  assert.deepEqual(same.operation.tap, { kind: "same", place: 3 });
+  assert.ok("operation" in session.tapStudentCard(card, { kind: "different", place: 2 }));
+  // Restored part way: the same columns judged.
+  const partway = new BrowserLessonSession(events, store, "pc", { reducedMotion: true });
+  assert.equal(chartValues(partway).marked, 2, "restored decided");
+  assert.deepEqual(session.tapStudentCard(card, { kind: "same", place: 1 }), { refused: "after_decided", message: "The tenths decide; the hundredths come after and don't matter." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "column", place: 0 }), { refused: "after_decided", message: "The tenths decide; the thousandths come after and don't matter." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "column", place: 2 }), { refused: "already_decides", message: "Tenths: 6 and 7, the first place that differs." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "sign", place: 10 }), { refused: "not_true", message: "“0.625 > 0.7” is not true." });
+  assert.notEqual(session.studentTasks[0]!.status, "succeeded", "a wrong sign does not end the task");
+  const signed = session.tapStudentCard(card, { kind: "sign", place: 12 });
+  assert.ok("operation" in signed);
+  assert.deepEqual(signed.operation.changes, [{ alias: "signed", before: 0, after: 1 }]);
+  assert.equal(session.studentTasks[0]!.status, "succeeded", "the true sign ends the task");
+  assert.equal(session.studentTasks[0]!.auto_submit, true);
+  assert.equal(session.studentCardLive(card), false);
+  const done = chartValues(session);
+  assert.deepEqual([done.a, done.b, done.compared, done.marked, done.signed], [625, 700, 0, 2, 1]);
+  const restored = new BrowserLessonSession(events, store, "pc", { reducedMotion: true });
+  assert.deepEqual(restored.studentTasks.map((each) => each.status), ["succeeded"]);
+  assert.deepEqual(chartValues(restored), done);
+});
+
+test("a compare practice restored complete, its submission lost, is submitted when it is laid again", () => {
+  const events = normalizeAuthoringLesson(compareLesson({ language: "zh-CN", a: "0.7", b: "0.70", decimals: true, practice: [["2.50", "2.5"]] }), compareHost("pc-lost"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "pc-lost", { reducedMotion: true });
+  const card = "pc-lost:node:chart";
+  while (session.projection.status !== "completed") session.advance();
+  assert.deepEqual([chartValues(session).a_decimals, chartValues(session).b_decimals], [2, 1], "2.50 and 2.5 keep their written decimals");
+  for (const place of [3, 2, 1]) session.tapStudentCard(card, { kind: "same", place });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "sign", place: 10 }), { refused: "not_true", message: "「2.50 > 2.5」不成立。" });
+  session.tapStudentCard(card, { kind: "sign", place: 11 });
+  assert.equal(session.studentTasks[0]!.status, "succeeded");
+  for (const log of store.studentOperations.values()) log.operations = log.operations.filter((operation) => operation.kind !== "card_submit");
+  for (const log of store.studentTaskProgress.values()) for (const task of log.tasks) { task.status = "not_started"; task.attempts = []; }
+  const restored = new BrowserLessonSession(events, store, "pc-lost", { reducedMotion: true });
+  while (restored.projection.status !== "completed") restored.advance();
+  assert.equal(restored.studentTasks[0]!.status, "succeeded", "the signed chart closes its task");
+  assert.equal(restored.studentCardLive(card), false);
+});
+
+test("the student log keeps a compare card's judgements and signs, and a pile to the millions", () => {
+  const tap = (kind: string, place: number) => ({ profile: "octos.student.operation", version: "0.1", id: `l:card-tap:${kind}:${place}`, sequence: 1, lesson_id: "l", kind: "card_tap",
+    target: { kind: "card_node", node_id: "l:node:chart" }, input: "mouse", tap: { kind, place }, changes: [{ alias: "marked", before: 0, after: 1 }] });
+  const log = (operation: unknown) => ({ profile: "octos.student.operation-log", version: "0.1", lesson_id: "l", operations: [operation] });
+  assert.equal(parseStudentOperationLog(log(tap("same", 9)), "l")?.operations.length, 1, "the millions");
+  assert.equal(parseStudentOperationLog(log(tap("sign", 12)), "l")?.operations.length, 1, "<");
+  assert.equal(parseStudentOperationLog(log(tap("column", 3)), "l")?.operations.length, 1, "a decided chart's column");
+  assert.equal(parseStudentOperationLog(log(tap("sign", 13)), "l"), undefined, "three signs at most");
+  const submit = { profile: "octos.student.operation", version: "0.1", id: "l:card-submit:1", sequence: 1, lesson_id: "l", kind: "card_submit",
+    target: { kind: "student_task", task_id: "t" }, input: "mouse", pile: { a: 1_000_000_000, b: 999_999_000, compared: 0, marked: 1, signed: 1 } };
+  assert.equal(parseStudentOperationLog(log(submit), "l")?.operations.length, 1, "1,000,000 in thousandths, decided and signed");
+});
+
 // ---------------------------------------------------------------- a demonstration's pace (owner, 2026-11-27)
 
 /** Plays the session `ms` milliseconds in 16 ms ticks, noting each change of `alias` (its time and value) and when the animation ended. */
@@ -2510,13 +2584,15 @@ test("a demonstration's steps pause, resume from a checkpoint, follow the speed,
   assert.equal(still.projection.board!.variables!.finished!.value, 1);
 });
 
-test("every demonstration card steps one action at a time: the make-ten card a counter, the times-ten card a row", (context) => {
+test("every demonstration card steps one action at a time: the make-ten card a counter, the times-ten card a row, the compare card a column or the sign", (context) => {
   context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
   const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
   const cases = [
     { name: "make ten 8 + 6", alias: "filled", events: normalizeAuthoringLesson(makeTenLesson({ a: 8, b: 6, beats: [{ key: "fill", say: "Two move across.", actions: [{ do: "animate", variable: "filled", value: 10 }] } as any] }), makeTenHost("mt-pace")), values: [9, 10] },
     // 0.3 counted in thousandths: three tenths disks, each moving two places (tenths to hundredths to thousandths), one row at a time.
     { name: "times ten 0.3 → thousandths", alias: "counted_in", events: normalizeAuthoringLesson(timesTenLesson({ amount: "0.3", target: "0.001", beats: [{ key: "move", say: "Each row moves twice.", actions: [{ do: "animate", variable: "counted_in", value: 1 }] } as any] }), timesTenHost("tt-pace")), values: [70, 40, 10, 7, 4, 1] },
+    // 4,530 and 4,503 compared to the sign (decision 0029): the thousands, the hundreds, the tens, then the sign.
+    { name: "compare 4,530 and 4,503", alias: "compared", events: normalizeAuthoringLesson(compareLesson({ a: "4530", b: "4503", beats: [{ key: "all", say: "From the left.", actions: [{ do: "animate", variable: "compared", value: 4 }] } as any] }), compareHost("pc-pace")), values: [1, 2, 3, 4] },
   ];
   for (const each of cases) {
     const session = new BrowserLessonSession(each.events, new MemoryStore(), `${each.name}`);

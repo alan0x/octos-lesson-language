@@ -361,6 +361,29 @@ Lesson 可以声明供多个白板节点共同读取的数值变量：
 - 编译器拒绝（只丢这张图）：`amount` 不是一位上一个数字（`not_one_digit`），两个单位隔三位以上或倍数不在相邻两位（`too_far`），大的单位超过 9 个（`too_many`），数不成整数（`not_whole`），形状不对（`not_same_shape`），超出百万位到千分位；
 - 只做桌面（约 1024 像素宽以上）；卡片一开始就按最多的时候留好地方，做的时候不会长高。卡片自己的操作说明 `cardHowTo("place_value_times_ten", content)`；卡片上还有一行跟着表的状态变的说明（每一种能点的东西各一句），位置固定。后面几节可用的事实：`placeValueTimesTenFacts` 和 `placeValueTimesTenStepSentences`；锁着时的那句话 `placeValueTimesTenLockedText`、一行几个空 `placeValueTimesTenAnswerParts`、全对以后的那句话 `placeValueTimesTenDoneText`（倍数在这里说「1/10」）。
 
+按数位比大小（`place_value_compare`，数学插件 0.12.0，特性 `plugin:math/place-value-compare@1`，播放器 0.20.0，决定 0029）：两个数在一张数位表上各占一行，按数位对齐（小数点对齐），从最高位比起，第一个不一样的数位决定，后面的数位不影响。
+
+```json
+"tasks": [{
+  "as": "practice",
+  "start": {"kind": "practice", "variables": ["a", "b", "compared", "marked", "signed"],
+            "values": {"a": 625, "b": 700, "compared": 0, "marked": 0, "signed": 0}},
+  "prompt": "Compare the two numbers.",
+  "availability": {"kind": "after_lesson"},
+  "allowed_operations": [{"kind": "card_tap", "node": "chart"}],
+  "completion": {"kind": "card_fact", "node": "chart", "fact": "complete"},
+  "hints": ["Start at the left."]
+}]
+```
+
+- 卡片的内容：两个数 `a`、`b`（整千分之一，0.625 写 625）；`a_decimals`、`b_decimals`（可选，0 到 3：这个数写出来的小数位数，比它本身需要的多时才写，0.70 写 2；不写就是数本身的位数），所以 0.7 和 0.70 是一对；`compared`（演示：从左边起比了几列，再加一步选符号）；孩子的状态 `marked`（从左边起判断了几列，0 到 7）和 `signed`（选对了符号，0 或 1）。列从两个数算出来（从两个数最高的一位，至少到个位，到写出来的最低一位，最多七列），所以练习可以换一对数；
+- 每个字段都是卡片级字段，按名字绑定（能力 `value-bindings:card-field`），一个变量只绑定一个字段，绑定直接写变量名；`marked` 的变量从 0 到 7，`signed` 从 0 到 1（和哪一对数无关）；
+- 点按（只有学生点，课不点）：`same`、`different`（这一列下面的「一样」「不一样」，`place` 是数位加三，个位 3），从左边起一列一列判断，只接受对的判断；`sign`（`place` 10 到 12：>、=、<），表比完以后才能选，只接受对的符号；`column`（比完以后点一列，总被拒绝，拒绝的话就是这一列的事实：「The tens decide; the ones come after and don't matter.」）。拒绝都只说事实；选对符号以前不说哪个数大；
+- 演示：课只通过 `compared` 演示，从 0 开始（卡片从 0 打开），一次一个整数往前：每一步判断一列（前面的「一样」，决定的那一列「不一样」；相等的一对一直「一样」），最后一步选对的符号；最大值是决定的那一列加二。可以一次写到后面的值：卡片的 `stepValues` 是每一个整数一步，播放器一步一步地设（每一步一个演示的时间，0026 修订 2），不能往回，不能超过最后一步。演示时卡片拒绝一切点按，也不说话（课自己讲）；孩子的状态是 0。重放起点可以把 `compared` 设成任何一步，`marked`、`signed` 回到 0；
+- 练习的起点：自己的 `a`、`b`（不能和课里的一样），`compared`、`marked`、`signed` 都是 0。事实 `complete`（孩子比完并选对了符号；演示到最后不算）在每次点按后判定，选对符号的那一下就完成任务，没有「我做完了」；做完以后的那张表按这道练习自己的数算；
+- 编译器拒绝（只丢这张图）：两个数写得一模一样（`same_numeral`，0.7 和 0.70 不算），超过七列（`too_wide`），超过三位小数或写的小数位数比数本身需要的少（`decimals`）；
+- 只做桌面（约 1024 像素宽以上）；每一格一开始就按这一对数最多的圆片留好地方，做的时候不会长高。卡片自己的操作说明 `cardHowTo("place_value_compare", content)`；卡片上题目正下方一行跟着表的状态变的说明（只在能点时显示）。后面几节可用的事实：`placeValueCompareFacts`（演示时孩子的事实是新表的）和 `placeValueCompareStepSentences`；选对以后的那句话 `placeValueCompareDoneText`；课里的小数（mantissa、scale）用 `placeValueCompareFromDecimal` 换成卡片的数。
+
 数位上的滑块（数学插件 0.7.0，特性 `plugin:math/base-ten-trade-slider@1`，决定 0023 修订 4）：
 
 - 有托盘的那一位（个位；三列时也可以是十位）的个数变量可以写 `control: {"kind": "slider", "step": 10}`；步长必须正好是 10。托盘、最高一位不能有滑块，这些变量也不能有其他控件。卡片上每一位的个数和每个托盘都必须绑定到它自己的变量，范围和点按一样；

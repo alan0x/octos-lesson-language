@@ -70,7 +70,8 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.doesNotThrow(throwsStart(state));
   assert.equal(cardHowTo(PLACE_VALUE_TIMES_TEN_KIND, content), placeValueTimesTenHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_times_ten, buildPlaceValueTimesTen);
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.1");
+  // The compare card (0029) moved the manifest on since; a times-ten lesson still needs only math 0.11.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.0");
 });
 
 test("the complete fact: judged on each tap; done, the task's own problem at its own start unit, every row moved", () => {
@@ -111,7 +112,8 @@ test("a lesson with the card: schema, validation, normalization, execution requi
     const practice = setLessonVariables(board, task(lesson).start.values);
     assert.equal(practice.nodes[node.id]!.content.amount, task(lesson).start.values.amount);
   }
-  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.19.0");
+  // The compare card (0029) moved the player on since; a times-ten lesson still needs only player 0.19.0.
+  assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.20.0");
 });
 
 test("practice: its own problem of the card's shape, counted in at its own start unit, rows fresh", () => {

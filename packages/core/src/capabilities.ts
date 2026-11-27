@@ -5,6 +5,7 @@ import { PLACE_VALUE_CHART_BINDINGS, PLACE_VALUE_CHART_CARD_BINDINGS, PLACE_VALU
 import { PLACE_VALUE_TRADE_BINDINGS, PLACE_VALUE_TRADE_CARD_BINDINGS, PLACE_VALUE_TRADE_KIND } from "../../plugin-math/src/place-value-trade.js";
 import { MAKE_TEN_CARD_BINDINGS, MAKE_TEN_KIND } from "../../plugin-math/src/make-ten.js";
 import { PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_ROW_FIELDS } from "../../plugin-math/src/place-value-times-ten.js";
+import { PLACE_VALUE_COMPARE_BINDINGS, PLACE_VALUE_COMPARE_KIND } from "../../plugin-math/src/place-value-compare.js";
 
 /**
  * Executable capabilities implemented by the current OLL core/runtime.
@@ -33,7 +34,7 @@ export const OLL_NODE_KINDS = [
  * OLL and are always installed; their execution feature is the plugin's, not
  * `node:<kind>`, so an older player refuses them before playback.
  */
-export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND, BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND, MAKE_TEN_KIND, PLACE_VALUE_TIMES_TEN_KIND] as const;
+export const OLL_PLUGIN_NODE_KINDS = [NUMBER_LINE_KIND, FRACTION_MODEL_KIND, BASE_TEN_TRADE_KIND, PLACE_VALUE_CHART_KIND, PLACE_VALUE_TRADE_KIND, MAKE_TEN_KIND, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_COMPARE_KIND] as const;
 
 export type OllNodeKind = typeof OLL_NODE_KINDS[number] | typeof OLL_PLUGIN_NODE_KINDS[number];
 
@@ -87,13 +88,16 @@ export const OLL_BINDING_CAPABILITIES = {
  * card has its two numbers and the demonstration's "columns finished" (decision 0026, player 0.17.0); the
  * make-ten card has its pair, the demonstration's count in the bigger frame, and the count the learner moved
  * (decision 0027, player 0.18.0); the place-value times-ten card has its amount, its target, the demonstration's
- * "counted in" and the learner's row sets, every field of it card-level (decision 0028, player 0.19.0).
+ * "counted in" and the learner's row sets, every field of it card-level (decision 0028, player 0.19.0); the place-value
+ * compare card has its pair, their written decimals, the demonstration's "compared" and the learner's "marked" and
+ * "signed", every field of it card-level (decision 0029, player 0.20.0).
  */
 export const OLL_CARD_BINDING_CAPABILITIES: Readonly<Record<string, readonly string[]>> = Object.freeze({
   place_value_chart: PLACE_VALUE_CHART_CARD_BINDINGS,
   place_value_trade: PLACE_VALUE_TRADE_CARD_BINDINGS,
   make_ten: MAKE_TEN_CARD_BINDINGS,
   place_value_times_ten: [...PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, ...PLACE_VALUE_TIMES_TEN_ROW_FIELDS],
+  place_value_compare: PLACE_VALUE_COMPARE_BINDINGS,
 });
 
 /** The card-level fields of a node kind, or none. */

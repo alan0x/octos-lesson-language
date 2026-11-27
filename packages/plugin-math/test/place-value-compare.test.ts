@@ -143,6 +143,11 @@ test("sketch: judgements from the left, one column at a time; only true judgemen
   s = run(s, [1, "different"]);
   eq(reason(tap(s, 3, "same")), "after_decided", "and once the hundreds decide, the ones don't matter");
   eq(m.placeValueCompareRefusalText(s, { tap: "same", place: 3 }, "zh-CN"), "已经由百位决定了；个位在后面，不影响。", "the zh fact after the decision");
+  // The sketch's tap on a decided chart's column (review of #128): it states that column's fact.
+  eq(m.placeValueCompareRefusalText(s, { tap: "column", place: 3 }, "en-US"), "The hundreds decide; the ones come after and don't matter.", "a later column doesn't matter");
+  eq(m.placeValueCompareRefusalText(s, { tap: "column", place: 5 }, "en-US"), "Hundreds: 5 and 6, the first place that differs.", "the deciding column");
+  eq(m.placeValueCompareRefusalText(s, { tap: "column", place: 6 }, "en-US"), "Thousands: 4 and 4, the same.", "a column the same");
+  eq(m.placeValueCompareRefusalText(m.placeValueCompareStart(p), { tap: "column", place: 6 }, "en-US"), "Thousands: 4 and 4.", "before the decision, a tap off the buttons states the column's digits");
 
   p = pair("0.625", "0.7");
   s = run(m.placeValueCompareStart(p), [0, "same"], [1, "different"]);
@@ -266,6 +271,13 @@ test("state: total; a refused pair is an empty chart, never complete; compared s
   eq(reason(m.applyPlaceValueCompareTap(refused, { tap: "same", place: 3 })), "no_place", "a refused pair takes no tap");
   eq(m.placeValueCompareStartFault(refused), "This pair: the same numeral twice; there is nothing to compare (0.7 and 0.70 are a pair) (same_numeral)", "a practice start on a refused pair is refused with its fault");
   eq(m.placeValueCompareStartFault(demo), "A practice card starts with nothing demonstrated: compared is 2, not 0", "a practice start shows no demonstration");
+  // Review of #128: while a demonstration shows, the learner's facts are a fresh chart's, never complete; the line says nothing.
+  const shownEnd = m.placeValueCompareState({ a: 4530000, b: 4503000, compared: 4, marked: 0, signed: 0 });
+  eq([m.placeValueCompareSigned(shownEnd), m.placeValueCompareComplete(shownEnd)], [true, false], "the demonstration's end shows the sign, but the learner's card is not complete");
+  const facts = m.placeValueCompareFacts(shownEnd);
+  eq([facts.judged, facts.decided, facts.complete, facts.next, facts.compared], [0, false, false, 3, 4], "the learner's facts during a demonstration");
+  for (const compared of [1, 2, 3, 4]) eq(m.placeValueCompareInstruction(m.placeValueCompareState({ a: 4530000, b: 4503000, compared, marked: 0, signed: 0 }), "en-US"), "", `no instruction while the demonstration shows (compared ${compared})`);
+  for (const compared of [1, 4]) eq(m.placeValueCompareStartFault(m.placeValueCompareState({ a: 4530000, b: 4503000, compared, marked: 0, signed: 0 })), `A practice card starts with nothing demonstrated: compared is ${compared}, not 0`, "a practice start refuses compared");
   eq(m.placeValueCompareStartFault(m.placeValueCompareState(contentOf(p, { marked: 1 }))), "A practice card starts fresh: marked is 1, not 0", "a practice start judges nothing");
   eq(m.placeValueCompareStartFault(m.placeValueCompareState(contentOf(p))), undefined, "a fresh card starts a practice");
   eq(m.placeValueCompareState(undefined).fault, "unreadable", "no content");
@@ -320,7 +332,7 @@ test("compared: the demonstration's values and what the next one does", () => {
 test("facts and words: the card never names the larger number before the sign", () => {
   const p = pair("0.625", "0.7");
   let s = m.placeValueCompareStart(p);
-  eq(m.placeValueCompareFacts(s), { columns: [0, -1, -2, -3], deciding: -1, digits: [6, 7], relation: "<", judged: 0, next: 0, decided: false, complete: false }, "facts for the lesson's later sections");
+  eq(m.placeValueCompareFacts(s), { columns: [0, -1, -2, -3], deciding: -1, digits: [6, 7], relation: "<", judged: 0, next: 0, decided: false, complete: false, compared: 0 }, "facts for the lesson's later sections");
   eq(m.placeValueCompareFactText(s, "en-US"), "", "a fresh chart says nothing");
   eq(m.placeValueCompareInstruction(s, "en-US"), "From the left, judge each place until one is different.", "the instruction");
   s = run(s, [0, "same"]);
@@ -340,7 +352,6 @@ test("facts and words: the card never names the larger number before the sign", 
   eq(m.placeValueCompareDoneText(eqp, "en-US"), "✓ 0.7 = 0.70: every place is the same.", "an equal pair's sentence");
   eq(m.placeValueCompareFacts(all).deciding, null, "no place decides an equal pair");
   eq(m.placeValueCompareHowTo({ a: 1, b: 2, compared: 0, marked: 0, signed: 0, language: "zh-CN" }), "从左边起，一位一位点它下面的「一样」或「不一样」，直到有一位不一样；然后在两个数中间选 >、= 或 <。", "the fixed how-to, the card's own");
-  ok(!m.placeValueCompareHowTo({}).includes("main_visual"), "never a role");
 });
 
 test("plan: desktop sizes; room kept from the start; the numerals lined up on their points", () => {

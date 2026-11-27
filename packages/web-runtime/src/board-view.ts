@@ -14,6 +14,7 @@ import { planPlaceValueChart } from "../../plugin-math/src/place-value-chart.js"
 import { renderPlaceValueTrade, updatePlaceValueTrade, type PlaceValueTradeViewContext } from "../../plugin-math/src/place-value-trade-view.js";
 import { renderMakeTen, updateMakeTen, type MakeTenViewContext } from "../../plugin-math/src/make-ten-view.js";
 import { renderPlaceValueTimesTen, updatePlaceValueTimesTen, type PlaceValueTimesTenViewContext } from "../../plugin-math/src/place-value-times-ten-view.js";
+import { renderPlaceValueCompare, updatePlaceValueCompare, type PlaceValueCompareViewContext } from "../../plugin-math/src/place-value-compare-view.js";
 import { tapCardKind, type CardTap } from "../../core/src/cards.js";
 import { numberLineDragValue, NUMBER_LINE_ZOOM, type NumberLineContent, type NumberLineWindow } from "../../plugin-math/src/number-line.js";
 import { limitInkStrokes, prepareStrokeReplay, sanitizeInkSvg } from "./ink-snapshot.js";
@@ -1796,6 +1797,8 @@ function renderContent(
   makeTen?: MakeTenViewContext,
   /** A place-value times-ten card's state of play on the board: live, and a refused tap with its notice (decision 0028). */
   placeValueTimesTen?: PlaceValueTimesTenViewContext,
+  /** A place-value compare card's state of play on the board: live, and a refused tap with its notice (decision 0029). */
+  placeValueCompare?: PlaceValueCompareViewContext,
 ): void {
   const content = node.content ?? {};
   const title = cardHeading(node);
@@ -1833,6 +1836,11 @@ function renderContent(
   // The math plugin's place-value times-ten card (decision 0028): an amount counted in another unit; taps arrive as the trade card's do.
   if (node.kind === "place_value_times_ten") {
     renderPlaceValueTimesTen(parent, content, placeValueTimesTen ?? { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) });
+    return;
+  }
+  // The math plugin's place-value compare card (decision 0029): two numbers compared by place; taps arrive as the trade card's do.
+  if (node.kind === "place_value_compare") {
+    renderPlaceValueCompare(parent, content, placeValueCompare ?? { applyEmphasis: (element, id) => applyEmphasisClass(element, latestEmphasis(node, id)) });
     return;
   }
   if (node.kind === "plot") { renderPlotExplorer(parent, node, variables, drawPlot, plotAnimation); return; }
@@ -2928,7 +2936,8 @@ export class InfiniteBoardView {
         + (kind === "place_value_chart" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.placeValueBands(node.content)]) : "")
         + (kind === "place_value_trade" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "")
         + (kind === "make_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "")
-        + (kind === "place_value_times_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "");
+        + (kind === "place_value_times_ten" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "")
+        + (kind === "place_value_compare" ? JSON.stringify([this.cardTapHandler?.live(node.id) ?? false, this.cardNotices.get(node.id) ?? "", this.cardRefusals.get(node.id) ?? null]) : "");
       if (this.nodeContentSignatures.get(node.id) !== signature) {
         let updated = false;
         if (kind === "plot") {
@@ -3027,6 +3036,17 @@ export class InfiniteBoardView {
         if (timesTenContext) {
           try { updated = updatePlaceValueTimesTen(element, node.content ?? {}, timesTenContext); } catch { updated = false; }
         }
+        // The compare card updates in place too, so a judgement pulses and the demonstration plays one step at a time.
+        const compareContext: PlaceValueCompareViewContext | undefined = kind === "place_value_compare" ? {
+          applyEmphasis: (target: Element, id: string) => applyEmphasisClass(target, latestEmphasis(node, id)),
+          live: this.cardTapHandler?.live(node.id) ?? false,
+          notice: this.cardNotices.get(node.id) ?? "",
+          demonstrationMs: demonstrationStepMs(this.playbackSpeed),
+          ...(refusedTap ? { refused: { kind: refusedTap.kind, place: refusedTap.place } } : {}),
+        } : undefined;
+        if (compareContext) {
+          try { updated = updatePlaceValueCompare(element, node.content ?? {}, compareContext); } catch { updated = false; }
+        }
         if (!updated) {
           if (cardContext) this.stopCardSteps(node.id);
           disposeScene3d(element);
@@ -3047,6 +3067,7 @@ export class InfiniteBoardView {
             tradeContext,
             makeTenContext,
             timesTenContext,
+            compareContext,
           );
           if (kind === "ink") this.inkShownStrokes.set(node.id, shownStrokeCount(node));
           if (cardContext) { updateBaseTenTrade(element, node.content ?? {}, cardContext); this.cardFrames.set(node.id, cardFrame); this.cardSteps.delete(node.id); }

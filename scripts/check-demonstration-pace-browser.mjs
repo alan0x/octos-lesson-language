@@ -7,6 +7,7 @@
 //   goes on when resumed; a learner's tap afterwards keeps its quick motion;
 // - the times-ten card: 0.2 counted in thousandths (two rows, each two places along), one row's move a step;
 // - the make-ten card: 8 + 6, `filled` 8 -> 10, one counter a step;
+// - the compare card: 4,530 and 4,503, `compared` 0 -> 4, one column judged a step, then the sign (decision 0029);
 // - the trading mat (default-on): the lesson's own taps, one a step; the place-value chart's own take-outs too;
 // - reduced motion: the card changes at once and the lesson does not wait;
 // - a card without a title shows no heading: its role ("main_visual") is never drawn as one.
@@ -22,6 +23,7 @@ import { tradeHost, tradeLesson } from "../dist/packages/plugin-math/test/place-
 import { timesTenHost, timesTenLesson } from "../dist/packages/plugin-math/test/place-value-times-ten-fixtures.js";
 import { makeTenHost, makeTenLesson } from "../dist/packages/plugin-math/test/make-ten-fixtures.js";
 import { chartHost, chartLesson } from "../dist/packages/plugin-math/test/place-value-chart-fixtures.js";
+import { compareHost, compareLesson } from "../dist/packages/plugin-math/test/place-value-compare-fixtures.js";
 
 const SLOT = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
 const animate = (key, variable, value) => ({ key, say: "Look.", actions: [{ do: "animate", variable, value }] });
@@ -42,6 +44,7 @@ const lessons = {
   trade: normalizeAuthoringLesson(tradeLesson({ operation: "subtract", a: "3000", b: "1468", practice: [["5000", "2367"]], beats: [animate("ones", "finished", 1)] }), tradeHost("trade")),
   timesTen: normalizeAuthoringLesson(timesTenLesson({ amount: "0.2", target: "0.001", beats: [animate("thousandths", "counted_in", 1)] }), timesTenHost("timesTen")),
   makeTen: normalizeAuthoringLesson(makeTenLesson({ a: 8, b: 6, beats: [animate("ten", "filled", 10)] }), makeTenHost("makeTen")),
+  compare: normalizeAuthoringLesson(compareLesson({ a: "4530", b: "4503", beats: [animate("all", "compared", 4)] }), compareHost("compare")),
   mat: normalizeAuthoringLesson(matLesson(), { lessonId: "mat", boardId: "b", baseRevision: 0, regionIntent: "new_topic" }),
   // The place-value chart pulled apart by the lesson's own taps: the hundreds, the tens, the ones.
   chart: normalizeAuthoringLesson(chartLesson({ mode: "apart", given: "numeral", target: 347_000, fixedNumber: true,
@@ -105,6 +108,7 @@ const measure = (page, name, { kind, speed = 1, reducedMotion = false, pauseAt, 
       .map((row) => count(group, `.place-value-trade-disks .place-value-trade-disk[data-row="${row}"]`)).join(",")).join("|");
     if (kind === "place_value_times_ten") return [...root.querySelectorAll(".place-value-times-ten-things")].map((layer) => [...layer.children].filter((child) => child.matches("[data-i]")).length).join(",");
     if (kind === "place_value_chart") return [...root.querySelectorAll(".place-value-place")].map((group) => `${count(group, ".place-value-disks .place-value-disk")}/${count(group, ".place-value-pulled .place-value-disk")}`).join("|");
+    if (kind === "place_value_compare") return [...root.querySelectorAll(".place-value-compare-mark")].map((mark) => mark.textContent).join("") + (root.querySelector(".place-value-compare-chosen")?.textContent ?? "");
     if (kind === "make_ten") return [0, 1].map((frame) => count(root, `.make-ten-counter[data-frame="${frame}"]`)).join(",");
     return [...root.querySelectorAll("g.base-ten-place")].map((group) => `${count(group, ".base-ten-unit.base-ten-in-tray:not(.base-ten-leaving)")}/${count(group, ".base-ten-unit:not(.base-ten-in-tray):not(.base-ten-leaving)")}`).join("|");
   };
@@ -244,6 +248,14 @@ try {
   check(steps.every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each counter moves for about a step: ${steps.map((step) => step.motion)}`);
   check(makeTen.next >= steps[0].at + 2 * SLOT - 50, `the next operation waits: ${makeTen.next} ms`);
 
+  // The compare card: 4,530 and 4,503, the thousands, the hundreds and the tens judged, then the sign.
+  const compare = await measure(page, "compare", { kind: "place_value_compare" });
+  steps = summarize("compare 4,530 and 4,503, compared 0 -> 4", compare);
+  untitled("compare", compare);
+  check(steps.length === 4 && gaps(steps).every((gap) => near(gap, SLOT, 150)), `one column judged a slot, then the sign: ${JSON.stringify(compare.steps)}`);
+  check(steps.every((step) => step.motion >= DEMONSTRATION_STEP_MS * 0.6 && step.motion <= DEMONSTRATION_STEP_MS + 300), `each step moves for about a step: ${steps.map((step) => step.motion)}`);
+  check(compare.next >= steps[0].at + 4 * SLOT - 50, `the next operation waits: ${compare.next} ms`);
+
   // The mat: the lesson's own taps, three into the tray and the make, one a slot.
   const mat = await measure(page, "mat", { kind: "base_ten_trade" });
   steps = summarize("mat: the lesson's taps (gather, gather, gather, make)", mat);
@@ -268,4 +280,4 @@ if (failures.length) {
   console.error(`demonstration pace browser checks failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log(`demonstration pace browser checks passed: a step's slot is ${SLOT} ms (${DEMONSTRATION_STEP_MS} ms of motion, ${DEMONSTRATION_HOLD_MS} ms held) on the trade card's cascade, the times-ten card's rows, the make-ten card's counters, the mat's and the chart's lesson taps; the lesson waits for the last; double speed halves it; a pause holds it; reduced motion changes at once; a learner's tap stays quick; no card shows its role as a heading`);
+console.log(`demonstration pace browser checks passed: a step's slot is ${SLOT} ms (${DEMONSTRATION_STEP_MS} ms of motion, ${DEMONSTRATION_HOLD_MS} ms held) on the trade card's cascade, the times-ten card's rows, the make-ten card's counters, the compare card's columns and sign, the mat's and the chart's lesson taps; the lesson waits for the last; double speed halves it; a pause holds it; reduced motion changes at once; a learner's tap stays quick; no card shows its role as a heading`);

@@ -5,13 +5,14 @@ import type { PlaceValueTap } from "../../plugin-math/src/place-value-chart.js";
 import type { PlaceValueTradeTapKind } from "../../plugin-math/src/place-value-trade.js";
 import type { MakeTenTapKind } from "../../plugin-math/src/make-ten.js";
 import type { PlaceValueTimesTenTapKind } from "../../plugin-math/src/place-value-times-ten.js";
+import type { PlaceValueCompareTapKind } from "../../plugin-math/src/place-value-compare.js";
 
 /**
  * A tap a card takes: the trading mat's (decision 0023), the place-value chart's (decision 0025), the place-value
  * trade card's (decision 0026), the make-ten card's (decision 0027) or the place-value times-ten card's (decision
  * 0028; the last three a learner's only, never the lesson's).
  */
-export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind | MakeTenTapKind | PlaceValueTimesTenTapKind;
+export type CardTapKind = "gather" | "ungather" | "make" | "break" | PlaceValueTap["tap"] | PlaceValueTradeTapKind | MakeTenTapKind | PlaceValueTimesTenTapKind | PlaceValueCompareTapKind;
 /** A place an authoring tap names: the mat's, or a chart's alias (`ones`, `tenths`, `hundred-thousands`). */
 export type CardTapPlaceName = BaseTenPlaceName | "thousandths" | "hundredths" | "tenths" | "thousands" | "ten-thousands" | "hundred-thousands" | "millions";
 
