@@ -2549,3 +2549,26 @@ test("the lesson's own tap on the mat is a demonstration step: a step's slot bef
   for (const gap of times({})) near(gap, slot, "a lesson tap's slot");
   for (const gap of times({ reducedMotion: true })) assert.ok(gap < 1_000, `with reduced motion a lesson tap does not wait a step: ${gap} ms`);
 });
+
+test("with external narration, audio that ends early never cuts a demonstration short: the sentence ends after the last step", (context) => {
+  context.mock.timers.enable({ apis: ["setTimeout", "Date"], now: 0 });
+  const slot = DEMONSTRATION_STEP_MS + DEMONSTRATION_HOLD_MS;
+  const session = new BrowserLessonSession(normalizeAuthoringLesson(ptPaceLesson(), tradeHost("pt-audio")), new MemoryStore(), "pt-audio", { narrationTiming: "external" });
+  while (!session.activeVariableAnimation) assert.ok(session.advance());
+  const beat = session.currentOperation!.beat_id!;
+  const sentence = session.projection.current_narration?.text;
+  assert.ok(sentence);
+  session.startNarration(beat);
+  session.play();
+  playNoting(context, session, "finished", slot + 400);
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  // The audio ends here, two actions in: the card goes on, one action a slot, and the sentence waits for it.
+  session.completeNarration(beat);
+  assert.ok(session.activeVariableAnimation, "the demonstration is not cut short");
+  assert.equal(session.projection.board!.variables!.finished!.value, 0.5);
+  const third = playNoting(context, session, "finished", 2 * slot - 400);
+  assert.deepEqual(third.seen.map(([, value]) => value), [0.75, 1]);
+  assert.equal(session.projection.current_narration?.text, sentence, "the sentence is still on during the last step");
+  playNoting(context, session, "finished", slot + 400);
+  assert.notEqual(session.projection.current_narration?.text, sentence, "after the last hold the sentence ends");
+});

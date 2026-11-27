@@ -798,6 +798,9 @@ export class BrowserLessonSession {
     if (
       this.playing &&
       this.scheduledBaseDelay === undefined &&
+      // A card's demonstration is never cut short by audio that ends first: the sentence ends after its last step
+      // (owner, 2026-11-27); its end goes on to the narration's end.
+      !this.playingCardDemonstration() &&
       (nextOperation?.type === "narration.end" ||
         wasWaitingForStart)
     ) {
@@ -1005,6 +1008,11 @@ export class BrowserLessonSession {
     }
     this.demonstrationValues = { action_id: animation.action_id, from: animation.from, values };
     return values;
+  }
+
+  /** Whether a card's demonstration is playing now (an animation of a tap card's demonstration field). */
+  private playingCardDemonstration(): boolean {
+    return this.variableAnimation !== undefined && this.cardDemonstrationValues(this.variableAnimation) !== undefined;
   }
 
   /** How long an animation takes at the current speed: a card demonstration's steps, or its duration intent. */
