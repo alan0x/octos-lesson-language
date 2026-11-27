@@ -372,6 +372,10 @@ export { renderMakeTen, updateMakeTen, type MakeTenViewContext } from "./make-te
 export * from "./place-value-times-ten.js";
 export { buildPlaceValueTimesTen, type BuiltPlaceValueTimesTen, type PlaceValueTimesTenInput } from "./place-value-times-ten-builder.js";
 export { renderPlaceValueTimesTen, updatePlaceValueTimesTen, type PlaceValueTimesTenViewContext } from "./place-value-times-ten-view.js";
+// Comparing two numbers by place, from the largest place down (decision 0029).
+export * from "./place-value-compare.js";
+export { buildPlaceValueCompare, type BuiltPlaceValueCompare, type PlaceValueCompareInput } from "./place-value-compare-builder.js";
+export { PLACE_VALUE_COMPARE_STEP_MS, renderPlaceValueCompare, updatePlaceValueCompare, type PlaceValueCompareViewContext } from "./place-value-compare-view.js";
 
 export const MATH_BUILDERS = {
   function_plot: buildFunctionPlot,
