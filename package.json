@@ -43,7 +43,8 @@
     "check:place-value-chart-browser": "npm run build && node scripts/check-place-value-chart-browser.mjs",
     "check:place-value-trade-browser": "npm run build && node scripts/check-place-value-trade-browser.mjs",
     "check:make-ten-browser": "npm run build && node scripts/check-make-ten-browser.mjs",
-    "check:place-value-times-ten-browser": "npm run build && node scripts/check-place-value-times-ten-browser.mjs"
+    "check:place-value-times-ten-browser": "npm run build && node scripts/check-place-value-times-ten-browser.mjs",
+    "check:demonstration-pace-browser": "npm run build && node scripts/check-demonstration-pace-browser.mjs"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

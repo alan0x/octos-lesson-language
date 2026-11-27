@@ -72,7 +72,7 @@ test("a chart lesson with a practice task on its own number: validated, normaliz
 test("a chart lesson requires the chart's feature, its facts and the card-level binding: player 0.16.0, math 0.8.0", () => {
   // The chart came with math 0.8.0 and player 0.16.0; the trade card (decision 0026) moved both on.
   // The trade card (0026) and the make-ten card (0027) moved both on since.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.0");
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.11.1");
   assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.19.0");
   const requirements = deriveExecutionRequirements(normalizeAuthoringLesson(build(), chartHost("pv")));
   for (const feature of [PLACE_VALUE_CHART_FEATURE, "student-tasks:card_fact:built", "value-bindings:card-field"]) assert.ok(requirements.requiredCapabilities.includes(feature), feature);
