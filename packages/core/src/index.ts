@@ -516,6 +516,16 @@ function validateCardStudentTask(
     fail("OLL_INVALID_STUDENT_TASK", where, `${message}: ${detail} (${failPath.replace(/^\$\//, "")})`);
   kind.validateContent(cardContentAt(kind, content, variables, initial), "$", failAt("The lesson's pile is not a starting pile", `${path}/completion/node`), { start: true });
   if (task.start) {
+    // A practice on another pair starts the demonstration field where that pair puts it (decision 0027: the
+    // bigger addend): a field left unbound keeps the lesson's value, so it must be bound for the start to set it.
+    const shown = kind.demonstration;
+    if (shown && variables.get(shown.field) === undefined) {
+      const practiceAt = cardContentAt(kind, content, variables, { ...initial, ...startValues });
+      const start = shown.start(practiceAt);
+      if (Number(practiceAt[shown.field]) !== start) {
+        fail("OLL_INVALID_STUDENT_TASK", `${path}/completion/node`, `The practice starts the card's '${shown.field}' at ${start}, not the ${String(practiceAt[shown.field])} written on the card: bind '${shown.field}' to a lesson variable the task's start sets`);
+      }
+    }
     const selected = new Set(task.start.variables ?? []);
     const missing = [...variables.values()].filter((alias) => !selected.has(alias));
     if (missing.length) fail("OLL_INVALID_PHASE_START", `${path}/start/variables`, `A card task's practice pile sets every ${kind.kind === BASE_TEN_TRADE_KIND ? "count and tray" : "field the card binds"}; missing ${missing.join(", ")}`);
@@ -1279,6 +1289,23 @@ function checkDemonstrationReplay(cards: ReadonlyMap<string, LessonTapCard>, val
     });
     kind.validateContent(at, "$", (failPath, message) => fail("OLL_INVALID_PHASE_START", path, `The replay's card is not one this card takes: ${message} (${failPath.replace(/^\$\//, "")})`));
   }
+}
+
+/**
+ * A card that opens fresh (`demonstration.opensAtStart`, decision 0027), checked as the lesson has played when it
+ * is written: its bound fields at the played values. The card's own starting rules say why when it has them
+ * (`validateContent` with `start`); otherwise its demonstration field must be at its `start`.
+ */
+function checkOpensFresh(action: Partial<WriteAction>, played: Readonly<Record<string, number>>, path: string): void {
+  const kind = tapCardKind(action.kind);
+  const demonstration = kind?.demonstration;
+  if (!kind || !demonstration?.opensAtStart || !action.content || typeof action.content !== "object") return;
+  const content = action.content as JsonObject;
+  const at = cardContentAt(kind, content, bareBindings(content), played);
+  const prefix = "As the lesson has played when the card is written: ";
+  kind.validateContent(at, `${path}/content`, (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, `${prefix}${message}`), { start: true });
+  const value = Number(at[demonstration.field]), start = demonstration.start(at);
+  if (value !== start) fail("OLL_INVALID_OPERATION_PAYLOAD", `${path}/content/${demonstration.field}`, `${prefix}a ${kind.kind} card opens fresh: its '${demonstration.field}' starts at ${start}, not ${value}`);
 }
 
 /** A card's bindings to a bare variable, by binding target (an expression that is more than a name is left out). */
@@ -2307,15 +2334,6 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
             tapCard.validateContent(cardContentAt(tapCard, action.content, bareBindings(action.content), initials), `${actionPath}/content`,
               (failPath, message) => fail("OLL_INVALID_OPERATION_PAYLOAD", failPath, `As its variables start it: ${message}`), { start: true });
           }
-          // A card that opens fresh (its demonstration not yet played), as written and as its variables start it.
-          if (tapCard?.demonstration?.opensAtStart) {
-            const demonstration = tapCard.demonstration;
-            const initials = Object.fromEntries((document.lesson.variables ?? []).map((variable) => [variable.as, variable.initial]));
-            for (const [opening, prefix] of [[action.content, ""], [cardContentAt(tapCard, action.content, bareBindings(action.content), initials), "As its variables start it: "]] as const) {
-              const value = Number(opening[demonstration.field]), start = demonstration.start(opening);
-              if (value !== start) fail("OLL_INVALID_OPERATION_PAYLOAD", `${actionPath}/content/${demonstration.field}`, `${prefix}A ${tapCard.kind} card opens fresh: its '${demonstration.field}' starts at ${start}, not ${value}`);
-            }
-          }
           register(registry, action.as, "node", `${actionPath}/as`, fragments);
           return;
         }
@@ -2465,6 +2483,10 @@ export function validateAuthoringLesson(document: AuthoringLesson, resourceConte
       for (const phase of ["before_speech", "during_speech", "after_speech"] as const) {
         beat.actions.forEach((action, actionIndex) => {
           if ((action.when ?? "during_speech") !== phase) return;
+          // A card that opens fresh (decision 0027) opens so as the lesson has played when it is written: no beat
+          // before it, no earlier phase of its own beat, no replay and no earlier card on the same variables may
+          // have moved its demonstration field (review of #122).
+          if (action.do === "write") checkOpensFresh(action, playedValues, `${beatPath}/actions/${actionIndex}`);
           if (action.do === "animate") {
             checkDemonstrationAnimate(shownCards, action.variable, action.value, playedValues[action.variable], `${beatPath}/actions/${actionIndex}`);
             playedValues[action.variable] = action.value;

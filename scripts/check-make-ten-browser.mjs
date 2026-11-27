@@ -5,11 +5,13 @@
 //   the arrow before the first move); a red counter refused with a fact at its frame, the counter ringed in grey and
 //   the movable ones pointed out; the blue counter clicked is the one that crosses, the frame it left closes up; a
 //   counter that crossed clicked goes back; Enter on a focused counter taps it; the click that makes the ten ends
-//   the task with no "done"; then the row of four blanks; the split, the ones left and the total never drawn;
+//   the task with no "done"; then the row of four blanks; the split (the number moved, 3) and the total (12) are
+//   never drawn before they are typed; the ones left is drawn, by design, as the second frame's live count;
 // - Chinese: 3 + 8, the line and the refusal in Chinese, the colour word in its colour;
 // - the program's demonstration: the lesson animates the count in the bigger frame 8 -> 10 and the card moves one
 //   counter at a time; then the practice start lays its own pair fresh;
-// - the card fits a 1,024 px window; counters are drawn at least 44 px.
+// - the card fits a 1,024 px window; counters are drawn at least 30 px at the teaching camera's framing (the drawn
+//   size is logged; the card's own counters are 50 units).
 // Pairs are the accepted sketch's. Screenshots go to OLL_MAKE_TEN_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";
@@ -130,7 +132,7 @@ try {
   await click(page, counter(0, 0, 2));
   now = await read(page);
   check(now.note === "Red counters stay in their frame." && now.noteAt === "0" && JSON.stringify(now.noteColour) === '["0"]', `a refused red counter: a fact at its frame, its colour word in red: ${JSON.stringify([now.note, now.noteAt, now.noteColour])}`);
-  check(JSON.stringify(now.refused) === JSON.stringify([red]) && now.pointing.every((width) => width === "3") && now.frames[0].red === 7, `that counter ringed, the movable ones pointed out, nothing moved: ${JSON.stringify([now.refused, now.pointing])}`);
+  check(JSON.stringify(now.refused) === JSON.stringify([red]) && now.frames[1].movable === 5 && now.pointing.length === now.frames[1].movable && now.pointing.every((width) => width === "3") && now.frames[0].red === 7, `that counter ringed, the movable ones pointed out, nothing moved: ${JSON.stringify([now.refused, now.pointing])}`);
   if (shots) await page.screenshot({ path: `${shots}/refused-en.png` });
   // The blue counter clicked (the third) is the one that crosses; its frame closes up.
   const blue = await page.locator(counter(1, 1, 2)).getAttribute("data-piece");
@@ -152,7 +154,8 @@ try {
   await click(page, counter(1, 1, 0));
   now = await read(page);
   check(JSON.stringify(now.statuses) === '["succeeded","not_started"]' && now.live === 0 && now.frames[0].full, `the click that makes the ten ends the task, with no "done": ${JSON.stringify([now.statuses, now.live])}`);
-  check(now.frames[0].caption === "10" && now.frames[1].caption === "2" && !/\b12\b/.test(now.text), `ten and 2; the total is never drawn: ${JSON.stringify(now.frames.map((f) => f.caption))} ${now.text}`);
+  check(now.frames[0].caption === "10" && now.frames[1].caption === "2" && !/\b12\b/.test(now.text) && !/\b3\b/.test(now.text),
+    `ten and 2; neither the split (3) nor the total (12) is drawn before the row is typed: ${JSON.stringify(now.frames.map((f) => f.caption))} ${now.text}`);
   if (shots) await page.screenshot({ path: `${shots}/ten-en.png` });
   check(await row(page, "row-1", { "to-ten": "2", rest: "3", ones: "2", total: "12" }) === "in_progress" && await row(page, "row-1", { "to-ten": "3", rest: "2", ones: "2", total: "12" }) === "succeeded",
     "the row: the part beside the 7 makes ten (3 + 2, not 2 + 3)");

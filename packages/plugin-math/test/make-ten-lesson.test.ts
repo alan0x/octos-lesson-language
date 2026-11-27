@@ -93,6 +93,12 @@ test("a make-ten lesson with a practice pair and the row anchored on the card: v
   assert.deepEqual(["a", "b", "filled", "moved"].map((field) => practice.nodes["mt:node:frames"]!.content[field]), [7, 5, 7, 0]);
   validateAuthoringLesson(makeTenLesson({ a: 4, b: 9, practice: [[3, 8], [9, 8]], language: "zh-CN" }));
   validateAuthoringLesson(makeTenLesson({ a: 9, b: 5, practice: [[9, 7]], noDemo: true }));
+  // Unbound, the count in the bigger frame keeps the lesson's value: a practice pair with another bigger number
+  // cannot start it there (review of #122), and the refusal says to bind it.
+  assert.throws(() => validateAuthoringLesson(makeTenLesson({ a: 9, b: 5, practice: [[7, 5]], noDemo: true })), (error: any) => {
+    assert.equal(error.message, "The practice starts the card's 'filled' at 7, not the 9 written on the card: bind 'filled' to a lesson variable the task's start sets");
+    return true;
+  });
 });
 
 test("a make-ten lesson requires the card's feature, its fact, the card-level bindings and the row: player 0.18.0, math 0.10.0", () => {
@@ -141,12 +147,44 @@ test("the pairs the card refuses, at the card's content, so only the picture is 
   });
   const madeByVariable = lesson86({ practice: [] });
   variable(madeByVariable, "filled").initial = 9;
-  assert.throws(() => validateAuthoringLesson(madeByVariable), /As its variables start it: A card opens fresh: for 8 \+ 6 'filled' starts at 8, the bigger addend, not 9/);
+  assert.throws(() => validateAuthoringLesson(madeByVariable), (error: any) => {
+    assert.equal(error.message, "As its variables start it: A card opens fresh: for 8 + 6 'filled' starts at 8, the bigger addend, not 9");
+    return true;
+  });
   // Nor with counters already moved.
   const moved = lesson86();
   card(moved).content.moved = 1;
   variable(moved, "moved").initial = 1;
-  assert.throws(() => validateAuthoringLesson(moved), /content\/moved|A card opens fresh: nothing moved, not 1/);
+  assert.throws(() => validateAuthoringLesson(moved), (error: any) => {
+    assert.equal(`${error.path}: ${error.message}`, "/steps/0/beats/0/actions/0/content/moved: A card opens fresh: nothing moved, not 1");
+    return true;
+  });
+  // Nor as the lesson has played when the card is written (review of #122): a beat before it, an earlier phase of
+  // its own beat, a replay before it, or an earlier card on the same variables may not have filled the frame.
+  const played = (lesson: AuthoringLesson, pattern: string) => assert.throws(() => validateAuthoringLesson(lesson), (error: any) => {
+    assert.equal(error.message, pattern);
+    assert.equal(error.code, "OLL_INVALID_OPERATION_PAYLOAD");
+    return true;
+  });
+  const fresh = "As the lesson has played when the card is written: A card opens fresh: for 8 + 6 'filled' starts at 8, the bigger addend, not ";
+  const before = lesson86();
+  before.steps[0]!.beats.unshift(animate("pre", { filled: 10 }));
+  played(before, `${fresh}10`);
+  const samePhase = lesson86();
+  (samePhase.steps[0]!.beats[0]!.actions as any[]).unshift({ do: "animate", variable: "filled", value: 10, when: "before_speech" });
+  played(samePhase, `${fresh}10`);
+  const replayed = lesson86();
+  replayed.steps[0]!.beats.unshift({ key: "pre", say: "Look.", start: { kind: "replay", variables: ["filled"], values: { filled: 9 } }, actions: [{ do: "write", as: "note", kind: "text", role: "note", content: { text: "8 + 6" }, place: { relation: "new_region" } }] } as any);
+  played(replayed, `${fresh}9`);
+  const second = lesson86();
+  const again = structuredClone(card(second));
+  again.as = "frames-2";
+  second.steps[0]!.beats.push(animate("ten", { filled: 10 }), { key: "again", say: "Another card.", actions: [again] } as any);
+  played(second, `${fresh}10`);
+  // A card written after its demonstration, on variables still at their start, opens fresh.
+  const later = lesson86();
+  later.steps[0]!.beats.unshift({ key: "intro", say: "Two numbers.", actions: [{ do: "write", as: "note", kind: "text", role: "note", content: { text: "8 + 6" }, place: { relation: "new_region" } }] } as any);
+  validateAuthoringLesson(later);
 });
 
 test("a practice pair is the task's own, starting fresh: its bigger addend in the bigger frame, nothing moved", () => {
