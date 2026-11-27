@@ -110,6 +110,17 @@ lesson for review should advance the session to the available end without
 calling `play()`. The Runtime aligns the start and end boundaries but does not
 attempt word-level audio synchronization.
 
+A lesson's demonstration on a tap card has its own pace (owner, 2026-11-27):
+one card action at a time, each `DEMONSTRATION_STEP_MS` (2 s) of motion and
+`DEMONSTRATION_HOLD_MS` (0.6 s) held, and the lesson goes on after the last.
+The Runtime sets the card's demonstration field one action at a time
+(`CardDemonstration.stepValues`), and a lesson's own tap on the mat or the chart
+takes one such slot. The speed divides both; a host that calls `setSpeed()`
+should also call `InfiniteBoardView.setPlaybackSpeed()` with the same value, so
+the card's motion fits the slot. With `reducedMotion` the card changes at once;
+when a host leaves the option unset, a demonstration follows the page's
+`prefers-reduced-motion`.
+
 ## Student variable operations
 
 `setVariable()` remains a host/programmatic update and does not pretend to be

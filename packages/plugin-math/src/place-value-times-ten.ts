@@ -391,6 +391,23 @@ export function placeValueTimesTenDemoState(problem: PlaceValueTimesTenProblem, 
   const moved = Math.floor(part * problem.n + 1e-9);
   return { problem, stages: Array.from({ length: problem.n }, (_, i) => Math.min(problem.g, whole + (i < moved ? 1 : 0))), demo: at };
 }
+/**
+ * The values of "counted in" the player sets from `from` to `to`, one per row's move, in order (owner, 2026-11-27:
+ * a demonstration plays one action at a time). Between two values of the path a value moves the rows one at a
+ * time (`placeValueTimesTenDemoState`), so the r-th row of n is at r/n of the way; the last is `to`'s path value.
+ * Empty when `to` is not past `from` along the path.
+ */
+export function placeValueTimesTenDemoValues(problem: PlaceValueTimesTenProblem, from: number, to: number): number[] {
+  const path = placeValueTimesTenPath(problem);
+  const n = Math.max(1, problem.n);
+  const index = (value: number) => Math.floor(placeValueTimesTenPosition(problem, value) * n + 1e-6);
+  const values: number[] = [];
+  for (let t = index(from) + 1; t <= index(to); t += 1) {
+    const k = Math.floor(t / n), r = t - k * n;
+    values.push(r === 0 ? path[k]! : path[k]! + (path[k + 1]! - path[k]!) * r / n);
+  }
+  return values;
+}
 /** One step per later "counted in" value: each lineage moved once, top row first. */
 export function placeValueTimesTenDemoSteps(problem: PlaceValueTimesTenProblem): { steps: Array<{ countedIn: number; actions: Array<{ kind: "break" | "bundle"; i: number; stage: number }>; after: PlaceValueTimesTenState }>; final: PlaceValueTimesTenState } {
   let state = placeValueTimesTenStart(problem);

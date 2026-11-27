@@ -362,12 +362,19 @@ test("content rules: fields, columns, statuses and the demonstration", () => {
 test("the card's state is total: any content draws, numbers between values never draw part of a disk", () => {
   const content = card("3486", "+", "2739");
   assert.deepEqual(placeValueTradeState(content).problem.columns, [3, 2, 1, 0]);
-  // A demonstration animating 0 -> 2 shows each column in turn: 1.5 is one column finished.
+  // Between two whole numbers the chart is partway through the next column, one action at a time (owner,
+  // 2026-11-27): the tens take two actions (bring down, trade), so 1.5 is the ones finished and the tens brought down.
   const half = placeValueTradeState({ ...content, finished: 1.5 });
-  assert.equal(half.finished, 1);
+  assert.equal(half.finished, 1.5);
   assert.equal(m.placeValueTradeFinishedCount(half), 1);
-  assert.deepEqual(row(half, "answer"), [0, 0, 0, 5]);
-  assert.deepEqual(row(half, "carry"), [0, 0, 1, 0]);
+  assert.deepEqual(row(half, "answer"), [0, 0, 12, 5]);
+  assert.deepEqual(row(half, "carry"), [0, 0, 0, 0]);
+  // A value short of the next action shows the actions played so far: 1.4 is one column finished.
+  const before = placeValueTradeState({ ...content, finished: 1.4 });
+  assert.equal(before.finished, 1);
+  assert.deepEqual(row(before, "answer"), [0, 0, 0, 5]);
+  assert.deepEqual(row(before, "carry"), [0, 0, 1, 0]);
+  assert.equal(placeValueTradeState({ ...content, finished: 1.9 }).finished, 1.5);
   // Two columns finished: the program has played both bring-downs and both trades.
   assert.deepEqual(row(placeValueTradeState({ ...content, finished: 2 }), "answer"), [0, 0, 2, 5]);
   // Out of range, not whole, missing: clamped, never negative, never thrown.

@@ -2,6 +2,7 @@ import { checkNumericAnswer, checkNumericRow, numericRowBlanks, scene3dViewForIn
 import { baseTenMat, baseTenSliderMove, type BaseTenRefusal, type BaseTenStep, type BaseTenTap } from "../../plugin-math/src/base-ten-trade.js";
 import { BASE_TEN_TRADE_CARD, tapCardKind, type CardTap, type TapCardKind } from "../../core/src/cards.js";
 import { cardSliderAliases, cardSliderTarget, type CardSliderTarget } from "./card-slider.js";
+import { DEMONSTRATION_SLOT_MS } from "../../plugin-math/src/demonstration-pace.js";
 import {
   HeadlessLessonPlayer,
   type PlaybackAppendResult,
@@ -376,6 +377,8 @@ export class BrowserLessonSession {
   private currentFrame?: PlaybackFrame;
   private variableAnimation?: PlaybackVariableAnimation;
   private variableAnimationTimer?: ReturnType<typeof setTimeout>;
+  /** The steps of the card demonstration the current animation plays (`cardDemonstrationValues`), by its action. */
+  private demonstrationValues?: { action_id: string; from: number; values: number[] | undefined };
   private dragPersistTimer?: ReturnType<typeof setTimeout>;
   private lastDragPersistAt = 0;
   private variableAnimationStartedAt?: number;
@@ -710,6 +713,11 @@ export class BrowserLessonSession {
           easing: declaration.easing,
           duration_intent: declaration.duration_intent,
         };
+        // A card's demonstration with reduced motion (the page's, when the host does not say) changes at once.
+        if (this.cardDemonstrationValues(this.variableAnimation) && this.demonstrationsAtOnce()) {
+          this.player.setVariable(declaration.variable, declaration.to);
+          this.variableAnimation = undefined;
+        }
       }
       if (phase && frame) {
         const key = `playback:${this.phaseState.epoch}:${frame.operation.action!.action_id}`;
@@ -764,6 +772,8 @@ export class BrowserLessonSession {
     if (
       this.playing &&
       this.scheduledBaseDelay === undefined &&
+      // A repeated or resumed start while a card's demonstration plays leaves it to its steps (owner, 2026-11-27).
+      !this.playingCardDemonstration() &&
       wasWaitingForStart
     ) {
       this.tick();
@@ -795,6 +805,9 @@ export class BrowserLessonSession {
     if (
       this.playing &&
       this.scheduledBaseDelay === undefined &&
+      // A card's demonstration is never cut short by audio that ends first: the sentence ends after its last step
+      // (owner, 2026-11-27); its end goes on to the narration's end.
+      !this.playingCardDemonstration() &&
       (nextOperation?.type === "narration.end" ||
         wasWaitingForStart)
     ) {
@@ -962,7 +975,66 @@ export class BrowserLessonSession {
       this.scheduleVariableAnimation();
       return;
     }
-    this.scheduleBaseDelay(operationBaseDelay(frame.operation));
+    this.scheduleBaseDelay(this.frameBaseDelay(frame.operation));
+  }
+
+  /**
+   * A lesson's tap on a tap card (the mat, the chart) is one demonstration step: it takes a step's slot, its
+   * animation and a hold, before the lesson goes on (owner, 2026-11-27). With reduced motion it changes at once
+   * and the lesson does not wait for it.
+   */
+  private frameBaseDelay(operation: PlaybackOperation): number {
+    if (!this.demonstrationsAtOnce() && operation.type === "action.apply" && operation.action?.op === "card.tap") return DEMONSTRATION_SLOT_MS;
+    return operationBaseDelay(operation);
+  }
+
+  /**
+   * A card's demonstration changes at once, with no steps to wait for: with reduced motion, as the host says, or
+   * as the page asks when the host does not say (the card views follow the page's setting too).
+   */
+  private demonstrationsAtOnce(): boolean {
+    if (this.options.reducedMotion !== undefined) return this.options.reducedMotion;
+    try { return typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches; } catch { return false; }
+  }
+
+  /**
+   * The values a tap card's demonstration passes through, one per card action (`CardDemonstration.stepValues`),
+   * when this animation moves the demonstration field of a card on the board (owner, 2026-11-27: a demonstration
+   * plays one action at a time, a step's slot each, and the lesson goes on after the last). Undefined for any other
+   * animation, which eases as its duration intent says. Computed from the board and the animation's own `from`, so
+   * a restored checkpoint gets the same steps.
+   */
+  private cardDemonstrationValues(animation: PlaybackVariableAnimation): number[] | undefined {
+    if (this.demonstrationValues?.action_id === animation.action_id && this.demonstrationValues.from === animation.from) return this.demonstrationValues.values;
+    let values: number[] | undefined;
+    const board = this.player.snapshot.board;
+    for (const node of Object.values(board?.nodes ?? {})) {
+      const card = tapCardKind(node.kind);
+      const demonstration = card?.demonstration;
+      if (!card || !demonstration) continue;
+      const bindings = (node.content?.bindings ?? []) as Array<{ target: string; expression: string }>;
+      if (!bindings.some((binding) => binding.target === demonstration.field && binding.expression.trim() === animation.variable)) continue;
+      const bound = new Map(bindings.map((binding) => [binding.target, binding.expression.trim()]));
+      try {
+        const content = card.contentAt(node.content, (target) => (target === demonstration.field ? animation.from : board?.variables?.[bound.get(target) ?? ""]?.value));
+        const steps = demonstration.stepValues(content, animation.from, animation.to);
+        if (steps.length) values = steps;
+      } catch { /* a card the program cannot read: the animation eases as any other */ }
+      break;
+    }
+    this.demonstrationValues = { action_id: animation.action_id, from: animation.from, values };
+    return values;
+  }
+
+  /** Whether a card's demonstration is playing now (an animation of a tap card's demonstration field). */
+  private playingCardDemonstration(): boolean {
+    return this.variableAnimation !== undefined && this.cardDemonstrationValues(this.variableAnimation) !== undefined;
+  }
+
+  /** How long an animation takes at the current speed: a card demonstration's steps, or its duration intent. */
+  private variableAnimationLength(animation: PlaybackVariableAnimation): number {
+    const steps = this.cardDemonstrationValues(animation);
+    return steps ? Math.max(32, steps.length * DEMONSTRATION_SLOT_MS / this.speed) : variableAnimationDuration(animation.duration_intent, this.speed);
   }
 
   setVariable(alias: string, value: number): void {
@@ -1904,9 +1976,13 @@ export class BrowserLessonSession {
     const animation = this.variableAnimation;
     if (!animation) return;
     const next = { ...animation, progress: Math.max(0, Math.min(1, progress)) };
-    const eased = this.easedVariableProgress(next);
+    const steps = this.cardDemonstrationValues(animation);
     const declaration = this.player.snapshot.board?.variables?.[animation.variable];
-    this.player.setVariable(animation.variable, next.progress >= 1 ? animation.to : animatedVariableValue(animation.from, animation.to, eased, declaration));
+    // A card demonstration is stepped: step i's value is set as its slot begins, so its action plays, then holds.
+    const value = next.progress >= 1 ? animation.to
+      : steps ? steps[Math.min(steps.length - 1, Math.floor(next.progress * steps.length + 1e-9))]!
+        : animatedVariableValue(animation.from, animation.to, this.easedVariableProgress(next), declaration);
+    this.player.setVariable(animation.variable, value);
     animation.progress = next.progress;
   }
 
@@ -1916,7 +1992,7 @@ export class BrowserLessonSession {
     if (this.variableAnimationTimer !== undefined) clearTimeout(this.variableAnimationTimer);
     this.variableAnimationStartProgress = animation.progress;
     this.variableAnimationStartedAt = Date.now();
-    const duration = variableAnimationDuration(animation.duration_intent, this.speed);
+    const duration = this.variableAnimationLength(animation);
     const remainingDuration = duration * (1 - animation.progress);
     const update = () => {
       const active = this.variableAnimation;
@@ -1946,7 +2022,7 @@ export class BrowserLessonSession {
 
   private freezeVariableAnimation(): void {
     if (!this.variableAnimation || this.variableAnimationStartedAt === undefined) return;
-    const duration = variableAnimationDuration(this.variableAnimation.duration_intent, this.speed);
+    const duration = this.variableAnimationLength(this.variableAnimation);
     const remainingDuration = duration * (1 - this.variableAnimationStartProgress);
     const elapsed = Math.max(0, Date.now() - this.variableAnimationStartedAt);
     const progress = this.variableAnimationStartProgress

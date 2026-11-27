@@ -148,3 +148,28 @@ test("a demonstration hook: the card says its values, the next value and a fresh
   assert.deepEqual([fromThree.start({}), fromThree.opensAtStart, fromThree.refuseStep({}, 3, 2), fromThree.outside({}, 11)], [3, true, "counts things: it goes forward, not from 3 back to 2; next 4", "counts things: 3 to 10, not 11"]);
   assert.ok(Object.isFrozen(trade) && Object.isFrozen(fromThree));
 });
+
+test("a demonstration says the values one action apart (owner, 2026-11-27): each column's actions, each counter, each row", () => {
+  const sub = { operation: "subtract", top_place: 3, low_place: 0, a: 3_000_000, b: 1_468_000, finished: 0,
+    places: [3, 2, 1, 0].map((place) => ({ as: ["ones", "tens", "hundreds", "thousands"][place], place, status: 0 })) };
+  // 3,000 − 1,468: the ones are short across three zeros, so three breaks and the take-away; then a take-away a column.
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(sub, 0, 1), [0.25, 0.5, 0.75, 1]);
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(sub, 0, 4), [0.25, 0.5, 0.75, 1, 2, 3, 4]);
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(sub, 1, 3), [2, 3]);
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(sub, 2, 2), [], "the same value again plays nothing");
+  // 3,486 + 2,739: each of the three lower columns comes down and trades its ten; the thousands only come down.
+  const add = { ...sub, operation: "add", a: 3_486_000, b: 2_739_000 };
+  assert.deepEqual(PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(add, 0, 4), [0.5, 1, 1.5, 2, 2.5, 3, 4]);
+  // The make-ten card moves one counter a value (the default of a whole-number field).
+  assert.deepEqual(MAKE_TEN_CARD.demonstration!.stepValues({ a: 8, b: 6, filled: 8, moved: 0 }, 8, 10), [9, 10]);
+  // The times-ten card moves one row a value: 0.3 in thousandths, three rows, each two places along.
+  const timesTen = tapCardKind("place_value_times_ten")!;
+  const chart = { question: "count", toward: "right", apart: 2, amount: 300, target: 1, counted_in: 100, moved_once: 0, moved_twice: 0 };
+  assert.deepEqual(timesTen.demonstration!.stepValues(chart, 100, 1), [70, 40, 10, 7, 4, 1]);
+  assert.deepEqual(timesTen.demonstration!.stepValues(chart, 100, 10), [70, 40, 10]);
+  assert.deepEqual(timesTen.demonstration!.stepValues(chart, 10, 10), []);
+  // The card at each value is the chart after that many actions, in order: the hundreds, tens and ones each
+  // receive ten (status 2) as the breaks pass down, then the ones are taken away (3).
+  const states = PLACE_VALUE_TRADE_DEMONSTRATION.stepValues(sub, 0, 1).map((finished) => PLACE_VALUE_TRADE_CARD.state({ ...sub, finished }) as { status: Record<number, number> });
+  assert.deepEqual(states.map((state) => [3, 2, 1, 0].map((place) => state.status[place])), [[0, 2, 0, 0], [0, 2, 2, 0], [0, 2, 2, 2], [0, 2, 2, 3]]);
+});

@@ -16,7 +16,8 @@
 //   1,024 px with no horizontal scroll, every disk label inside its disk, the card's height kept while it is worked;
 // - the program's demonstration: "compared" played by the session with motion, the columns judged one at a time,
 //   then the sign; then the practice opens fresh on its own pair.
-// What it does not show: how long a step holds (the view's `stepMs`); it checks the order of the steps, not their pace.
+// What it does not show: how long a step holds (the player's slot; `npm run check:demonstration-pace-browser` measures
+// pace); it checks the order of the steps, not their timing.
 // Pairs are the accepted sketch's. Screenshots go to OLL_PLACE_VALUE_COMPARE_SCREENSHOTS when it is set.
 import { chromium } from "playwright-core";
 import { build } from "esbuild";

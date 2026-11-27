@@ -27,7 +27,7 @@ import {
 } from "../../plugin-math/src/place-value-chart.js";
 import {
   PLACE_VALUE_TRADE_CARD_BINDINGS, PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PROBLEM_FIELDS, PLACE_VALUE_TRADE_TAPS, PLACE_VALUE_TRADE_WORDS,
-  applyPlaceValueTradeTap, placeValueTradeChanges, placeValueTradeColumns, placeValueTradeComplete, placeValueTradeDemoSteps, placeValueTradeLanguage,
+  applyPlaceValueTradeTap, placeValueTradeChanges, placeValueTradeColumns, placeValueTradeComplete, placeValueTradeDemoSteps, placeValueTradeDemoValues, placeValueTradeLanguage,
   placeValueTradeMaxStatus, placeValueTradeProblemOn, placeValueTradeRefusalText, placeValueTradeStartFault, placeValueTradeState, validatePlaceValueTradeContent,
   type PlaceValueTradeOperation, type PlaceValueTradeState, type PlaceValueTradeTapKind,
 } from "../../plugin-math/src/place-value-trade.js";
@@ -40,7 +40,7 @@ import {
   PLACE_VALUE_TIMES_TEN_CARD_BINDINGS, PLACE_VALUE_TIMES_TEN_DEMONSTRATION_FIELD, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_MAX_ROWS,
   PLACE_VALUE_TIMES_TEN_PROBLEM_FIELDS, PLACE_VALUE_TIMES_TEN_ROW_FIELDS, PLACE_VALUE_TIMES_TEN_TAP_PLACES, PLACE_VALUE_TIMES_TEN_TAPS, PLACE_VALUE_TIMES_TEN_WORDS,
   applyPlaceValueTimesTenTap, placeValueTimesTenChanges, placeValueTimesTenComplete, placeValueTimesTenContentProblem, placeValueTimesTenCountedInFault, placeValueTimesTenCountedInMeaning, placeValueTimesTenCountedInReplayFault,
-  placeValueTimesTenAnswerParts, placeValueTimesTenDoneText, placeValueTimesTenLanguage, placeValueTimesTenPath, placeValueTimesTenPosition, placeValueTimesTenRefusalText, placeValueTimesTenRowFields,
+  placeValueTimesTenAnswerParts, placeValueTimesTenDemoValues, placeValueTimesTenDoneText, placeValueTimesTenLanguage, placeValueTimesTenPath, placeValueTimesTenPosition, placeValueTimesTenRefusalText, placeValueTimesTenRowFields,
   placeValueTimesTenState, placeValueTimesTenStateStartFault, validatePlaceValueTimesTenContent,
   type PlaceValueTimesTenContent, type PlaceValueTimesTenState, type PlaceValueTimesTenTapKind,
 } from "../../plugin-math/src/place-value-times-ten.js";
@@ -129,6 +129,13 @@ export interface CardDemonstration {
   refuseReplay(content: unknown, value: number): string | undefined;
   /** The field's values on this card, for an animation outside its variable's range (a refusal). */
   outside(content: unknown, value: number): string;
+  /**
+   * The field's value after each action the card plays as the lesson moves it from `from` to `to`, in order, the
+   * last `to` (owner, 2026-11-27: a demonstration plays one action at a time, at its own pace). The player sets
+   * them one after another, a step's slot apart (`DEMONSTRATION_SLOT_MS`), and the lesson goes on after the last.
+   * Empty when the move plays nothing.
+   */
+  stepValues(content: unknown, from: number, to: number): number[];
 }
 
 /**
@@ -147,9 +154,16 @@ export function wholeForwardDemonstration(spec: {
   start(content: unknown): number;
   range(content: unknown): { min: number; max: number };
   next(content: unknown, value: number): string;
+  /** The values one action apart (`CardDemonstration.stepValues`); absent, each whole number is one action. */
+  stepValues?(content: unknown, from: number, to: number): number[];
 }): WholeForwardDemonstration {
   return Object.freeze({
     range: spec.range, next: spec.next,
+    stepValues: spec.stepValues ?? ((_content: unknown, from: number, to: number): number[] => {
+      const values: number[] = [];
+      for (let value = Math.floor(from + 1e-9) + 1; value <= to + 1e-9; value += 1) values.push(value);
+      return values;
+    }),
     field: spec.field, tapState: spec.tapState, shows: spec.shows, fresh: spec.fresh, ...(spec.opensAtStart ? { opensAtStart: true } : {}),
     start: spec.start,
     refuseStep(content: unknown, from: number, to: number): string | undefined {
@@ -544,6 +558,8 @@ export const PLACE_VALUE_TRADE_DEMONSTRATION: WholeForwardDemonstration = wholeF
     const place = columns[columns.length - 1 - k];
     return place === undefined ? `every column is finished at ${columns.length}` : `the next value, ${k + 1}, finishes the ${placeValueColumnName(place).toLowerCase()}`;
   },
+  // One action at a time: a column of m actions passes k + 1/m, …, k + 1 (a bring-down, a trade, each break, a take).
+  stepValues: (content: unknown, from: number, to: number) => placeValueTradeDemoValues(placeValueTradeState(content).problem, from, to),
 });
 
 /**
@@ -791,6 +807,11 @@ export const PLACE_VALUE_TIMES_TEN_DEMONSTRATION: CardDemonstration = Object.fre
   outside(content: unknown, value: number): string {
     const problem = timesTenProblem(content);
     return problem ? `${placeValueTimesTenCountedInMeaning(problem)}; ${value} is outside its variable's range` : TIMES_TEN_NO_PROBLEM;
+  },
+  // One row's move at a time.
+  stepValues(content: unknown, from: number, to: number): number[] {
+    const problem = timesTenProblem(content);
+    return problem ? placeValueTimesTenDemoValues(problem, from, to) : [];
   },
 });
 

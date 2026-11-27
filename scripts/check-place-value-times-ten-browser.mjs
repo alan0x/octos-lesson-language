@@ -245,8 +245,9 @@ try {
   const inOrder = (seen, expected) => { let at = 0; for (const state of seen) if (state === expected[at]) at += 1; return at === expected.length; };
   const dealt = await playDemo("demoTimes", "copy", 70_000);
   check(inOrder(dealt.seen, ["0", "1", "2", "3", "4", "5", "6", "7"]), `700 counted in 70s deals one hundred at a time into the copies: ${JSON.stringify(dealt.seen)}`);
-  // The player sets a card's demonstration field at once (every bound field changes at once), so the card plays
-  // the moves itself; the values seen are logged, not claimed.
+  // This check advances the session by hand, which sets the demonstration field at once (a skip), so the card plays
+  // the moves itself at the tap's pace; the values seen are logged, not claimed. The player's own pace, one row a
+  // step, is measured by check-demonstration-pace-browser.mjs.
   console.log(`  demoTimes: counted in values seen between its path's values: ${dealt.between}`);
   check(dealt.given === "4,000 is ? times 400" && dealt.values.counted_in === 1_000_000 && dealt.values.moved_once === 0 && dealt.available[0] === true && dealt.copies.every((n) => n === 0),
     `from the demonstration to a fresh practice on its own problem, at its own start unit: ${JSON.stringify([dealt.given, dealt.values, dealt.available, dealt.copies])}`);

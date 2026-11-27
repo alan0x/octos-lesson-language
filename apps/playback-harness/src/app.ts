@@ -340,7 +340,12 @@ requireElement("#play-button").addEventListener("click", () => session.isPlaying
 requireElement("#step-button").addEventListener("click", () => { session.step(); });
 requireElement("#beat-button").addEventListener("click", () => session.advanceBeat());
 requireElement("#reset-button").addEventListener("click", () => { session.reset(); boardView.fit(); });
-requireElement<HTMLSelectElement>("#speed-select").addEventListener("change", (event) => session.setSpeed(Number((event.target as HTMLSelectElement).value)));
+requireElement<HTMLSelectElement>("#speed-select").addEventListener("change", (event) => {
+  const speed = Number((event.target as HTMLSelectElement).value);
+  session.setSpeed(speed);
+  // A tap card's demonstration step animates as long as the session gives it (owner, 2026-11-27).
+  boardView.setPlaybackSpeed(speed);
+});
 requireElement("#fit-button").addEventListener("click", () => boardView.fit());
 requireElement("#zoom-in").addEventListener("click", () => boardView.zoomBy(1.18));
 requireElement("#zoom-out").addEventListener("click", () => boardView.zoomBy(.84));

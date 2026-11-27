@@ -43,6 +43,10 @@ test("the registry entry: judgements and signs by place index, every field card-
   assert.equal(demo.refuseStep(content, 3, 1), "counts the columns a place_value_compare card's demonstration has judged from the left, then one more for the sign: it goes forward, not from 3 back to 1; the next value, 4, chooses the sign");
   assert.equal(demo.refuseStep(content, 1, 5), "counts the columns a place_value_compare card's demonstration has judged from the left, then one more for the sign: 0 to 4 on this pair, not 5; the next value, 2, judges the hundreds");
   assert.equal(demo.refuseStep(content, 0, 1.5), "counts the columns a place_value_compare card's demonstration has judged from the left, then one more for the sign: a whole number, not 1.5; from 0, the next value, 1, judges the thousands");
+  // The player's steps (0026 revision 2): one per column judged, then the sign.
+  assert.deepEqual(demo.stepValues(content, 0, 4), [1, 2, 3, 4]);
+  assert.deepEqual(demo.stepValues(content, 2, 3), [3]);
+  assert.deepEqual(demo.stepValues(content, 3, 3), []);
   assert.equal(demo.refuseReplay(content, 3), undefined);
   assert.match(demo.refuseReplay(content, 6)!, /0 to 4 on this pair, not 6$/);
   // A tap names a place index; a judgement changes `marked`, the true sign `signed`.

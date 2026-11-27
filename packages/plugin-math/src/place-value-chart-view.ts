@@ -33,6 +33,11 @@ export interface PlaceValueChartViewContext {
    * into rows (`planPlaceValueChart`). The board passes the same width to its layout.
    */
   fitWidth?: number;
+  /**
+   * The change is the lesson's own tap, a demonstration step: its new disks pop in this slowly (`DEMONSTRATION_STEP_MS`
+   * at the playback speed; owner, 2026-11-27). Absent: a learner's tap or a count easing, at the stylesheet's pop.
+   */
+  demonstrationMs?: number;
 }
 
 interface ChartView {
@@ -168,13 +173,17 @@ function create(parent: HTMLElement, raw: Record<string, unknown>, fitWidth: num
   };
 }
 
-/** Makes a layer hold exactly `count` disks: those drawn stay, new ones are added at the end, extra ones go. */
-function reconcile(view: ChartView, place: number, list: SVGGElement[], layer: SVGGElement, count: number, part: boolean): void {
+/**
+ * Makes a layer hold exactly `count` disks: those drawn stay, new ones are added at the end, extra ones go. A new
+ * disk pops in; `popMs` stretches its pop (a lesson's tap, a demonstration step).
+ */
+function reconcile(view: ChartView, place: number, list: SVGGElement[], layer: SVGGElement, count: number, part: boolean, popMs?: number): void {
   while (list.length > count) list.pop()!.remove();
   for (const disk of list) disk.classList.remove("place-value-disk-new");
   while (list.length < count) {
     const disk = diskElement(view.plan, place, placeValueDiskAt(view.plan, place, list.length, part));
     disk.classList.add("place-value-disk-new");
+    if (popMs) disk.style.animationDuration = `${Math.round(popMs)}ms`;
     list.push(disk);
     layer.append(disk);
   }
@@ -196,10 +205,10 @@ function update(view: ChartView, raw: Record<string, unknown>, context: PlaceVal
     const name = placeValueColumnName(place, view.language);
     const layer = view.layers.get(place)!;
     const disks = view.disks.get(place)!;
-    reconcile(view, place, disks, layer.disks, state.counts[i]!, false);
+    reconcile(view, place, disks, layer.disks, state.counts[i]!, false, context.demonstrationMs);
     // Building, a disk on the chart is tapped to take it away.
     for (const disk of disks) setTappable(disk, state.mode === "build" ? `remove:${placeValueTapIndex(place)}` : undefined, words.removeLabel(name), live);
-    if (state.mode === "apart") reconcile(view, place, view.pulled.get(place)!, layer.pulled, state.pulled[i]!, true);
+    if (state.mode === "apart") reconcile(view, place, view.pulled.get(place)!, layer.pulled, state.pulled[i]!, true, context.demonstrationMs);
     const button = view.buttons.get(place)!;
     // Buttons show only while the learner can tap; a place with nothing on the chart has nothing to take out.
     const shown = live && (state.mode === "build" || state.counts[i]! > 0);
