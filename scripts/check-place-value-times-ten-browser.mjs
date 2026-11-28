@@ -9,7 +9,8 @@
 //   deals one hundred into every copy, at the slot under it; a copy's fact said beside that copy; the smaller
 //   number's fact; ten whole copies; the row of two blanks;
 // - a stated times pair whose digit is 1 (0028 revision 4), practised as 1,000,000 is ? times 100,000: the card's
-//   narrowest copies column holds its head, its copy numbers and its facts; one tap fills all ten copies;
+//   narrowest copies column holds its head and its copy numbers; a copy's fact and the smaller number's are said;
+//   one tap fills all ten copies;
 // - Chinese: put-together questions (300 ones = ? hundreds: squares of a hundred into rows of ten, rows into one;
 //   60 thousandths = ? hundredths), the card's words in Chinese;
 // - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000), each a lesson's practice card (the card the
