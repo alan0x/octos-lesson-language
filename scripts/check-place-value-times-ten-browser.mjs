@@ -8,6 +8,9 @@
 // - a times pair, practised as 4,000 is ? times 400: ten empty copies of the 400, numbered; each thousand broken
 //   deals one hundred into every copy, at the slot under it; a copy's fact said beside that copy; the smaller
 //   number's fact; ten whole copies; the row of two blanks;
+// - a stated times pair whose digit is 1 (0028 revision 4), practised as 1,000,000 is ? times 100,000: the card's
+//   narrowest copies column holds its head and its copy numbers; a copy's fact and the smaller number's are said;
+//   one tap fills all ten copies;
 // - Chinese: put-together questions (300 ones = ? hundreds: squares of a hundred into rows of ten, rows into one;
 //   60 thousandths = ? hundredths), the card's words in Chinese;
 // - the largest cards (9 ones -> hundredths, 9,000,000 vs 900,000), each a lesson's practice card (the card the
@@ -29,6 +32,7 @@ const animate = (key, value) => ({ key, say: "Look.", actions: [{ do: "animate",
 const lessons = {
   count: timesTenLesson({ amount: "0.3", target: "0.001", practice: [["5", "0.01"]] }),
   times: timesTenLesson({ amount: "700", target: "70", practice: [["4000", "400"]] }),
+  digitOne: timesTenLesson({ amount: "100", target: "10", shape: { question: "times", toward: "right", apart: 1 }, practice: [["1000000", "100000"]] }),
   zh: timesTenLesson({ language: "zh-CN", amount: "0.8", target: "0.1", start: "0.001", practice: [["300", "100"]] }),
   zhOne: timesTenLesson({ language: "zh-CN", amount: "2000", target: "1000", start: "100", practice: [["0.06", "0.01"]] }),
   // The largest problems are the practice cards: those are the cards worked (opened at frame 1).
@@ -199,6 +203,40 @@ try {
   check(await row(page, "answer-1", { renamed: "400", times: "10" }) === "in_progress" && await row(page, "answer-1", { renamed: "40", times: "10" }) === "succeeded", "the row of two blanks: 40 hundreds, 10 times");
   if (shots) await page.screenshot({ path: `${shots}/times-done.png` });
 
+  // A stated times pair whose digit is 1 (0028 revision 4): 1,000,000 is ? times 100,000, the narrowest copies column.
+  await open(page, "digitOne");
+  now = await read(page);
+  check(now.given === "1,000,000 is ? times 100,000" && JSON.stringify(now.labels) === '["1,000,000","100,000"]', `a digit-1 times pair: ${JSON.stringify([now.given, now.labels])}`);
+  check(now.copies.length === 10 && now.copies.every((copy) => copy.have === 0 && !copy.full) && now.copies.map((copy) => copy.number).join() === "1,2,3,4,5,6,7,8,9,10", `ten empty copies of 100,000, numbered: ${JSON.stringify(now.copies)}`);
+  const narrow = await page.evaluate(() => {
+    const svg = document.querySelector(".place-value-times-ten");
+    const heads = [...svg.querySelectorAll(".place-value-times-ten-head")].map((head) => {
+      const box = head.getBBox(), cell = head.nextElementSibling;
+      const x = Number(cell.getAttribute("x")), width = Number(cell.getAttribute("width"));
+      return { text: head.textContent, left: box.x, right: box.x + box.width, x, width };
+    });
+    const answer = svg.querySelector(".place-value-times-ten-answer").getBoundingClientRect();
+    const numbers = [...svg.querySelectorAll(".place-value-times-ten-number")].map((number) => number.getBoundingClientRect());
+    return { heads, inside: numbers.length >= 10 && numbers.slice(0, 10).every((r) => r.left >= answer.left - 1 && r.right <= answer.right + 1 && r.top >= answer.top - 1 && r.bottom <= answer.bottom + 1) };
+  });
+  check(narrow.heads.length === 2 && narrow.heads.every((head) => head.left >= head.x && head.right <= head.x + head.width), `each column's head fits its column: ${JSON.stringify(narrow.heads)}`);
+  check(narrow.inside, "the answer element holds the copy numbers 1 to 10");
+  check(now.card.left >= 0 && now.card.right <= 1024 && now.card.overflow <= 1, `the card fits 1,024 px: ${JSON.stringify(now.card)}`);
+  // An empty copy is tapped on its number (its ring and slot are outlines).
+  await click(page, '[data-oll-tap="copy:4"] .place-value-times-ten-number');
+  now = await read(page);
+  if (shots) await page.screenshot({ path: `${shots}/digit-one-copy.png` });
+  check(now.colnote.endsWith("This 100,000 has 0 hundred thousands; 100,000 is 1 hundred thousand.") && now.notice === "", `a copy's fact, beside that copy: ${JSON.stringify([now.colnote, now.notice])}`);
+  await tapAt(page, "smaller:0");
+  now = await read(page);
+  check(now.notice === "This is 100,000: 1 hundred thousand.", `the smaller number's fact: ${now.notice}`);
+  if (shots) await page.screenshot({ path: `${shots}/digit-one-start.png` });
+  await tapAt(page, "move:0");
+  now = await read(page);
+  check(now.copies.every((copy) => copy.full && copy.have === 1) && now.values.moved_once === 1 && JSON.stringify(now.statuses) === '["succeeded","not_started"]', `the million broken: ten whole copies of 100,000; the task ends: ${JSON.stringify([now.copies, now.values.moved_once, now.statuses])}`);
+  check(await row(page, "answer-1", { renamed: "1", times: "10" }) === "in_progress" && await row(page, "answer-1", { renamed: "10", times: "10" }) === "succeeded", "the row of two blanks: 10 hundred thousands, 10 times");
+  if (shots) { await page.waitForTimeout(1500); await page.screenshot({ path: `${shots}/digit-one-done.png` }); }
+
   // Chinese, putting together: 300 ones = ? hundreds (squares of a hundred become rows, rows become one).
   await open(page, "zh");
   now = await read(page);
@@ -314,4 +352,4 @@ if (failures.length) {
   console.error(`place-value times-ten browser checks failed:\n- ${failures.join("\n- ")}`);
   process.exit(1);
 }
-console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; Chinese put-together questions; the demonstration played with motion (0.3 counted in 0.01 then 0.001, 700 counted in 70s), one row at a time, then a fresh practice; the largest cards fit 1,024 px and keep their height");
+console.log("place-value times-ten browser checks passed: 5 ones = ? hundredths by real clicks (a one into a row of ten on its own row, a row into a square of a hundred), the line naming every kind that can be tapped in one place, a refusal on the target said as a fact, the task ended by the completing tap with no done, the card's answer row; 4,000 is ? times 400 with ten numbered copies each dealt a hundred per thousand, a copy's fact beside it, the smaller number's fact, the row of two blanks; 1,000,000 is ? times 100,000 (a stated digit-1 times pair) in its narrowest copies column; Chinese put-together questions; the demonstration played with motion (0.3 counted in 0.01 then 0.001, 700 counted in 70s), one row at a time, then a fresh practice; the largest cards fit 1,024 px and keep their height");

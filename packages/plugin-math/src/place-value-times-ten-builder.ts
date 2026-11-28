@@ -6,16 +6,20 @@
  * can change it.
  *
  * The card's shape (count or times; toward the right or the left; one or two places apart) is fixed by the
- * starting problem. "Counted in" starts at the problem's start unit: when the caller leaves it out, the builder
- * supplies it (the program's number, never the model's); a put-together question names its own (40 hundredths:
- * 0.01), given as `start`.
+ * starting problem. A caller that knows the shape gives it (`shape`; 0028 revision 4): the problem is the one that
+ * shape makes of the two numbers (`placeValueTimesTenProblemOfShape`), so 100 and 10 are a times pair on a `times`
+ * card and a count on a `count` card, and the shape fixes the start unit (a `start` given too must be that one).
+ * Without `shape` the builder reads the
+ * shape from the numbers, a pair whose digit is 1 as a count. "Counted in" starts at the problem's start unit: when
+ * the caller leaves it out, the builder supplies it (the program's number, never the model's); without `shape`, a
+ * put-together question names its own (40 hundredths: 0.01), given as `start`.
  */
 import type { AuthoringAction, Placement } from "../../core/src/index.js";
 import type { DrivenValue } from "./number-line-builder.js";
 import type { PlaceValueLanguage } from "./place-value-chart.js";
 import {
-  PLACE_VALUE_TIMES_TEN_KIND, placeValueTimesTenFaultText, placeValueTimesTenProblem, placeValueTimesTenRowFields, placeValueTimesTenShapeOf,
-  type PlaceValueTimesTenContent, type PlaceValueTimesTenProblem,
+  PLACE_VALUE_TIMES_TEN_KIND, placeValueTimesTenFaultText, placeValueTimesTenProblem, placeValueTimesTenProblemOfShape, placeValueTimesTenRowFields,
+  placeValueTimesTenShapeOf, type PlaceValueTimesTenContent, type PlaceValueTimesTenProblem, type PlaceValueTimesTenShape,
 } from "./place-value-times-ten.js";
 
 export interface PlaceValueTimesTenInput {
@@ -27,6 +31,13 @@ export interface PlaceValueTimesTenInput {
   /** The amount and the target, in integer thousandths (a times pair may be written either way round). */
   amount: number | DrivenValue;
   target: number | DrivenValue;
+  /**
+   * The card's shape, when the caller knows it (the question as asked: `count` or `times`, toward which side, how
+   * many places apart). The card is then of this shape, or the builder throws. The shape fixes the start unit: a
+   * `start` given with it is checked, and one the numbers read differently with (as without a shape) throws the
+   * card's fault. Left out, the shape is read from the numbers.
+   */
+  shape?: PlaceValueTimesTenShape;
   /** The unit the amount starts in (thousandths), when it is not the amount's own place: a put-together question's. */
   start?: number;
   /** The demonstration's "counted in" (thousandths); its starting value is the problem's start unit. */
@@ -56,14 +67,21 @@ export function buildPlaceValueTimesTen(input: PlaceValueTimesTenInput): BuiltPl
   };
   const amountIn = value(input.amount, "amount");
   const targetIn = value(input.target, "target");
-  const found = placeValueTimesTenProblem(amountIn, targetIn, input.start);
+  const found = input.shape ? placeValueTimesTenProblemOfShape(input.shape, amountIn, targetIn) : placeValueTimesTenProblem(amountIn, targetIn, input.start);
   if ("fault" in found) throw new Error(placeValueTimesTenFaultText(found.fault, amountIn, targetIn));
+  if (input.shape && input.start !== undefined) {
+    // A start given with the shape must be the shape's: the numbers read with it (as without a shape) start there.
+    const read = placeValueTimesTenProblem(amountIn, targetIn, input.start);
+    if ("fault" in read) throw new Error(placeValueTimesTenFaultText(read.fault, amountIn, targetIn));
+    if (read.start !== found.start) throw new Error(placeValueTimesTenFaultText("not_same_shape", amountIn, targetIn));
+  }
   const problem = found;
   if (problem.amount !== amountIn) {
     // Written smaller first: the larger goes on top, so the two bindings change places too.
     for (const binding of bindings) binding.target = binding.target === "amount" ? "target" : binding.target === "target" ? "amount" : binding.target;
   }
-  const shape = placeValueTimesTenShapeOf(problem);
+  // The stated shape, when given (the problem is of it); else the problem's own.
+  const shape = input.shape ?? placeValueTimesTenShapeOf(problem);
   const countedIn = value(input.counted_in ?? problem.start, "counted_in");
   const rows: Partial<Record<"moved_once" | "moved_twice", number>> = {};
   for (const field of placeValueTimesTenRowFields(problem.g)) rows[field] = value(input[field] ?? 0, field);

@@ -46,10 +46,16 @@ const failure = (raw: unknown, options: { boundValues?: boolean } = {}): string 
   }
 };
 
+const TIMES: m.PlaceValueTimesTenShape = { question: "times", toward: "right", apart: 1 };
+/** The problem a card of this shape makes of written numbers. */
+const shaped = (shape: m.PlaceValueTimesTenShape, amount: string, target: string): Faulted => m.placeValueTimesTenProblemOfShape(shape, v(amount), v(target)) as Faulted;
+/** A pair whose digit is 1 on a card that says `times` (0028 revision 4), at every two neighbouring places the card has. */
+const DIGIT_ONE_TIMES: Array<[string, string]> = [["0.01", "0.001"], ["0.1", "0.01"], ["1", "0.1"], ["10", "1"], ["100", "10"], ["1000", "100"], ["10000", "1000"], ["100000", "10000"], ["1000000", "100000"]];
+
 const all: Problem[] = [...TIMES_TEN_PROBLEMS.en, ...TIMES_TEN_PROBLEMS.zh].flatMap((item) => {
   const p = prob(item.amount, item.target, item.start) as Problem;
   return [p, practice(p, item.practice.amount, item.practice.target) as Problem];
-});
+}).concat(DIGIT_ONE_TIMES.map(([amount, target]) => shaped(TIMES, amount, target) as Problem));
 
 // ---------------------------------------------------------------- the sketch's model checks (test-model.mjs)
 
@@ -429,6 +435,152 @@ test("plan: where the answer is read (a count's target column; a times pair's co
   // A wide place value is squeezed to its disk; a short one is drawn as it is.
   for (const label of ["100,000", "1,000,000", "10,000"]) ok((m.placeValueTimesTenDiskLabelWidth(label) ?? 99) <= G.D - 6, `${label} fits its disk`);
   for (const label of ["1", "10", "100", "0.1", "0.01", "0.001", "1万"]) eq(m.placeValueTimesTenDiskLabelWidth(label), undefined, `${label} is drawn as it is`);
+});
+
+test("0028 revision 4: a pair whose digit is 1 is a times pair on a card that says times, a count on a count card", () => {
+  // Without a shape (and on a count card) the reading is today's: 1 hundred = 10 tens; 1 one = 10 tenths.
+  eq([prob("100", "10").question, prob("100", "10").result, prob("0.1", "1").question], ["count", 10, "count"], "no shape: a count");
+  const counted = shaped({ question: "count", toward: "right", apart: 1 }, "100", "10");
+  eq(counted, prob("100", "10"), "a count card reads 100 and 10 as before");
+  eq(m.placeValueTimesTenProblemText(counted, "en-US"), "1 hundred = ? tens", "1 hundred = ? tens");
+  // On a times card: 100 is ? times 10, as 700 is ? times 70.
+  const b = shaped(TIMES, "100", "10");
+  eq(b, { question: "times", amount: 100000, target: 10000, s: 2, t: 1, dir: -1, g: 1, n: 1, start: 100000, digit: 1, renamed: 10, result: 10, columns: [2, 1] }, "100 against 10: one hundred, 10 tens, 10 times");
+  eq(shaped(TIMES, "10", "100"), b, "written smaller first: the same pair, the larger on top");
+  const c = shaped(TIMES, "1", "0.1");
+  eq([c.question, c.amount, c.target, c.s, c.t, c.n, c.start, c.renamed, c.columns], ["times", 1000, 100, 0, -1, 1, 1000, 10, [0, -1]], "0.1 is a tenth of 1: 1 against 0.1");
+  for (const [amount, target] of DIGIT_ONE_TIMES) {
+    const p = shaped(TIMES, amount, target);
+    eq([p.question, p.n, p.digit, p.renamed, p.result, p.start, p.amount], ["times", 1, 1, 10, 10, v(amount), v(amount)], `${amount} against ${target}: a times pair started in its own unit`);
+  }
+  // Every other pair reads as before: not neighbours, another digit, a count's numbers, another stated shape.
+  eq(shaped(TIMES, "1000", "10").fault, "not_same_shape", "1,000 and 10 are two places apart: a count's");
+  eq(shaped(TIMES, "0.3", "0.001").fault, "not_same_shape", "a count's numbers on a times card");
+  eq(shaped(TIMES, "700", "70"), prob("700", "70"), "another digit: as before");
+  eq(shaped({ question: "times", toward: "left", apart: 2 }, "100", "10").fault, "not_same_shape", "a times pair breaks right, one place apart");
+  // Practice of the same shape: a times example takes a digit-1 practice, and the other way round.
+  eq(practice(prob("700", "70"), "100", "10").question, "times", "700 against 70, practised as 100 against 10");
+  eq(practice(b, "4000", "400").renamed, 40, "100 against 10, practised as 4,000 against 400");
+  eq(practice(b, "1", "0.1").question, "times", "100 against 10, practised as 1 against 0.1");
+  eq(practice(b, "0.3", "0.001").fault, "not_same_shape", "a count is not its practice");
+  // The card: content, state, taps, answers, path and facts.
+  const content = contentOf(m.placeValueTimesTenStart(b));
+  eq(content, { question: "times", toward: "right", apart: 1, amount: 100000, target: 10000, counted_in: 100000, moved_once: 0 }, "100 against 10 as content");
+  eq(failure(content), undefined, "a valid card");
+  ok(failure({ ...content, amount: 10000, target: 100000 })?.includes("larger first"), "written larger first");
+  eq(m.placeValueTimesTenContentProblem(content), b, "the content's problem");
+  const state = m.placeValueTimesTenState(content);
+  eq([state.problem.question, state.stages], ["times", [0]], "one hundred, not yet broken");
+  eq(m.placeValueTimesTenCopies(state).map((copy) => copy.have), Array(10).fill(0), "ten empty copies of 10");
+  eq(m.applyPlaceValueTimesTenTap(state, { tap: "copy", row: 3 }), { ok: false, reason: "copy_short", have: 0, need: 1 }, "a copy's count");
+  eq(m.placeValueTimesTenRefusalText(state, { tap: "copy", row: 3 }, "en-US"), "This 10 has 0 tens; 10 is 1 ten.", "the copy's fact");
+  eq(m.placeValueTimesTenRefusalText(state, { tap: "smaller", row: 0 }, "zh-CN"), "这是 10：1 个十。", "the smaller number's fact, zh");
+  eq(reason(m.applyPlaceValueTimesTenTap(state, { tap: "move", row: 1 })), "no_thing", "one row only");
+  eq(m.placeValueTimesTenInstruction(state, "en-US"), "Tap a hundred to break it into ten tens, one into each 10.", "the instruction");
+  const done = run(state, 0);
+  ok(m.placeValueTimesTenComplete(done) && m.placeValueTimesTenCopies(done).every((copy) => copy.full && copy.have === 1), "the hundred broken: ten whole 10s");
+  eq(m.placeValueTimesTenChanges(state, done), [{ field: "moved_once", before: 0, after: 1 }], "the tap writes row 1");
+  eq(m.placeValueTimesTenRefusalText(done, { tap: "copy", row: 3 }, "en-US"), "This row is one 10.", "a whole copy");
+  eq(m.placeValueTimesTenState({ ...content, moved_once: 1 }).stages, [1], "the row set round-trips");
+  eq([m.placeValueTimesTenFacts(state).counted_in, m.placeValueTimesTenFacts(state).next, m.placeValueTimesTenFacts(state).copies], [100000, [10000], 0], "facts at the start");
+  eq([m.placeValueTimesTenFacts(done).counted_in, m.placeValueTimesTenFacts(done).complete, m.placeValueTimesTenFacts(done).copies], [10000, true, 1], "facts once broken");
+  eq(m.placeValueTimesTenPath(b), [100000, 10000], "counted in hundreds, then in 10s");
+  eq(m.placeValueTimesTenDemoValues(b, 100000, 10000), [10000], "one row's move");
+  eq(m.placeValueTimesTenState({ ...content, counted_in: 10000 }).stages, [1], "the demonstration at 10");
+  ok(failure({ ...content, counted_in: 50000 })?.includes("100000 = 100 (hundreds) -> 10000 = 10 (tens)"), "counted in off the path names it");
+  eq(m.placeValueTimesTenStartFault(content), undefined, "a fresh practice");
+  eq(m.placeValueTimesTenProblemText(b, "en-US"), "100 is ? times 10", "words en");
+  eq(m.placeValueTimesTenProblemText(c, "zh-CN"), "1 是 0.1 的 ? 倍", "words zh");
+  eq(m.placeValueTimesTenAnswerParts(b, "en-US"), [{ text: "1 hundred =" }, { blank: { as: "renamed", answer: 10 } }, { text: "tens;" }, { text: "100 is" }, { blank: { as: "times", answer: 10 } }, { text: "times 10" }], "the answer row");
+  eq(m.placeValueTimesTenDoneText(c, "en-US"), "✓ 1 = 10 × 0.1. The 1 in 1 is worth ten times the 1 in 0.1; 0.1 is 1/10 of 1.", "the done line: 0.1 is a tenth of 1");
+  eq(m.placeValueTimesTenLockedText(b, "en-US"), "Opens when every row is a 10.", "the lock");
+  eq(m.placeValueTimesTenStepSentences(c, "en-US"), ["Break each one into ten tenths, one into each 0.1."], "the demonstration's sentence");
+  eq(m.placeValueTimesTenHowTo(content), m.PLACE_VALUE_TIMES_TEN_WORDS["en-US"].howto.times, "the times how-to");
+});
+
+test("0028 revision 4: only a stated times card's digit-1 neighbours read differently; every other pair and shape as before", () => {
+  // The reading before revision 4, from the unchanged shape-free rules: the shape's start, the rules, the shape.
+  const before = (shape: m.PlaceValueTimesTenShape, amount: number, target: number) => {
+    const start = m.placeValueTimesTenStartUnit(shape, amount, target);
+    if (start === undefined) {
+      const other = m.placeValueTimesTenProblem(amount, target);
+      return "fault" in other ? { fault: shape.question === "times" ? other.fault : "start_not_unit" } : { fault: "not_same_shape" };
+    }
+    const p = m.placeValueTimesTenProblem(amount, target, shape.question === "times" ? undefined : start);
+    if ("fault" in p) return p;
+    const own = m.placeValueTimesTenShapeOf(p);
+    return own.question === shape.question && own.toward === shape.toward && own.apart === shape.apart ? p : { fault: "not_same_shape" };
+  };
+  const shapes: m.PlaceValueTimesTenShape[] = [TIMES, ...(["right", "left"] as const).flatMap((toward) => ([1, 2] as const).map((apart) => ({ question: "count" as const, toward, apart })))];
+  const values = Array.from({ length: 11 }, (_, k) => k - 3).flatMap((place) => Array.from({ length: 9 }, (_, d) => (d + 1) * m.placeValueTimesTenUnit(place)));
+  let same = 0, changed = 0;
+  for (const shape of shapes) for (const amount of values) for (const target of values) {
+    const now = m.placeValueTimesTenProblemOfShape(shape, amount, target);
+    const large = m.placeValueTimesTenOneDigit(Math.max(amount, target))!, small = m.placeValueTimesTenOneDigit(Math.min(amount, target))!;
+    const reads = shape.question === "times" && large.digit === 1 && small.digit === 1 && small.place === large.place - 1 && large.place <= m.PLACE_VALUE_TIMES_TEN_MAX_PLACE;
+    // The lesson's feature is declared on exactly the readings that changed (an older plugin read them as counts).
+    assert.equal(m.placeValueTimesTenUsesDigitOneTimes({ question: shape.question, amount, target }), reads, `the feature: ${shape.question} ${amount}/${target}`);
+    if (reads) {
+      assert.deepEqual([("question" in now) && now.question, ("amount" in now) && now.amount, ("renamed" in now) && now.renamed], ["times", Math.max(amount, target), 10], `${amount}/${target}`);
+      changed += 1;
+    } else {
+      assert.deepEqual(now, before(shape, amount, target), `${shape.question}/${shape.toward}/${shape.apart} ${amount}/${target}`);
+      same += 1;
+    }
+  }
+  eq([changed, same > 40000], [18, true], `18 readings changed (9 neighbouring pairs, either way round); ${same} the same`);
+  // At a start: a bound times card's numbers as a pile lays them.
+  const bound = { question: "times", amount: 700_000, target: 70_000, bindings: [{ target: "amount", expression: "a" }, { target: "target", expression: " b " }] };
+  eq([m.placeValueTimesTenUsesDigitOneTimes(bound), m.placeValueTimesTenUsesDigitOneTimes(bound, [{ a: 4_000_000, b: 400_000 }]), m.placeValueTimesTenUsesDigitOneTimes(bound, [{ a: 4_000_000, b: 400_000 }, { a: 1000, b: 100 }])], [false, false, true], "700/70 practised as 4,000/400, then as 1/0.1");
+  eq(m.placeValueTimesTenUsesDigitOneTimes({ ...bound, question: "count" }, [{ a: 1000, b: 100 }]), false, "a count card never");
+  eq(m.placeValueTimesTenUsesDigitOneTimes(bound, [{ c: 1000 }]), false, "a pile of other variables leaves the card as written");
+});
+
+test("builder: a stated shape (0028 revision 4); without one, the shape read from the numbers as before", () => {
+  const contentIn = (built: { actions: unknown[] }) => (built.actions[0] as unknown as { content: m.PlaceValueTimesTenContent }).content;
+  const at = { as: "c", role: "concept", place: {} };
+  // Without a shape: 100 and 10 are a count, as before.
+  const plain = buildPlaceValueTimesTen({ ...at, amount: 100000, target: 10000 });
+  eq(contentIn(plain), { question: "count", toward: "right", apart: 1, amount: 100000, target: 10000, counted_in: 100000, moved_once: 0 }, "no shape: 1 hundred = ? tens");
+  eq(buildPlaceValueTimesTen({ ...at, shape: { question: "count", toward: "right", apart: 1 }, amount: 100000, target: 10000 }), plain, "a count shape: the same card");
+  // A times shape: 100 is ? times 10.
+  const timesCard = buildPlaceValueTimesTen({ ...at, shape: TIMES, amount: 100000, target: 10000 });
+  eq(contentIn(timesCard), { question: "times", toward: "right", apart: 1, amount: 100000, target: 10000, counted_in: 100000, moved_once: 0 }, "a times shape: 100 is ? times 10");
+  eq([timesCard.problem.question, timesCard.problem.renamed], ["times", 10], "its problem");
+  eq(failure(contentIn(timesCard)), undefined, "a valid card");
+  const smallFirst = buildPlaceValueTimesTen({ ...at, shape: TIMES, amount: { expression: "small", initial: 100 }, target: { expression: "big", initial: 1000 }, counted_in: { expression: "counted", initial: 1000 } });
+  eq([contentIn(smallFirst).amount, contentIn(smallFirst).target, contentIn(smallFirst).bindings], [1000, 100, [{ target: "target", expression: "small" }, { target: "amount", expression: "big" }, { target: "counted_in", expression: "counted" }]], "0.1 and 1: the larger on top, bindings follow");
+  // A put-together count: the shape fixes the start unit (40 hundredths: 0.01).
+  const together = buildPlaceValueTimesTen({ ...at, shape: { question: "count", toward: "left", apart: 1 }, amount: 400, target: 100 });
+  eq(together, buildPlaceValueTimesTen({ ...at, amount: 400, target: 100, start: 10 }), "40 hundredths -> tenths: the same card as with its start");
+  // Every listed problem: its own shape stated builds the same card as without it.
+  for (const item of [...TIMES_TEN_PROBLEMS.en, ...TIMES_TEN_PROBLEMS.zh]) {
+    const input = { ...at, amount: v(item.amount), target: v(item.target), ...(item.start !== undefined ? { start: v(item.start) } : {}) };
+    const without = buildPlaceValueTimesTen(input);
+    eq(buildPlaceValueTimesTen({ ...input, shape: m.placeValueTimesTenShapeOf(without.problem) }), without, `${item.amount}/${item.target}: the stated shape, the same card`);
+  }
+  // A shape the numbers do not make: refused, as the card would.
+  assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: TIMES, amount: 300, target: 1 }), /not_same_shape/u, "a count's numbers on a times shape");
+  assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: { question: "times", toward: "left", apart: 2 }, amount: 100000, target: 10000 }), /not_same_shape/u, "a times pair breaks right, one place apart");
+  assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: { question: "count", toward: "right", apart: 2 }, amount: 100000, target: 10000 }), /not_whole/u, "100 two places from 10 starts in thousands");
+  // A start given with the shape: the shape's own builds the same card; another throws the card's fault.
+  const shapes: m.PlaceValueTimesTenShape[] = [TIMES, ...(["right", "left"] as const).flatMap((toward) => ([1, 2] as const).map((apart) => ({ question: "count" as const, toward, apart })))];
+  const values = Array.from({ length: 10 }, (_, k) => k - 3).flatMap((place) => Array.from({ length: 9 }, (_, d) => (d + 1) * m.placeValueTimesTenUnit(place)));
+  let agreed = 0;
+  for (const shape of shapes) for (const amount of values) for (const target of values) {
+    let alone: ReturnType<typeof buildPlaceValueTimesTen>;
+    try { alone = buildPlaceValueTimesTen({ ...at, shape, amount, target }); } catch { continue; }
+    assert.deepEqual(buildPlaceValueTimesTen({ ...at, shape, amount, target, start: alone.problem.start }), alone, `${shape.question}/${shape.toward}/${shape.apart} ${amount}/${target}: with its own start`);
+    agreed += 1;
+  }
+  eq(agreed, 468, "every card a shape builds over one-digit pairs (468), built again with its own start");
+  const thrown = (input: Partial<m.PlaceValueTimesTenShape> & { shape: m.PlaceValueTimesTenShape; amount: number; target: number; start: number }) => {
+    try { buildPlaceValueTimesTen({ ...at, ...input }); return undefined; } catch (error) { return (error as Error).message; }
+  };
+  eq(thrown({ shape: { question: "count", toward: "left", apart: 1 }, amount: 300, target: 100, start: 1 }), m.placeValueTimesTenFaultText("not_same_shape", 300, 100), "30 hundredths -> tenths, started in thousandths: another shape");
+  eq(thrown({ shape: { question: "count", toward: "right", apart: 1 }, amount: 5000, target: 100, start: 100 }), m.placeValueTimesTenFaultText("same_unit", 5000, 100), "5 ones -> tenths, started in tenths");
+  eq(thrown({ shape: TIMES, amount: 700000, target: 70000, start: 10000 }), m.placeValueTimesTenFaultText("times_start", 700000, 70000), "a times pair started in the tens");
+  eq(thrown({ shape: TIMES, amount: 100000, target: 10000, start: 100000 }), undefined, "100 against 10, started in its own hundreds");
 });
 
 test("builder: the program supplies counted in; a pair written smaller first; bindings", () => {

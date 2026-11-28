@@ -84,7 +84,9 @@ test("the registry entry: judgements and signs by place index, every field card-
   assert.doesNotThrow(throwsStart(fresh));
   assert.equal(cardHowTo(PLACE_VALUE_COMPARE_KIND, content), placeValueCompareHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_compare, buildPlaceValueCompare);
-  assert.equal(MATH_PLUGIN_MANIFEST.version, PLACE_VALUE_COMPARE_PLUGIN_VERSION);
+  // A stated digit-1 times pair (0028 revision 4) moved the manifest on since; a compare lesson still needs only math 0.12.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.1");
+  assert.equal(PLACE_VALUE_COMPARE_PLUGIN_VERSION, "0.12.0");
 });
 
 test("the complete fact: judged on each tap; done, the task's own pair compared to its deciding place and signed", () => {
