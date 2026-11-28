@@ -141,7 +141,9 @@ export type PlaceValueTimesTenFault =
  * and 3) is the same pair: the larger goes on top. Refused: unreadable; not_one_digit (2.5, 1,200, 5550);
  * out_of_range; not_a_pair (the target is neither a unit nor the same digit one place right); start_not_unit;
  * same_unit; too_far (more than two places; a times pair, more than one); too_many (more than 9 of the larger unit);
- * not_whole; times_start (a times pair starts in its own place).
+ * not_whole; times_start (a times pair starts in its own place). Without a shape, a pair whose digit is 1 (100 and
+ * 10) is read as a count (1 hundred = 10 tens); a card that says `times` reads it as a times pair
+ * (`placeValueTimesTenProblemOfShape`; 0028 revision 4).
  */
 export function placeValueTimesTenProblem(amount: number, target: number, start?: number): PlaceValueTimesTenProblem | { fault: PlaceValueTimesTenFault } {
   let A = amount, T = target;
@@ -164,7 +166,7 @@ export function placeValueTimesTenProblem(amount: number, target: number, start?
     if (t.digit !== a.digit) return { fault: "not_a_pair" };
     if (t.place !== a.place - 1) return { fault: a.place - t.place > 1 ? "too_far" : "not_a_pair" };
     if (S !== undefined && S !== unit(a.place)) return { fault: "times_start" };
-    return finish({ question: "times", amount: A, target: T, s: a.place, t: t.place, dir: -1, g: 1, n: a.digit, start: unit(a.place), digit: a.digit, renamed: A / unit(t.place), result: 10 });
+    return timesPair(A, a, T, t.place);
   }
   const s = S === undefined ? a.place : placeValueTimesTenPlaceOfUnit(S);
   if (s === undefined || s > PLACE_VALUE_TIMES_TEN_MAX_PLACE || s < PLACE_VALUE_TIMES_TEN_MIN_PLACE) return { fault: "start_not_unit" };
@@ -177,6 +179,10 @@ export function placeValueTimesTenProblem(amount: number, target: number, start?
   const larger = dir < 0 ? A / unit(s) : A / T;
   if (larger > PLACE_VALUE_TIMES_TEN_MAX_LINEAGES) return { fault: "too_many" };
   return finish({ question: "count", amount: A, target: T, s, t: t.place, dir, g: g as 1 | 2, n: larger, start: unit(s), result: A / T });
+}
+/** A times pair, the larger first: d of one place against d of the place on its right, started in its own place. */
+function timesPair(A: number, a: { digit: number; place: number }, T: number, tPlace: number): PlaceValueTimesTenProblem {
+  return finish({ question: "times", amount: A, target: T, s: a.place, t: tPlace, dir: -1, g: 1, n: a.digit, start: unit(a.place), digit: a.digit, renamed: A / unit(tPlace), result: 10 });
 }
 function finish(p: Omit<PlaceValueTimesTenProblem, "columns">): PlaceValueTimesTenProblem {
   const lo = Math.min(p.s, p.t), hi = Math.max(p.s, p.t);
@@ -207,7 +213,12 @@ export function placeValueTimesTenStartUnit(shape: PlaceValueTimesTenShape, amou
   return s >= PLACE_VALUE_TIMES_TEN_MIN_PLACE && s <= PLACE_VALUE_TIMES_TEN_MAX_PLACE ? unit(s) : undefined;
 }
 
-/** The problem a shape and its numbers make, or the fault (the shape's start, then the sketch's rules, then the shape). */
+/**
+ * The problem a shape and its numbers make, or the fault (the shape's start, then the sketch's rules, then the shape).
+ * The shape says the question: a pair whose digit is 1, one place apart (100 and 10; 1 and 0.1), is a count on a
+ * `count` card (1 hundred = 10 tens) and a times pair on a `times` card (100 is 10 times 10), as any other digit is
+ * (0028 revision 4). Every other pair reads as without a shape.
+ */
 export function placeValueTimesTenProblemOfShape(shape: PlaceValueTimesTenShape, amount: number, target: number): PlaceValueTimesTenProblem | { fault: PlaceValueTimesTenFault | "not_same_shape" } {
   const start = placeValueTimesTenStartUnit(shape, amount, target);
   if (start === undefined) {
@@ -216,11 +227,20 @@ export function placeValueTimesTenProblemOfShape(shape: PlaceValueTimesTenShape,
     if (!isFault(other)) return { fault: "not_same_shape" };
     return { fault: shape.question === "times" ? other.fault : "start_not_unit" };
   }
-  const p = placeValueTimesTenProblem(amount, target, shape.question === "times" ? undefined : start);
-  if (isFault(p)) return p;
+  const found = placeValueTimesTenProblem(amount, target, shape.question === "times" ? undefined : start);
+  if (isFault(found)) return found;
+  const p = shape.question === "times" ? digitOneTimesPair(found) ?? found : found;
   const own = placeValueTimesTenShapeOf(p);
   if (own.question !== shape.question || own.toward !== shape.toward || own.apart !== shape.apart) return { fault: "not_same_shape" };
   return p;
+}
+
+/** A count of digit 1 one place to the right (1 hundred = 10 tens) as its times pair (100 is 10 times 10), else undefined. */
+function digitOneTimesPair(p: PlaceValueTimesTenProblem): PlaceValueTimesTenProblem | undefined {
+  if (p.question !== "count") return undefined;
+  const a = placeValueTimesTenOneDigit(p.amount), t = placeValueTimesTenOneDigit(p.target);
+  if (!a || !t || a.digit !== 1 || t.digit !== 1 || t.place !== a.place - 1) return undefined;
+  return timesPair(p.amount, a, p.target, t.place);
 }
 
 /**

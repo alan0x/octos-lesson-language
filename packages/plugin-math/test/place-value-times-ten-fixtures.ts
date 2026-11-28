@@ -2,13 +2,14 @@
 // model.mjs PROBLEMS), each shown problem with its practice of the same shape, written as a learner writes them.
 // The start is given only where the question names a unit the amount is not in (a put-together question). And
 // lessons: the card built by the recipe builder, every field bound to its own variable, practice tasks on their own
-// problem, each followed by the card's answer row anchored to it.
+// problem, each followed by the card's answer row anchored to it; a lesson may state the card's shape (0028
+// revision 4: 100 and 10 as a times pair).
 import type { AuthoringLesson } from "../../core/src/index.js";
 import type { PlaceValueLanguage } from "../src/place-value-chart.js";
 import { buildPlaceValueTimesTen } from "../src/place-value-times-ten-builder.js";
 import {
   placeValueTimesTenAnswerParts, placeValueTimesTenParse, placeValueTimesTenPath, placeValueTimesTenPracticeProblem, placeValueTimesTenProblem,
-  placeValueTimesTenRowFields, type PlaceValueTimesTenProblem,
+  placeValueTimesTenProblemOfShape, placeValueTimesTenRowFields, type PlaceValueTimesTenProblem, type PlaceValueTimesTenShape,
 } from "../src/place-value-times-ten.js";
 
 export interface TimesTenProblemText {
@@ -80,6 +81,8 @@ export interface TimesTenLessonInput {
   amount: string;
   target: string;
   start?: string;
+  /** The card's shape, when the lesson states it (the builder's `shape`); left out, it is read from the numbers. */
+  shape?: PlaceValueTimesTenShape;
   /** Each practice task's numbers: a card task, then the card's answer row anchored to it. */
   practice?: Array<[string, string]>;
   beats?: AuthoringLesson["steps"][number]["beats"];
@@ -87,19 +90,23 @@ export interface TimesTenLessonInput {
   extraTasks?: unknown[];
 }
 
-export function timesTenProblemOf(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">): PlaceValueTimesTenProblem {
-  const p = placeValueTimesTenProblem(timesTenValue(input.amount), timesTenValue(input.target), input.start === undefined ? undefined : timesTenValue(input.start));
+type TimesTenProblemInput = Pick<TimesTenLessonInput, "amount" | "target" | "start" | "shape">;
+
+export function timesTenProblemOf(input: TimesTenProblemInput): PlaceValueTimesTenProblem {
+  const p = input.shape
+    ? placeValueTimesTenProblemOfShape(input.shape, timesTenValue(input.amount), timesTenValue(input.target))
+    : placeValueTimesTenProblem(timesTenValue(input.amount), timesTenValue(input.target), input.start === undefined ? undefined : timesTenValue(input.start));
   if ("fault" in p) throw new Error(`fixture problem refused: ${p.fault}`);
   return p;
 }
-export function timesTenPracticeOf(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">, amount: string, target: string): PlaceValueTimesTenProblem {
+export function timesTenPracticeOf(input: TimesTenProblemInput, amount: string, target: string): PlaceValueTimesTenProblem {
   const p = placeValueTimesTenPracticeProblem(timesTenProblemOf(input), timesTenValue(amount), timesTenValue(target));
   if ("fault" in p) throw new Error(`fixture practice refused: ${p.fault}`);
   return p;
 }
 
 /** A practice start: the task's own numbers, "counted in" at its own start unit (the program's), every row unmoved. */
-export function timesTenStart(input: Pick<TimesTenLessonInput, "amount" | "target" | "start">, amount: string, target: string) {
+export function timesTenStart(input: TimesTenProblemInput, amount: string, target: string) {
   const p = timesTenPracticeOf(input, amount, target);
   const values: Record<string, number> = { amount: p.amount, target: p.target, counted_in: p.start };
   for (const field of placeValueTimesTenRowFields(p.g)) values[field] = 0;
@@ -127,6 +134,7 @@ export function timesTenLesson(input: TimesTenLessonInput): AuthoringLesson {
     as: "chart", role: "main_visual", place: { relation: "new_region" },
     ...(input.language ? { language: input.language } : {}),
     amount: { expression: "amount", initial: p.amount }, target: { expression: "target", initial: p.target },
+    ...(input.shape ? { shape: input.shape } : {}),
     ...(input.start !== undefined ? { start: timesTenValue(input.start) } : {}),
     counted_in: { expression: "counted_in", initial: p.start },
     moved_once: { expression: "moved_once", initial: 0 },

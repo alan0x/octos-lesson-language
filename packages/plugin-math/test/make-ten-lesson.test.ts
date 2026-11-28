@@ -103,7 +103,7 @@ test("a make-ten lesson with a practice pair and the row anchored on the card: v
 
 test("a make-ten lesson requires the card's feature, its fact, the card-level bindings and the row: player 0.18.0, math 0.10.0", () => {
   // The times-ten (0028) and compare (0029) cards moved both on since; a make-ten lesson still needs only player 0.18.0 and math 0.10.0.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.0");
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.1");
   assert.equal(OLL_PLAYER_EXECUTION_VERSION, "0.20.0");
   const events = normalizeAuthoringLesson(lesson86(), makeTenHost("mt"));
   const requirements = deriveExecutionRequirements(events);

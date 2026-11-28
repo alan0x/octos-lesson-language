@@ -2406,6 +2406,24 @@ test("a times-ten practice restored complete, its submission lost, is submitted 
   assert.equal((restored.submitStudentRow("answer-1", { renamed: "40", times: "10" }) as StudentTaskSnapshot).status, "succeeded");
 });
 
+test("a stated times pair whose digit is 1 (0028 revision 4): 1 is ? times 0.1, tapped and answered", () => {
+  const events = normalizeAuthoringLesson(timesTenLesson({ amount: "100", target: "10", shape: { question: "times", toward: "right", apart: 1 }, practice: [["1", "0.1"]] }), timesTenHost("tt-one"));
+  const store = new MemoryStore();
+  const session = new BrowserLessonSession(events, store, "tt-one", { reducedMotion: true });
+  const card = "tt-one:node:chart";
+  while (session.projection.status !== "completed") session.advance();
+  const start = chartValues(session);
+  assert.deepEqual([start.amount, start.target, start.counted_in, start.moved_once], [1000, 100, 1000, 0], "1 against 0.1, counted in ones");
+  assert.deepEqual(session.tapStudentCard(card, { kind: "copy", place: 2 }), { refused: "copy_short", message: "This 0.1 has 0 tenths; 0.1 is 1 tenth." });
+  assert.deepEqual(session.tapStudentCard(card, { kind: "smaller", place: 0 }), { refused: "smaller", message: "This is 0.1: 1 tenth." });
+  const moved = session.tapStudentCard(card, { kind: "move", place: 0 });
+  assert.ok("operation" in moved);
+  assert.deepEqual(moved.operation.changes, [{ alias: "moved_once", before: 0, after: 1 }]);
+  assert.equal(session.studentTasks[0]!.status, "succeeded", "the one move completes the chart: ten whole 0.1s");
+  assert.equal((session.submitStudentRow("answer-1", { renamed: "1", times: "10" }) as StudentTaskSnapshot).status, "in_progress");
+  assert.equal((session.submitStudentRow("answer-1", { renamed: "10", times: "10" }) as StudentTaskSnapshot).status, "succeeded");
+});
+
 test("the student log keeps a times-ten card's row taps and a pile up to the millions", () => {
   const tap = (kind: string, place: number) => ({ profile: "octos.student.operation", version: "0.1", id: `l:card-tap:${kind}:${place}`, sequence: 1, lesson_id: "l", kind: "card_tap",
     target: { kind: "card_node", node_id: "l:node:chart" }, input: "mouse", tap: { kind, place }, changes: [{ alias: "moved_once", before: 0, after: 1 }] });

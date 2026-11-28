@@ -18,6 +18,8 @@ import { timesTenHost, timesTenLesson, timesTenPracticeOf, timesTenRow, timesTen
 
 const count = (extra: Partial<TimesTenLessonInput> = {}) => timesTenLesson({ amount: "0.3", target: "0.001", practice: [["5", "0.01"]], ...extra });
 const times = (extra: Partial<TimesTenLessonInput> = {}) => timesTenLesson({ amount: "700", target: "70", practice: [["4000", "400"]], ...extra });
+/** 100 is ? times 10 (0028 revision 4): the lesson states the times shape; practised as 1 against 0.1. */
+const digitOne = (extra: Partial<TimesTenLessonInput> = {}) => timesTenLesson({ amount: "100", target: "10", shape: { question: "times", toward: "right", apart: 1 }, practice: [["1", "0.1"]], ...extra });
 const together = (extra: Partial<TimesTenLessonInput> = {}) => timesTenLesson({ language: "zh-CN", amount: "2000", target: "1000", start: "100", practice: [["0.06", "0.01"]], ...extra });
 const task = (lesson: AuthoringLesson, index = 0) => (lesson.lesson.tasks as any[])[index];
 const card = (lesson: AuthoringLesson) => (lesson.steps[0]!.beats[0]!.actions[0] as any);
@@ -70,8 +72,9 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.doesNotThrow(throwsStart(state));
   assert.equal(cardHowTo(PLACE_VALUE_TIMES_TEN_KIND, content), placeValueTimesTenHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_times_ten, buildPlaceValueTimesTen);
-  // The compare card (0029) moved the manifest on since; a times-ten lesson still needs only math 0.11.0.
-  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.0");
+  // The compare card (0029) and a stated digit-1 times pair (0028 revision 4) moved the manifest on since; a
+  // times-ten lesson still needs only math 0.11.0.
+  assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.1");
 });
 
 test("the complete fact: judged on each tap; done, the task's own problem at its own start unit, every row moved", () => {
@@ -136,6 +139,58 @@ test("practice: its own problem of the card's shape, counted in at its own start
   const done = count();
   task(done).allowed_operations = [{ kind: "card_tap", node: "chart" }, { kind: "card_submit" }];
   assert.throws(() => validateAuthoringLesson(done), /allows only tapping its card/);
+});
+
+test("0028 revision 4: a stated times pair whose digit is 1 plays as a times pair; a digit-1 count as before", () => {
+  const lesson = digitOne();
+  const content = card(lesson).content;
+  assert.deepEqual([content.question, content.toward, content.apart, content.amount, content.target, content.counted_in, content.moved_once], ["times", "right", 1, 100_000, 10_000, 100_000, 0]);
+  assertAuthoringSchema(lesson);
+  assert.doesNotThrow(() => validateAuthoringLesson(lesson));
+  // The demonstration: counted in hundreds, then in 10s, one row's move.
+  const demo = PLACE_VALUE_TIMES_TEN_DEMONSTRATION;
+  assert.equal(demo.start(content), 100_000);
+  assert.equal(demo.refuseStep(content, 100_000, 10_000), undefined);
+  assert.deepEqual(demo.stepValues(content, 100_000, 10_000), [10_000]);
+  assert.doesNotThrow(() => validateAuthoringLesson(digitOne({ beats: [{ key: "tens", say: "Look.", actions: [{ do: "animate", variable: "counted_in", value: 10_000 }] } as any] })));
+  // The practice: 1 against 0.1, at its own start unit; the finished chart; the card's answer row.
+  assert.deepEqual(task(lesson).start.values, { amount: 1000, target: 100, counted_in: 1000, moved_once: 0 });
+  const kind = PLACE_VALUE_TIMES_TEN_CARD;
+  const practiceState = kind.state({ ...content, ...task(lesson).start.values });
+  assert.deepEqual([practiceState.problem.question, practiceState.stages], ["times", [0]]);
+  assert.deepEqual(kind.apply(practiceState, { kind: "copy", place: 4 }), { ok: false, reason: "copy_short" });
+  assert.equal(kind.refusalText("copy_short", 4, "en-US", practiceState), "This 0.1 has 0 tenths; 0.1 is 1 tenth.");
+  const moved = kind.apply(practiceState, { kind: "move", place: 0 });
+  assert.ok(moved.ok);
+  assert.deepEqual(kind.changes(practiceState, moved.state), [{ place: 0, field: "moved_once", before: 0, after: 1 }]);
+  assert.deepEqual(kind.facts.complete!.read({ fact: "complete" }, moved.state), { actual: 1, target: 1, succeeded: true });
+  assert.deepEqual(kind.answers!(moved.state, "en-US"), { values: [10, 10], text: "1 = 10 × 0.1. The 1 in 1 is worth ten times the 1 in 0.1; 0.1 is 1/10 of 1." });
+  const start = task(lesson).start.values as Record<string, number>;
+  assert.deepEqual(kind.facts.complete!.donePile({ content, completion: { fact: "complete" }, startValue: (alias) => start[alias ?? ""] ?? 0 }), { amount: 1000, target: 100, counted_in: 1000, moved_once: 1 });
+  assert.deepEqual(task(lesson, 1).completion.parts.flatMap((part: any) => ("blank" in part ? [part.blank.answer] : [])), ["10", "10"]);
+  const short = digitOne();
+  task(short, 1).completion.parts = [{ text: "1 is" }, { blank: { as: "times", answer: "10" } }, { text: "times 0.1" }];
+  assert.throws(() => validateAuthoringLesson(short), /2 blanks, 10 and 10/);
+  // Requirements, and the reducer: the card drawn as written.
+  const events = normalizeAuthoringLesson(lesson, timesTenHost("digit-one"));
+  const requirements = deriveExecutionRequirements(events);
+  assert.deepEqual([requirements.minimumPlayerVersion, requirements.requiredPlugins], ["0.19.0", { math: "0.11.0" }]);
+  const board = reduceCanonicalEvents(events);
+  const node = Object.values(board.nodes).find((candidate: any) => candidate.kind === PLACE_VALUE_TIMES_TEN_KIND) as any;
+  assert.equal(kind.state(node.content).problem.question, "times");
+  assert.equal(kind.state(setLessonVariables(board, task(lesson).start.values).nodes[node.id]!.content).problem.amount, 1000);
+  // Of the same shape: a 700-against-70 card takes 100 against 10 as practice; 100 against 10 takes 4,000 against 400.
+  assert.doesNotThrow(() => validateAuthoringLesson(times({ practice: [["100", "10"]] })));
+  assert.doesNotThrow(() => validateAuthoringLesson(digitOne({ practice: [["4000", "400"]] })));
+  // A count's numbers on this card are another shape.
+  const other = digitOne();
+  task(other).start = { ...task(other).start, values: { ...task(other).start.values, amount: 300, target: 1, counted_in: 100 } };
+  assert.throws(() => validateAuthoringLesson(other), /not_same_shape|outside/);
+  // Without the shape, 100 and 10 are a count, as before: 1 hundred = ? tens, one blank.
+  const counted = timesTenLesson({ amount: "100", target: "10", practice: [["1", "0.1"]] });
+  assert.equal(card(counted).content.question, "count");
+  assert.doesNotThrow(() => validateAuthoringLesson(counted));
+  assert.deepEqual(task(counted, 1).completion.parts, [{ text: "1 one =" }, { blank: { as: "count", answer: "10" } }, { text: "tenths" }]);
 });
 
 test("the answer right after the card's task is the card's own", () => {
