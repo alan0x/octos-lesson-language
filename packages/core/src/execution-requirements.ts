@@ -12,7 +12,10 @@ import {
 import { PLACE_VALUE_CHART_FEATURE, PLACE_VALUE_CHART_KIND, PLACE_VALUE_CHART_PLUGIN_VERSION } from "../../plugin-math/src/place-value-chart.js";
 import { PLACE_VALUE_TRADE_FEATURE, PLACE_VALUE_TRADE_KIND, PLACE_VALUE_TRADE_PLUGIN_VERSION } from "../../plugin-math/src/place-value-trade.js";
 import { MAKE_TEN_FEATURE, MAKE_TEN_KIND, MAKE_TEN_PLUGIN_VERSION } from "../../plugin-math/src/make-ten.js";
-import { PLACE_VALUE_TIMES_TEN_FEATURE, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION } from "../../plugin-math/src/place-value-times-ten.js";
+import {
+  PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE, PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_VERSION, PLACE_VALUE_TIMES_TEN_FEATURE, PLACE_VALUE_TIMES_TEN_KIND,
+  PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION, placeValueTimesTenUsesDigitOneTimes,
+} from "../../plugin-math/src/place-value-times-ten.js";
 import { PLACE_VALUE_COMPARE_FEATURE, PLACE_VALUE_COMPARE_KIND, PLACE_VALUE_COMPARE_PLUGIN_VERSION } from "../../plugin-math/src/place-value-compare.js";
 import type { CanonicalEvent } from "./types.js";
 
@@ -121,9 +124,15 @@ export interface ExecutionExtension {
   detect?(content: Readonly<Record<string, unknown>>, kind: string | undefined, use: (feature: string) => void, lesson?: ExecutionLessonContext): void;
 }
 
-/** What a detector may read of the lesson besides the content: its variables, with any control. */
+/** What a detector may read of the lesson besides the content: its variables, with any control, and its start piles. */
 export interface ExecutionLessonContext {
   variables: ReadonlyArray<{ as: string; control?: { kind: string; step?: number } }>;
+  /**
+   * The values the lesson's starts lay, by variable: the variables' initial values, and each practice's and each
+   * replay's start over them. A bound card is drawn at each, so a detector judges it there too (a times-ten card
+   * practised on a pair whose digit is 1; 0028 revision 4).
+   */
+  piles?: ReadonlyArray<Readonly<Record<string, number>>>;
 }
 
 export interface ExecutionOptions {
@@ -145,7 +154,7 @@ const looksLikeNumberLine = (content: Readonly<Record<string, unknown>>) =>
 export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.freeze([
   {
     plugin: { id: MATH_PLUGIN_MANIFEST.id, version: MATH_PLUGIN_MANIFEST.version },
-    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION, [PLACE_VALUE_CHART_FEATURE]: PLACE_VALUE_CHART_PLUGIN_VERSION, [PLACE_VALUE_TRADE_FEATURE]: PLACE_VALUE_TRADE_PLUGIN_VERSION, [MAKE_TEN_FEATURE]: MAKE_TEN_PLUGIN_VERSION, [PLACE_VALUE_TIMES_TEN_FEATURE]: PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION, [PLACE_VALUE_COMPARE_FEATURE]: PLACE_VALUE_COMPARE_PLUGIN_VERSION },
+    features: { [NUMBER_LINE_FEATURE]: NUMBER_LINE_PLUGIN_VERSION, [NUMBER_LINE_JUMP_LANES_FEATURE]: NUMBER_LINE_JUMP_LANES_VERSION, [FRACTION_MODEL_FEATURE]: FRACTION_MODEL_PLUGIN_VERSION, [BASE_TEN_TRADE_FEATURE]: BASE_TEN_TRADE_PLUGIN_VERSION, [BASE_TEN_TRADE_LANGUAGE_FEATURE]: BASE_TEN_TRADE_LANGUAGE_VERSION, [BASE_TEN_TRADE_SLIDER_FEATURE]: BASE_TEN_TRADE_SLIDER_VERSION, [PLACE_VALUE_CHART_FEATURE]: PLACE_VALUE_CHART_PLUGIN_VERSION, [PLACE_VALUE_TRADE_FEATURE]: PLACE_VALUE_TRADE_PLUGIN_VERSION, [MAKE_TEN_FEATURE]: MAKE_TEN_PLUGIN_VERSION, [PLACE_VALUE_TIMES_TEN_FEATURE]: PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION, [PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE]: PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_VERSION, [PLACE_VALUE_COMPARE_FEATURE]: PLACE_VALUE_COMPARE_PLUGIN_VERSION },
     detect(content, kind, use, lesson) {
       if (kind === NUMBER_LINE_KIND || (kind === undefined && looksLikeNumberLine(content))) {
         use(NUMBER_LINE_FEATURE);
@@ -163,6 +172,11 @@ export const FIRST_PARTY_EXTENSIONS: readonly ExecutionExtension[] = Object.free
       if (kind === PLACE_VALUE_TRADE_KIND) use(PLACE_VALUE_TRADE_FEATURE);
       if (kind === MAKE_TEN_KIND) use(MAKE_TEN_FEATURE);
       if (kind === PLACE_VALUE_TIMES_TEN_KIND) use(PLACE_VALUE_TIMES_TEN_FEATURE);
+      // A times pair whose digit is 1, written or laid by a start (0028 revision 4): an older plugin read it as a count.
+      // A revision of a card created elsewhere is known by its own fields.
+      if ((kind === PLACE_VALUE_TIMES_TEN_KIND || (kind === undefined && "counted_in" in content)) && placeValueTimesTenUsesDigitOneTimes(content, lesson?.piles)) {
+        use(PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE);
+      }
       if (kind === PLACE_VALUE_COMPARE_KIND) use(PLACE_VALUE_COMPARE_FEATURE);
     },
   },
@@ -242,8 +256,16 @@ export function deriveExecutionRequirements(events: readonly CanonicalEvent[], o
   const required = new Set<string>();
   // Node kinds created in these events, so revisions reach detectors with their kind.
   const kinds = new Map<string, string>();
-  // The lesson's variables, from its opening event, for detectors that read a card's bound controls.
-  const lesson: ExecutionLessonContext = { variables: events.flatMap((event) => event.lesson?.variables ?? []) };
+  // The lesson's variables, from its opening event, for detectors that read a card's bound controls; and its start
+  // piles (the variables' initial values, each practice's and each replay's start over them), gathered before the
+  // events are read because a task's start is declared before the card it lays.
+  const variables = events.flatMap((event) => event.lesson?.variables ?? []);
+  const initials: Record<string, number> = Object.fromEntries(variables.flatMap((variable) => (typeof variable.initial === "number" ? [[variable.as, variable.initial]] : [])));
+  const starts = events.flatMap((event) => [
+    ...(event.lesson?.tasks ?? []).flatMap((task) => (task.start?.values ? [task.start.values] : [])),
+    ...(event.step?.beats ?? []).flatMap((beat) => Object.values(beat.stage).flatMap((actions) => (actions ?? []).flatMap((action) => (action.transition?.values ? [action.transition.values] : [])))),
+  ]);
+  const lesson: ExecutionLessonContext = { variables, piles: [initials, ...starts.map((values) => ({ ...initials, ...values }))] };
   const add = (feature: string, path: string) => {
     // A first-party plugin feature is known even when that plugin is left out,
     // so the player's check can say which plugin is missing.

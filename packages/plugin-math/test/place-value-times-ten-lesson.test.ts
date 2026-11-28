@@ -5,14 +5,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  applyCanonicalAction, assertAuthoringSchema, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson, reduceCanonicalEvents,
-  setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
+  applyCanonicalAction, assertAuthoringSchema, assertDeclarationPlayable, assertExecutionSupported, deriveExecutionRequirements, normalizeAuthoringLesson,
+  reduceCanonicalEvents, setLessonVariables, validateAuthoringLesson, OLL_PLAYER_EXECUTION_VERSION, type AuthoringLesson,
 } from "../../core/src/index.js";
 import { PLACE_VALUE_TIMES_TEN_CARD, PLACE_VALUE_TIMES_TEN_DEMONSTRATION, tapCardKind } from "../../core/src/cards.js";
 import { MATH_BUILDERS, MATH_PLUGIN_MANIFEST, cardHowTo } from "../src/index.js";
 import { buildPlaceValueTimesTen } from "../src/place-value-times-ten-builder.js";
 import {
-  PLACE_VALUE_TIMES_TEN_FEATURE, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_TAP_PLACES, placeValueTimesTenHowTo, type PlaceValueTimesTenState,
+  PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE, PLACE_VALUE_TIMES_TEN_FEATURE, PLACE_VALUE_TIMES_TEN_KIND, PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION,
+  PLACE_VALUE_TIMES_TEN_TAP_PLACES, placeValueTimesTenHowTo, type PlaceValueTimesTenState,
 } from "../src/place-value-times-ten.js";
 import { timesTenHost, timesTenLesson, timesTenPracticeOf, timesTenRow, timesTenStart, type TimesTenLessonInput } from "./place-value-times-ten-fixtures.js";
 
@@ -73,7 +74,7 @@ test("the registry entry: row taps, the row sets and the card's numbers card-lev
   assert.equal(cardHowTo(PLACE_VALUE_TIMES_TEN_KIND, content), placeValueTimesTenHowTo(content));
   assert.equal(MATH_BUILDERS.place_value_times_ten, buildPlaceValueTimesTen);
   // The compare card (0029) and a stated digit-1 times pair (0028 revision 4) moved the manifest on since; a
-  // times-ten lesson still needs only math 0.11.0.
+  // times-ten lesson needs math 0.11.0, or 0.12.1 when it asks a times pair whose digit is 1.
   assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.1");
 });
 
@@ -174,7 +175,7 @@ test("0028 revision 4: a stated times pair whose digit is 1 plays as a times pai
   // Requirements, and the reducer: the card drawn as written.
   const events = normalizeAuthoringLesson(lesson, timesTenHost("digit-one"));
   const requirements = deriveExecutionRequirements(events);
-  assert.deepEqual([requirements.minimumPlayerVersion, requirements.requiredPlugins], ["0.19.0", { math: "0.11.0" }]);
+  assert.deepEqual([requirements.minimumPlayerVersion, requirements.requiredPlugins], ["0.19.0", { math: "0.12.1" }], "a digit-1 times pair needs math 0.12.1");
   const board = reduceCanonicalEvents(events);
   const node = Object.values(board.nodes).find((candidate: any) => candidate.kind === PLACE_VALUE_TIMES_TEN_KIND) as any;
   assert.equal(kind.state(node.content).problem.question, "times");
@@ -191,6 +192,56 @@ test("0028 revision 4: a stated times pair whose digit is 1 plays as a times pai
   assert.equal(card(counted).content.question, "count");
   assert.doesNotThrow(() => validateAuthoringLesson(counted));
   assert.deepEqual(task(counted, 1).completion.parts, [{ text: "1 one =" }, { blank: { as: "count", answer: "10" } }, { text: "tenths" }]);
+});
+
+test("0028 revision 4: a lesson that asks a times pair whose digit is 1 needs math 0.12.1, as written, practised, replayed or revised", () => {
+  const needs = (lesson: AuthoringLesson, id: string) => deriveExecutionRequirements(normalizeAuthoringLesson(lesson, timesTenHost(id)));
+  const gated = (lesson: AuthoringLesson, id: string, what: string) => {
+    const requirements = needs(lesson, id);
+    assert.ok(requirements.requiredCapabilities.includes(PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE), `${what}: the feature`);
+    assert.deepEqual(requirements.requiredPlugins, { math: "0.12.1" }, `${what}: math 0.12.1`);
+    return requirements;
+  };
+  const plain = (lesson: AuthoringLesson, id: string, what: string) => {
+    const requirements = needs(lesson, id);
+    assert.ok(!requirements.requiredCapabilities.includes(PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE), `${what}: no feature`);
+    assert.deepEqual(requirements.requiredPlugins, { math: PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION }, `${what}: math 0.11.0`);
+  };
+  // Written: 100 is ? times 10. A player whose math plugin is 0.12.0 refuses it (it read the pair as a count and drew an empty chart).
+  const written = gated(digitOne(), "written", "100 against 10 as written");
+  const declaration = { minimumPlayerVersion: written.minimumPlayerVersion, requiredCapabilities: written.requiredCapabilities };
+  assert.throws(() => assertDeclarationPlayable(declaration, undefined, {
+    extensions: [{ plugin: { id: "math", version: "0.12.0" }, features: { ...Object.fromEntries(written.requiredCapabilities.filter((feature) => feature.startsWith("plugin:math/") && feature !== PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE).map((feature) => [feature, "0.11.0"])) } }],
+  }), /uses 'plugin:math\/place-value-times-ten-digit-one-times@1', which the installed 'math' plugin 0.12.0 does not have/);
+  assert.doesNotThrow(() => assertDeclarationPlayable(declaration));
+  // Practised: a 700-against-70 card whose practice starts on 100 against 10.
+  validateAuthoringLesson(times({ practice: [["100", "10"]] }));
+  gated(times({ practice: [["100", "10"]] }), "practised", "700 against 70, practised as 100 against 10");
+  // Replayed: a replay lays 100 against 10 on the 700-against-70 card.
+  const replayed = times({ practice: [], beats: [{ key: "other", say: "Another pair.", start: { kind: "replay", variables: ["amount", "target", "counted_in", "moved_once"], values: { amount: 100_000, target: 10_000, counted_in: 100_000, moved_once: 0 } }, actions: [{ do: "animate", variable: "counted_in", value: 10_000 }] } as any] });
+  for (const [as, min] of [["amount", 100_000], ["target", 10_000], ["counted_in", 10_000]] as const) (replayed.lesson.variables as any[]).find((variable) => variable.as === as).min = min;
+  validateAuthoringLesson(replayed);
+  gated(replayed, "replayed", "a replay of 100 against 10");
+  // Revised: an unbound 700-against-70 card revised to 100 against 10.
+  const unbound = (revision: Record<string, unknown>): AuthoringLesson => ({
+    dsl: "octos.lesson", version: "0.1", profile: "authoring",
+    lesson: { mode: "explain", language: "en-US", title: "Ten of one place", goals: ["Count an amount in another unit"] },
+    steps: [{ key: "show", purpose: "See the problem", beats: [
+      { key: "draw", say: "Here is the amount.", actions: buildPlaceValueTimesTen({ as: "chart", role: "main_visual", place: { relation: "new_region" }, amount: 700_000, target: 70_000 }).actions },
+      { key: "again", say: "Another pair.", actions: [{ do: "revise", target: "chart", content: revision, reason: "Another pair" }] },
+    ] }],
+    close: { summary: "Ten of one place make one of the next.", focus: ["chart"] },
+  } as unknown as AuthoringLesson);
+  const revisedTimes = { question: "times", toward: "right", apart: 1, amount: 100_000, target: 10_000, counted_in: 100_000, moved_once: 0 };
+  validateAuthoringLesson(unbound(revisedTimes));
+  gated(unbound(revisedTimes), "revised", "revised to 100 against 10");
+  const revisedCount = { question: "count", toward: "right", apart: 1, amount: 100_000, target: 10_000, counted_in: 100_000, moved_once: 0 };
+  validateAuthoringLesson(unbound(revisedCount));
+  plain(unbound(revisedCount), "revised-count", "revised to 1 hundred = ? tens");
+  // Not gated: a count card on 100 and 10, an ordinary times card, and one practised on another digit.
+  plain(timesTenLesson({ amount: "100", target: "10", practice: [["1", "0.1"]] }), "count", "1 hundred = ? tens");
+  plain(times(), "times", "700 against 70, practised as 4,000 against 400");
+  plain(times({ practice: [["300", "30"]] }), "times-3", "700 against 70, practised as 300 against 30");
 });
 
 test("the answer right after the card's task is the card's own", () => {

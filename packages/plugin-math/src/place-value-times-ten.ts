@@ -30,6 +30,12 @@ export const PLACE_VALUE_TIMES_TEN_KIND = "place_value_times_ten";
 export const PLACE_VALUE_TIMES_TEN_FEATURE = "plugin:math/place-value-times-ten@1";
 /** The math plugin version that introduced the card. */
 export const PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION = "0.11.0";
+/**
+ * A `times` card on a pair whose digit is 1 (100 and 10; 1 and 0.1), as written or at a start (0028 revision 4). An
+ * older plugin read such a pair as a count, refused the content and drew an empty chart, so it refuses the lesson.
+ */
+export const PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE = "plugin:math/place-value-times-ten-digit-one-times@1";
+export const PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_VERSION = "0.12.1";
 /** The languages the card speaks: the chart's. A card without `language` speaks US English. */
 export const PLACE_VALUE_TIMES_TEN_LANGUAGES = PLACE_VALUE_CHART_LANGUAGES;
 
@@ -233,6 +239,34 @@ export function placeValueTimesTenProblemOfShape(shape: PlaceValueTimesTenShape,
   const own = placeValueTimesTenShapeOf(p);
   if (own.question !== shape.question || own.toward !== shape.toward || own.apart !== shape.apart) return { fault: "not_same_shape" };
   return p;
+}
+
+/** Two numbers whose digit is 1, one place apart, either way round (100 and 10; 0.1 and 1): in thousandths. */
+export function placeValueTimesTenDigitOnePair(amount: number, target: number): boolean {
+  const large = placeValueTimesTenOneDigit(Math.max(amount, target)), small = placeValueTimesTenOneDigit(Math.min(amount, target));
+  return !!large && !!small && large.digit === 1 && small.digit === 1 && small.place === large.place - 1 && large.place <= PLACE_VALUE_TIMES_TEN_MAX_PLACE;
+}
+
+/**
+ * Whether a card asks a times pair whose digit is 1 (0028 revision 4; `PLACE_VALUE_TIMES_TEN_DIGIT_ONE_TIMES_FEATURE`):
+ * its content says `times` and its numbers are such a pair as written, or at any of the lesson's start piles (a
+ * variable's initial values, a practice's or a replay's start), each field bound by its bare name read from the
+ * pile's value for its variable.
+ */
+export function placeValueTimesTenUsesDigitOneTimes(raw: unknown, piles: ReadonlyArray<Readonly<Record<string, number>>> = []): boolean {
+  const content = (raw ?? {}) as Record<string, unknown>;
+  if (content.question !== "times") return false;
+  const bound = new Map(((Array.isArray(content.bindings) ? content.bindings : []) as Array<{ target?: unknown; expression?: unknown }>)
+    .filter((binding) => typeof binding.target === "string" && typeof binding.expression === "string")
+    .map((binding) => [binding.target as string, (binding.expression as string).trim()]));
+  const at = (pile: Readonly<Record<string, number>> | undefined, field: "amount" | "target"): unknown => {
+    const alias = bound.get(field);
+    return pile && alias !== undefined && typeof pile[alias] === "number" ? pile[alias] : content[field];
+  };
+  return [undefined, ...piles].some((pile) => {
+    const amount = at(pile, "amount"), target = at(pile, "target");
+    return typeof amount === "number" && typeof target === "number" && placeValueTimesTenDigitOnePair(amount, target);
+  });
 }
 
 /** A count of digit 1 one place to the right (1 hundred = 10 tens) as its times pair (100 is 10 times 10), else undefined. */

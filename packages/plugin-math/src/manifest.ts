@@ -13,7 +13,8 @@ export const MATH_PLUGIN_MANIFEST = {
   // at a time, a step's slot each (owner, 2026-11-27; 0026 revision 2); lessons still require 0.11.0. 0.12.0:
   // comparing two numbers by place, the `place_value_compare` card (decision 0029). 0.12.1: a times-ten card that
   // says `times` reads a pair whose digit is 1 (100 and 10) as a times pair, and its builder takes the shape
-  // (0028 revision 4); lessons still require 0.11.0.
+  // (0028 revision 4); a lesson that asks such a pair requires 0.12.1 (`place-value-times-ten-digit-one-times`),
+  // other times-ten lessons still 0.11.0.
   version: "0.12.1",
   // Every subject plugin depends on the shared tools (decision 0012).
   depends: { shared: "0.1.0" },

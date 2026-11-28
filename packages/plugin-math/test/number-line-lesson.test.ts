@@ -66,7 +66,8 @@ test("a number line requires the math plugin's feature, not a core node feature"
   // The make-ten card (0027) came after the trade card.
   // The times-ten card (0028) came after the make-ten card. 0.11.1 changed only how a demonstration is paced
   // (0026 revision 2), so its lessons still require 0.11.0. The compare card (0029) came after it. 0.12.1 reads a
-  // times-ten card's stated digit-1 times pair as a times pair (0028 revision 4); times-ten lessons still require 0.11.0.
+  // times-ten card's stated digit-1 times pair as a times pair (0028 revision 4): only a lesson that asks such a pair
+  // requires it (its own feature); other times-ten lessons still require 0.11.0.
   assert.equal(MATH_PLUGIN_MANIFEST.version, "0.12.1");
   assert.equal(PLACE_VALUE_COMPARE_PLUGIN_VERSION, "0.12.0");
   assert.equal(PLACE_VALUE_TIMES_TEN_PLUGIN_VERSION, "0.11.0");

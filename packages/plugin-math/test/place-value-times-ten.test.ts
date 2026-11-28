@@ -517,7 +517,10 @@ test("0028 revision 4: only a stated times card's digit-1 neighbours read differ
   for (const shape of shapes) for (const amount of values) for (const target of values) {
     const now = m.placeValueTimesTenProblemOfShape(shape, amount, target);
     const large = m.placeValueTimesTenOneDigit(Math.max(amount, target))!, small = m.placeValueTimesTenOneDigit(Math.min(amount, target))!;
-    if (shape.question === "times" && large.digit === 1 && small.digit === 1 && small.place === large.place - 1 && large.place <= m.PLACE_VALUE_TIMES_TEN_MAX_PLACE) {
+    const reads = shape.question === "times" && large.digit === 1 && small.digit === 1 && small.place === large.place - 1 && large.place <= m.PLACE_VALUE_TIMES_TEN_MAX_PLACE;
+    // The lesson's feature is declared on exactly the readings that changed (an older plugin read them as counts).
+    assert.equal(m.placeValueTimesTenUsesDigitOneTimes({ question: shape.question, amount, target }), reads, `the feature: ${shape.question} ${amount}/${target}`);
+    if (reads) {
       assert.deepEqual([("question" in now) && now.question, ("amount" in now) && now.amount, ("renamed" in now) && now.renamed], ["times", Math.max(amount, target), 10], `${amount}/${target}`);
       changed += 1;
     } else {
@@ -526,6 +529,11 @@ test("0028 revision 4: only a stated times card's digit-1 neighbours read differ
     }
   }
   eq([changed, same > 40000], [18, true], `18 readings changed (9 neighbouring pairs, either way round); ${same} the same`);
+  // At a start: a bound times card's numbers as a pile lays them.
+  const bound = { question: "times", amount: 700_000, target: 70_000, bindings: [{ target: "amount", expression: "a" }, { target: "target", expression: " b " }] };
+  eq([m.placeValueTimesTenUsesDigitOneTimes(bound), m.placeValueTimesTenUsesDigitOneTimes(bound, [{ a: 4_000_000, b: 400_000 }]), m.placeValueTimesTenUsesDigitOneTimes(bound, [{ a: 4_000_000, b: 400_000 }, { a: 1000, b: 100 }])], [false, false, true], "700/70 practised as 4,000/400, then as 1/0.1");
+  eq(m.placeValueTimesTenUsesDigitOneTimes({ ...bound, question: "count" }, [{ a: 1000, b: 100 }]), false, "a count card never");
+  eq(m.placeValueTimesTenUsesDigitOneTimes(bound, [{ c: 1000 }]), false, "a pile of other variables leaves the card as written");
 });
 
 test("builder: a stated shape (0028 revision 4); without one, the shape read from the numbers as before", () => {
