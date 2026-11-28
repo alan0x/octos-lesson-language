@@ -8,7 +8,8 @@
  * The card's shape (count or times; toward the right or the left; one or two places apart) is fixed by the
  * starting problem. A caller that knows the shape gives it (`shape`; 0028 revision 4): the problem is the one that
  * shape makes of the two numbers (`placeValueTimesTenProblemOfShape`), so 100 and 10 are a times pair on a `times`
- * card and a count on a `count` card, and the shape fixes the start unit. Without `shape` the builder reads the
+ * card and a count on a `count` card, and the shape fixes the start unit (a `start` given too must be that one).
+ * Without `shape` the builder reads the
  * shape from the numbers, a pair whose digit is 1 as a count. "Counted in" starts at the problem's start unit: when
  * the caller leaves it out, the builder supplies it (the program's number, never the model's); without `shape`, a
  * put-together question names its own (40 hundredths: 0.01), given as `start`.
@@ -32,8 +33,9 @@ export interface PlaceValueTimesTenInput {
   target: number | DrivenValue;
   /**
    * The card's shape, when the caller knows it (the question as asked: `count` or `times`, toward which side, how
-   * many places apart). The card is then of this shape, or the builder throws; `start` is not read (the shape fixes
-   * the start unit). Left out, the shape is read from the numbers.
+   * many places apart). The card is then of this shape, or the builder throws. The shape fixes the start unit: a
+   * `start` given with it is checked, and one the numbers read differently with (as without a shape) throws the
+   * card's fault. Left out, the shape is read from the numbers.
    */
   shape?: PlaceValueTimesTenShape;
   /** The unit the amount starts in (thousandths), when it is not the amount's own place: a put-together question's. */
@@ -67,6 +69,12 @@ export function buildPlaceValueTimesTen(input: PlaceValueTimesTenInput): BuiltPl
   const targetIn = value(input.target, "target");
   const found = input.shape ? placeValueTimesTenProblemOfShape(input.shape, amountIn, targetIn) : placeValueTimesTenProblem(amountIn, targetIn, input.start);
   if ("fault" in found) throw new Error(placeValueTimesTenFaultText(found.fault, amountIn, targetIn));
+  if (input.shape && input.start !== undefined) {
+    // A start given with the shape must be the shape's: the numbers read with it (as without a shape) start there.
+    const read = placeValueTimesTenProblem(amountIn, targetIn, input.start);
+    if ("fault" in read) throw new Error(placeValueTimesTenFaultText(read.fault, amountIn, targetIn));
+    if (read.start !== found.start) throw new Error(placeValueTimesTenFaultText("not_same_shape", amountIn, targetIn));
+  }
   const problem = found;
   if (problem.amount !== amountIn) {
     // Written smaller first: the larger goes on top, so the two bindings change places too.

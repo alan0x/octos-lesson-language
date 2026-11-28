@@ -563,6 +563,24 @@ test("builder: a stated shape (0028 revision 4); without one, the shape read fro
   assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: TIMES, amount: 300, target: 1 }), /not_same_shape/u, "a count's numbers on a times shape");
   assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: { question: "times", toward: "left", apart: 2 }, amount: 100000, target: 10000 }), /not_same_shape/u, "a times pair breaks right, one place apart");
   assert.throws(() => buildPlaceValueTimesTen({ ...at, shape: { question: "count", toward: "right", apart: 2 }, amount: 100000, target: 10000 }), /not_whole/u, "100 two places from 10 starts in thousands");
+  // A start given with the shape: the shape's own builds the same card; another throws the card's fault.
+  const shapes: m.PlaceValueTimesTenShape[] = [TIMES, ...(["right", "left"] as const).flatMap((toward) => ([1, 2] as const).map((apart) => ({ question: "count" as const, toward, apart })))];
+  const values = Array.from({ length: 10 }, (_, k) => k - 3).flatMap((place) => Array.from({ length: 9 }, (_, d) => (d + 1) * m.placeValueTimesTenUnit(place)));
+  let agreed = 0;
+  for (const shape of shapes) for (const amount of values) for (const target of values) {
+    let alone: ReturnType<typeof buildPlaceValueTimesTen>;
+    try { alone = buildPlaceValueTimesTen({ ...at, shape, amount, target }); } catch { continue; }
+    assert.deepEqual(buildPlaceValueTimesTen({ ...at, shape, amount, target, start: alone.problem.start }), alone, `${shape.question}/${shape.toward}/${shape.apart} ${amount}/${target}: with its own start`);
+    agreed += 1;
+  }
+  eq(agreed, 468, "every card a shape builds over one-digit pairs (468), built again with its own start");
+  const thrown = (input: Partial<m.PlaceValueTimesTenShape> & { shape: m.PlaceValueTimesTenShape; amount: number; target: number; start: number }) => {
+    try { buildPlaceValueTimesTen({ ...at, ...input }); return undefined; } catch (error) { return (error as Error).message; }
+  };
+  eq(thrown({ shape: { question: "count", toward: "left", apart: 1 }, amount: 300, target: 100, start: 1 }), m.placeValueTimesTenFaultText("not_same_shape", 300, 100), "30 hundredths -> tenths, started in thousandths: another shape");
+  eq(thrown({ shape: { question: "count", toward: "right", apart: 1 }, amount: 5000, target: 100, start: 100 }), m.placeValueTimesTenFaultText("same_unit", 5000, 100), "5 ones -> tenths, started in tenths");
+  eq(thrown({ shape: TIMES, amount: 700000, target: 70000, start: 10000 }), m.placeValueTimesTenFaultText("times_start", 700000, 70000), "a times pair started in the tens");
+  eq(thrown({ shape: TIMES, amount: 100000, target: 10000, start: 100000 }), undefined, "100 against 10, started in its own hundreds");
 });
 
 test("builder: the program supplies counted in; a pair written smaller first; bindings", () => {
